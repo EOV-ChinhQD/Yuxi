@@ -34,6 +34,7 @@ const agentLoading = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
 
+const DEFAULT_AGENT_BACKEND_ID = 'ChatbotAgent'
 const agentBackendOptions = ref([])
 
 const showAgentModal = ref(false)
@@ -46,7 +47,7 @@ const agentShareConfig = ref({ access_level: 'user', department_ids: [], user_ui
 const agentForm = reactive({
   slug: '',
   name: '',
-  backend_id: 'ChatbotAgent',
+  backend_id: DEFAULT_AGENT_BACKEND_ID,
   description: '',
   icon: ''
 })
@@ -63,6 +64,7 @@ const agentModalMenuItems = computed(() => {
   }
   return items
 })
+const showAgentModalSidebar = computed(() => agentModalMenuItems.value.length > 1)
 const runtimeConfigSegment = computed(() =>
   runtimeAgentModalTabs.includes(agentModalActiveTab.value) ? agentModalActiveTab.value : 'model'
 )
@@ -91,7 +93,7 @@ const agentStats = computed(() => ({
   manageable: agentStore.agents.filter((agent) => agent.can_manage).length,
   global: agentStore.agents.filter((agent) => agent.share_config?.access_level === 'global').length
 }))
-const getDefaultBackendId = () => agentBackendOptions.value[0]?.value || 'ChatbotAgent'
+const getDefaultBackendId = () => DEFAULT_AGENT_BACKEND_ID
 
 const getInitialShareConfig = () => ({
   access_level: userStore.isAdmin ? 'global' : 'user',
@@ -183,7 +185,7 @@ const openEditAgentModal = async (agent) => {
   Object.assign(agentForm, {
     slug: detail.id || detail.slug || '',
     name: detail.name || '',
-    backend_id: detail.backend_id || 'ChatbotAgent',
+    backend_id: detail.backend_id || DEFAULT_AGENT_BACKEND_ID,
     description: detail.description || '',
     icon: detail.icon || ''
   })
@@ -404,8 +406,8 @@ defineExpose({
           </div>
         </div>
       </template>
-      <div class="agent-modal-content">
-        <aside class="agent-modal-sidebar" aria-label="智能体配置分组">
+      <div class="agent-modal-content" :class="{ 'without-sidebar': !showAgentModalSidebar }">
+        <aside v-if="showAgentModalSidebar" class="agent-modal-sidebar" aria-label="智能体配置分组">
           <button
             v-for="item in agentModalMenuItems"
             :key="item.key"
@@ -461,15 +463,17 @@ defineExpose({
                     <span v-else class="agent-inline-slug">{{ agentForm.slug || editingAgentId }}</span>
                   </div>
                 </div>
-                <div class="agent-backend-summary" aria-label="智能体后端">
-                  <component :is="selectedBackendIcon" :size="16" />
+                <div class="agent-backend-summary" :class="{ editable: !editingAgentId }" aria-label="智能体后端">
+                  <span class="agent-backend-icon">
+                    <component :is="selectedBackendIcon" :size="16" />
+                  </span>
                   <div class="agent-backend-text">
-                    <span class="agent-backend-label">后端</span>
+                    <span class="agent-backend-label">智能体后端</span>
                     <a-select
                       v-if="!editingAgentId"
                       v-model:value="agentForm.backend_id"
                       class="agent-backend-select"
-                      size="small"
+                      :bordered="false"
                       :options="agentBackendOptions"
                     />
                     <span v-else class="agent-backend-name">{{ selectedBackendLabel }}</span>
@@ -611,6 +615,10 @@ defineExpose({
   border: 1px solid var(--gray-150);
   border-radius: 12px;
   background: var(--gray-0);
+
+  &.without-sidebar {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .agent-modal-sidebar {
@@ -656,10 +664,11 @@ defineExpose({
   }
 
   &.active {
-    border-color: var(--main-100);
     background: var(--gray-0);
     color: var(--main-800);
-    font-weight: 600;
+    span {
+      font-weight: 600;
+    }
   }
 }
 
@@ -862,19 +871,38 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  gap: 8px;
-  min-height: 40px;
-  padding: 7px 10px;
-  border: 1px solid var(--gray-150);
+  gap: 10px;
+  min-width: 220px;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 1px solid var(--main-100);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--gray-0), var(--main-10));
+  color: var(--main-700);
+
+  &.editable {
+    padding-right: 8px;
+  }
+}
+
+.agent-backend-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
-  background: var(--gray-0);
+  background: var(--main-50);
   color: var(--main-700);
 }
 
 .agent-backend-text {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 2px;
+  min-width: 0;
+  gap: 3px;
   line-height: 1.2;
 }
 
@@ -886,19 +914,30 @@ defineExpose({
 .agent-backend-name {
   max-width: 180px;
   overflow: hidden;
-  color: var(--gray-800);
-  font-size: 12px;
+  color: var(--gray-900);
+  font-size: 13px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .agent-backend-select {
-  min-width: 160px;
+  width: 170px;
+  margin: -3px 0 -5px -11px;
 
   :deep(.ant-select-selector) {
-    border-color: var(--gray-150) !important;
-    border-radius: 8px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  :deep(.ant-select-selection-item) {
+    color: var(--gray-900);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  :deep(.ant-select-arrow) {
+    color: var(--gray-500);
   }
 }
 

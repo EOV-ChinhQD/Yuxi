@@ -5,7 +5,7 @@ import { GithubOutlined } from '@ant-design/icons-vue'
 import {
   BarChart3,
   ClipboardList,
-  Blocks,
+  LibraryBig,
   Box,
   FolderKanban,
   PanelLeftClose,
@@ -137,22 +137,22 @@ const mainList = computed(() => {
 
   if (userStore.isAdmin) {
     items.push({
-      name: '扩展管理',
+      name: '智能体扩展',
       path: '/extensions',
       activePaths: ['/extensions'],
-      icon: Blocks,
-      activeIcon: Blocks
+      icon: LibraryBig,
+      activeIcon: LibraryBig
     })
 
     items.push({
-      name: '模型管理',
+      name: '智能体管理',
       path: '/model-manage',
       icon: Box,
       activeIcon: Box
     })
 
     items.push({
-      name: 'Dashboard',
+      name: '数据总览',
       path: '/dashboard',
       icon: BarChart3,
       activeIcon: BarChart3

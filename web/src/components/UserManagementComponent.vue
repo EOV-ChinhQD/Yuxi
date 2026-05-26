@@ -15,12 +15,43 @@
           title="刷新"
           class="refresh-btn lucide-icon-btn"
         >
-          <template #icon><RefreshCw :size="16" :class="{ spin: userManagement.refreshing }" /></template>
+          <template #icon>
+            <RefreshCw :size="16" :class="{ spin: userManagement.refreshing }" />
+          </template>
         </a-button>
         <a-button type="primary" @click="showAddUserModal" class="add-btn lucide-icon-btn">
           <template #icon><Plus :size="16" /></template>
           添加用户
         </a-button>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <a-input
+        v-model:value="userManagement.searchKeyword"
+        class="search-input"
+        placeholder="搜索用户名 / ID / 手机号"
+        allow-clear
+      >
+        <template #prefix><Search :size="16" /></template>
+      </a-input>
+      <div class="filter-actions">
+        <a-select v-model:value="userManagement.departmentFilter" class="filter-select">
+          <a-select-option value="">全部部门</a-select-option>
+          <a-select-option
+            v-for="dept in departmentFilterOptions"
+            :key="dept.value"
+            :value="dept.value"
+          >
+            {{ dept.label }}
+          </a-select-option>
+        </a-select>
+        <a-select v-model:value="userManagement.roleFilter" class="filter-select">
+          <a-select-option value="">全部权限</a-select-option>
+          <a-select-option value="superadmin">超级管理员</a-select-option>
+          <a-select-option value="admin">管理员</a-select-option>
+          <a-select-option value="user">普通用户</a-select-option>
+        </a-select>
       </div>
     </div>
 
@@ -32,11 +63,13 @@
         </div>
 
         <div class="cards-container">
-          <div v-if="userManagement.users.length === 0" class="empty-state">
-            <a-empty description="暂无用户数据" />
+          <div v-if="filteredUsers.length === 0" class="empty-state">
+            <a-empty
+              :description="userManagement.users.length === 0 ? '暂无用户数据' : '没有匹配的用户'"
+            />
           </div>
           <div v-else class="user-cards-grid">
-            <div v-for="user in userManagement.users" :key="user.id" class="user-card">
+            <div v-for="user in filteredUsers" :key="user.id" class="user-card">
               <div class="card-header">
                 <div class="user-info-main">
                   <div class="user-avatar">
@@ -225,11 +258,11 @@
 </template>
 
 <script setup>
-import { reactive, onMounted, watch } from 'vue'
+import { reactive, onMounted, watch, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
 import { departmentApi } from '@/apis'
-import { Plus, Pencil, Trash2, User, UserLock, UserStar, RefreshCw } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, User, UserLock, UserStar, RefreshCw, Search } from 'lucide-vue-next'
 import { formatDateTime } from '@/utils/time'
 
 const userStore = useUserStore()
@@ -239,6 +272,9 @@ const userManagement = reactive({
   loading: false,
   refreshing: false,
   users: [],
+  searchKeyword: '',
+  departmentFilter: '',
+  roleFilter: '',
   error: null,
   modalVisible: false,
   modalTitle: '添加用户',
@@ -261,6 +297,55 @@ const userManagement = reactive({
 // 部门列表（仅超级管理员使用）
 const departmentManagement = reactive({
   departments: []
+})
+
+const departmentFilterOptions = computed(() => {
+  const options = new Map()
+
+  departmentManagement.departments.forEach((dept) => {
+    options.set(String(dept.id), {
+      value: String(dept.id),
+      label: dept.name
+    })
+  })
+
+  userManagement.users.forEach((user) => {
+    const departmentId = user.department_id
+    const departmentName = user.department_name
+
+    if (departmentId == null && !departmentName) return
+
+    const value = String(departmentId ?? departmentName)
+
+    if (!options.has(value)) {
+      options.set(value, {
+        value,
+        label: departmentName || `部门 ${departmentId}`
+      })
+    }
+  })
+
+  return [...options.values()]
+})
+
+const filteredUsers = computed(() => {
+  const keyword = userManagement.searchKeyword.trim().toLowerCase()
+
+  return userManagement.users.filter((user) => {
+    const matchesKeyword =
+      !keyword ||
+      [user.username, user.uid, user.phone_number].some((value) =>
+        String(value || '')
+          .toLowerCase()
+          .includes(keyword)
+      )
+    const matchesDepartment =
+      !userManagement.departmentFilter ||
+      String(user.department_id ?? user.department_name ?? '') === userManagement.departmentFilter
+    const matchesRole = !userManagement.roleFilter || user.role === userManagement.roleFilter
+
+    return matchesKeyword && matchesDepartment && matchesRole
+  })
 })
 
 // 获取部门列表
@@ -609,6 +694,57 @@ onMounted(async () => {
         :deep(.ant-btn-loading-icon) {
           color: var(--gray-600);
         }
+      }
+    }
+  }
+
+  .filter-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+
+    .search-input {
+      width: 300px;
+      max-width: 100%;
+
+      :deep(.ant-input-prefix) {
+        color: var(--gray-500);
+        margin-right: 6px;
+      }
+    }
+
+    .filter-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .filter-select {
+      width: 150px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .filter-section {
+      align-items: stretch;
+
+      .search-input,
+      .filter-actions {
+        width: 100%;
+      }
+
+      .filter-actions {
+        margin-left: 0;
+      }
+
+      .filter-select {
+        flex: 1;
+        min-width: 0;
       }
     }
   }

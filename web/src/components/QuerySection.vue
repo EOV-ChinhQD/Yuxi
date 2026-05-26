@@ -59,7 +59,7 @@
               </div>
               <div v-else>
                 <div class="result-summary">
-                  <strong>检索到 {{ queryResult.length }} 个相关文档块：</strong>
+                  <span>检索到 {{ queryResult.length }} 个相关文档块：</span>
                   <a-button
                     type="text"
                     size="small"
@@ -514,7 +514,8 @@ defineExpose({
       background-color: var(--main-50);
       border-radius: 6px;
       color: var(--gray-800);
-      font-weight: 500;
+      font-size: 13px;
+      span { font-weight: 500; }
     }
 
     .clear-results-btn {
@@ -578,6 +579,7 @@ defineExpose({
       .result-content {
         padding: 8px 0;
         line-height: 1.6;
+        font-size: 13px;
         color: var(--gray-900);
         white-space: pre-wrap;
         word-break: break-word;
