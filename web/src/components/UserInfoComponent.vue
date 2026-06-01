@@ -74,13 +74,12 @@ import DebugComponent from '@/components/DebugComponent.vue'
 import { message } from 'ant-design-vue'
 import { CircleUser, BookOpen, Sun, Moon, LogOut, Settings, Terminal } from 'lucide-vue-next'
 import { useThemeStore } from '@/stores/theme'
+import { generatePixelAvatar } from '@/utils/pixelAvatar'
 
 const router = useRouter()
 const userStore = useUserStore()
 const themeStore = useThemeStore()
 const slots = useSlots()
-
-const DEFAULT_AVATAR_URL = 'https://xerrors.oss-cn-shanghai.aliyuncs.com/github/default.jpeg'
 
 // 调试面板状态
 const showDebug = ref(false)
@@ -89,28 +88,23 @@ const showDebug = ref(false)
 const { openSettingsModal } = inject('settingsModal', {})
 
 const avatarLoadFailed = ref(false)
-const defaultAvatarLoadFailed = ref(false)
 
-// 用户头像不可用时回退到公共默认头像；默认头像异常时再显示图标占位。
+// 用户头像不可用时回退到基于 UID 生成的本地像素头像。
 const avatarSrc = computed(() => {
   if (userStore.avatar && !avatarLoadFailed.value) return userStore.avatar
-  if (!defaultAvatarLoadFailed.value) return DEFAULT_AVATAR_URL
-  return ''
+  return generatePixelAvatar(userStore.uid)
 })
 
 const handleAvatarError = () => {
   if (userStore.avatar && !avatarLoadFailed.value) {
     avatarLoadFailed.value = true
-    return
   }
-  defaultAvatarLoadFailed.value = true
 }
 
 watch(
   () => userStore.avatar,
   () => {
     avatarLoadFailed.value = false
-    defaultAvatarLoadFailed.value = false
   }
 )
 

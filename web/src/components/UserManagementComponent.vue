@@ -73,15 +73,7 @@
               <div class="card-header">
                 <div class="user-info-main">
                   <div class="user-avatar">
-                    <img
-                      v-if="user.avatar"
-                      :src="user.avatar"
-                      :alt="user.username"
-                      class="avatar-img"
-                    />
-                    <div v-else class="avatar-placeholder">
-                      {{ user.username.charAt(0).toUpperCase() }}
-                    </div>
+                    <img :src="getUserAvatarSrc(user)" :alt="user.username" class="avatar-img" />
                   </div>
                   <div class="user-info-content">
                     <div class="name-tag-row">
@@ -279,6 +271,7 @@ import {
   MoreVertical
 } from 'lucide-vue-next'
 import { formatDateTime } from '@/utils/time'
+import { generatePixelAvatar } from '@/utils/pixelAvatar'
 
 const userStore = useUserStore()
 
@@ -436,6 +429,8 @@ watch(
 
 // 格式化时间显示
 const formatTime = (timeStr) => formatDateTime(timeStr)
+
+const getUserAvatarSrc = (user) => user.avatar || generatePixelAvatar(user.uid)
 
 const isUserDeleteDisabled = (user) =>
   user.id === userStore.userId ||
@@ -832,11 +827,6 @@ onMounted(async () => {
                   object-fit: cover;
                 }
 
-                .avatar-placeholder {
-                  color: var(--gray-600);
-                  font-weight: 500;
-                  font-size: 14px;
-                }
               }
 
               .user-info-content {

@@ -106,8 +106,7 @@ import { message } from 'ant-design-vue'
 import { CircleUser, RefreshCw, Upload } from 'lucide-vue-next'
 import ApiKeyManagementComponent from '@/components/ApiKeyManagementComponent.vue'
 import { useUserStore } from '@/stores/user'
-
-const DEFAULT_AVATAR_URL = 'https://xerrors.oss-cn-shanghai.aliyuncs.com/github/default.jpeg'
+import { generatePixelAvatar } from '@/utils/pixelAvatar'
 
 const userStore = useUserStore()
 const avatarUploading = ref(false)
@@ -117,7 +116,6 @@ const editingField = ref('')
 const usernameInput = ref(null)
 const phoneInput = ref(null)
 const avatarLoadFailed = ref(false)
-const defaultAvatarLoadFailed = ref(false)
 const profileDraft = reactive({
   username: '',
   phone_number: ''
@@ -125,8 +123,7 @@ const profileDraft = reactive({
 
 const avatarSrc = computed(() => {
   if (userStore.avatar && !avatarLoadFailed.value) return userStore.avatar
-  if (!defaultAvatarLoadFailed.value) return DEFAULT_AVATAR_URL
-  return ''
+  return generatePixelAvatar(userStore.uid)
 })
 
 const userRoleText = computed(() => {
@@ -150,9 +147,7 @@ const syncProfileDraft = () => {
 const handleAvatarError = () => {
   if (userStore.avatar && !avatarLoadFailed.value) {
     avatarLoadFailed.value = true
-    return false
   }
-  defaultAvatarLoadFailed.value = true
   return false
 }
 
@@ -276,7 +271,6 @@ const handleAvatarChange = async (info) => {
     avatarUploading.value = true
     await userStore.uploadAvatar(info.file.originFileObj || info.file)
     avatarLoadFailed.value = false
-    defaultAvatarLoadFailed.value = false
     message.success('头像上传成功！')
   } catch (error) {
     console.error('头像上传失败:', error)
@@ -290,7 +284,6 @@ watch(
   () => userStore.avatar,
   () => {
     avatarLoadFailed.value = false
-    defaultAvatarLoadFailed.value = false
   }
 )
 
