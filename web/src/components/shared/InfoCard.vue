@@ -283,7 +283,7 @@ const normalizedTags = computed(() => {
   }
 
   &-mini {
-    padding: 12px 14px;
+    padding: 16px 14px;
     gap: 0;
   }
 

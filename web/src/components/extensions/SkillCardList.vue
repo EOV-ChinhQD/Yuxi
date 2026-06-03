@@ -294,71 +294,87 @@
                     <a href="https://skills.sh/" target="_blank" rel="noopener noreferrer"
                       >skills.sh</a
                     >
-                    查询开源 skills。
+                    查询开源 skills。 也支持 ModelScope 单个 Skill
+                    地址，每次仅限安装一个：`https://modelscope.cn/skills/&lt;skill-id&gt;`。 Skill
+                    ID 可在
+                    <a href="https://modelscope.cn/skills" target="_blank" rel="noopener noreferrer"
+                      >ModelScope Skill 市场</a
+                    >
+                    进入详情后从地址栏获取。
                   </div>
 
                   <!-- 仓库技能分页多选列表 -->
                   <div v-if="remoteSkillOptions.length" class="skills-list-section">
-                    <div class="list-operations-bar">
-                      <div class="op-buttons">
-                        <a-button size="small" type="link" @click="handleRepoSelectAll"
-                          >全选</a-button
-                        >
-                        <a-button size="small" type="link" @click="handleRepoSelectInvert"
-                          >反选</a-button
-                        >
-                        <a-button size="small" type="link" @click="handleRepoSelectNone"
-                          >清空</a-button
-                        >
+                    <template v-if="hasSingleRepoSkill">
+                      <div class="single-remote-skill-card">
+                        <div class="single-remote-skill-name">{{ singleRepoSkill.name }}</div>
+                        <div class="single-remote-skill-meta">
+                          {{ singleRepoSkill.description || '暂无描述' }}
+                        </div>
                       </div>
-                      <a-input
-                        v-model:value="repoFilterKeyword"
-                        placeholder="本地过滤检索..."
-                        size="small"
-                        style="width: 180px"
-                        allow-clear
-                      />
-                    </div>
-                    <div class="skills-list-viewport">
-                      <a-list
-                        size="small"
-                        :pagination="{ pageSize: 5, size: 'small', showSizeChanger: false }"
-                        :data-source="filteredRepoSkills"
-                        class="remote-skills-list-container"
-                      >
-                        <template #renderItem="{ item }">
-                          <a-list-item>
-                            <div class="skill-list-item-content">
-                              <div class="skill-name-col">
-                                <a-checkbox
-                                  :checked="selectedRepoSkills.includes(item.name)"
-                                  @change="
-                                    (e) => handleToggleRepoSkill(item.name, e.target.checked)
-                                  "
-                                  :disabled="installingRemoteSkill"
-                                >
-                                  <span class="skill-item-name">{{ item.name }}</span>
-                                </a-checkbox>
+                    </template>
+                    <template v-else>
+                      <div class="list-operations-bar">
+                        <div class="op-buttons">
+                          <a-button size="small" type="link" @click="handleRepoSelectAll"
+                            >全选</a-button
+                          >
+                          <a-button size="small" type="link" @click="handleRepoSelectInvert"
+                            >反选</a-button
+                          >
+                          <a-button size="small" type="link" @click="handleRepoSelectNone"
+                            >清空</a-button
+                          >
+                        </div>
+                        <a-input
+                          v-model:value="repoFilterKeyword"
+                          placeholder="本地过滤检索..."
+                          size="small"
+                          style="width: 180px"
+                          allow-clear
+                        />
+                      </div>
+                      <div class="skills-list-viewport">
+                        <a-list
+                          size="small"
+                          :pagination="{ pageSize: 5, size: 'small', showSizeChanger: false }"
+                          :data-source="filteredRepoSkills"
+                          class="remote-skills-list-container"
+                        >
+                          <template #renderItem="{ item }">
+                            <a-list-item>
+                              <div class="skill-list-item-content">
+                                <div class="skill-name-col">
+                                  <a-checkbox
+                                    :checked="selectedRepoSkills.includes(item.name)"
+                                    @change="
+                                      (e) => handleToggleRepoSkill(item.name, e.target.checked)
+                                    "
+                                    :disabled="installingRemoteSkill"
+                                  >
+                                    <span class="skill-item-name">{{ item.name }}</span>
+                                  </a-checkbox>
+                                </div>
+                                <div class="skill-desc-col">
+                                  <a-tooltip
+                                    :title="item.description || '暂无描述'"
+                                    placement="topLeft"
+                                  >
+                                    <span class="skill-item-desc">{{
+                                      item.description || '暂无描述'
+                                    }}</span>
+                                  </a-tooltip>
+                                </div>
                               </div>
-                              <div class="skill-desc-col">
-                                <a-tooltip
-                                  :title="item.description || '暂无描述'"
-                                  placement="topLeft"
-                                >
-                                  <span class="skill-item-desc">{{
-                                    item.description || '暂无描述'
-                                  }}</span>
-                                </a-tooltip>
-                              </div>
-                            </div>
-                          </a-list-item>
-                        </template>
-                      </a-list>
-                    </div>
-                    <div class="remote-skill-summary">
-                      已选 {{ selectedRepoSkills.length }} / 共发现
-                      {{ remoteSkillOptions.length }} 个 skills。
-                    </div>
+                            </a-list-item>
+                          </template>
+                        </a-list>
+                      </div>
+                      <div class="remote-skill-summary">
+                        已选 {{ selectedRepoSkills.length }} / 共发现
+                        {{ remoteSkillOptions.length }} 个 skills。
+                      </div>
+                    </template>
                   </div>
                 </a-form>
               </div>
@@ -392,65 +408,86 @@
 
                   <!-- 搜索结果列表 -->
                   <div v-if="searchedSkills.length" class="skills-list-section">
-                    <div class="list-operations-bar">
-                      <div class="op-buttons">
-                        <a-button size="small" type="link" @click="handleSearchSelectAll"
-                          >全选</a-button
-                        >
-                        <a-button size="small" type="link" @click="handleSearchSelectInvert"
-                          >反选</a-button
-                        >
-                        <a-button size="small" type="link" @click="handleSearchSelectNone"
-                          >清空</a-button
-                        >
+                    <template v-if="hasSingleSearchedSkill">
+                      <div class="single-remote-skill-card">
+                        <div class="single-remote-skill-header">
+                          <div class="single-remote-skill-name">
+                            {{ singleSearchedSkill.name }}
+                          </div>
+                          <a-tag
+                            v-if="singleSearchedSkill.installs"
+                            color="blue"
+                            class="skill-item-installs"
+                          >
+                            {{ singleSearchedSkill.installs }}
+                          </a-tag>
+                        </div>
+                        <div class="single-remote-skill-meta">
+                          {{ singleSearchedSkill.source }}
+                        </div>
                       </div>
-                    </div>
-                    <div class="skills-list-viewport">
-                      <a-list
-                        size="small"
-                        :pagination="{ pageSize: 5, size: 'small', showSizeChanger: false }"
-                        :data-source="searchedSkills"
-                        class="remote-skills-list-container"
-                      >
-                        <template #renderItem="{ item }">
-                          <a-list-item>
-                            <div class="search-skill-item-row">
-                              <div class="skill-name-col">
-                                <a-checkbox
-                                  :checked="
-                                    selectedSearchSkills.some(
-                                      (s) => s.name === item.name && s.source === item.source
-                                    )
-                                  "
-                                  @change="(e) => handleToggleSearchSkill(item, e.target.checked)"
-                                  :disabled="installingRemoteSkill"
-                                >
-                                  <span class="skill-item-name">{{ item.name }}</span>
-                                </a-checkbox>
+                    </template>
+                    <template v-else>
+                      <div class="list-operations-bar">
+                        <div class="op-buttons">
+                          <a-button size="small" type="link" @click="handleSearchSelectAll"
+                            >全选</a-button
+                          >
+                          <a-button size="small" type="link" @click="handleSearchSelectInvert"
+                            >反选</a-button
+                          >
+                          <a-button size="small" type="link" @click="handleSearchSelectNone"
+                            >清空</a-button
+                          >
+                        </div>
+                      </div>
+                      <div class="skills-list-viewport">
+                        <a-list
+                          size="small"
+                          :pagination="{ pageSize: 5, size: 'small', showSizeChanger: false }"
+                          :data-source="searchedSkills"
+                          class="remote-skills-list-container"
+                        >
+                          <template #renderItem="{ item }">
+                            <a-list-item>
+                              <div class="search-skill-item-row">
+                                <div class="skill-name-col">
+                                  <a-checkbox
+                                    :checked="
+                                      selectedSearchSkills.some(
+                                        (s) => s.name === item.name && s.source === item.source
+                                      )
+                                    "
+                                    @change="(e) => handleToggleSearchSkill(item, e.target.checked)"
+                                    :disabled="installingRemoteSkill"
+                                  >
+                                    <span class="skill-item-name">{{ item.name }}</span>
+                                  </a-checkbox>
+                                </div>
+                                <div class="skill-repo-col">
+                                  <a-tooltip :title="item.source" placement="topLeft">
+                                    <span class="skill-item-repo">{{ item.source }}</span>
+                                  </a-tooltip>
+                                </div>
+                                <div class="skill-install-col">
+                                  <a-tag
+                                    v-if="item.installs"
+                                    color="blue"
+                                    class="skill-item-installs"
+                                  >
+                                    {{ item.installs }}
+                                  </a-tag>
+                                </div>
                               </div>
-                              <div class="skill-repo-col">
-                                <a-tooltip :title="item.source" placement="topLeft">
-                                  <span class="skill-item-repo">{{ item.source }}</span>
-                                </a-tooltip>
-                              </div>
-                              <div class="skill-install-col">
-                                <a-tag
-                                  v-if="item.installs"
-                                  color="blue"
-                                  class="skill-item-installs"
-                                >
-                                  {{ item.installs }}
-                                </a-tag>
-                              </div>
-                            </div>
-                          </a-list-item>
-                        </template>
-                      </a-list>
-                    </div>
-                    <div class="remote-skill-summary">
-                      已选择 {{ selectedSearchSkills.length }} / 共找到
-                      {{ searchedSkills.length }} 个 skills。
-                    </div>
+                            </a-list-item>
+                          </template>
+                        </a-list>
+                      </div>
+                      <div class="remote-skill-summary">
+                        已选择 {{ selectedSearchSkills.length }} / 共找到
+                        {{ searchedSkills.length }} 个 skills。
+                      </div>
+                    </template>
                   </div>
                 </a-form>
               </div>
@@ -587,11 +624,15 @@ const remoteInstallForm = reactive({
 const remoteSkillOptions = ref([])
 const repoFilterKeyword = ref('')
 const selectedRepoSkills = ref([])
+const hasSingleRepoSkill = computed(() => remoteSkillOptions.value.length === 1)
+const singleRepoSkill = computed(() => remoteSkillOptions.value[0] || null)
 
 const searchKeyword = ref('')
 const searchingRemoteSkills = ref(false)
 const searchedSkills = ref([])
 const selectedSearchSkills = ref([])
+const hasSingleSearchedSkill = computed(() => searchedSkills.value.length === 1)
+const singleSearchedSkill = computed(() => searchedSkills.value[0] || null)
 
 const repoHistory = ref([])
 const allowedSkillAccessLevels = ref(['user'])
@@ -1049,12 +1090,17 @@ const handleListRemoteSkills = async () => {
   try {
     const result = await skillApi.listRemoteSkills(source)
     remoteSkillOptions.value = result?.data || []
-    selectedRepoSkills.value = []
+    selectedRepoSkills.value =
+      remoteSkillOptions.value.length === 1 ? [remoteSkillOptions.value[0].name] : []
     if (!remoteSkillOptions.value.length) {
       message.warning('未发现可安装的 Skills')
       return
     }
-    message.success(`已发现 ${remoteSkillOptions.value.length} 个 Skills`)
+    if (remoteSkillOptions.value.length === 1) {
+      message.success('已发现 1 个 Skill，已自动选中')
+    } else {
+      message.success(`已发现 ${remoteSkillOptions.value.length} 个 Skills`)
+    }
 
     // 保存成功的拉取历史
     let history = [...repoHistory.value]
@@ -1112,9 +1158,11 @@ const handleSearchRemoteSkills = async () => {
   try {
     const result = await skillApi.searchRemoteSkills(query)
     searchedSkills.value = result?.data || []
-    selectedSearchSkills.value = []
+    selectedSearchSkills.value = searchedSkills.value.length === 1 ? [...searchedSkills.value] : []
     if (!searchedSkills.value.length) {
       message.warning('未搜索到相关的 Skills')
+    } else if (searchedSkills.value.length === 1) {
+      message.success('搜索到 1 个 Skill，已自动选中')
     } else {
       message.success(`搜索到 ${searchedSkills.value.length} 个 Skills`)
     }
@@ -1625,6 +1673,45 @@ defineExpose({
         border-bottom: none;
       }
     }
+  }
+
+  .single-remote-skill-card {
+    border: 1px solid var(--gray-150);
+    border-radius: 6px;
+    background: var(--gray-0);
+    padding: 12px;
+  }
+
+  .single-remote-skill-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+
+    .ant-tag {
+      flex-shrink: 0;
+      margin-inline-end: 0;
+    }
+  }
+
+  .single-remote-skill-name {
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--gray-900);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .single-remote-skill-meta {
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 18px;
+    color: var(--gray-500);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .skill-list-item-content {
