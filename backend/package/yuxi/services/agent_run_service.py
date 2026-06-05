@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from yuxi.agents.buildin import agent_manager
+from yuxi.models.providers.cache import model_cache
 from yuxi.repositories.agent_repository import AgentRepository
 from yuxi.repositories.agent_run_repository import TERMINAL_RUN_STATUSES, AgentRunRepository
 from yuxi.repositories.conversation_repository import ConversationRepository
@@ -32,6 +33,30 @@ from yuxi.utils.logging_config import logger
 SSE_HEARTBEAT_SECONDS = int(os.getenv("RUN_SSE_HEARTBEAT_SECONDS", "15"))
 SSE_MAX_CONNECTION_MINUTES = int(os.getenv("RUN_SSE_MAX_CONNECTION_MINUTES", "30"))
 SSE_POLL_INTERVAL_SECONDS = float(os.getenv("RUN_SSE_POLL_INTERVAL_SECONDS", "1.0"))
+
+
+def _validate_model_spec(model_spec: str | None) -> str | None:
+    """校验对话级模型覆盖：未提供则返回 None；非法模型直接 422，不静默回退。"""
+    if not model_spec:
+        return None
+    info = model_cache.get_model_info(model_spec)
+    if not info or info.model_type != "chat":
+        raise HTTPException(status_code=422, detail=f"未找到可用聊天模型: '{model_spec}'")
+    return model_spec
+
+
+def _resolve_effective_model_spec(model_spec: str | None, agent_item, agent_backend) -> str | None:
+    """解析本次 chat run 实际使用的模型：显式覆盖优先，否则快照智能体当前配置。"""
+    resolved_model_spec = _validate_model_spec(model_spec)
+    if resolved_model_spec:
+        return resolved_model_spec
+
+    context = agent_backend.context_schema()
+    config_json = getattr(agent_item, "config_json", None) or {}
+    config_context = config_json.get("context") if isinstance(config_json, dict) else {}
+    if isinstance(config_context, dict):
+        context.update_from_dict(config_context)
+    return getattr(context, "model", None)
 
 
 def _build_run_response(run) -> dict:
@@ -65,6 +90,7 @@ async def create_agent_run_view(
     image_content: str | None,
     current_uid: str,
     db: AsyncSession,
+    model_spec: str | None = None,
     resume: object | None = None,
     parent_run_id: str | None = None,
     resume_request_id: str | None = None,
@@ -91,13 +117,18 @@ async def create_agent_run_view(
     agent_item = await agent_repo.get_visible_by_slug(slug=agent_id, user=current_user)
     if not agent_item:
         raise HTTPException(status_code=404, detail="智能体不存在")
-    if not agent_manager.get_agent(agent_item.backend_id):
+    agent_backend = agent_manager.get_agent(agent_item.backend_id)
+    if not agent_backend:
         raise HTTPException(status_code=404, detail=f"智能体后端 {agent_item.backend_id} 不存在")
 
     run_type = "resume" if resume is not None else "chat"
     request_id = str(resume_request_id or (meta or {}).get("request_id") or uuid.uuid4())
     config = {"thread_id": thread_id, "agent_id": agent_id}
     run_repo = AgentRunRepository(db)
+    # chat：快照本次实际模型；resume：沿用被恢复运行的原始模型，保证单次运行模型一致。
+    resolved_model_spec = (
+        _resolve_effective_model_spec(model_spec, agent_item, agent_backend) if run_type == "chat" else None
+    )
     if run_type == "resume":
         if not parent_run_id:
             raise HTTPException(status_code=422, detail="parent_run_id 不能为空")
@@ -106,6 +137,7 @@ async def create_agent_run_view(
             raise HTTPException(status_code=404, detail="被恢复的运行任务不存在")
         if parent_run.status != "interrupted":
             raise HTTPException(status_code=409, detail="只有 interrupted run 可以恢复")
+        resolved_model_spec = (parent_run.input_payload or {}).get("model_spec")
         if resume_request_id:
             existing_resume = await run_repo.get_resume_run(parent_run_id, resume_request_id)
             if existing_resume and existing_resume.uid == str(current_uid):
@@ -125,6 +157,7 @@ async def create_agent_run_view(
         "run_type": run_type,
         "config": config or {},
         "image_content": image_content,
+        "model_spec": resolved_model_spec,
         "agent_id": agent_id,
         "backend_id": agent_item.backend_id,
         "thread_id": thread_id,
@@ -155,6 +188,7 @@ async def create_agent_run_view(
             "parent_run_id": parent_run_id,
             "resume": resume,
             "attachments": [],
+            "model_spec": resolved_model_spec,
         }
         if run_type == "resume":
             input_metadata["source"] = "ask_user_question_resume"

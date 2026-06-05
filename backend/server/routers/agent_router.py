@@ -57,6 +57,7 @@ class AgentRunCreate(BaseModel):
     thread_id: str = Field(..., description="会话线程 ID")
     meta: dict = Field(default_factory=dict, description="可选，请求追踪信息，例如 request_id")
     image_content: str | None = Field(None, description="可选，base64 图片内容")
+    model_spec: str | None = Field(None, description="可选，对话级模型覆盖，优先级高于智能体配置")
     resume: Any | None = Field(None, description="可选，恢复 interrupted run 的输入")
     parent_run_id: str | None = Field(None, description="可选，被恢复的 run ID")
     resume_request_id: str | None = Field(None, description="可选，resume 幂等键")
@@ -258,6 +259,7 @@ async def create_agent_run(
         thread_id=payload.thread_id,
         meta=dict(payload.meta or {}),
         image_content=payload.image_content,
+        model_spec=payload.model_spec,
         current_uid=str(current_user.uid),
         db=db,
         resume=payload.resume,

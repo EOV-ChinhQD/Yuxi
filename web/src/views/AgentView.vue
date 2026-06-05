@@ -6,21 +6,8 @@
         <AgentChatComponent
           ref="chatComponentRef"
           :single-mode="false"
-          :send-disabled="isSavingInputModel"
           @thread-change="handleThreadChange"
         >
-          <template #input-actions-left>
-            <div v-if="showInputModelSelector" class="input-model-selector">
-              <ModelSelectorComponent
-                :model_spec="currentInputModelSpec"
-                :disabled="isInputModelSelectorDisabled"
-                size="nano"
-                display-name="mini"
-                @select-model="handleInputModelChange"
-              />
-            </div>
-          </template>
-
           <template #input-actions-right="{ hasActiveThread }">
             <a-dropdown
               v-if="selectedAgentId"
@@ -154,7 +141,6 @@ import { message } from 'ant-design-vue'
 import { Settings2, Ellipsis, ChevronDown, Check, FolderKanban } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import AgentChatComponent from '@/components/AgentChatComponent.vue'
-import ModelSelectorComponent from '@/components/ModelSelectorComponent.vue'
 import FeedbackModalComponent from '@/components/dashboard/FeedbackModalComponent.vue'
 import { useUserStore } from '@/stores/user'
 import { isBuiltinAgent, useAgentStore } from '@/stores/agent'
@@ -178,11 +164,9 @@ const route = useRoute()
 const router = useRouter()
 
 // 从 agentStore 中获取响应式状态
-const { agents, selectedAgentId, selectedAgent, agentConfig, configurableItems, isLoadingConfig } =
-  storeToRefs(agentStore)
+const { agents, selectedAgentId, isLoadingConfig } = storeToRefs(agentStore)
 
 const syncingRouteThread = ref(false)
-const isSavingInputModel = ref(false)
 
 const getRouteThreadId = () => {
   const value = route.params.thread_id
@@ -257,40 +241,6 @@ const currentAgentLabel = computed(() => {
   return currentAgentOption.value?.label || '智能体'
 })
 
-const inputModelKey = computed(() => {
-  if (configurableItems.value?.model?.kind === 'llm') return 'model'
-  return (
-    Object.entries(configurableItems.value || {}).find(([, item]) => item?.kind === 'llm')?.[0] ||
-    ''
-  )
-})
-
-const currentInputModelSpec = computed(() => {
-  const key = inputModelKey.value
-  return key ? agentConfig.value?.[key] || '' : ''
-})
-
-const showInputModelSelector = computed(() => Boolean(selectedAgentId.value && inputModelKey.value))
-const isInputModelSelectorDisabled = computed(
-  () => isLoadingConfig.value || isSavingInputModel.value || !selectedAgent.value?.can_manage
-)
-
-const handleInputModelChange = async (spec) => {
-  const key = inputModelKey.value
-  if (!key || typeof spec !== 'string' || !spec || spec === currentInputModelSpec.value) return
-  if (isInputModelSelectorDisabled.value) return
-
-  const previousSpec = currentInputModelSpec.value
-  isSavingInputModel.value = true
-  try {
-    agentStore.updateAgentConfig({ [key]: spec })
-    await agentStore.saveAgentConfig()
-  } catch {
-    agentStore.updateAgentConfig({ [key]: previousSpec })
-  } finally {
-    isSavingInputModel.value = false
-  }
-}
 
 const agentDropdownOpen = ref(false)
 
@@ -419,14 +369,6 @@ const handleFeedback = () => {
 .content {
   flex: 1;
   overflow: hidden;
-}
-
-.input-model-selector {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  max-width: min(168px, calc(100vw - 160px));
 }
 
 .config-dropdown-trigger {

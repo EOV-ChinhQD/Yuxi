@@ -166,6 +166,13 @@ def _json_safe(value: Any) -> Any:
     return str(value)
 
 
+def _apply_model_override(input_context: dict, meta: dict | None) -> None:
+    """对话级模型覆盖：meta.model_spec 优先于智能体配置的 model。值已在创建 run 时校验。"""
+    model_spec = (meta or {}).get("model_spec")
+    if model_spec:
+        input_context["model"] = model_spec
+
+
 def _stream_message_key(metadata: dict | None, namespace: list[str], thread_id: str | None) -> tuple[str, str]:
     if not isinstance(metadata, dict):
         return thread_id or "", "/".join(namespace)
@@ -755,6 +762,7 @@ async def agent_chat(
         run_id=meta.get("run_id"),
         request_id=meta.get("request_id"),
     )
+    _apply_model_override(input_context, meta)
     langfuse_run = _build_langfuse_run_context(
         current_user=current_user,
         thread_id=thread_id,
@@ -961,6 +969,7 @@ async def stream_agent_chat(
         run_id=meta.get("run_id"),
         request_id=meta.get("request_id"),
     )
+    _apply_model_override(input_context, meta)
     langfuse_run = _build_langfuse_run_context(
         current_user=current_user,
         thread_id=thread_id,
@@ -1247,6 +1256,7 @@ async def stream_agent_resume(
         run_id=meta.get("run_id"),
         request_id=meta.get("request_id"),
     )
+    _apply_model_override(input_context, meta)
     context = agent.context_schema()
     context.update(input_context)
     langfuse_run = _build_langfuse_run_context(

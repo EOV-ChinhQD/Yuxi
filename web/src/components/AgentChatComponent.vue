@@ -133,6 +133,15 @@
                 @remove-attachment="handleAttachmentRemove"
               >
                 <template #actions-left-extra>
+                  <div class="input-model-selector">
+                    <ModelSelectorComponent
+                      :model_spec="currentModelSpec"
+                      size="nano"
+                      display-name="mini"
+                      placeholder="选择模型"
+                      @select-model="handleModelSelect"
+                    />
+                  </div>
                   <slot name="input-actions-left" :has-active-thread="!!currentChatId"></slot>
                 </template>
                 <template #actions-right-extra>
@@ -373,6 +382,7 @@ import {
   SyncOutlined
 } from '@ant-design/icons-vue'
 import AgentInputArea from '@/components/AgentInputArea.vue'
+import ModelSelectorComponent from '@/components/ModelSelectorComponent.vue'
 import AgentMessageComponent from '@/components/AgentMessageComponent.vue'
 import RefsComponent from '@/components/RefsComponent.vue'
 import ToolCallsGroupComponent from '@/components/ToolCallsGroupComponent.vue'
@@ -675,6 +685,26 @@ const currentAgent = computed(() => {
   return agents.value.find((a) => a.id === currentAgentId.value) || null
 })
 const currentChatId = computed(() => currentThreadId.value)
+
+// ==================== 对话级模型覆盖 ====================
+// 按线程记忆用户选择的模型；未选择时回退到智能体配置的模型。
+const DRAFT_MODEL_KEY = '__draft__'
+const selectedModelByThread = reactive({})
+const agentDefaultModel = computed(
+  () =>
+    agentConfig.value?.model ||
+    currentAgent.value?.config_json?.context?.model ||
+    configStore.config?.default_model ||
+    ''
+)
+const currentModelSpec = computed(
+  () => selectedModelByThread[currentChatId.value || DRAFT_MODEL_KEY] || agentDefaultModel.value
+)
+const handleModelSelect = (spec) => {
+  if (typeof spec === 'string' && spec) {
+    selectedModelByThread[currentChatId.value || DRAFT_MODEL_KEY] = spec
+  }
+}
 
 const currentThreadAgentName = computed(() => {
   const threadAgentId = currentThread.value?.agent_id
@@ -1432,10 +1462,26 @@ const fetchThreadMessages = async ({ agentId, threadId, delay = 0 }) => {
 
   try {
     const response = await agentApi.getAgentHistory(threadId)
-    threadMessages.value[threadId] = response.history || []
+    const history = response.history || []
+    threadMessages.value[threadId] = history
+    restoreThreadModelSelection(threadId, history)
   } catch (error) {
     handleChatError(error, 'load')
     throw error
+  }
+}
+
+// 跨会话还原：用最近一条用户消息记录的 model_spec 还原模型选择
+const restoreThreadModelSelection = (threadId, history) => {
+  if (selectedModelByThread[threadId]) return
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const msg = history[i]
+    if (msg?.type !== 'human') continue
+    const modelSpec = msg?.extra_metadata?.model_spec
+    if (modelSpec) {
+      selectedModelByThread[threadId] = modelSpec
+      return
+    }
   }
 }
 
@@ -1700,7 +1746,17 @@ const handleSendMessage = async ({ image } = {}) => {
       message.error('创建对话失败，请重试')
       return
     }
+    // 新建线程：把草稿态的模型选择迁移到真实线程，避免选择丢失
+    const draftModelSpec = selectedModelByThread[DRAFT_MODEL_KEY]
+    if (draftModelSpec) {
+      if (!selectedModelByThread[threadId]) {
+        selectedModelByThread[threadId] = draftModelSpec
+      }
+      delete selectedModelByThread[DRAFT_MODEL_KEY]
+    }
   }
+  // 仅当用户显式选择过模型才下发覆盖；否则传 null，由后端使用智能体配置的模型
+  const modelSpec = selectedModelByThread[threadId] || null
 
   userInput.value = ''
 
@@ -1761,7 +1817,8 @@ const handleSendMessage = async ({ image } = {}) => {
         request_id: requestId,
         attachment_file_ids: pendingAttachmentFileIds
       },
-      image_content: imageContent
+      image_content: imageContent,
+      model_spec: modelSpec
     })
     const runId = runResp?.run_id
     if (!runId) {
@@ -2509,6 +2566,14 @@ watch(currentChatId, (threadId, oldThreadId) => {
       margin: 4px 0;
       user-select: none;
     }
+  }
+
+  .input-model-selector {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    max-width: min(168px, calc(100vw - 160px));
   }
 
   &.start-screen {

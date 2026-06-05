@@ -105,6 +105,7 @@ export const agentApi = {
       thread_id: data.thread_id,
       meta: data.meta || {},
       image_content: data.image_content || null,
+      model_spec: data.model_spec || null,
       resume: data.resume ?? null,
       parent_run_id: data.parent_run_id || null,
       resume_request_id: data.resume_request_id || null
