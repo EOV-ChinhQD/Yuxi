@@ -400,13 +400,17 @@
                       :class="{ 'is-clickable': run.child_thread_id }"
                       @click="run.child_thread_id && openSubagentThread(run)"
                     >
-                      <img
-                        v-if="getSubagentIconSrc(run)"
+                      <FallbackAvatar
                         class="state-subagent-icon"
                         :src="getSubagentIconSrc(run)"
+                        :default-src="getSubagentDefaultIconSrc(run)"
+                        :name="getSubagentRunName(run)"
+                        :seed="run.subagent_type || getSubagentRunName(run)"
+                        kind="agent"
+                        :size="28"
+                        shape="rounded"
                         :alt="`${getSubagentRunName(run)}图标`"
                       />
-                      <span v-else class="state-subagent-icon" aria-hidden="true"></span>
                       <div class="state-list-item-body">
                         <div class="state-list-item-title state-subagent-title">
                           <span>{{ getSubagentRunName(run) }}</span>
@@ -445,6 +449,7 @@
       :child-thread-id="subagentThreadModal.childThreadId"
       :subagent-name="activeSubagentThreadName"
       :subagent-avatar="activeSubagentThreadAvatar"
+      :subagent-default-avatar="activeSubagentThreadDefaultAvatar"
     />
   </div>
 </template>
@@ -500,6 +505,7 @@ import AgentArtifactsCard from '@/components/AgentArtifactsCard.vue'
 import AgentPanel from '@/components/AgentPanel.vue'
 import AttachmentTmpUploadModal from '@/components/AttachmentTmpUploadModal.vue'
 import SubagentThreadModal from '@/components/SubagentThreadModal.vue'
+import FallbackAvatar from '@/components/common/FallbackAvatar.vue'
 import { enrichTaskToolCalls, parseToolCallArgs } from '@/components/ToolCallingResult/toolRegistry'
 import { getConversationDisplayItems } from '@/utils/messageGrouping'
 import { makeChildThreadId } from '@/utils/subagentThread'
@@ -680,8 +686,11 @@ const getSubagentAgent = (run) => {
 
 const getSubagentIconSrc = (run) => {
   const agent = getSubagentAgent(run)
-  return agent?.icon || (run?.subagent_type ? generatePixelAvatar(run.subagent_type) : '')
+  return agent?.icon || ''
 }
+
+const getSubagentDefaultIconSrc = (run) =>
+  run?.subagent_type ? generatePixelAvatar(run.subagent_type) : ''
 
 const getSubagentRunMeta = (run) => {
   const artifacts = Array.isArray(run?.artifacts) ? run.artifacts.length : 0
@@ -902,13 +911,15 @@ const subagentThreadModal = reactive({
   open: false,
   childThreadId: '',
   subagentName: '',
-  subagentAvatar: ''
+  subagentAvatar: '',
+  subagentDefaultAvatar: ''
 })
 const openSubagentThread = (run) => {
   if (!run?.child_thread_id) return
   subagentThreadModal.childThreadId = String(run.child_thread_id)
   subagentThreadModal.subagentName = getSubagentRunName(run)
   subagentThreadModal.subagentAvatar = getSubagentIconSrc(run)
+  subagentThreadModal.subagentDefaultAvatar = getSubagentDefaultIconSrc(run)
   subagentThreadModal.open = true
 }
 const isStateSectionExpanded = (key) => !collapsedStateSections[key]
@@ -1158,6 +1169,12 @@ const activeSubagentThreadAvatar = computed(() =>
   activeSubagentThreadRun.value
     ? getSubagentIconSrc(activeSubagentThreadRun.value) || subagentThreadModal.subagentAvatar
     : subagentThreadModal.subagentAvatar
+)
+const activeSubagentThreadDefaultAvatar = computed(() =>
+  activeSubagentThreadRun.value
+    ? getSubagentDefaultIconSrc(activeSubagentThreadRun.value) ||
+      subagentThreadModal.subagentDefaultAvatar
+    : subagentThreadModal.subagentDefaultAvatar
 )
 
 // 首次运行的子智能体：前端按后端同样的哈希推算 child_thread_id，缓存到映射里供面板/轨迹定位。

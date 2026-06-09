@@ -40,13 +40,17 @@
                     }"
                     @click="handleAgentSwitch(agent.value, hasActiveThread)"
                   >
-                    <img
-                      v-if="agent.icon"
+                    <FallbackAvatar
                       class="config-dropdown-item-icon-image"
                       :src="agent.icon"
+                      :default-src="agent.defaultIcon"
+                      :name="agent.label"
+                      :seed="agent.value || agent.label"
+                      kind="agent"
+                      :size="24"
+                      shape="rounded"
                       :alt="`${agent.label}图标`"
                     />
-                    <span v-else class="config-dropdown-item-icon-empty" aria-hidden="true"></span>
                     <span class="config-dropdown-item-label">{{ agent.label }}</span>
                     <span v-if="agent.isBuiltin" class="config-dropdown-item-badge">内置</span>
                     <Check
@@ -103,6 +107,7 @@ import AgentChatComponent from '@/components/AgentChatComponent.vue'
 import { isBuiltinAgent, useAgentStore } from '@/stores/agent'
 import { handleChatError } from '@/utils/errorHandler'
 import { generatePixelAvatar } from '@/utils/pixelAvatar'
+import FallbackAvatar from '@/components/common/FallbackAvatar.vue'
 
 import { storeToRefs } from 'pinia'
 
@@ -178,7 +183,8 @@ const agentQuickSwitchOptions = computed(() =>
     .map((agent) => ({
       label: agent.name || agent.id,
       value: agent.id,
-      icon: agent.icon || (agent.id ? generatePixelAvatar(agent.id) : ''),
+      icon: agent.icon || '',
+      defaultIcon: agent.id ? generatePixelAvatar(agent.id) : '',
       isBuiltin: isBuiltinAgent(agent)
     }))
 )

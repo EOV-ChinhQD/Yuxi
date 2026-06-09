@@ -73,7 +73,17 @@
               <div class="card-header">
                 <div class="user-info-main">
                   <div class="user-avatar">
-                    <img :src="getUserAvatarSrc(user)" :alt="user.username" class="avatar-img" />
+                    <FallbackAvatar
+                      :src="user.avatar"
+                      :default-src="getUserDefaultAvatarSrc(user)"
+                      :name="user.username"
+                      :seed="user.uid || user.username"
+                      kind="user"
+                      :size="40"
+                      shape="circle"
+                      :alt="user.username"
+                      class="avatar-img"
+                    />
                   </div>
                   <div class="user-info-content">
                     <div class="name-tag-row">
@@ -282,6 +292,7 @@ import {
 } from 'lucide-vue-next'
 import { formatDateTime } from '@/utils/time'
 import { generatePixelAvatar } from '@/utils/pixelAvatar'
+import FallbackAvatar from '@/components/common/FallbackAvatar.vue'
 
 const userStore = useUserStore()
 
@@ -465,7 +476,7 @@ watch(
 // 格式化时间显示
 const formatTime = (timeStr) => formatDateTime(timeStr)
 
-const getUserAvatarSrc = (user) => user.avatar || generatePixelAvatar(user.uid)
+const getUserDefaultAvatarSrc = (user) => (user.uid ? generatePixelAvatar(user.uid) : '')
 
 const isUserDeleteDisabled = (user) =>
   user.id === userStore.userId ||
