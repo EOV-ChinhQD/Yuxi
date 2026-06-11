@@ -8,7 +8,7 @@
       }"
       :style="{ '--file-panel-width': filePanelWidthStyle }"
     >
-      <div class="chat-header">
+      <div class="chat-header" :class="{ 'has-active-thread': !!currentChatId }">
         <div class="header__left">
           <slot name="header-left"></slot>
           <div
@@ -2606,6 +2606,10 @@ watch(currentChatId, (threadId, oldThreadId) => {
     flex-shrink: 0; /* Prevent header from shrinking */
     transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
+    &.has-active-thread {
+      border-bottom: 1px solid var(--gray-150);
+    }
+
     .header__left,
     .header__right {
       display: flex;
@@ -3194,7 +3198,7 @@ watch(currentChatId, (threadId, oldThreadId) => {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 44px;
+  min-height: var(--header-height);
   padding: 4px 12px;
   background: var(--gray-25);
   border-bottom: 1px solid var(--gray-100);
