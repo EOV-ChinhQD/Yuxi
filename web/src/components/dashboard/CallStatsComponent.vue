@@ -249,6 +249,8 @@ const renderCallStatsChart = () => {
       itemHeight: 14,
       formatter: (name) => truncateLegend(name),
       pageIconSize: 12,
+      pageIconColor: getCSSVariable('--gray-500'),
+      pageIconInactiveColor: getCSSVariable('--gray-300'),
       pageTextStyle: { color: getCSSVariable('--gray-500') }
     },
     series
