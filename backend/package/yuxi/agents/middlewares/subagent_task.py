@@ -6,7 +6,7 @@ import uuid
 from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
-from deepagents import SubagentTransformer as DeepAgentsSubagentTransformer
+from langchain.agents._subagent_transformer import SubagentTransformer as DeepAgentsSubagentTransformer
 from deepagents.middleware._utils import append_to_system_message
 from langchain.agents.middleware.types import AgentMiddleware, ContextT, ModelRequest, ModelResponse, ResponseT
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -62,6 +62,9 @@ THREAD_ID_ARG = "Tùy chọn. ID thread sub-agent hiện có muốn tiếp tục
 
 
 class YuxiSubagentTransformer(DeepAgentsSubagentTransformer):
+    def __init__(self, scope: tuple[str, ...] = (), *, subagent_names: Any = None) -> None:
+        super().__init__(scope)
+
     def init(self) -> dict[str, Any]:
         return {YUXI_SUBAGENTS_STREAM_KEY: self._log}
 

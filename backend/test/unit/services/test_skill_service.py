@@ -1176,7 +1176,7 @@ async def test_delete_skills_batch_ok(tmp_path: Path, monkeypatch: pytest.Monkey
     assert results == [
         {"slug": "skill-a", "success": True},
         {"slug": "skill-b", "success": True},
-        {"slug": "skill-c", "success": False, "error": "Skill 'skill-c' does not exist"},
+        {"slug": "skill-c", "success": False, "error": "Kỹ năng 'skill-c' không tồn tại"},
     ]
     assert deleted_slugs == ["skill-a", "skill-b"]
     assert not (tmp_path / "skills" / "skill-a").exists()

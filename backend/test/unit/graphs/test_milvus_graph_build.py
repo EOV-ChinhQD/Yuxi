@@ -86,10 +86,10 @@ def test_llm_graph_extractor_appends_schema_to_fixed_prompt():
 
     prompt = extractor._build_prompt("Zhang San works in the company")
 
-    assert "Please extract entities and entity relationships from the following text" in prompt
+    assert "Vui lòng trích xuất các thực thể và mối quan hệ thực thể từ văn bản bên dưới" in prompt
     assert "Extract Schema constraints" in prompt
     assert "Entity type can only be Person or Organization" in prompt
-    assert "text:\nZhang San works in the company" in prompt
+    assert "Text:\nZhang San works in the company" in prompt
 
 
 def test_graph_extractor_factory_supports_only_llm():

@@ -149,10 +149,10 @@ def test_book_chunking_should_apply_overlength_protection() -> None:
 
 
 def test_split_sentences_chinese_should_keep_quote_boundary() -> None:
-    text = 'He said:“Hello.”Then ask:“are u there?”Finally the end!'
+    text = '他说：“你好。”然后问：“你在吗？”最后结束！'
     sentences = split_sentences_chinese(text)
 
-    assert sentences == ["He said:“Hello.”", "Then ask:“are u there?”", "Finally the end!"]
+    assert sentences == ["他说：“你好。”", "然后问：“你在吗？”", "最后结束！"]
 
 
 def test_markdown_heading_has_higher_weight_in_bullet_category() -> None:
@@ -241,7 +241,7 @@ def test_laws_chunking_should_prefer_sentence_boundary_split() -> None:
 def test_laws_chunking_should_prefer_article_level_before_item_level() -> None:
     content = """
 No. 6 Chapter Special Tax Adjustment
-Article 106 Strip No. 38 of the Enterprise Income Tax Law stipulates that a withholding agent may be designated under certain circumstances, including:
+No.106 strip No. 38 of the Enterprise Income Tax Law stipulates that a withholding agent may be designated under certain circumstances, including:
 (one)There are direct or indirect control relationships in terms of funds, operations, purchases and sales, etc.;
 (two) can represent the enterprise to implement other binding behaviors.
 No.one hundred and seven strip The tax authorities can determine the taxable income in accordance with the law.
@@ -262,7 +262,7 @@ No.one hundred and seven strip The tax authorities can determine the taxable inc
     )
 
     # As long as the items under the item are not broken into independent fragments, the goal of "item-level priority" can be met.
-    target_chunks = [ck["content"] for ck in chunks if "Article 106" in ck["content"]]
+    target_chunks = [ck["content"] for ck in chunks if "No.106 strip" in ck["content"]]
     assert target_chunks
     assert any("(one)" in chunk and "(two)" in chunk for chunk in target_chunks)
 

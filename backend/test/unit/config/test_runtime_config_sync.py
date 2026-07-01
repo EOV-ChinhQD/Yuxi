@@ -96,7 +96,7 @@ def test_save_dir_from_base_toml_is_ignored(tmp_path, monkeypatch: pytest.Monkey
     config_dir = tmp_path / "config"
     config_dir.mkdir(parents=True)
     (config_dir / "base.toml").write_text(
-        f'save_dir = "{tmp_path / "from-file"}"\ndefault_model = "test-provider:file-chat"\n',
+        f'save_dir = "{(tmp_path / "from-file").as_posix()}"\ndefault_model = "test-provider:file-chat"\n',
         encoding="utf-8",
     )
 
