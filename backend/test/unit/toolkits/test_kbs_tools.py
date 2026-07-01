@@ -381,7 +381,7 @@ async def test_open_kb_document_requires_markdown_content(monkeypatch) -> None:
     runtime = SimpleNamespace(context=SimpleNamespace())
     result = await _run_open_kb_document(kb_id="db-1", file_id="file-1", runtime=runtime)
 
-    assert "No parsed Markdown content" in result
+    assert "kh\u00f4ng c\u00f3 n\u1ed9i dung Markdown" in result
 
 
 def _search_file_callable():

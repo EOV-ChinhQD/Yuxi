@@ -47,7 +47,7 @@ def test_normalize_payload_accepts_anthropic_provider_type():
 
 
 def test_normalize_payload_rejects_unknown_enabled_model_type():
-    with pytest.raises(ValueError, match="type phải là"):
+    with pytest.raises(ValueError, match="phải là chat"):
         _normalize_payload(
             {
                 "provider_id": "openrouter-local",
@@ -278,7 +278,7 @@ def test_normalize_payload_accepts_manual_source():
 
 def test_normalize_payload_rejects_invalid_source():
     """source Only manual or remote are allowed, other values ​​are considered illegal."""
-    with pytest.raises(ValueError, match="source phải là"):
+    with pytest.raises(ValueError, match="phải là manual hoặc remote"):
         _normalize_payload(
             {
                 "provider_id": "custom-local",

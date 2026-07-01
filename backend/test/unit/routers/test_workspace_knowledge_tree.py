@@ -122,7 +122,7 @@ def test_workspace_knowledge_tree_uses_paginated_document_listing(monkeypatch):
     assert payload["page"] == 2
     assert payload["total"] == 2
     assert payload["entries"][0]["is_virtual_folder"] is True
-    assert payload["entries"][0]["path"] == "/knowledge/kb_1/virtual/%E8%B5%84%E6%96%99%2F"
+    assert payload["entries"][0]["path"] == "/knowledge/kb_1/virtual/material%2F"
     assert payload["entries"][1]["path"] == "/knowledge/kb_1/file/file_1"
     assert payload["entries"][1]["size"] == 2048
     assert payload["entries"][1]["modified_at"] == "2026-06-20T01:00:00Z"

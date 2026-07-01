@@ -348,4 +348,4 @@ async def test_upload_workspace_files_rejects_more_than_limit(tmp_path: Path, mo
         await svc.upload_workspace_files(parent_path="/", files=uploads, current_user=user)
 
     assert exc_info.value.status_code == 400
-    assert f"Upload at most at one time {svc.MAX_WORKSPACE_UPLOAD_FILES} files" in exc_info.value.detail
+    assert f"tối đa {svc.MAX_WORKSPACE_UPLOAD_FILES} tệp" in exc_info.value.detail

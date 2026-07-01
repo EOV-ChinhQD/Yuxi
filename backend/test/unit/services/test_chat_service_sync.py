@@ -400,7 +400,7 @@ async def test_build_agent_input_context_merges_workspace_agents_prompt(monkeypa
         uid="user-1",
     )
 
-    assert context["system_prompt"] == "Original system prompt word\n\nuser workspace agents/AGENTS.md content:\nRead AGENTS before answering.md"
+    assert context["system_prompt"] == "Original system prompt word\n\nUser workspace agents/AGENTS.md content:\nRead AGENTS before answering.md"
     assert context["temperature"] == 0.1
     assert context["thread_id"] == "thread-1"
     assert context["uid"] == "user-1"

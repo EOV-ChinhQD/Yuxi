@@ -219,7 +219,7 @@ async def test_parse_tmp_attachment_uses_object_name_for_type_validation(monkeyp
         )
 
     assert exc_info.value.status_code == 400
-    assert "PDF and pictures" in exc_info.value.detail
+    assert "PDF và hình ảnh" in exc_info.value.detail
 
 
 @pytest.mark.asyncio

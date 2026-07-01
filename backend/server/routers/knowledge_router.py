@@ -335,6 +335,7 @@ async def get_database_mindmap_files(kb_id: str, current_user: User = Depends(ge
 
 @knowledge.post("/databases/{kb_id}/mindmap/generate")
 async def generate_mindmap(
+    kb_id: str,
     file_ids: list[str] | None = Body(default=None, description="Danh sách ID tệp được chọn"),
     user_prompt: str = Body(default="", description="Prompt tùy chỉnh của người dùng"),
     incremental: bool = Body(default=False, description="Có cập nhật tăng dần hay không"),

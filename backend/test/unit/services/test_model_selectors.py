@@ -72,7 +72,7 @@ def _httpx_embedding_response(status_code: int, content: str | None = None) -> h
     ],
 )
 def test_selectors_report_unknown_unconfigured_specs(selector, args):
-    with pytest.raises(ValueError, match="Unknown|Không tìm thấy mô hình"):
+    with pytest.raises(ValueError, match="Unknown|Không tìm thấy model"):
         selector(**args)
 
 
@@ -239,7 +239,7 @@ async def test_embedding_connection_reports_dimension_mismatch(monkeypatch):
 
     monkeypatch.setattr(model, "aencode", fake_aencode)
 
-    assert await model.test_connection() == (False, "Embedding Inconsistent dimensions: config 4, actual 3")
+    assert await model.test_connection() == (False, "Embedding Inconsistent dimensions: Configuration 4,actual 3")
 
 
 def test_embedding_sync_400_logs_warning(monkeypatch):

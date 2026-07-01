@@ -129,7 +129,7 @@ def test_build_benchmark_generation_prompt_contains_required_schema():
     prompt = build_benchmark_generation_prompt([("chunk_1", "fragment content")])
 
     assert "Fragment ID=chunk_1" in prompt
-    assert "query、gold_answer、gold_chunk_ids" in prompt
+    assert "query, gold_answer, gold_chunk_ids" in prompt
 
 
 @pytest.mark.asyncio

@@ -20,10 +20,10 @@ def test_build_answer_prompt_uses_first_five_non_empty_chunks():
 
     prompt = build_answer_prompt("question", chunks)
 
-    assert "User Question: Question" in prompt
-    assert "Content 0" in prompt
-    assert "Content 4" in prompt
-    assert "Content 5" not in prompt
+    assert "User questions:question" in prompt
+    assert "content0" in prompt
+    assert "content4" in prompt
+    assert "content5" not in prompt
 
 
 def test_aggregate_metrics_matches_service_output_shape():

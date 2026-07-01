@@ -194,7 +194,7 @@ def test_parse_image_ignores_enable_ocr(tmp_path: Path) -> None:
     file_path = tmp_path / "parser_test.png"
     _build_png(file_path)
 
-    with pytest.raises(ValueError, match="Bắt buộc phải bật OCR"):
+    with pytest.raises(ValueError, match="Image files must have OCR enabled"):
         parser_unified.parse_image(str(file_path), params={"enable_ocr": "rapid_ocr"})
 
 
@@ -213,7 +213,7 @@ async def test_parser_aparse_pdf_file_returns_markdown_text(tmp_path: Path):
 
 @pytest.mark.asyncio
 async def test_parser_aparse_image_file_with_mineru_when_available():
-    file_path = DATA_DIR / "test picture.png"
+    file_path = DATA_DIR / "测试图片.png"
     assert file_path.exists(), f"Test file does not exist: {file_path}"
 
     health = await asyncio.to_thread(DocumentProcessorFactory.check_health, "mineru_ocr")

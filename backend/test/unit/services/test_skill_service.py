@@ -226,7 +226,7 @@ async def test_normal_user_confirm_skill_draft_rejects_wider_share_scope(
         operator=operator,
     )
 
-    with pytest.raises(ValueError, match="Không có quyền sử dụng phạm vi chia sẻ Skill này"):
+    with pytest.raises(ValueError, match="does not have permission to use this skill"):
         await svc.confirm_skill_install_draft(
             None,
             draft_id=draft["draft_id"],
@@ -513,7 +513,7 @@ async def test_skill_zip_import_validates_skill_md_name_not_zip_filename(
         }
     )
 
-    with pytest.raises(ValueError, match="SKILL.md frontmatter.name phải là chữ thường/số/dấu gạch ngang"):
+    with pytest.raises(ValueError, match="frontmatter.name must be lowercase"):
         await svc.prepare_skill_upload(
             None,
             filename="valid-archive.zip",
@@ -689,7 +689,7 @@ async def test_import_skill_dir_requires_root_skill_md(tmp_path: Path, monkeypat
     source_dir = tmp_path / "source-skill"
     source_dir.mkdir(parents=True, exist_ok=True)
 
-    with pytest.raises(ValueError, match="SKILL.md cấp rễ"):
+    with pytest.raises(ValueError, match="missing root-level SKILL.md"):
         await svc.import_skill_dir(
             None,
             source_dir=source_dir,
@@ -1133,7 +1133,7 @@ async def test_builtin_skill_file_edit_blocked(tmp_path: Path, monkeypatch: pyte
 
     monkeypatch.setattr(svc, "get_skill_or_raise", fake_get_skill_or_raise)
 
-    with pytest.raises(ValueError, match="Skill tích hợp không được phép sửa đổi file trực tiếp"):
+    with pytest.raises(ValueError, match="Không cho phép sửa đổi trực tiếp"):
         await svc.update_skill_file(
             None,
             slug="reporter",
@@ -1186,7 +1186,7 @@ async def test_delete_skills_batch_ok(tmp_path: Path, monkeypatch: pytest.Monkey
 @pytest.mark.asyncio
 async def test_delete_skills_batch_limit_exceeded():
     slugs = [f"skill-{i}" for i in range(51)]
-    with pytest.raises(ValueError, match="Số lượng skill bị xóa hàng loạt không được vượt quá 50"):
+    with pytest.raises(ValueError, match="xóa hàng loạt không được vượt quá 50"):
         await svc.delete_skills_batch(None, slugs=slugs)
 
 

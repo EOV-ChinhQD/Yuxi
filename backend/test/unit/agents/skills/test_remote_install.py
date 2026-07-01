@@ -137,7 +137,7 @@ async def test_install_remote_skill_rejects_missing_remote_skill(monkeypatch: py
 
     monkeypatch.setattr(svc, "_run_skills_cli", fake_run_skills_cli)
 
-    with pytest.raises(ValueError, match="Không tồn tại skill"):
+    with pytest.raises(ValueError, match="không tồn tại trong kho lưu trữ từ xa"):
         await svc.install_remote_skill(
             None,
             source="anthropics/skills",
@@ -303,7 +303,7 @@ async def test_install_remote_skills_batch_handles_invalid_names(monkeypatch: py
     assert len(results) == 3
     assert results[0] == {"slug": "valid-skill", "success": True}
     assert results[1]["success"] is False
-    assert "illegal" in results[1]["error"]
+    assert "không hợp lệ" in results[1]["error"]
     assert results[2] == {"slug": "another-valid", "success": False, "error": "skills CLI Expected skills catalog not generated"}
 
     # Only valid skills passed to the CLI

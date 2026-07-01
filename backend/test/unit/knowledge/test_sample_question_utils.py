@@ -34,7 +34,7 @@ async def test_generate_database_sample_questions_rejects_empty_files(monkeypatc
         await sq.generate_database_sample_questions("kb_1")
 
     assert exc_info.value.status_code == 400
-    assert "no file" in exc_info.value.detail
+    assert "Không có file" in exc_info.value.detail
 
 
 @pytest.mark.asyncio
@@ -105,4 +105,4 @@ async def test_generate_database_sample_questions_maps_invalid_json(monkeypatch)
         await sq.generate_database_sample_questions("kb_1")
 
     assert exc_info.value.status_code == 500
-    assert "AI returns format error" in exc_info.value.detail
+    assert "Lỗi định dạng trả về từ AI" in exc_info.value.detail

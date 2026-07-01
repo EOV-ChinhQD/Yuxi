@@ -82,4 +82,4 @@ async def test_import_workspace_files_rejects_directory(tmp_path, monkeypatch):
         )
 
     assert exc_info.value.status_code == 400
-    assert "not a file" in exc_info.value.detail
+    assert "không phải là một tệp" in exc_info.value.detail

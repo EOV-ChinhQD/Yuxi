@@ -65,7 +65,7 @@ def test_access_token_rejects_public_default_secret_in_production(monkeypatch):
     monkeypatch.setenv("JWT_SECRET_KEY", "yuxi_know_secure_key")
     monkeypatch.setenv("YUXI_INSTANCE_ID", "pytest-instance")
 
-    with pytest.raises(ValueError, match="Khóa mặc định công khai"):
+    with pytest.raises(ValueError, match="kh\u00f4ng th\u1ec3 s\u1eed d\u1ee5ng kh\u00f3a m\u1eb7c \u0111\u1ecbnh"):
         AuthUtils.create_access_token({"sub": "1"})
 
 
