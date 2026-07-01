@@ -3,11 +3,11 @@
     <PageHeader
       v-if="!isDetailPage"
       v-model:active-key="activeTab"
-      title="智能体扩展"
+      title="Gia hạn đại lý"
       :tabs="extensionTabs"
       :loading="activeChildLoading"
       :show-border="true"
-      aria-label="智能体扩展视图切换"
+      aria-label="Chuyển đổi chế độ xem mở rộng của tác nhân"
     />
 
     <div v-if="!isDetailPage" class="extensions-content">
@@ -49,8 +49,8 @@ const mcpRef = ref(null)
 const toolsRef = ref(null)
 
 const adminExtensionTabs = [
-  { key: 'knowledge', label: '知识库' },
-  { key: 'tools', label: '工具' },
+  { key: 'knowledge', label: 'cơ sở tri thức' },
+  { key: 'tools', label: 'Công cụ' },
   { key: 'mcp', label: 'MCP' },
   { key: 'skills', label: 'Skills' }
 ]

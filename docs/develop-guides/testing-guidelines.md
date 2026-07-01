@@ -1,137 +1,137 @@
-# 测试规范与工作流
+# Kiểm tra thông số kỹ thuật và quy trình làm việc
 
-本文档用于指导 Yuxi 后续如何创建测试文件、修改测试文件，以及如何验证项目功能。目标是务实、稳定、可执行，不追求过度设计。
+Tài liệu này nhằm mục đích hướng dẫn Yuxi Cách tạo file test sau、Sửa đổi tập tin thử nghiệm，và cách xác minh chức năng của dự án。Mục tiêu là thực dụng、ổn định、Có thể thực thi，Đừng theo đuổi thiết kế quá mức。
 
-## 1. 测试分层
+## 1. Kiểm tra lớp
 
-当前测试统一分为三层：
+Thử nghiệm hiện tại được chia thành ba lớp：
 
 - `backend/test/unit`
-  - 纯单元测试
-  - 不依赖运行中的 Docker 服务
-  - 优先使用 `monkeypatch`、fake repo、stub、`tmp_path`
+  - Kiểm tra đơn vị thuần túy
+  - Không phụ thuộc vào việc chạy Docker dịch vụ
+  - ưu tiên sử dụng `monkeypatch`、fake repo、stub、`tmp_path`
 
 - `backend/test/integration`
-  - 真实 API 集成测试
-  - 依赖 `docker compose up -d` 后的运行环境
-  - 统一通过真实 HTTP 接口验证认证、权限、参数和副作用
+  - đúng API Kiểm tra tích hợp
+  - phụ thuộc vào `docker compose up -d` Môi trường hoạt động cuối cùng
+  - đoàn kết thông qua sự thật HTTP Xác thực xác minh giao diện、Quyền、Các thông số và tác dụng phụ
 
 - `backend/test/e2e`
-  - 关键链路端到端测试
-  - 覆盖 run、viewer、附件、文件落盘等完整流程
-  - 默认数量少、执行更慢
+  - Kiểm tra toàn diện các liên kết quan trọng
+  - Bìa run、viewer、Phụ kiện、Toàn bộ quá trình đặt tập tin vào đĩa
+  - Số lượng mặc định là nhỏ、Thực hiện chậm hơn
 
-## 2. 新增测试时怎么选目录
+## 2. Cách chọn thư mục khi thêm bài kiểm tra mới
 
-新增测试前先判断：
+Đánh giá trước khi thêm bài kiểm tra：
 
-1. 只测 Python 逻辑，不需要真实服务
-   放到 `unit`
+1. Chỉ kiểm tra Python logic，Không cần dịch vụ thực sự
+   đưa vào `unit`
 
-2. 需要请求真实接口
-   放到 `integration/api`
+2. Cần yêu cầu giao diện thật
+   đưa vào `integration/api`
 
-3. 需要验证从入口到最终结果的完整链路
-   放到 `e2e`
+3. Cần xác minh liên kết đầy đủ từ đầu vào đến kết quả cuối cùng
+   đưa vào `e2e`
 
-不要再默认把测试直接丢到 `backend/test/` 根目录。
+Đừng mặc định ném các bài kiểm tra trực tiếp vào `backend/test/` thư mục gốc。
 
-## 3. 文件和命名规范
+## 3. Quy ước đặt tên và tập tin
 
-文件名：
+tên tập tin：
 
-- 使用 `test_<domain>_<target>.py`
-- 一个文件只测一个明确主题
+- sử dụng `test_<domain>_<target>.py`
+- Một tập tin chỉ kiểm tra một chủ đề rõ ràng
 
-函数名：
+tên hàm：
 
-- 使用 `test_<行为>_<预期结果>`
-- 名称直接表达业务语义
+- sử dụng `test_<hành vi>_<kết quả mong đợi>`
+- Tên trực tiếp thể hiện ngữ nghĩa kinh doanh
 
-示例：
+Ví dụ：
 
 - `test_create_agent_run_commits_before_enqueue`
 - `test_viewer_download_returns_attachment_response`
 - `test_agent_bubble_sort_run_creates_expected_artifacts`
 
-## 4. 写测试的基本要求
+## 4. Yêu cầu cơ bản khi viết bài kiểm tra
 
-每个测试尽量保持三段式：
+Cố gắng giữ mỗi bài kiểm tra trong ba giai đoạn：
 
-1. Arrange：准备数据、打桩、创建资源
-2. Act：调用被测行为
-3. Assert：断言结果
+1. Arrange：Chuẩn bị dữ liệu、đóng cọc、Tạo tài nguyên
+2. Act：Gọi hành vi đang được kiểm tra
+3. Assert：Khẳng định kết quả
 
-要求：
+yêu cầu：
 
-- 不要只断言 `status_code == 200`
-- 要断言关键业务字段和副作用
-- 失败信息要能帮助定位问题
+- Đừng chỉ khẳng định `status_code == 200`
+- Để khẳng định lĩnh vực kinh doanh trọng điểm và tác dụng phụ
+- Thông tin lỗi sẽ giúp xác định vấn đề
 
-## 5. fixture 规范
+## 5. fixture quy phạm
 
-原则：
+nguyên tắc：
 
-- 同一个文件内复用，优先写本地 helper
-- 多个文件复用，再提取到对应层级的 `conftest.py`
-- 根 `backend/test/conftest.py` 只保留通用 marker，不绑定真实环境
+- Tái sử dụng trong cùng một tập tin，Ưu tiên viết địa phương helper
+- Tái sử dụng nhiều tập tin，Sau đó giải nén đến mức tương ứng `conftest.py`
+- gốc `backend/test/conftest.py` Chỉ giữ chung marker，Không bị ràng buộc với môi trường thực tế
 
-当前约定：
+thỏa thuận hiện tại：
 
 - `backend/test/integration/conftest.py`
-  - 管理 `test_client`、`admin_headers`、`standard_user`、`knowledge_database`
+  - quản lý `test_client`、`admin_headers`、`standard_user`、`knowledge_database`
 
 - `backend/test/e2e/conftest.py`
-  - 管理 `e2e_client`、`e2e_headers`、`e2e_agent_context`
+  - quản lý `e2e_client`、`e2e_headers`、`e2e_agent_context`
 
-## 6. 允许与禁止
+## 6. Được phép và bị cấm
 
-允许：
+cho phép：
 
-- 在单元测试里使用 `monkeypatch`
-- 在集成测试里通过 fixture 创建测试资源
-- 在 E2E 中使用轮询等待最终状态
+- Được sử dụng trong các bài kiểm tra đơn vị `monkeypatch`
+- Đã vượt qua bài kiểm tra tích hợp fixture Tạo tài nguyên thử nghiệm
+- trong E2E Sử dụng bỏ phiếu để chờ trạng thái cuối cùng
 
-禁止：
+bị cấm：
 
-- 在测试文件里硬编码真实账号密码
-- 在单元测试里请求真实 HTTP 服务
-- 在根 `conftest.py` 里继续添加重环境依赖
-- 写 `if __name__ == "__main__":` 作为测试入口
-- 用 `print` 作为通过/失败判断手段
-- 因为系统里没有默认数据就直接 `skip`
+- Mã hóa mật khẩu tài khoản thực trong tệp thử nghiệm
+- Yêu cầu sự thật trong các bài kiểm tra đơn vị HTTP dịch vụ
+- ở gốc `conftest.py` Tiếp tục thêm các phần phụ thuộc môi trường nặng vào đây
+- viết `if __name__ == "__main__":` Là một lối vào thử nghiệm
+- sử dụng `print` như đã thông qua/Phán xét thất bại có nghĩa là
+- Vì trong hệ thống không có dữ liệu mặc định nên chỉ `skip`
 
-## 7. skip 的使用规则
+## 7. skip Quy tắc sử dụng
 
-只在下面两类场景允许 `pytest.skip`：
+Chỉ được phép trong hai trường hợp sau: `pytest.skip`：
 
-1. 外部可选能力不可用
-   例如 OCR 服务、外部模型服务未启动
+1. Khả năng tùy chọn bên ngoài không có sẵn
+   Ví dụ OCR dịch vụ、Dịch vụ mô hình bên ngoài chưa được bắt đầu
 
-2. E2E 环境变量未配置
-   例如没有配置专用测试账号
+2. E2E Biến môi trường không được cấu hình
+   Ví dụ: không có tài khoản thử nghiệm chuyên dụng nào được định cấu hình
 
-不允许把“系统里没有 agent / config / 预置数据”当成正常 skip 条件。
-这类情况应优先改为 fixture 显式准备资源，或者直接 fail 暴露环境问题。
+không được phép“Không có trong hệ thống agent / config / Dữ liệu đặt trước”Hãy coi nó như bình thường skip Điều kiện。
+Trong những trường hợp như vậy, nên thay đổi mức độ ưu tiên thành fixture Chuẩn bị nguồn lực rõ ràng，Hoặc trực tiếp fail tiếp xúc với các vấn đề môi trường。
 
-## 8. 修改测试文件时的规则
+## 8. Quy tắc sửa đổi tệp thử nghiệm
 
-如果是修 bug：
+Nếu là sửa chữa bug：
 
-1. 先补一个能稳定复现 bug 的测试
-2. 再修代码
-3. 先跑最小相关测试集
-4. 再跑相关层级回归
+1. Hãy tạo ra một cái đầu tiên để có thể tái tạo nó một cách ổn định bug kiểm tra
+2. Sửa lại mã
+3. Trước tiên hãy chạy bộ thử nghiệm tối thiểu có liên quan
+4. Chạy lại hồi quy mức liên quan
 
-如果是改已有功能：
+Nếu bạn đang thay đổi một chức năng hiện có：
 
-- 行为变了，就更新断言
-- 文件职责混乱，就顺手拆分或迁移目录
-- 依赖现成系统状态的测试，优先改成 fixture 建资源
+- hành vi đã thay đổi，Khẳng định về việc cập nhật
+- Trách nhiệm tài liệu khó hiểu，Chỉ cần chia nhỏ hoặc di chuyển thư mục một cách dễ dàng
+- Các thử nghiệm dựa trên trạng thái hệ thống hiện có，Ưu tiên thay đổi fixture Xây dựng tài nguyên
 
-## 9. 运行方式
+## 9. Chế độ hoạt động
 
-启动环境：
+Bắt đầu môi trường：
 
 ```bash
 docker compose up -d
@@ -139,31 +139,31 @@ docker ps
 docker logs api-dev --tail 100
 ```
 
-运行单元测试：
+Chạy thử nghiệm đơn vị：
 
 ```bash
 docker compose exec api uv run --group test pytest test/unit -m "not slow"
 ```
 
-运行集成测试：
+Chạy thử nghiệm tích hợp：
 
 ```bash
 docker compose exec api uv run --group test pytest test/integration
 ```
 
-运行 E2E：
+chạy E2E：
 
 ```bash
 docker compose exec api uv run --group test pytest test/e2e -m e2e
 ```
 
-运行全部测试：
+Chạy tất cả các bài kiểm tra：
 
 ```bash
 docker compose exec api uv run --group test pytest test
 ```
 
-也可以使用：
+Cũng có thể được sử dụng：
 
 ```bash
 backend/test/run_tests.sh unit
@@ -172,23 +172,23 @@ backend/test/run_tests.sh e2e
 backend/test/run_tests.sh all
 ```
 
-## 10. 推荐的日常开发流程
+## 10. Quy trình phát triển hàng ngày được đề xuất
 
-建议顺序：
+Thứ tự đề xuất：
 
-1. 本地改代码
-2. 先跑相关单元测试
-3. 涉及接口时跑相关集成测试
-4. 涉及关键主链路时补跑对应 E2E
-5. 提交前至少完成“检查 -> 测试 -> Lint”
+1. Thay đổi mã cục bộ
+2. Trước tiên hãy chạy thử nghiệm đơn vị có liên quan
+3. Chạy thử nghiệm tích hợp có liên quan khi có liên quan đến giao diện
+4. Phản ứng bù đắp khi có liên quan đến các liên kết chính quan trọng E2E
+5. Hoàn thành trước khi gửi ít nhất“Kiểm tra -> kiểm tra -> Lint”
 
-## 11. 当前落地原则
+## 11. Nguyên tắc thực hiện hiện hành
 
-这套规范的重点不是一步到位重写所有旧测试，而是：
+Mục đích của bộ thông số kỹ thuật này không phải là viết lại tất cả các bài kiểm tra cũ trong một lần.，đúng hơn：
 
-- 新增测试必须按新目录落位
-- 改到旧测试时顺手迁移
-- 优先保持测试可执行和可信
-- 优先减少假绿和环境耦合
+- Các bài kiểm tra mới phải được đặt trong thư mục mới
+- Dễ dàng di chuyển khi thay đổi sang các bài kiểm tra cũ
+- Ưu tiên giữ cho các bài kiểm tra có thể thực thi được và đáng tin cậy
+- Ưu tiên giảm sự kết hợp sai màu xanh lá cây và môi trường
 
-对当前 Yuxi 来说，这就是最务实、也最容易持续执行的测试标准。
+đến hiện tại Yuxi Hãy nói chuyện，Đây là cách thực dụng nhất、Đây cũng là tiêu chuẩn thử nghiệm dễ dàng nhất để thực hiện liên tục.。

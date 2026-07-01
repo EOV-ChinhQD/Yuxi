@@ -3,7 +3,7 @@
     <template #result="{ resultContent }">
       <div class="calculator-result">
         <!-- <div class="calc-header">
-          <h4><NumberOutlined /> 计算结果</h4>
+          <h4><NumberOutlined /> Kết quả tính toán</h4>
         </div> -->
 
         <div class="calc-display">
@@ -37,18 +37,18 @@ const parseData = (content) => {
   return content
 }
 
-// 方法
+// phương pháp
 const formatNumber = (num) => {
   if (typeof num !== 'number') return String(num)
 
-  // 处理特殊值
+  // Xử lý các giá trị đặc biệt
   if (!isFinite(num)) {
     if (num === Infinity) return '∞'
     if (num === -Infinity) return '-∞'
     if (isNaN(num)) return 'NaN'
   }
 
-  // 使用本地化格式
+  // Sử dụng định dạng được bản địa hóa
   return new Intl.NumberFormat('zh-CN', {
     maximumFractionDigits: 10,
     useGrouping: true

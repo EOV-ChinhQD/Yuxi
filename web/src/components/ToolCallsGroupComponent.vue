@@ -46,7 +46,7 @@ import { getToolCallId, normalizeToolCalls } from '@/components/ToolCallingResul
 
 const activeSubagentToolCallIds = inject('activeSubagentToolCallIds', null)
 
-// task 工具结果不随流式返回，不能用 tool_call_result 判断运行中：只有「活跃」的 task 才算运行中。
+// task Kết quả công cụ không được trả về khi phát trực tuyến，Không thể sử dụng được tool_call_result Sự phán xét đang diễn ra：chỉ「hoạt động」của task Nó đang chạy。
 const toolRunState = (toolCall) => {
   if (toolCall.status === 'error') return 'error'
   if (toolCall.tool_call_result || toolCall.status === 'success') return 'completed'
@@ -75,19 +75,19 @@ const areToolCallsExpanded = ref(false)
 watch(
   [() => normalizedToolCalls.value.length, () => props.isActive],
   ([, isActive], [, previousActive]) => {
-    // 如果是活跃状态，强制展开
+    // Nếu nó đang hoạt động，Mở rộng lực lượng
     if (isActive) {
       areToolCallsExpanded.value = true
       return
     }
 
-    // 从活跃转为非活跃（例如：正文开始输出了），则收起
+    // Chuyển từ hoạt động sang không hoạt động（Ví dụ：Văn bản bắt đầu được xuất ra），Sau đó cất nó đi
     if (previousActive === true && isActive === false) {
       areToolCallsExpanded.value = false
       return
     }
 
-    // 初始化或非活跃状态下，默认保持收起
+    // Trong quá trình khởi tạo hoặc trạng thái không hoạt động，Giữ thu gọn theo mặc định
     if (!previousActive && !isActive) {
       areToolCallsExpanded.value = false
     }
@@ -106,9 +106,9 @@ const getToolCallLabel = (toolCall) => {
 
 const toolCallsSummaryTitle = computed(() => {
   if (normalizedToolCalls.value.length === 1) {
-    return `调用: ${getToolCallLabel(normalizedToolCalls.value[0])}`
+    return `gọi: ${getToolCallLabel(normalizedToolCalls.value[0])}`
   }
-  return `已调用 ${normalizedToolCalls.value.length} 个工具`
+  return `đã được gọi ${normalizedToolCalls.value.length} công cụ`
 })
 
 const toolCallsNamesMeta = computed(() => {
@@ -129,10 +129,10 @@ const statusSummary = computed(() => {
 
   const parts = []
   if (successCount > 0 && successCount === normalizedToolCalls.value.length) {
-    return '已完成'
+    return 'Đã hoàn thành'
   }
-  if (errorCount > 0) parts.push(`${errorCount} 失败`)
-  if (runningCount > 0) parts.push(`${runningCount} 进行中`)
+  if (errorCount > 0) parts.push(`${errorCount} thất bại`)
+  if (runningCount > 0) parts.push(`${runningCount} Đang tiến hành`)
 
   return parts.join(' · ')
 })

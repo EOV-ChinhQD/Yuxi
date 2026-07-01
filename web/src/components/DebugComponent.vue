@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:open="showModal"
-    title="调试面板（请在生产环境中谨慎使用）"
+    title="Bảng gỡ lỗi（Vui lòng sử dụng thận trọng trong môi trường sản xuất）"
     width="90%"
     :footer="null"
     :maskClosable="true"
@@ -21,32 +21,32 @@
           <a-button @click="clearLogs" :icon="h(ClearOutlined)" class="icon-only"> </a-button>
           <a-button @click="printSystemConfig">
             <template #icon><SettingOutlined /></template>
-            系统配置
+            Cấu hình hệ thống
           </a-button>
           <a-button @click="printUserInfo">
             <template #icon><UserOutlined /></template>
-            用户信息
+            Thông tin người dùng
           </a-button>
           <a-button @click="printDatabaseInfo">
             <template #icon><DatabaseOutlined /></template>
-            知识库信息
+            Thông tin cơ sở kiến thức
           </a-button>
           <a-button @click="printAgentConfig">
             <template #icon><RobotOutlined /></template>
-            智能体配置
+            Cấu hình đại lý
           </a-button>
           <a-button @click="toggleDebugMode" :type="infoStore.debugMode ? 'primary' : 'default'">
             <template #icon><BugOutlined /></template>
-            Debug 模式: {{ infoStore.debugMode ? '开启' : '关闭' }}
+            Debug chế độ: {{ infoStore.debugMode ? 'bật lên' : 'đóng' }}
           </a-button>
           <a-button @click="toggleFullscreen">
             <template #icon>
               <FullscreenOutlined v-if="!state.isFullscreen" />
               <FullscreenExitOutlined v-else />
             </template>
-            {{ state.isFullscreen ? '退出全屏' : '全屏' }}
+            {{ state.isFullscreen ? 'Thoát toàn màn hình' : 'toàn màn hình' }}
           </a-button>
-          <a-tooltip :title="state.autoRefresh ? '点击停止自动刷新' : '点击开启自动刷新'">
+          <a-tooltip :title="state.autoRefresh ? 'Nhấp để dừng làm mới tự động' : 'Nhấp để bật tính năng làm mới tự động'">
             <a-button
               :type="state.autoRefresh ? 'primary' : 'default'"
               :class="{ 'auto-refresh-button': state.autoRefresh }"
@@ -55,19 +55,19 @@
               <template #icon>
                 <SyncOutlined :spin="state.autoRefresh" />
               </template>
-              自动刷新
+              Tự động làm mới
               <span v-if="state.autoRefresh" class="refresh-interval">(5s)</span>
             </a-button>
           </a-tooltip>
           <a-button @click="openUserSwitcher">
             <template #icon><SwapOutlined /></template>
-            切换用户
+            Chuyển đổi người dùng
           </a-button>
         </div>
         <div class="filter-group">
           <a-input-search
             v-model:value="state.searchText"
-            placeholder="搜索日志..."
+            placeholder="Nhật ký tìm kiếm..."
             style="width: 200px; height: 32px"
             @search="onSearch"
           />
@@ -108,13 +108,13 @@
             <span class="message">{{ log.message }}</span>
           </div>
         </div>
-        <div v-else class="empty-logs">暂无日志</div>
+        <div v-else class="empty-logs">Chưa có nhật ký nào</div>
       </div>
       <p v-if="error" class="error">{{ error }}</p>
-      <!-- 用户切换 Modal -->
+      <!-- Chuyển đổi người dùng Modal -->
       <a-modal
         v-model:open="state.showUserSwitcher"
-        title="切换用户"
+        title="Chuyển đổi người dùng"
         :confirmLoading="state.switchingUser"
         :footer="null"
         :bodyStyle="{ padding: '12px' }"
@@ -126,7 +126,7 @@
             </a-list-item>
           </template>
           <template #empty>
-            <a-empty description="暂无用户" />
+            <a-empty description="Chưa có người dùng nào" />
           </template>
         </a-list>
       </a-modal>
@@ -150,10 +150,10 @@ import {
 
 const showModal = defineModel('show')
 
-// 监听 showModal 变化，当打开时获取日志
+// màn hình showModal thay đổi，Nhận nhật ký khi mở
 watch(showModal, (isOpen) => {
   if (isOpen) {
-    // 延迟一下确保 DOM 渲染完成
+    // Trì hoãn để đảm bảo DOM Kết xuất hoàn tất
     setTimeout(fetchLogs, 100)
   }
 })
@@ -198,7 +198,7 @@ const agentStore = useAgentStore()
 const infoStore = useInfoStore()
 const config = configStore.config
 
-// 定义日志级别
+// Xác định cấp độ nhật ký
 const logLevels = [
   { value: 'INFO', label: 'INFO' },
   { value: 'ERROR', label: 'ERROR' },
@@ -208,7 +208,7 @@ const logLevels = [
 
 const logViewer = ref(null)
 
-// 状态管理
+// Quản lý trạng thái
 const state = reactive({
   fetching: false,
   autoRefresh: false,
@@ -225,9 +225,9 @@ const error = ref('')
 const logContainer = ref(null)
 let autoRefreshInterval = null
 
-// 解析日志行
+// Phân tích dòng nhật ký
 const parseLogLine = (line) => {
-  // 支持两种时间戳格式：带毫秒和不带毫秒
+  // Hỗ trợ hai định dạng dấu thời gian：Có và không có mili giây
   const match = line.match(
     /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:,\d{3})?)\s*-\s*(\w+)\s*-\s*([^-]+?)\s*-\s*(.+)$/
   )
@@ -243,13 +243,13 @@ const parseLogLine = (line) => {
   return null
 }
 
-// 格式化时间戳
+// Định dạng dấu thời gian
 const formatTimestamp = (timestamp) => {
   try {
-    // 处理带毫秒的格式：将 "2025-03-10 08:26:37,269" 转换为 "2025-03-10 08:26:37.269"
+    // Xử lý định dạng bằng mili giây：sẽ "2025-03-10 08:26:37,269" Chuyển đổi thành "2025-03-10 08:26:37.269"
     let normalizedTimestamp = timestamp.replace(',', '.')
 
-    // 如果没有毫秒，添加 .000
+    // nếu không có mili giây，thêm .000
     if (!/\.\d{3}$/.test(normalizedTimestamp)) {
       normalizedTimestamp += '.000'
     }
@@ -257,12 +257,12 @@ const formatTimestamp = (timestamp) => {
     const date = dayjs(normalizedTimestamp)
     return date.isValid() ? date.format('HH:mm:ss.SSS') : timestamp
   } catch (err) {
-    console.error('时间戳格式化错误:', err)
+    console.error('Lỗi định dạng dấu thời gian:', err)
     return timestamp
   }
 }
 
-// 处理日志显示
+// Hiển thị nhật ký xử lý
 const processedLogs = computed(() => {
   return state.rawLogs
     .map(parseLogLine)
@@ -273,14 +273,14 @@ const processedLogs = computed(() => {
     })
 })
 
-// 获取日志数据
+// Nhận dữ liệu nhật ký
 const fetchLogs = async () => {
   if (!checkSuperAdminPermission()) return
 
   state.fetching = true
   try {
     error.value = ''
-    // 将选中的日志级别转换为逗号分隔的字符串传递给后端
+    // Chuyển đổi các cấp độ nhật ký đã chọn thành chuỗi được phân tách bằng dấu phẩy và chuyển nó vào phần phụ trợ
     const levelsParam = state.selectedLevels.join(',')
     const logData = await configApi.getLogs(levelsParam)
     state.rawLogs = logData.log.split('\n').filter((line) => line.trim())
@@ -293,24 +293,24 @@ const fetchLogs = async () => {
     }, 100)
     scrollToBottom()
   } catch (err) {
-    error.value = `错误: ${err.message}`
+    error.value = `Lỗi: ${err.message}`
   } finally {
     state.fetching = false
   }
 }
 
-// 清空日志
+// Xóa nhật ký
 const clearLogs = () => {
   if (!checkSuperAdminPermission()) return
   state.rawLogs = []
 }
 
-// 搜索功能
+// Chức năng tìm kiếm
 const onSearch = () => {
-  // 搜索会通过computed自动触发
+  // Việc tìm kiếm sẽ vượt quacomputedKích hoạt tự động
 }
 
-// 日志级别选择相关方法
+// Các phương pháp liên quan đến lựa chọn cấp độ nhật ký
 const isLogLevelSelected = (level) => {
   return state.selectedLevels.includes(level)
 }
@@ -320,7 +320,7 @@ const toggleLogLevel = (level) => {
   const index = currentLevels.indexOf(level)
 
   if (index > -1) {
-    // 如果取消选中后没有选中的级别，默认全选
+    // Nếu không có cấp độ nào được chọn sau khi bỏ chọn，Chọn tất cả theo mặc định
     if (currentLevels.length === 1) {
       return
     }
@@ -330,11 +330,11 @@ const toggleLogLevel = (level) => {
   }
 
   state.selectedLevels = currentLevels
-  // 切换日志级别后重新获取数据
+  // Lấy lại dữ liệu sau khi chuyển đổi cấp độ nhật ký
   fetchLogs()
 }
 
-// 自动刷新
+// Tự động làm mới
 const toggleAutoRefresh = (value) => {
   if (!checkSuperAdminPermission()) return
 
@@ -350,7 +350,7 @@ const toggleAutoRefresh = (value) => {
   }
 }
 
-// 全屏切换
+// Chuyển đổi toàn màn hình
 const toggleFullscreen = async () => {
   if (!checkSuperAdminPermission()) return
 
@@ -373,11 +373,11 @@ const toggleFullscreen = async () => {
       }
     }
   } catch (err) {
-    console.error('全屏切换失败:', err)
+    console.error('Chuyển đổi toàn màn hình không thành công:', err)
   }
 }
 
-// 监听全屏变化
+// Theo dõi các thay đổi toàn màn hình
 const handleFullscreenChange = () => {
   state.isFullscreen = Boolean(
     document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement
@@ -408,19 +408,19 @@ onUnmounted(() => {
   document.removeEventListener('msfullscreenchange', handleFullscreenChange)
 })
 
-// 打印系统配置
+// Cấu hình hệ thống in
 const printSystemConfig = () => {
   if (!checkSuperAdminPermission()) return
-  console.log('=== 系统配置 ===')
+  console.log('=== Cấu hình hệ thống ===')
   console.log(config)
 }
 
-// 打印用户信息
+// In thông tin người dùng
 const printUserInfo = () => {
   if (!checkSuperAdminPermission()) return
-  console.log('=== 用户信息 ===')
+  console.log('=== Thông tin người dùng ===')
   const userInfo = {
-    token: userStore.token ? '*** (已隐藏)' : null,
+    token: userStore.token ? '*** (Ẩn)' : null,
     userId: userStore.userId,
     username: userStore.username,
     uid: userStore.uid,
@@ -434,20 +434,20 @@ const printUserInfo = () => {
   console.log(JSON.stringify(userInfo, null, 2))
 }
 
-// 打印知识库信息
+// In thông tin cơ sở kiến thức
 const printDatabaseInfo = async () => {
   if (!checkSuperAdminPermission()) return
 
   try {
-    console.log('=== 知识库信息 ===')
-    console.log('基本信息:', {
+    console.log('=== Thông tin cơ sở kiến thức ===')
+    console.log('Thông tin cơ bản:', {
       kbId: databaseStore.kbId,
       databaseName: databaseStore.database.name,
       databaseDesc: databaseStore.database.description,
       fileCount: Object.keys(databaseStore.database.files || {}).length
     })
 
-    console.log('状态信息:', {
+    console.log('thông tin trạng thái:', {
       databaseLoading: databaseStore.state.databaseLoading,
       searchLoading: databaseStore.state.searchLoading,
       lock: databaseStore.state.lock,
@@ -455,32 +455,32 @@ const printDatabaseInfo = async () => {
       queryParamsLoading: databaseStore.state.queryParamsLoading
     })
 
-    console.log('查询参数:', {
+    console.log('tham số truy vấn:', {
       queryParams: databaseStore.queryParams,
       meta: databaseStore.meta,
       selectedFileCount: databaseStore.selectedRowKeys.length
     })
   } catch (error) {
-    console.error('获取知识库信息失败:', error)
-    message.error('获取知识库信息失败: ' + error.message)
+    console.error('Không thể lấy được thông tin cơ sở kiến thức:', error)
+    message.error('Không thể lấy được thông tin cơ sở kiến thức: ' + error.message)
   }
 }
 
-// 切换Debug模式
+// chuyển đổiDebugchế độ
 const toggleDebugMode = () => {
   if (!checkSuperAdminPermission()) return
   infoStore.toggleDebugMode()
 }
 
-// 打印智能体配置
+// Cấu hình tác nhân in
 const printAgentConfig = async () => {
   if (!checkSuperAdminPermission()) return
 
   try {
-    console.log('=== 智能体配置信息 ===')
+    console.log('=== Thông tin cấu hình đại lý ===')
 
-    // Store状态信息
-    console.log('Store 状态:', {
+    // Storethông tin trạng thái
+    console.log('Store Trạng thái:', {
       isInitialized: agentStore.isInitialized,
       selectedAgentId: agentStore.selectedAgentId,
       agentCount: agentStore.agentsList.length,
@@ -493,81 +493,81 @@ const printAgentConfig = async () => {
       hasConfigChanges: agentStore.hasConfigChanges
     })
 
-    // 智能体列表信息
-    console.log('智能体列表:', {
+    // Thông tin danh sách đại lý
+    console.log('Danh sách đại lý:', {
       count: agentStore.agentsList.length,
       agents: toRaw(agentStore.agentsList)
     })
 
-    // 当前选中智能体信息
+    // Thông tin đại lý hiện đang được chọn
     if (agentStore.selectedAgent) {
-      console.log('当前选中智能体:', {
+      console.log('Đại lý hiện được chọn:', {
         agent: toRaw(agentStore.selectedAgent),
         isBuiltin: isBuiltinAgent(agentStore.selectedAgent),
         configurableItemsCount: Object.keys(agentStore.configurableItems).length
       })
 
-      // 当前智能体配置（仅管理员可见）
+      // Cấu hình đại lý hiện tại（Chỉ hiển thị với quản trị viên）
       if (userStore.isAdmin) {
-        console.log('当前智能体配置:', {
+        console.log('Cấu hình đại lý hiện tại:', {
           current: toRaw(agentStore.agentConfig),
           original: toRaw(agentStore.originalAgentConfig),
           hasChanges: agentStore.hasConfigChanges
         })
       } else {
-        console.log('智能体配置: 需要管理员权限查看详细配置')
+        console.log('Cấu hình đại lý: Cần có quyền quản trị viên để xem cấu hình chi tiết')
       }
     }
 
-    // 工具信息
+    // Thông tin công cụ
     const toolsList = agentStore.availableTools ? Object.values(agentStore.availableTools) : []
-    console.log('可用工具:', {
+    console.log('Công cụ có sẵn:', {
       count: toolsList.length,
       tools: toolsList
     })
 
-    // 配置项信息（管理员可见）
+    // Thông tin mục cấu hình（Hiển thị với quản trị viên）
     if (userStore.isAdmin && agentStore.selectedAgent) {
-      console.log('可配置项:', toRaw(agentStore.configurableItems))
+      console.log('Các mục có thể cấu hình:', toRaw(agentStore.configurableItems))
     }
   } catch (error) {
-    console.error('获取智能体配置失败:', error)
-    message.error('获取智能体配置失败: ' + error.message)
+    console.error('Không lấy được cấu hình tác nhân:', error)
+    message.error('Không lấy được cấu hình tác nhân: ' + error.message)
   }
 }
 
-// 获取用户列表
+// Lấy danh sách người dùng
 const fetchUsers = async () => {
   try {
     const response = await fetch('/api/auth/users', {
       headers: userStore.getAuthHeaders()
     })
     if (!response.ok) {
-      throw new Error('获取用户列表失败')
+      throw new Error('Không lấy được danh sách người dùng')
     }
     state.users = await response.json()
   } catch (err) {
-    message.error(`获取用户列表失败: ${err.message}`)
+    message.error(`Không lấy được danh sách người dùng: ${err.message}`)
   }
 }
 
-// 打开用户选择器
+// Mở bộ chọn người dùng
 const openUserSwitcher = () => {
   if (!checkSuperAdminPermission()) return
   state.showUserSwitcher = true
   fetchUsers()
 }
 
-// 切换用户
+// Chuyển đổi người dùng
 const switchToUser = async (user) => {
   if (!checkSuperAdminPermission()) return
 
-  // 危险操作确认
+  // Xác nhận các hoạt động nguy hiểm
   Modal.confirm({
-    title: '⚠️ 危险操作确认',
-    content: `确定要切换为用户 "${user.username}" 吗？此操作将被记录。`,
-    okText: '确认切换',
-    cancelText: '取消',
+    title: '⚠️ Xác nhận các hoạt động nguy hiểm',
+    content: `Xác nhận bạn muốn chuyển sang người dùng "${user.username}" ?？Thao tác này sẽ được ghi lại。`,
+    okText: 'Xác nhận chuyển đổi',
+    cancelText: 'Hủy bỏ',
     okType: 'danger',
     onOk: async () => {
       state.switchingUser = true
@@ -578,17 +578,17 @@ const switchToUser = async (user) => {
         })
         if (!response.ok) {
           const error = await response.json()
-          throw new Error(error.detail || '切换用户失败')
+          throw new Error(error.detail || 'Không thể chuyển đổi người dùng')
         }
         const data = await response.json()
-        // 设置新 token
+        // thiết lập mới token
         localStorage.setItem('user_token', data.access_token)
-        message.success(`已切换用户: ${user.username}`)
+        message.success(`Người dùng đã chuyển đổi: ${user.username}`)
         state.showUserSwitcher = false
-        // 刷新页面以重新初始化应用
+        // Làm mới trang để khởi động lại ứng dụng
         window.location.reload()
       } catch (err) {
-        message.error(`切换失败: ${err.message}`)
+        message.error(`Chuyển đổi không thành công: ${err.message}`)
       } finally {
         state.switchingUser = false
       }
@@ -832,7 +832,7 @@ const switchToUser = async (user) => {
   }
 }
 
-/* 响应式适配 */
+/* Thích ứng đáp ứng */
 @media (max-width: 768px) {
   .log-level-selector {
     min-width: 280px;

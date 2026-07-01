@@ -1,75 +1,75 @@
 import { apiGet, apiAdminGet, apiAdminPost, apiAdminPut, apiAdminDelete, apiRequest } from './base'
 
 /**
- * 知识库管理API模块
- * 包含数据库管理、文档管理、查询接口等功能
+ * Quản lý cơ sở tri thứcAPImô-đun
+ * Bao gồm quản lý cơ sở dữ liệu、Quản lý tài liệu、Giao diện truy vấn và các chức năng khác
  */
 
 // =============================================================================
-// === 数据库管理分组 ===
+// === Nhóm quản lý cơ sở dữ liệu ===
 // =============================================================================
 
 export const databaseApi = {
   /**
-   * 获取所有知识库
-   * @returns {Promise} - 知识库列表
+   * Nhận tất cả các cơ sở kiến ​​thức
+   * @returns {Promise} - Danh sách cơ sở kiến thức
    */
   getDatabases: async () => {
     return apiAdminGet('/api/knowledge/databases')
   },
 
   /**
-   * 创建知识库
-   * @param {Object} databaseData - 知识库数据
-   * @returns {Promise} - 创建结果
+   * Tạo nền tảng kiến thức
+   * @param {Object} databaseData - dữ liệu cơ sở tri thức
+   * @returns {Promise} - Tạo kết quả
    */
   createDatabase: async (databaseData) => {
     return apiAdminPost('/api/knowledge/databases', databaseData)
   },
 
   /**
-   * 获取知识库详细信息
-   * @param {string} kbId - 知识库ID
-   * @returns {Promise} - 知识库信息
+   * Nhận thông tin chi tiết về cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @returns {Promise} - Thông tin cơ sở kiến thức
    */
   getDatabaseInfo: async (kbId) => {
     return apiAdminGet(`/api/knowledge/databases/${kbId}`)
   },
 
   /**
-   * 修复知识库文件统计
-   * @param {string} kbId - 知识库ID
-   * @returns {Promise} - 修复结果
+   * Sửa số liệu thống kê tập tin cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @returns {Promise} - Kết quả sửa chữa
    */
   repairDatabaseStats: async (kbId) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/stats/repair`, {})
   },
 
   /**
-   * 更新知识库信息
-   * @param {string} kbId - 知识库ID
-   * @param {Object} updateData - 更新数据
-   * @returns {Promise} - 更新结果
+   * Cập nhật thông tin cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {Object} updateData - Cập nhật dữ liệu
+   * @returns {Promise} - Cập nhật kết quả
    */
   updateDatabase: async (kbId, updateData) => {
     return apiAdminPut(`/api/knowledge/databases/${kbId}`, updateData)
   },
 
   /**
-   * 删除知识库
-   * @param {string} kbId - 知识库ID
-   * @returns {Promise} - 删除结果
+   * Xóa cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @returns {Promise} - Xóa kết quả
    */
   deleteDatabase: async (kbId) => {
     return apiAdminDelete(`/api/knowledge/databases/${kbId}`)
   },
 
   /**
-   * 使用 AI 生成或优化知识库描述
-   * @param {string} name - 知识库名称
-   * @param {string} currentDescription - 当前描述（可选）
-   * @param {Array} fileList - 文件列表（可选）
-   * @returns {Promise} - 生成结果
+   * sử dụng AI Tạo hoặc tối ưu hóa các mô tả cơ sở kiến thức
+   * @param {string} name - Tên cơ sở kiến thức
+   * @param {string} currentDescription - mô tả hiện tại（Tùy chọn）
+   * @param {Array} fileList - danh sách tập tin（Tùy chọn）
+   * @returns {Promise} - Tạo kết quả
    */
   generateDescription: async (name, currentDescription = '', fileList = []) => {
     return apiAdminPost('/api/knowledge/generate-description', {
@@ -80,8 +80,8 @@ export const databaseApi = {
   },
 
   /**
-   * 获取当前用户有权访问的知识库列表（用于智能体配置）
-   * @returns {Promise} - 可访问的知识库列表
+   * Lấy danh sách cơ sở tri thức mà người dùng hiện tại có quyền truy cập（cho cấu hình đại lý）
+   * @returns {Promise} - Danh sách cơ sở kiến thức có thể truy cập
    */
   getAccessibleDatabases: async () => {
     return apiGet('/api/knowledge/databases/accessible')
@@ -89,7 +89,7 @@ export const databaseApi = {
 }
 
 // =============================================================================
-// === 文档管理分组 ===
+// === Nhóm quản lý văn bản ===
 // =============================================================================
 
 const buildQuery = (params) => {
@@ -104,10 +104,10 @@ const buildQuery = (params) => {
 
 export const documentApi = {
   /**
-   * 分页获取知识库文档列表
-   * @param {string} kbId - 知识库ID
-   * @param {Object} params - 查询参数
-   * @returns {Promise} - 文档列表
+   * Lấy danh sách tài liệu cơ sở kiến thức theo phân trang
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {Object} params - tham số truy vấn
+   * @returns {Promise} - Danh sách tài liệu
    */
   listDocuments: async (kbId, params = {}) => {
     const query = buildQuery(params)
@@ -115,10 +115,10 @@ export const documentApi = {
   },
 
   /**
-   * 检查知识库中是否存在指定文件名或相对路径
-   * @param {string} kbId - 知识库ID
-   * @param {string} filename - 文件名或相对路径
-   * @returns {Promise} - 存在性检查结果
+   * Kiểm tra xem tên tệp hoặc đường dẫn tương đối đã chỉ định có tồn tại trong cơ sở kiến ​​thức không
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {string} filename - Tên tệp hoặc đường dẫn tương đối
+   * @returns {Promise} - Kết quả kiểm tra sự tồn tại
    */
   documentExists: async (kbId, filename) => {
     const query = buildQuery({ filename })
@@ -126,11 +126,11 @@ export const documentApi = {
   },
 
   /**
-   * 创建文件夹
-   * @param {string} kbId - 知识库ID
-   * @param {string} folderName - 文件夹名称
-   * @param {string} parentId - 父文件夹ID
-   * @returns {Promise} - 创建结果
+   * Tạo thư mục
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {string} folderName - tên thư mục
+   * @param {string} parentId - thư mục mẹID
+   * @returns {Promise} - Tạo kết quả
    */
   createFolder: async (kbId, folderName, parentId = null) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/folders`, {
@@ -140,11 +140,11 @@ export const documentApi = {
   },
 
   /**
-   * 添加文档到知识库
-   * @param {string} kbId - 知识库ID
-   * @param {Array} items - 文档列表
-   * @param {Object} params - 处理参数
-   * @returns {Promise} - 添加结果
+   * Thêm tài liệu vào cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {Array} items - Danh sách tài liệu
+   * @param {Object} params - Thông số xử lý
+   * @returns {Promise} - Thêm kết quả
    */
   addDocuments: async (kbId, items, params = {}) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/documents`, {
@@ -154,11 +154,11 @@ export const documentApi = {
   },
 
   /**
-   * 将已上传文件添加为知识库文档记录（不解析、不入库）
-   * @param {string} kbId - 知识库ID
-   * @param {Array} items - 已上传文件的 MinIO URL 列表
-   * @param {Object} params - 添加参数
-   * @returns {Promise} - 添加结果
+   * Thêm các tệp đã tải lên dưới dạng bản ghi tài liệu cơ sở kiến thức（Chưa được phân tích cú pháp、Không được lưu trữ trong kho）
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {Array} items - Tệp đã tải lên MinIO URL danh sách
+   * @param {Object} params - Thêm thông số
+   * @returns {Promise} - Thêm kết quả
    */
   addUploadedDocuments: async (kbId, items, params = {}) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/documents/add`, {
@@ -168,50 +168,50 @@ export const documentApi = {
   },
 
   /**
-   * 获取文档信息
-   * @param {string} kbId - 知识库ID
-   * @param {string} docId - 文档ID
-   * @returns {Promise} - 文档信息
+   * Nhận thông tin tài liệu
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {string} docId - Tài liệuID
+   * @returns {Promise} - Thông tin tài liệu
    */
   getDocumentInfo: async (kbId, docId) => {
     return apiAdminGet(`/api/knowledge/databases/${kbId}/documents/${docId}`)
   },
 
   /**
-   * 获取文档基本信息
-   * @param {string} kbId - 知识库ID
-   * @param {string} docId - 文档ID
-   * @returns {Promise} - 文档基本信息
+   * Nhận thông tin cơ bản về tài liệu
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {string} docId - Tài liệuID
+   * @returns {Promise} - Tài liệu thông tin cơ bản
    */
   getDocumentBasicInfo: async (kbId, docId) => {
     return apiAdminGet(`/api/knowledge/databases/${kbId}/documents/${docId}/basic`)
   },
 
   /**
-   * 获取文档解析内容和分块
-   * @param {string} kbId - 知识库ID
-   * @param {string} docId - 文档ID
-   * @returns {Promise} - 文档内容信息
+   * Nhận nội dung phân tích tài liệu và phân đoạn
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {string} docId - Tài liệuID
+   * @returns {Promise} - Thông tin nội dung tài liệu
    */
   getDocumentContent: async (kbId, docId) => {
     return apiAdminGet(`/api/knowledge/databases/${kbId}/documents/${docId}/content`)
   },
 
   /**
-   * 删除文档
-   * @param {string} kbId - 知识库ID
-   * @param {string} docId - 文档ID
-   * @returns {Promise} - 删除结果
+   * Xóa tài liệu
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {string} docId - Tài liệuID
+   * @returns {Promise} - Xóa kết quả
    */
   deleteDocument: async (kbId, docId) => {
     return apiAdminDelete(`/api/knowledge/databases/${kbId}/documents/${docId}`)
   },
 
   /**
-   * 批量删除文档
-   * @param {string} kbId - 知识库ID
-   * @param {Array} fileIds - 文件ID列表
-   * @returns {Promise} - 批量删除结果
+   * Xóa tài liệu theo đợt
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {Array} fileIds - tập tinIDdanh sách
+   * @returns {Promise} - Xóa kết quả theo đợt
    */
   batchDeleteDocuments: async (kbId, fileIds) => {
     return apiRequest(
@@ -229,40 +229,40 @@ export const documentApi = {
   },
 
   /**
-   * 下载文档
-   * @param {string} kbId - 知识库ID
-   * @param {string} docId - 文档ID
-   * @returns {Promise} - Response对象
+   * Tải tài liệu xuống
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {string} docId - Tài liệuID
+   * @returns {Promise} - Responsevật thể
    */
   downloadDocument: async (kbId, docId) => {
     return apiAdminGet(`/api/knowledge/databases/${kbId}/documents/${docId}/download`, {}, 'blob')
   },
 
   /**
-   * 手动触发文档解析
-   * @param {string} kbId - 知识库ID
-   * @param {Array} fileIds - 文件ID列表
-   * @returns {Promise} - 解析任务结果
+   * Kích hoạt phân tích tài liệu theo cách thủ công
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {Array} fileIds - tập tinIDdanh sách
+   * @returns {Promise} - Phân tích kết quả nhiệm vụ
    */
   parseDocuments: async (kbId, fileIds) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/documents/parse`, fileIds)
   },
 
   /**
-   * 手动触发全部待解析文档解析
-   * @param {string} kbId - 知识库ID
-   * @returns {Promise} - 解析任务结果
+   * Kích hoạt thủ công việc phân tích cú pháp tất cả các tài liệu cần phân tích cú pháp
+   * @param {string} kbId - cơ sở tri thứcID
+   * @returns {Promise} - Phân tích kết quả nhiệm vụ
    */
   parsePendingDocuments: async (kbId) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/documents/parse-pending`, {})
   },
 
   /**
-   * 手动触发文档入库
-   * @param {string} kbId - 知识库ID
-   * @param {Array} fileIds - 文件ID列表
-   * @param {Object} params - 处理参数
-   * @returns {Promise} - 入库任务结果
+   * Kích hoạt lưu trữ tài liệu theo cách thủ công
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {Array} fileIds - tập tinIDdanh sách
+   * @param {Object} params - Thông số xử lý
+   * @returns {Promise} - Kết quả nhiệm vụ kho bãi
    */
   indexDocuments: async (kbId, fileIds, params = {}) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/documents/index`, {
@@ -272,10 +272,10 @@ export const documentApi = {
   },
 
   /**
-   * 手动触发全部待入库文档入库
-   * @param {string} kbId - 知识库ID
-   * @param {Object} params - 处理参数
-   * @returns {Promise} - 入库任务结果
+   * Kích hoạt thủ công việc lưu trữ tất cả các tài liệu sẽ được lưu trữ trong cơ sở dữ liệu
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {Object} params - Thông số xử lý
+   * @returns {Promise} - Kết quả nhiệm vụ kho bãi
    */
   indexPendingDocuments: async (kbId, params = {}) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/documents/index-pending`, {
@@ -285,7 +285,7 @@ export const documentApi = {
 }
 
 // =============================================================================
-// === 图谱构建分组 ===
+// === Nhóm xây dựng bản đồ ===
 // =============================================================================
 
 function graphBuildUrl(kbId, action) {
@@ -313,7 +313,7 @@ export const graphBuildApi = {
 }
 
 // =============================================================================
-// === 思维导图分组 ===
+// === Nhóm bản đồ tư duy ===
 // =============================================================================
 
 export const mindmapApi = {
@@ -343,16 +343,16 @@ export const mindmapApi = {
 }
 
 // =============================================================================
-// === 查询分组 ===
+// === Nhóm truy vấn ===
 // =============================================================================
 
 export const queryApi = {
   /**
-   * 查询知识库
-   * @param {string} kbId - 知识库ID
-   * @param {string} query - 查询文本
-   * @param {Object} meta - 查询参数
-   * @returns {Promise} - 查询结果
+   * Truy vấn cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {string} query - Văn bản truy vấn
+   * @param {Object} meta - tham số truy vấn
+   * @returns {Promise} - Kết quả truy vấn
    */
   queryKnowledgeBase: async (kbId, query, meta = {}) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/query`, {
@@ -362,11 +362,11 @@ export const queryApi = {
   },
 
   /**
-   * 测试查询知识库
-   * @param {string} kbId - 知识库ID
-   * @param {string} query - 查询文本
-   * @param {Object} meta - 查询参数
-   * @returns {Promise} - 测试结果
+   * Kiểm tra cơ sở kiến thức truy vấn
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {string} query - Văn bản truy vấn
+   * @param {Object} meta - tham số truy vấn
+   * @returns {Promise} - Kết quả kiểm tra
    */
   queryTest: async (kbId, query, meta = {}) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/query-test`, {
@@ -376,29 +376,29 @@ export const queryApi = {
   },
 
   /**
-   * 获取知识库查询参数
-   * @param {string} kbId - 知识库ID
-   * @returns {Promise} - 查询参数
+   * Nhận tham số truy vấn cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @returns {Promise} - tham số truy vấn
    */
   getKnowledgeBaseQueryParams: async (kbId) => {
     return apiAdminGet(`/api/knowledge/databases/${kbId}/query-params`)
   },
 
   /**
-   * 更新知识库查询参数
-   * @param {string} kbId - 知识库ID
-   * @param {Object} params - 查询参数
-   * @returns {Promise} - 更新结果
+   * Cập nhật các tham số truy vấn cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {Object} params - tham số truy vấn
+   * @returns {Promise} - Cập nhật kết quả
    */
   updateKnowledgeBaseQueryParams: async (kbId, params) => {
     return apiAdminPut(`/api/knowledge/databases/${kbId}/query-params`, params)
   },
 
   /**
-   * 生成知识库的测试问题
-   * @param {string} kbId - 知识库ID
-   * @param {number} count - 生成问题数量，默认10
-   * @returns {Promise} - 生成的问题列表
+   * Tạo câu hỏi kiểm tra cho cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @param {number} count - Số lượng câu hỏi được tạo，Mặc định10
+   * @returns {Promise} - danh sách câu hỏi được tạo
    */
   generateSampleQuestions: async (kbId, count = 10) => {
     return apiAdminPost(`/api/knowledge/databases/${kbId}/sample-questions`, {
@@ -407,9 +407,9 @@ export const queryApi = {
   },
 
   /**
-   * 获取知识库的测试问题
-   * @param {string} kbId - 知识库ID
-   * @returns {Promise} - 问题列表
+   * Nhận câu hỏi kiểm tra từ cơ sở kiến thức
+   * @param {string} kbId - cơ sở tri thứcID
+   * @returns {Promise} - Danh sách câu hỏi
    */
   getSampleQuestions: async (kbId) => {
     return apiAdminGet(`/api/knowledge/databases/${kbId}/sample-questions`)
@@ -417,15 +417,15 @@ export const queryApi = {
 }
 
 // =============================================================================
-// === 文件管理分组 ===
+// === Nhóm quản lý tập tin ===
 // =============================================================================
 
 export const fileApi = {
   /**
-   * 抓取 URL 内容
-   * @param {string} url - 目标 URL
-   * @param {string} kbId - 知识库 ID
-   * @returns {Promise} - 抓取结果
+   * thu thập thông tin URL nội dung
+   * @param {string} url - mục tiêu URL
+   * @param {string} kbId - cơ sở tri thức ID
+   * @returns {Promise} - Tìm nạp kết quả
    */
   fetchUrl: async (url, kbId = null) => {
     return apiAdminPost('/api/knowledge/files/fetch-url', {
@@ -435,10 +435,10 @@ export const fileApi = {
   },
 
   /**
-   * 从工作区导入文件到知识库 MinIO 暂存区
-   * @param {string} kbId - 知识库 ID
-   * @param {Array<string>} paths - 工作区文件路径
-   * @returns {Promise} - 导入结果
+   * Nhập tệp từ không gian làm việc vào cơ sở kiến thức MinIO Khu vực dàn dựng
+   * @param {string} kbId - cơ sở tri thức ID
+   * @param {Array<string>} paths - đường dẫn tập tin không gian làm việc
+   * @returns {Promise} - Nhập kết quả
    */
   importWorkspaceFiles: async (kbId, paths) => {
     return apiAdminPost('/api/knowledge/files/import-workspace', {
@@ -448,10 +448,10 @@ export const fileApi = {
   },
 
   /**
-   * 上传文件
-   * @param {File} file - 文件对象
-   * @param {string} kbId - 知识库ID（可选）
-   * @returns {Promise} - 上传结果
+   * Tải tập tin lên
+   * @param {File} file - đối tượng tập tin
+   * @param {string} kbId - cơ sở tri thứcID（Tùy chọn）
+   * @returns {Promise} - Tải kết quả lên
    */
   uploadFile: async (file, kbId = null) => {
     const formData = new FormData()
@@ -467,43 +467,43 @@ export const fileApi = {
   },
 
   /**
-   * 获取支持的文件类型
-   * @returns {Promise} - 文件类型列表
+   * Nhận các loại tệp được hỗ trợ
+   * @returns {Promise} - Danh sách các loại tập tin
    */
   getSupportedFileTypes: async () => {
     return apiAdminGet('/api/knowledge/files/supported-types')
   },
 
   /**
-   * 上传文件夹（zip格式）
-   * @param {File} file - zip文件
-   * @param {string} kbId - 知识库ID
-   * @returns {Promise} - 上传结果
+   * Tải lên thư mục（zipđịnh dạng）
+   * @param {File} file - ziptập tin
+   * @param {string} kbId - cơ sở tri thứcID
+   * @returns {Promise} - Tải kết quả lên
    */
   uploadFolder: async (file, kbId) => {
     const formData = new FormData()
     formData.append('file', file)
 
-    // 使用 apiRequest 直接发送 FormData，但使用统一的错误处理
+    // sử dụng apiRequest Gửi trực tiếp FormData，Nhưng sử dụng xử lý lỗi thống nhất
     return apiRequest(
       `/api/knowledge/files/upload-folder?kb_id=${kbId}`,
       {
         method: 'POST',
         body: formData
-        // 不设置 Content-Type，让浏览器自动设置 boundary
+        // Chưa đặt Content-Type，Hãy để trình duyệt tự động thiết lập boundary
       },
       true,
       'json'
-    ) // 需要认证，期望JSON响应
+    ) // Yêu cầu xác thực，Kỳ vọngJSONphản ứng
   },
 
   /**
-   * 处理文件夹（异步处理zip文件）
-   * @param {Object} data - 处理参数
-   * @param {string} data.file_path - 已上传的zip文件路径
-   * @param {string} data.kb_id - 知识库ID
-   * @param {string} data.content_hash - 文件内容哈希
-   * @returns {Promise} - 处理任务结果
+   * Thư mục xử lý（Xử lý không đồng bộziptập tin）
+   * @param {Object} data - Thông số xử lý
+   * @param {string} data.file_path - Đã tải lênzipđường dẫn tập tin
+   * @param {string} data.kb_id - cơ sở tri thứcID
+   * @param {string} data.content_hash - Băm nội dung tệp
+   * @returns {Promise} - Xử lý kết quả nhiệm vụ
    */
   processFolder: async ({ file_path, kb_id, content_hash }) => {
     return apiAdminPost('/api/knowledge/files/process-folder', {
@@ -515,21 +515,21 @@ export const fileApi = {
 }
 
 // =============================================================================
-// === 知识库类型分组 ===
+// === Nhóm loại cơ sở kiến thức ===
 // =============================================================================
 
 export const typeApi = {
   /**
-   * 获取支持的知识库类型
-   * @returns {Promise} - 知识库类型列表
+   * Nhận các loại cơ sở kiến thức được hỗ trợ
+   * @returns {Promise} - Danh sách các loại cơ sở tri thức
    */
   getKnowledgeBaseTypes: async () => {
     return apiAdminGet('/api/knowledge/types')
   },
 
   /**
-   * 获取知识库统计信息
-   * @returns {Promise} - 统计信息
+   * Nhận số liệu thống kê cơ sở kiến thức
+   * @returns {Promise} - Thống kê
    */
   getStatistics: async () => {
     return apiAdminGet('/api/knowledge/stats')
@@ -537,7 +537,7 @@ export const typeApi = {
 }
 
 // =============================================================================
-// === RAG评估分组 ===
+// === RAGNhóm đánh giá ===
 // =============================================================================
 
 export const evaluationApi = {

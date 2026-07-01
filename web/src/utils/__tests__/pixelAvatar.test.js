@@ -35,7 +35,7 @@ const run = () => {
   }
 
   {
-    const avatar = generatePixelAvatar(' user/中文 ')
+    const avatar = generatePixelAvatar(' user/Tiếng Trung ')
     assert.equal(
       avatar,
       `${DICEBEAR_GLYPHS_AVATAR_BASE_URL}?seed=user%2F%E4%B8%AD%E6%96%87`,
@@ -60,13 +60,13 @@ const run = () => {
 
   {
     assert.equal(
-      getAvatarInitials('张三丰', 'user'),
-      '张三',
+      getAvatarInitials('Trương Tam Phong', 'user'),
+      'Trương Tam',
       'Chinese initials use first two chars'
     )
     assert.equal(getAvatarInitials('Alice', 'user'), 'Al', 'ASCII initials use first two chars')
-    assert.equal(getAvatarInitials('', 'user'), '用户', 'User fallback should be localized')
-    assert.equal(getAvatarInitials('', 'agent'), '智能', 'Agent fallback should be localized')
+    assert.equal(getAvatarInitials('', 'user'), 'người dùng', 'User fallback should be localized')
+    assert.equal(getAvatarInitials('', 'agent'), 'thông minh', 'Agent fallback should be localized')
     console.log('T6 Initials: PASS')
   }
 

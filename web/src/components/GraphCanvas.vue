@@ -12,7 +12,7 @@
         <div v-if="activeStatsPanel" class="floating-panel type-stats-card">
           <div class="panel-header">
             <span class="panel-title">
-              {{ activeStatsPanel === 'node' ? '实体类型' : '关系类型' }}
+              {{ activeStatsPanel === 'node' ? 'Loại thực thể' : 'Loại mối quan hệ' }}
             </span>
           </div>
           <div class="panel-body">
@@ -37,7 +37,7 @@
             type="button"
             @click="toggleStatsPanel('node')"
           >
-            <span class="stat-label">实体</span>
+            <span class="stat-label">thực thể</span>
             <span class="stat-value">{{ visibleEntityCount }}</span>
           </button>
           <button
@@ -46,7 +46,7 @@
             type="button"
             @click="toggleStatsPanel('edge')"
           >
-            <span class="stat-label">关系</span>
+            <span class="stat-label">mối quan hệ</span>
             <span class="stat-value">{{ visibleRelationshipCount }}</span>
           </button>
         </div>
@@ -140,7 +140,7 @@ const EDGE_LABEL_COLORS = [
   '#ff9d4d'
 ]
 
-// CSS 变量解析工具函数
+// CSS Chức năng công cụ phân tích cú pháp biến
 function getCSSVariable(variableName, element = document.documentElement) {
   return getComputedStyle(element).getPropertyValue(variableName).trim()
 }
@@ -243,7 +243,7 @@ function formatData() {
       visualLabel: getNodeVisualLabel(n),
       color: getNodeColor(n),
       degree: degrees.get(String(n.id)) || 0,
-      original: n // 保存原始数据
+      original: n // Lưu dữ liệu gốc
     }
   }))
 
@@ -255,7 +255,7 @@ function formatData() {
       label: e.type ?? '',
       visualLabel: getEdgeVisualLabel(e),
       color: getEdgeColor(e),
-      original: e // 保存原始数据
+      original: e // Lưu dữ liệu gốc
     }
   }))
 
@@ -341,21 +341,21 @@ function initGraph() {
       {
         type: 'click-select',
         degree: 1,
-        state: 'selected', // 选中的状态
-        neighborState: 'active', // 相邻节点附着状态
-        unselectedState: 'inactive', // 未选中节点状态
+        state: 'selected', // trạng thái đã chọn
+        neighborState: 'active', // Trạng thái đính kèm nút lân cận
+        unselectedState: 'inactive', // Trạng thái nút chưa được chọn
         multiple: true,
         trigger: ['shift'],
-        // 禁用默认的选中效果，避免与自定义事件冲突
+        // Tắt hiệu ứng lựa chọn mặc định，Tránh xung đột với các sự kiện tùy chỉnh
         disableDefault: false
       }
     ]
   })
 
-  // 绑定事件
+  // Sự kiện ràng buộc
   graphInstance.on('node:click', (evt) => {
     const { target } = evt
-    // 获取节点ID
+    // Nhận nútID
     const nodeId = target.id
     const nodeData = graphInstance.getNodeData(nodeId)
     emit('node-click', nodeData)
@@ -369,7 +369,7 @@ function initGraph() {
   })
 
   graphInstance.on('canvas:click', (evt) => {
-    // 只有点击画布空白处才触发
+    // Chỉ được kích hoạt khi nhấp vào khoảng trống trên khung vẽ
     if (!evt.target) {
       emit('canvas-click')
     }
@@ -383,7 +383,7 @@ function setGraphData() {
   if (!graphInstance || !isMounted) return
   const data = formatData()
 
-  console.log('开始设置图谱数据:', {
+  console.log('Bắt đầu thiết lập dữ liệu bản đồ:', {
     nodes: data.nodes.length,
     edges: data.edges.length
   })
@@ -391,31 +391,31 @@ function setGraphData() {
   graphInstance.setData(data)
   graphInstance.render()
 
-  // 手动触发布局重新计算，确保节点分布
+  // Kích hoạt tính toán lại bố cục theo cách thủ công，Đảm bảo phân phối nút
   clearTimeout(layoutTimeout)
   layoutTimeout = setTimeout(() => {
     if (!isMounted || !graphInstance) return
     try {
       if (graphInstance && graphInstance.layout) {
         graphInstance.layout()
-        console.log('触发布局重新计算')
+        console.log('Tính toán lại bố cục kích hoạt')
       }
     } catch (error) {
-      console.warn('布局重新计算失败:', error)
+      console.warn('Tính toán lại bố cục không thành công:', error)
     }
 
-    // 等待力导向布局稳定后再应用高亮
+    // Đợi bố cục được định hướng bắt buộc ổn định trước khi áp dụng đánh dấu
     clearTimeout(highlightTimeout)
     highlightTimeout = setTimeout(() => {
       if (!isMounted || !graphInstance) return
       applyHighlightKeywords()
       emit('data-rendered')
-      console.log('图谱渲染完成，布局已稳定')
+      console.log('Kết xuất bản đồ đã hoàn tất，Bố cục đã ổn định')
     }, 1500)
-  }, 10) // 等待 10ms 确保布局完成
+  }, 10) // chờ đã 10ms Đảm bảo bố cục đã hoàn tất
 }
 
-// 关键词高亮功能
+// Chức năng đánh dấu từ khóa
 function applyHighlightKeywords() {
   if (!graphInstance || !props.highlightKeywords || props.highlightKeywords.length === 0) return
 
@@ -439,7 +439,7 @@ function applyHighlightKeywords() {
   }
 }
 
-// 清除高亮
+// điểm nhấn rõ ràng
 function clearHighlights() {
   if (!graphInstance) return
 
@@ -547,7 +547,7 @@ watch(
   { deep: true }
 )
 
-// 监听关键词变化
+// Theo dõi thay đổi từ khóa
 watch(
   () => props.highlightKeywords,
   () => {
@@ -561,7 +561,7 @@ watch(
   { deep: true }
 )
 
-// 监听主题切换，重新加载图形
+// Giám sát chuyển đổi chủ đề，Tải lại đồ họa
 watch(
   () => themeStore.isDark,
   () => {
@@ -573,7 +573,7 @@ watch(
 
 onMounted(() => {
   isMounted = true
-  // ResizeObserver 监听容器尺寸，自动重渲染
+  // ResizeObserver Kích thước thùng nghe，Tự động hiển thị lại
   if (window.ResizeObserver) {
     resizeObserver = new ResizeObserver(() => {
       if (!container.value || !graphInstance || !isMounted) return
@@ -615,7 +615,7 @@ onUnmounted(() => {
   graphInstance = null
 })
 
-// 暴露方法
+// phương pháp tiếp xúc
 defineExpose({
   refreshGraph,
   fitView,
@@ -778,7 +778,7 @@ defineExpose({
   }
 
   .slots {
-    // 让整层覆盖容器默认不接收指针事件（便于穿透到底下画布）
+    // Để toàn bộ lớp chứa vùng chứa không nhận được các sự kiện con trỏ theo mặc định（Dễ dàng thâm nhập vào canvas bên dưới）
     pointer-events: none;
     position: absolute;
     top: 0;
@@ -803,7 +803,7 @@ defineExpose({
       }
     }
     .canvas-content {
-      // 中间内容层及其子元素全部穿透
+      // Lớp nội dung ở giữa và các thành phần phụ của nó đều được thâm nhập
       pointer-events: none;
       flex: 1;
       background: transparent !important;
@@ -814,7 +814,7 @@ defineExpose({
   }
 }
 
-/* 高亮节点的脉冲动画效果 */
+/* Hiệu ứng hoạt hình xung của các nút được đánh dấu */
 @keyframes highlightPulse {
   0% {
     filter: brightness(1);

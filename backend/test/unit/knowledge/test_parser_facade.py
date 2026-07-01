@@ -213,7 +213,7 @@ async def test_parser_aparse_pdf_file_returns_markdown_text(tmp_path: Path):
 
 @pytest.mark.asyncio
 async def test_parser_aparse_image_file_with_mineru_when_available():
-    file_path = DATA_DIR / "测试图片.png"
+    file_path = DATA_DIR / "hình ảnh thử nghiệm.png"
     assert file_path.exists(), f"Test file does not exist: {file_path}"
 
     health = await asyncio.to_thread(DocumentProcessorFactory.check_health, "mineru_ocr")

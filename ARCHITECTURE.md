@@ -1,79 +1,79 @@
 # ARCHITECTURE.md
 
-本文档是 Yuxi 的代码地图，参考 matklad 的 `ARCHITECTURE.md` 建议维护：只描述相对稳定的系统边界、目录职责和跨切面约束，避免同步易变的实现细节。新贡献者如果不确定“某个能力应该改哪里”，先读这里，再用符号搜索定位具体类型、函数或路由。
+Tài liệu này là bản đồ mã nguồn của Yuxi, được duy trì dựa trên đề xuất `ARCHITECTURE.md` của matklad: chỉ mô tả các ranh giới hệ thống tương đối ổn định, trách nhiệm của các thư mục và ràng buộc chéo, tránh đồng bộ hóa các chi tiết triển khai dễ thay đổi. Người mới tham gia nếu không chắc chắn "chức năng nào cần sửa ở đâu", trước tiên hãy đọc ở đây, sau đó sử dụng tìm kiếm biểu tượng để định vị loại, hàm hoặc định tuyến cụ thể.
 
-## 鸟瞰
+## Tổng quan
 
-Yuxi 是一个面向 RAG、知识图谱和多智能体工作流的知识库平台。用户在 Vue 前端中配置智能体、知识库、工具、Skills、MCP 与 SubAgents；前端通过 `/api` 调用 FastAPI；后端服务层协调数据库、对象存储、向量库、图数据库、LangGraph 运行态和沙盒；长耗时智能体运行交给 worker 异步执行，并通过事件流回到前端。
+Yuxi là một nền tảng cơ sở kiến thức hướng tới RAG, đồ thị kiến thức và quy trình làm việc đa tác tử (multi-agent). Người dùng cấu hình agent, cơ sở kiến thức, công cụ, kỹ năng (Skills), MCP và SubAgents trong giao diện Vue; frontend gọi FastAPI thông qua `/api`; backend service điều phối cơ sở dữ liệu, lưu trữ đối tượng, kho vector, cơ sở dữ liệu đồ thị, môi trường chạy LangGraph và hộp cát (sandbox); các agent chạy mất nhiều thời gian sẽ được giao cho worker xử lý bất đồng bộ và trả kết quả về frontend qua luồng sự kiện (event stream).
 
-开发与运行拓扑以 `docker-compose.yml` 为准。核心开发服务包括：
+Cấu trúc phát triển và vận hành dựa trên `docker-compose.yml`. Các dịch vụ phát triển cốt lõi bao gồm:
 
-- `web-dev`：Vue/Vite 前端，挂载 `web/src` 并热重载。
-- `api-dev`：FastAPI API 服务，挂载 `backend/server` 和 `backend/package` 并热重载。
-- `worker-dev`：ARQ 后台任务 worker，处理智能体运行等异步任务。
-- `sandbox-provisioner`：为智能体工具执行提供沙盒环境。
-- `postgres`、`redis`、`minio`、`milvus`、`graph`：分别承载业务/知识库元数据、运行事件与队列状态、对象存储、向量检索、Neo4j 图谱。
-- `mineru-*`、`paddlex`：按 `all` profile 启动的文档解析/OCR 能力。
+- `web-dev`：Vue/Vite frontend, gắn kết `web/src` và tải lại nóng (hot reload).
+- `api-dev`：FastAPI API service, gắn kết `backend/server` và `backend/package` và tải lại nóng.
+- `worker-dev`：ARQ background task worker, xử lý các tác vụ bất đồng bộ như chạy agent.
+- `sandbox-provisioner`：Cung cấp môi trường hộp cát để thực thi công cụ của agent.
+- `postgres`、`redis`、`minio`、`milvus`、`graph`：Lần lượt lưu trữ siêu dữ liệu nghiệp vụ/cơ sở kiến thức, trạng thái hàng đợi và sự kiện chạy, lưu trữ đối tượng, tìm kiếm vector, đồ thị Neo4j.
+- `mineru-*`、`paddlex`：Khả năng phân tích tài liệu/OCR được khởi động theo profile `all`.
 
-## 后端代码地图
+## Bản đồ mã nguồn Backend
 
-后端分成两个顶层边界：`backend/server` 是 Web 应用入口与 HTTP 适配层，`backend/package/yuxi` 是可复用业务包。新增业务逻辑通常优先放在 `yuxi` 包中，路由层只做请求解析、认证上下文和响应装配。
+Backend được chia thành hai ranh giới cấp cao nhất: `backend/server` là lối vào ứng dụng Web và lớp điều phối HTTP, `backend/package/yuxi` là gói nghiệp vụ có thể tái sử dụng. Logic nghiệp vụ mới thường được ưu tiên đặt trong gói `yuxi`, lớp định tuyến (router) chỉ thực hiện phân tích yêu cầu, ngữ cảnh xác thực và đóng gói phản hồi.
 
-- `server/main.py` 创建 FastAPI 应用，注册中间件，并把所有业务接口统一挂到 `/api`。
-- `server/routers` 是 HTTP 路由边界。路由按领域拆分，集中在 `server/routers/__init__.py` 注册；知识库、图谱、评估和思维导图接口在 `LITE_MODE` 下不会注册。
-- `server/utils` 放 Web 层通用能力，例如生命周期、认证、日志与迁移辅助。
-- `server/worker_main.py` 是 worker 入口，实际 worker 设置来自 `yuxi.services.run_worker`。
+- `server/main.py` tạo ứng dụng FastAPI, đăng ký middleware và hợp nhất tất cả các cổng nghiệp vụ vào `/api`.
+- `server/routers` là ranh giới định tuyến HTTP. Các tuyến được chia theo lĩnh vực, tập trung đăng ký trong `server/routers/__init__.py`; các cổng cơ sở kiến thức, đồ thị, đánh giá và sơ đồ tư duy sẽ không được đăng ký trong `LITE_MODE`.
+- `server/utils` đặt các khả năng chung của lớp Web, chẳng hạn như vòng đời, xác thực, nhật ký và hỗ trợ di chuyển dữ liệu.
+- `server/worker_main.py` là lối vào worker, thiết lập worker thực tế đến từ `yuxi.services.run_worker`.
 
-`backend/package/yuxi` 是后端主体：
+`backend/package/yuxi` là phần thân chính của backend:
 
-- `agents` 定义 LangGraph 智能体体系。`BaseAgent` 是智能体基类，`BaseContext` 是运行配置上下文；`buildin` 放内置智能体；`middlewares` 负责把知识库、Skills、MCP、附件、运行配置等能力挂到运行时；`toolkits` 放工具注册与内置工具；`backends` 对接沙盒和 Skills 等外部执行/资源后端。
-- `services` 是用例层，负责串联 repositories、agents、knowledge、storage 和外部系统。聊天、运行队列、文件视图、Skills、MCP、SubAgents、评估等跨模块流程都从这里找入口。
-- `repositories` 是数据库访问边界，封装业务对象和知识库元数据的 SQLAlchemy 查询。不要让路由绕过 repository 直接操作模型，除非已有局部模式要求这样做。
-- `storage` 放持久化基础设施。`storage/postgres` 管理业务表、知识库表和 LangGraph checkpoint 所需连接池；`storage/minio` 管理对象存储。
-- `knowledge` 是知识库和图谱领域。`KnowledgeBaseManager` 根据知识库类型分发到具体实现；`implementations` 放 Milvus、Dify 等知识库实现；`graphs` 放 Milvus 知识库图谱适配与构建服务；`chunking` 放文档分块策略。
-- `knowledge/parser` 是文档解析边界，统一封装 MinerU、PaddleX、RapidOCR、DeepSeek OCR 等解析实现。
-- `models` 封装 chat、embedding、rerank 模型适配；`config` 维护应用配置和内置模型信息；`utils` 放跨领域但足够通用的工具。
+- `agents` định nghĩa hệ thống agent LangGraph. `BaseAgent` là lớp cơ sở agent, `BaseContext` là ngữ cảnh cấu hình chạy; `buildin` chứa các agent tích hợp sẵn; `middlewares` chịu trách nhiệm gắn kết cơ sở kiến thức, kỹ năng, MCP, tệp đính kèm, cấu hình chạy và các khả năng khác vào runtime; `toolkits` chứa đăng ký công cụ và công cụ tích hợp sẵn; `backends` kết nối với các đầu thực thi/tài nguyên bên ngoài như hộp cát và kỹ năng.
+- `services` là lớp use case, chịu trách nhiệm kết nối repositories, agents, knowledge, storage và các hệ thống bên ngoài. Các quy trình liên quan đến chat, hàng đợi chạy, chế độ xem tệp, kỹ năng, MCP, SubAgents, đánh giá đều nằm ở đây.
+- `repositories` là ranh giới truy cập cơ sở dữ liệu, đóng gói các truy vấn SQLAlchemy cho đối tượng nghiệp vụ và siêu dữ liệu cơ sở kiến thức. Không cho phép router vượt qua repository để thao tác trực tiếp với model, trừ khi có mẫu cục bộ yêu cầu.
+- `storage` đặt cơ sở hạ tầng lưu trữ. `storage/postgres` quản lý nhóm kết nối cho bảng nghiệp vụ, bảng cơ sở kiến thức và LangGraph checkpoint; `storage/minio` quản lý lưu trữ đối tượng.
+- `knowledge` là lĩnh vực cơ sở kiến thức và đồ thị. `KnowledgeBaseManager` phân phối đến các triển khai cụ thể dựa trên loại cơ sở kiến thức; `implementations` đặt các triển khai cơ sở kiến thức như Milvus, Dify; `graphs` đặt dịch vụ xây dựng và tương thích đồ thị cơ sở kiến thức Milvus; `chunking` đặt chiến lược phân đoạn tài liệu.
+- `knowledge/parser` là ranh giới phân tích tài liệu, đóng gói các triển khai phân tích như MinerU, PaddleX, RapidOCR, DeepSeek OCR.
+- `models` đóng gói thích ứng cho chat, embedding, rerank; `config` duy trì cấu hình ứng dụng và thông tin mô hình tích hợp sẵn; `utils` đặt các công cụ chung xuyên lĩnh vực.
 
-测试代码放在 `backend/test`，按 `unit`、`integration`、`e2e` 分层组织。新增或修改后端行为时，测试应落在最能覆盖风险的那一层。
+Mã nguồn kiểm thử nằm trong `backend/test`, được tổ chức theo các lớp `unit`, `integration`, `e2e`. Khi thêm mới hoặc sửa đổi hành vi backend, các bài kiểm thử nên nằm ở lớp có thể bao phủ rủi ro tốt nhất.
 
-## 前端代码地图
+## Bản đồ mã nguồn Frontend
 
-前端是 Vue 3 + Vite 应用，业务入口集中在 `web/src`。
+Frontend là ứng dụng Vue 3 + Vite, lối vào nghiệp vụ tập trung trong `web/src`.
 
-- `main.js` 挂载应用，`App.vue` 是根组件。
-- `router` 定义页面路由和权限跳转。普通用户默认进入智能体对话，图谱、知识库、仪表盘、扩展管理等页面带管理员权限约束。
-- `apis` 是唯一推荐的后端接口封装位置。新增后端接口时，同步在这里补对应 API 方法，复用 `base.js` 的请求、鉴权和错误处理。
-- `stores` 放 Pinia 状态，例如用户、智能体配置、主题、图谱和任务状态。
-- `views` 是页面级入口，`components` 是可复用界面块；智能体对话、知识库、图谱、扩展管理等复杂页面由 view 组合多个 component。
-- `composables` 放可组合的前端运行逻辑，例如流式消息处理、运行事件订阅、审批、人机输入和智能体线程状态。
-- `utils` 放前端通用工具和轻量转换逻辑；样式集中在 `assets/css`，颜色和基础规范优先复用 `base.css` 与现有 less 文件。
+- `main.js` gắn kết ứng dụng, `App.vue` là component gốc.
+- `router` định nghĩa định tuyến trang và quyền chuyển hướng. Người dùng thông thường mặc định vào trang chat agent, các trang đồ thị, cơ sở kiến thức, dashboard, quản lý mở rộng có ràng buộc quyền quản trị viên.
+- `apis` là vị trí duy nhất được khuyến nghị để đóng gói giao diện backend. Khi thêm cổng backend mới, hãy bổ sung đồng thời phương thức API tương ứng tại đây, tái sử dụng yêu cầu, xác thực và xử lý lỗi của `base.js`.
+- `stores` đặt trạng thái Pinia, chẳng hạn như cấu hình người dùng, agent, theme, đồ thị và trạng thái nhiệm vụ.
+- `views` là lối vào cấp trang, `components` là các khối giao diện có thể tái sử dụng; các trang phức tạp như chat agent, cơ sở kiến thức, đồ thị, quản lý mở rộng được kết hợp từ view và nhiều component.
+- `composables` đặt logic chạy frontend có thể kết hợp, chẳng hạn như xử lý tin nhắn luồng, đăng ký sự kiện chạy, phê duyệt, nhập liệu thủ công và trạng thái thread agent.
+- `utils` đặt các công cụ chung và logic chuyển đổi nhẹ của frontend; style tập trung trong `assets/css`, các quy tắc cơ bản và màu sắc ưu tiên sử dụng lại `base.css` và các file less hiện có.
 
-## 运行链路
+## Luồng vận hành
 
-一次典型智能体对话大致经过以下边界：
+Một cuộc hội thoại agent điển hình thường đi qua các ranh giới sau:
 
-1. `AgentView` 及相关组件收集输入、附件和智能体配置。
-2. `web/src/apis` 调用 `/api/chat` 相关接口。
-3. `server/routers/chat_router.py` 进入后端，委托 `yuxi.services.chat_service` 或 `agent_run_service`。
-4. 服务层读取 conversation、agent config、tools、skills、knowledge 等配置，必要时创建后台 run。
-5. `worker-dev` 执行 LangGraph 智能体；中间件按上下文挂载知识库工具、Skills、MCP、附件与沙盒能力。
-6. 运行事件写入 Redis，最终状态和业务记录写入 Postgres；文件和产物落到 `saves`、MinIO 或沙盒用户数据目录。
-7. 前端通过 SSE/轮询消费运行事件，渲染消息、工具调用、引用来源、产物卡片和文件预览。
+1. `AgentView` và các thành phần liên quan thu thập đầu vào, tệp đính kèm và cấu hình agent.
+2. `web/src/apis` gọi các giao diện liên quan đến `/api/chat`.
+3. `server/routers/chat_router.py` đi vào backend, ủy thác cho `yuxi.services.chat_service` hoặc `agent_run_service`.
+4. Lớp dịch vụ đọc cấu hình hội thoại, cấu hình agent, công cụ, kỹ năng, cơ sở kiến thức, v.v., và tạo run nền khi cần thiết.
+5. `worker-dev` thực thi agent LangGraph; middleware gắn kết các khả năng cơ sở kiến thức, kỹ năng, MCP, tệp đính kèm và hộp cát dựa trên ngữ cảnh.
+6. Các sự kiện chạy được ghi vào Redis, trạng thái cuối cùng và bản ghi nghiệp vụ được ghi vào Postgres; tệp và sản phẩm đầu ra được lưu vào `saves`, MinIO hoặc thư mục dữ liệu người dùng hộp cát.
+7. Frontend tiêu thụ các sự kiện chạy thông qua SSE/polling, hiển thị tin nhắn, cuộc gọi công cụ, nguồn tham chiếu, thẻ sản phẩm và bản xem trước tệp.
 
-## 架构不变量
+## Các bất biến kiến trúc
 
-- Docker Compose 是开发环境的事实来源。开发时优先检查容器、日志和热重载，不要默认要求本地裸跑服务。
-- HTTP 路由层应保持薄；领域流程放在 `yuxi.services`，持久化查询放在 `yuxi.repositories`。
-- 前端 API 调用应集中在 `web/src/apis`，组件不要散落拼接后端 URL。
-- 智能体能力通过 context、middleware、toolkits、backends 组合；知识库通过工具访问，不要把知识库、MCP、Skills 或沙盒逻辑硬编码进单个页面或路由。
-- LITE 模式必须允许跳过知识库、图谱、评估等重依赖能力；新增相关接口或初始化逻辑时要尊重这个边界。
-- 沙盒虚拟路径以 `SANDBOX_VIRTUAL_PATH_PREFIX` 为边界，用户可见路径与宿主机真实路径不要混用。
-- 面向用户或外部系统的输入在边界校验；内部服务之间优先信任已有类型、仓储和框架约束，避免为了假设场景堆叠防御代码。
+- Docker Compose là nguồn gốc thực tế cho môi trường phát triển. Khi phát triển, ưu tiên kiểm tra container, nhật ký và tải lại nóng, không mặc định yêu cầu chạy trực tiếp các dịch vụ trên máy chủ local.
+- Lớp định tuyến HTTP nên giữ độ mỏng nhẹ; quy trình nghiệp vụ đặt trong `yuxi.services`, truy vấn lưu trữ đặt trong `yuxi.repositories`.
+- Cuộc gọi API frontend nên tập trung trong `web/src/apis`, các thành phần không được tự ghép nối URL backend riêng lẻ.
+- Khả năng của agent được kết hợp qua context, middleware, toolkits, backends; truy cập cơ sở kiến thức qua công cụ, không mã hóa cứng logic cơ sở kiến thức, MCP, kỹ năng hoặc hộp cát vào trang hoặc tuyến đơn lẻ.
+- Chế độ LITE phải cho phép bỏ qua các khả năng phụ thuộc nặng như cơ sở kiến thức, đồ thị, đánh giá; hãy tôn trọng ranh giới này khi thêm giao diện mới hoặc logic khởi tạo.
+- Đường dẫn ảo của hộp cát lấy `SANDBOX_VIRTUAL_PATH_PREFIX` làm ranh giới, không dùng lẫn lộn giữa đường dẫn người dùng thấy và đường dẫn thực tế trên máy chủ.
+- Đầu vào đối mặt với người dùng hoặc hệ thống bên ngoài được xác thực tại ranh giới; giữa các dịch vụ nội bộ ưu tiên tin tưởng các ràng buộc hiện có của kiểu dữ liệu, lưu trữ và khung ứng dụng, tránh tích lũy mã phòng thủ cho các tình huống giả định.
 
-## 跨切面关注点
+## Các khía cạnh chéo
 
-- **配置**：环境变量来自 Compose 和 `.env`，用户持久化配置由 `yuxi.config.app.Config` 管理，运行时配置通过智能体 context 进入 LangGraph。
-- **权限**：前端路由守卫提供页面级跳转，后端认证与权限检查仍是最终边界。
-- **状态与存储**：Postgres 存业务与知识库元数据，LangGraph checkpoint 使用独立连接池或 SQLite fallback，Redis 承载运行事件和取消信号，MinIO/本地 `saves`/沙盒目录承载文件。
-- **文档处理**：上传文件先进入解析和分块边界，再进入知识库实现；解析插件和知识库实现应保持可替换。
-- **观测与调试**：开发阶段优先使用 `docker logs api-dev --tail 100`、worker 日志和现有测试分层定位问题；Langfuse 相关逻辑集中在服务层和智能体运行配置附近。
+- **Cấu hình**: Biến môi trường đến từ Compose và `.env`, cấu hình bền vững của người dùng do `yuxi.config.app.Config` quản lý, cấu hình runtime đi vào LangGraph qua agent context.
+- **Quyền hạn**: Bộ bảo vệ định tuyến frontend cung cấp chuyển hướng cấp trang, xác thực và kiểm tra quyền backend vẫn là ranh giới cuối cùng.
+- **Trạng thái và lưu trữ**: Postgres lưu trữ siêu dữ liệu nghiệp vụ và cơ sở kiến thức, LangGraph checkpoint sử dụng nhóm kết nối độc lập hoặc SQLite fallback, Redis lưu trữ sự kiện chạy và tín hiệu hủy, MinIO/`saves` local/thư mục hộp cát lưu trữ tệp tin.
+- **Xử lý tài liệu**: Tệp tải lên trước tiên đi vào ranh giới phân tích và phân đoạn, sau đó đi vào triển khai cơ sở kiến thức; plugin phân tích và triển khai cơ sở kiến thức phải giữ khả năng thay thế.
+- **Giám sát và gỡ lỗi**: Trong giai đoạn phát triển, ưu tiên sử dụng `docker logs api-dev --tail 100`, nhật ký worker và các bài kiểm thử hiện có để định vị sự cố; logic liên quan đến Langfuse tập trung xung quanh lớp dịch vụ và cấu hình chạy agent.

@@ -1,27 +1,27 @@
 <template>
   <a-modal
     v-model:open="visible"
-    title="自动生成评估基准"
+    title="Tự động tạo điểm chuẩn đánh giá"
     width="600px"
     :mask-closable="!generating"
     :closable="!generating"
     @cancel="handleCancel"
   >
     <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
-      <a-form-item label="基准名称" name="name">
-        <a-input v-model:value="formState.name" placeholder="请输入评估基准名称" />
+      <a-form-item label="Tên điểm chuẩn" name="name">
+        <a-input v-model:value="formState.name" placeholder="Vui lòng nhập tên điểm chuẩn đánh giá" />
       </a-form-item>
 
-      <a-form-item label="描述" name="description">
+      <a-form-item label="Mô tả" name="description">
         <a-textarea
           v-model:value="formState.description"
-          placeholder="请输入评估基准描述（可选）"
+          placeholder="Vui lòng nhập mô tả về điểm chuẩn đánh giá（Tùy chọn）"
           :rows="3"
         />
       </a-form-item>
 
-      <a-form-item label="构建方式" name="generation_mode">
-        <div class="generation-mode-cards" role="radiogroup" aria-label="构建方式">
+      <a-form-item label="Cách xây dựng" name="generation_mode">
+        <div class="generation-mode-cards" role="radiogroup" aria-label="Cách xây dựng">
           <div
             v-for="option in generationModeOptions"
             :key="option.value"
@@ -52,22 +52,22 @@
       </a-form-item>
 
       <a-form-item
-        label="LLM模型配置"
+        label="LLMCấu hình mô hình"
         name="llm_model_spec"
-        :rules="[{ required: true, message: '请选择LLM模型' }]"
+        :rules="[{ required: true, message: 'Vui lòng chọnLLMngười mẫu' }]"
       >
         <ModelSelectorComponent
           :model_spec="formState.llm_model_spec"
-          placeholder="选择用于生成问题的LLM模型"
+          placeholder="Chọn câu hỏi được sử dụng để tạo câu hỏiLLMngười mẫu"
           @select-model="handleSelectLLMModel"
         />
       </a-form-item>
 
-      <a-form-item label="生成参数" name="params">
+      <a-form-item label="Tạo tham số" name="params">
         <a-row :gutter="16">
           <a-col :span="12">
             <a-form-item
-              label="问题数量"
+              label="Số lượng câu hỏi"
               name="count"
               :labelCol="{ span: 24 }"
               :wrapperCol="{ span: 24 }"
@@ -77,7 +77,7 @@
                 :min="1"
                 :max="100"
                 style="width: 100%"
-                placeholder="生成问题数量"
+                placeholder="Số lượng câu hỏi được tạo"
               />
             </a-form-item>
           </a-col>
@@ -85,8 +85,8 @@
             <a-form-item name="neighbors_count" :labelCol="{ span: 24 }" :wrapperCol="{ span: 24 }">
               <template #label>
                 <span class="field-label-with-help">
-                  候选 Chunk 数量
-                  <a-tooltip title="每次生成问题时参考的候选 Chunk 总数">
+                  ứng cử viên Chunk số lượng
+                  <a-tooltip title="Thí sinh tham khảo mỗi khi có câu hỏi Chunk tổng cộng">
                     <CircleHelp class="help-icon" />
                   </a-tooltip>
                 </span>
@@ -96,7 +96,7 @@
                 :min="0"
                 :max="10"
                 style="width: 100%"
-                placeholder="默认 1"
+                placeholder="Mặc định 1"
               />
             </a-form-item>
           </a-col>
@@ -108,8 +108,8 @@
             >
               <template #label>
                 <span class="field-label-with-help">
-                  构建并发数
-                  <a-tooltip title="同时生成评估题目的 worker 数，过高可能触发模型服务限流">
+                  Số lượng bản dựng đồng thời
+                  <a-tooltip title="Tạo câu hỏi đánh giá cùng một lúc worker con số，Quá cao có thể kích hoạt giới hạn hiện tại của dịch vụ mô hình">
                     <CircleHelp class="help-icon" />
                   </a-tooltip>
                 </span>
@@ -119,7 +119,7 @@
                 :min="1"
                 :max="20"
                 style="width: 100%"
-                placeholder="默认 10"
+                placeholder="Mặc định 10"
               />
             </a-form-item>
           </a-col>
@@ -131,8 +131,8 @@
             >
               <template #label>
                 <span class="field-label-with-help">
-                  每轮扩展 Chunk 数
-                  <a-tooltip title="PPR 扩散后每轮加入的最高分 Chunk 数">
+                  Mở rộng mỗi vòng Chunk con số
+                  <a-tooltip title="PPR Điểm cao nhất được thêm vào trong mỗi vòng sau khi phổ biến Chunk con số">
                     <CircleHelp class="help-icon" />
                   </a-tooltip>
                 </span>
@@ -142,7 +142,7 @@
                 :min="1"
                 :max="3"
                 style="width: 100%"
-                placeholder="默认 1"
+                placeholder="Mặc định 1"
               />
             </a-form-item>
           </a-col>
@@ -152,25 +152,25 @@
     <template #footer>
       <div class="benchmark-modal-footer">
         <div class="benchmark-help-text">
-          需要了解评估基准生成原理？查看
+          Cần nắm rõ nguyên tắc tạo chuẩn đánh giá？Xem
           <a
             class="benchmark-help-link"
             href="https://xerrors.github.io/Yuxi/intro/evaluation.html"
             target="_blank"
             rel="noopener noreferrer"
           >
-            使用说明
+            Hướng dẫn sử dụng
           </a>
         </div>
         <div class="footer-actions">
-          <a-button :disabled="generating" @click="handleCancel">取消</a-button>
+          <a-button :disabled="generating" @click="handleCancel">Hủy bỏ</a-button>
           <a-button
             type="primary"
             :loading="generating"
             :disabled="generating"
             @click="handleGenerate"
           >
-            确定
+            được rồi
           </a-button>
         </div>
       </div>
@@ -201,7 +201,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:visible', 'success'])
 
-// 默认基准名称
+// Tên cơ sở mặc định
 const defaultBenchmarkName = () => {
   const today = new Date().toISOString().slice(0, 10)
   const suffix = Array.from(
@@ -211,7 +211,7 @@ const defaultBenchmarkName = () => {
   return `Test-${today}-${suffix}`
 }
 
-// 响应式数据
+// Dữ liệu đáp ứng
 const formRef = ref()
 const generating = ref(false)
 const graphIndexedChunks = ref(0)
@@ -227,17 +227,17 @@ const formState = reactive({
   llm_model_spec: configStore.config?.default_model || ''
 })
 
-// 表单验证规则
+// quy tắc xác thực biểu mẫu
 const rules = {
   name: [
-    { required: true, message: '请输入基准名称', trigger: 'blur' },
-    { min: 2, max: 100, message: '基准名称长度应在2-100个字符之间', trigger: 'blur' }
+    { required: true, message: 'Vui lòng nhập tên điểm chuẩn', trigger: 'blur' },
+    { min: 2, max: 100, message: 'Độ dài tên cơ sở phải nằm trong2-100giữa các ký tự', trigger: 'blur' }
   ],
-  count: [{ required: true, message: '请输入生成问题数量', trigger: 'blur' }],
-  concurrency_count: [{ required: true, message: '请输入构建并发数', trigger: 'blur' }]
+  count: [{ required: true, message: 'Vui lòng nhập số lượng câu hỏi được tạo', trigger: 'blur' }],
+  concurrency_count: [{ required: true, message: 'Vui lòng nhập số lượng bản dựng đồng thời', trigger: 'blur' }]
 }
 
-// 双向绑定visible
+// Ràng buộc hai chiềuvisible
 const visible = computed({
   get: () => props.visible,
   set: (val) => emit('update:visible', val)
@@ -248,21 +248,21 @@ const graphEnhancedDisabled = computed(() => graphIndexedChunks.value <= 0)
 const generationModeOptions = computed(() => [
   {
     value: 'vector',
-    label: '向量构建',
-    tag: '默认',
-    description: '基于向量相似度召回 chunks，稳定适用于所有知识库。',
-    helper: '适合快速生成通用评估基准。',
+    label: 'xây dựng vector',
+    tag: 'Mặc định',
+    description: 'Nhớ lại dựa trên độ tương tự của vectơ chunks，Ổn định cho mọi cơ sở kiến thức。',
+    helper: 'Thích hợp để nhanh chóng tạo ra các tiêu chuẩn đánh giá chung。',
     icon: Database,
     disabled: false
   },
   {
     value: 'graph_enhanced',
-    label: '图增强构建',
-    tag: '图谱',
-    description: '在向量召回基础上结合知识图谱扩展相关 chunks。',
+    label: 'Xây dựng tăng cường đồ thị',
+    tag: 'tập bản đồ',
+    description: 'Dựa trên việc thu hồi vectơ và kết hợp với biểu đồ tri thức để mở rộng mối tương quan chunks。',
     helper: graphEnhancedDisabled.value
-      ? '当前知识库尚未完成图谱构建，暂不能使用图增强构建'
-      : `已构建图谱的 chunks：${graphIndexedChunks.value}`,
+      ? 'Cơ sở tri thức hiện tại vẫn chưa hoàn thiện việc xây dựng đồ thị.，Không thể sử dụng phép tăng đồ thị để xây dựng'
+      : `Bản đồ đã được xây dựng chunks：${graphIndexedChunks.value}`,
     icon: Network,
     disabled: graphEnhancedDisabled.value
   }
@@ -277,7 +277,7 @@ const loadGraphBuildStatus = async () => {
       formState.generation_mode = 'vector'
     }
   } catch (error) {
-    console.error('加载图谱构建状态失败:', error)
+    console.error('Không thể tải trạng thái xây dựng bản đồ:', error)
     graphIndexedChunks.value = 0
     if (formState.generation_mode === 'graph_enhanced') {
       formState.generation_mode = 'vector'
@@ -290,12 +290,12 @@ const selectGenerationMode = (option) => {
   formState.generation_mode = option.value
 }
 
-// 生成基准
+// Tạo điểm chuẩn
 const handleGenerate = async () => {
   if (generating.value) return
 
   try {
-    // 表单验证
+    // xác nhận mẫu
     await formRef.value.validate()
 
     generating.value = true
@@ -314,29 +314,29 @@ const handleGenerate = async () => {
     const response = await evaluationApi.generateDataset(props.kbId, params)
 
     if (response.message === 'success') {
-      message.success('生成任务已提交')
+      message.success('Nhiệm vụ xây dựng đã được gửi')
       visible.value = false
       resetForm()
       emit('success')
     } else {
       generating.value = false
-      message.error(response.message || '生成失败')
+      message.error(response.message || 'Xây dựng không thành công')
     }
   } catch (error) {
-    console.error('生成失败:', error)
+    console.error('Xây dựng không thành công:', error)
     generating.value = false
-    message.error(error?.response?.data?.detail || '生成失败')
+    message.error(error?.response?.data?.detail || 'Xây dựng không thành công')
   }
 }
 
-// 取消操作
+// Hủy thao tác
 const handleCancel = () => {
   if (generating.value) return
   visible.value = false
   resetForm()
 }
 
-// 重置表单
+// Đặt lại biểu mẫu
 const resetForm = () => {
   formRef.value?.resetFields()
   Object.assign(formState, {
@@ -352,12 +352,12 @@ const resetForm = () => {
   generating.value = false
 }
 
-// 选择LLM模型
+// chọnLLMngười mẫu
 const handleSelectLLMModel = (modelSpec) => {
   formState.llm_model_spec = modelSpec
 }
 
-// 监听visible变化
+// màn hìnhvisiblethay đổi
 watch(visible, (val) => {
   if (val && !generating.value) {
     resetForm()

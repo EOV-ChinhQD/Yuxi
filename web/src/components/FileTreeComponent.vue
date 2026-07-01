@@ -24,7 +24,7 @@
             <span
               v-if="isNodeLoading(data.key)"
               class="folder-loading-icon"
-              aria-label="正在加载"
+              aria-label="Đang tải"
             ></span>
             <FileTypeIcon v-else is-dir :size="18" />
           </template>
@@ -165,7 +165,7 @@ const handleNodeClick = (data) => {
 .file-tree-wrapper {
   width: 100%;
 
-  /* 统一节点容器 */
+  /* Vùng chứa nút hợp nhất */
   :deep(.ant-tree-treenode) {
     display: flex;
     align-items: center;
@@ -173,12 +173,12 @@ const handleNodeClick = (data) => {
     padding: 0;
     height: 32px;
 
-    /* 隐藏切换器 */
+    /* Ẩn trình chuyển đổi */
     .ant-tree-switcher {
       display: none;
     }
 
-    /* 缩进单元 */
+    /* đơn vị thụt lề */
     .ant-tree-indent {
       display: flex;
       align-items: center;
@@ -188,7 +188,7 @@ const handleNodeClick = (data) => {
       }
     }
 
-    /* 内容区域容器 */
+    /* vùng chứa nội dung */
     .ant-tree-node-content-wrapper {
       display: flex;
       align-items: center;
@@ -200,7 +200,7 @@ const handleNodeClick = (data) => {
       border-radius: 4px;
       transition: background-color 0.2s;
 
-      /* 图标容器 */
+      /* thùng chứa biểu tượng */
       .ant-tree-iconEle {
         display: flex;
         align-items: center;
@@ -216,7 +216,7 @@ const handleNodeClick = (data) => {
         }
       }
 
-      /* 标题文字容器 */
+      /* vùng chứa văn bản tiêu đề */
       .ant-tree-title {
         display: flex;
         align-items: center;

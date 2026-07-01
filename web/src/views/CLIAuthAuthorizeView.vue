@@ -3,7 +3,7 @@
     <section class="cli-auth-panel">
       <div class="cli-auth-header">
         <p class="eyebrow">Yuxi CLI</p>
-        <h1>确认命令行登录</h1>
+        <h1>Xác nhận đăng nhập dòng lệnh</h1>
       </div>
 
       <a-alert v-if="errorMessage" type="error" :message="errorMessage" show-icon />
@@ -14,8 +14,8 @@
         <a-result
           v-if="approved"
           status="success"
-          title="已授权"
-          sub-title="可以关闭此页面并回到终端。"
+          title="Được ủy quyền"
+          sub-title="Bạn có thể đóng trang này và quay lại terminal。"
         />
 
         <div v-else class="session-summary">
@@ -23,25 +23,25 @@
           <a-alert
             type="warning"
             show-icon
-            message="请确认这是你本人发起的命令行登录"
-            description="确认后将以你当前的身份创建一个 API Key 并返回给终端。若不是你本人发起，请勿确认并关闭此页面。"
+            message="Vui lòng xác nhận rằng đây là lần đăng nhập bằng dòng lệnh do bạn thực hiện."
+            description="Sau khi xác nhận, một tài khoản sẽ được tạo với danh tính hiện tại của bạn API Key và quay trở lại thiết bị đầu cuối。Nếu người khởi xướng không phải là bạn，Không xác nhận và đóng trang này。"
           />
           <dl>
             <div>
-              <dt>凭据名称</dt>
+              <dt>Tên thông tin xác thực</dt>
               <dd>{{ session?.key_name || 'Yuxi CLI' }}</dd>
             </div>
             <div>
-              <dt>状态</dt>
+              <dt>Trạng thái</dt>
               <dd>{{ session?.status || '-' }}</dd>
             </div>
             <div>
-              <dt>过期时间</dt>
+              <dt>Thời gian hết hạn</dt>
               <dd>{{ session?.expires_at || '-' }}</dd>
             </div>
           </dl>
           <a-button type="primary" size="large" :loading="approving" @click="approveSession">
-            确认授权
+            Xác nhận ủy quyền
           </a-button>
         </div>
       </template>
@@ -69,7 +69,7 @@ const userCode = computed(() =>
 
 async function loadSession() {
   if (!userCode.value) {
-    errorMessage.value = '缺少 CLI 授权码'
+    errorMessage.value = 'mất tích CLI Mã ủy quyền'
     loading.value = false
     return
   }
@@ -77,7 +77,7 @@ async function loadSession() {
     loading.value = true
     session.value = await authApi.getCLIAuthSession(userCode.value)
   } catch (error) {
-    errorMessage.value = error.message || '获取 CLI 授权会话失败'
+    errorMessage.value = error.message || 'Nhận CLI Phiên ủy quyền không thành công'
   } finally {
     loading.value = false
   }
@@ -89,7 +89,7 @@ async function approveSession() {
     await authApi.approveCLIAuthSession(userCode.value)
     approved.value = true
   } catch (error) {
-    errorMessage.value = error.message || '确认 CLI 授权失败'
+    errorMessage.value = error.message || 'Xác nhận CLI Ủy quyền không thành công'
   } finally {
     approving.value = false
   }

@@ -4,7 +4,7 @@
       <button
         type="button"
         class="item-main"
-        :title="`打开 ${file.name}`"
+        :title="`mở ${file.name}`"
         @click="openPreview(file)"
       >
         <FileTypeIcon :name="file.path" :size="20" class="item-icon" />
@@ -14,12 +14,12 @@
         </div>
       </button>
       <div class="item-actions">
-        <button class="item-action-btn" title="下载" @click.stop="downloadFile(file)">
+        <button class="item-action-btn" title="Tải xuống" @click.stop="downloadFile(file)">
           <Download :size="15" />
         </button>
         <button
           class="item-action-btn"
-          :title="isSaving(file.path) ? '保存中' : '保存到工作区'"
+          :title="isSaving(file.path) ? 'Đang lưu' : 'Lưu vào không gian làm việc'"
           :disabled="isSaving(file.path)"
           @click.stop="saveToWorkspace(file)"
         >
@@ -72,7 +72,7 @@ const parseDownloadFilename = (contentDisposition) => {
     try {
       return decodeURIComponent(utf8Match[1])
     } catch (error) {
-      console.warn('解析 UTF-8 文件名失败:', error)
+      console.warn('phân tích cú pháp UTF-8 Tên tệp không thành công:', error)
     }
   }
 
@@ -85,10 +85,10 @@ const getFileMetaLabel = (path) => {
     String(path || '')
       .split('/')
       .pop() || ''
-  if (!filename.includes('.')) return '交付文件'
+  if (!filename.includes('.')) return 'Chứng từ giao hàng'
 
   const extension = filename.split('.').pop()
-  return extension ? `交付文件 · ${extension.toUpperCase()}` : '交付文件'
+  return extension ? `Chứng từ giao hàng · ${extension.toUpperCase()}` : 'Chứng từ giao hàng'
 }
 
 const openPreview = (file) => {
@@ -113,7 +113,7 @@ const downloadFile = async (file) => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
   } catch (error) {
-    message.error(error?.message || '下载文件失败')
+    message.error(error?.message || 'Tải xuống tệp không thành công')
   }
 }
 
@@ -132,10 +132,10 @@ const saveToWorkspace = async (file) => {
   setSaving(file.path, true)
   try {
     const result = await threadApi.saveThreadArtifactToWorkspace(props.threadId, file.path)
-    message.success(`已保存到工作区：${result.saved_path}`)
+    message.success(`Đã lưu vào không gian làm việc：${result.saved_path}`)
     emit('saved', result)
   } catch (error) {
-    message.error(error?.message || '保存到工作区失败')
+    message.error(error?.message || 'Lưu vào không gian làm việc không thành công')
   } finally {
     setSaving(file.path, false)
   }

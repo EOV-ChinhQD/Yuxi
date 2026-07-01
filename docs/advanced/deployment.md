@@ -1,70 +1,70 @@
-# 生产部署指南
+# Hướng dẫn triển khai sản xuất
 
-本文档介绍如何在生产环境中部署 Yuxi。
+Tài liệu này mô tả cách triển khai trong môi trường sản xuất Yuxi。
 
-## 前置要求
+## Điều kiện tiên quyết
 
 - Docker Engine (v24.0+)
 - Docker Compose (v2.20+)
-- NVIDIA Container Toolkit（如需使用 GPU 服务）
+- NVIDIA Container Toolkit（Nếu bạn cần sử dụng GPU dịch vụ）
 
-::: warning 注意事项
-1. 生产环境和开发环境建议使用不同的机器，避免端口和资源冲突
-2. 虽然名为「生产环境」，但这只是基本配置，真正上线需要根据实际情况调整
-3. 前端有调试面板（长按侧边栏触发），生产环境建议关闭
+::: warning Những điều cần lưu ý
+1. Nên sử dụng các loại máy khác nhau cho môi trường sản xuất và môi trường phát triển，Tránh xung đột cổng và tài nguyên
+2. Mặc dù có tên「môi trường sản xuất」，Nhưng đây chỉ là cấu hình cơ bản，Việc ra mắt thực tế cần phải được điều chỉnh theo tình hình thực tế.
+3. Có một bảng gỡ lỗi ở mặt trước（Được kích hoạt bằng cách nhấn và giữ thanh bên），Đề nghị đóng cửa môi trường sản xuất
 :::
 
-## 部署步骤
+## Các bước triển khai
 
-### 1. 准备配置文件
+### 1. Chuẩn bị tập tin cấu hình
 
-为避免与开发环境冲突，生产环境建议使用 `.env.prod` 文件：
+Để tránh xung đột với môi trường phát triển，Đề xuất cho môi trường sản xuất `.env.prod` tập tin：
 
 ```bash
 cp .env.template .env.prod
 ```
 
-编辑 `.env.prod`，设置强密码和必要的 API 密钥：
+Chỉnh sửa `.env.prod`，Đặt mật khẩu mạnh và cần thiết API chìa khóa：
 
-- `NEO4J_PASSWORD`：修改默认密码
-- `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY`：修改默认密钥
-- `SILICONFLOW_API_KEY` 等模型密钥
+- `NEO4J_PASSWORD`：Thay đổi mật khẩu mặc định
+- `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY`：Sửa đổi khóa mặc định
+- `SILICONFLOW_API_KEY` khóa mô hình bằng nhau
 
-### 2. 启动服务
+### 2. Bắt đầu dịch vụ
 
-使用生产环境配置文件启动：
+Bắt đầu sử dụng tệp cấu hình môi trường sản xuất：
 
 ```bash
-# 仅启动核心服务（CPU 模式）
+# Chỉ bắt đầu các dịch vụ cốt lõi（CPU chế độ）
 docker compose -f docker-compose.prod.yml up -d --build
 
-# 启动所有服务（包含 GPU OCR）
+# Bắt đầu tất cả các dịch vụ（chứa GPU OCR）
 docker compose -f docker-compose.prod.yml --profile all up -d --build
 ```
 
-### 3. 验证部署
+### 3. Xác minh triển khai
 
-- Web 访问：http://localhost（直接通过 80 端口）
-- API 健康检查：`curl http://localhost/api/system/health`
+- Web chuyến thăm：http://localhost（vượt qua trực tiếp 80 hải cảng）
+- API kiểm tra sức khỏe：`curl http://localhost/api/system/health`
 
-## 维护与更新
+## Bảo trì và cập nhật
 
-### 更新代码
+### Cập nhật mã
 
 ```bash
-# 拉取最新代码
+# Kéo mã mới nhất
 git pull
 
-# 重新构建并启动
+# Xây dựng lại và bắt đầu
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-### 查看日志
+### Xem nhật ký
 
 ```bash
-# API 日志
+# API Nhật ký
 docker logs -f api-prod
 
-# Nginx 访问日志
+# Nginx nhật ký truy cập
 docker logs -f web-prod
 ```

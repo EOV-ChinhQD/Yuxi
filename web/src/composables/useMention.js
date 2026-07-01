@@ -2,51 +2,51 @@ import { ref } from 'vue'
 
 /**
  * @typedef {Object} MentionFile
- * @property {string} path - 文件路径
- * @property {string} [content] - 文件内容
- * @property {string} [modified_at] - 修改时间
- * @property {number} [size] - 文件大小
+ * @property {string} path - đường dẫn tập tin
+ * @property {string} [content] - Nội dung tập tin
+ * @property {string} [modified_at] - thời gian sửa đổi
+ * @property {number} [size] - kích thước tập tin
  */
 
 /**
  * @typedef {Object} MentionKnowledgeBase
- * @property {string} kb_id - 知识库ID
- * @property {string} name - 知识库名称
+ * @property {string} kb_id - cơ sở tri thứcID
+ * @property {string} name - Tên cơ sở kiến thức
  */
 
 /**
  * @typedef {Object} MentionMcp
- * @property {string} name - MCP 名称
- * @property {string} [description] - 描述
+ * @property {string} name - MCP Tên
+ * @property {string} [description] - Mô tả
  */
 
 /**
  * @typedef {Object} MentionConfig
- * @property {MentionFile[]} [files] - 可引用的文件列表
- * @property {MentionKnowledgeBase[]} [knowledgeBases] - 可引用的知识库列表
- * @property {MentionMcp[]} [mcps] - 可引用的 MCP 服务器列表
+ * @property {MentionFile[]} [files] - Danh sách tài liệu có thể trích dẫn
+ * @property {MentionKnowledgeBase[]} [knowledgeBases] - Danh sách cơ sở kiến thức có thể tham khảo
+ * @property {MentionMcp[]} [mcps] - Có thể trích dẫn MCP Danh sách máy chủ
  */
 
 /**
  * @typedef {Object} MentionItem
- * @property {string} value - 显示和插入的值
- * @property {string} label - 显示标签
- * @property {'file'|'knowledge'|'mcp'} type - 类型
- * @property {string} [description] - 描述信息
+ * @property {string} value - Các giá trị được hiển thị và chèn vào
+ * @property {string} label - hiển thị nhãn
+ * @property {'file'|'knowledge'|'mcp'} type - Loại
+ * @property {string} [description] - Thông tin mô tả
  */
 
 /**
  * @typedef {Object} UseMentionReturn
- * @property {import('vue').Ref<MentionConfig>} mentionConfig - 当前的 mention 配置
- * @property {Function} setMention - 设置 mention 配置
- * @property {Function} updateFiles - 更新文件列表
- * @property {Function} updateKnowledgeBases - 更新知识库列表
- * @property {Function} updateMcps - 更新 MCP 列表
- * @property {Function} getFilteredItems - 根据查询获取过滤后的候选列表
+ * @property {import('vue').Ref<MentionConfig>} mentionConfig - hiện tại mention Cấu hình
+ * @property {Function} setMention - cài đặt mention Cấu hình
+ * @property {Function} updateFiles - Cập nhật danh sách tập tin
+ * @property {Function} updateKnowledgeBases - Cập nhật danh sách cơ sở kiến thức
+ * @property {Function} updateMcps - cập nhật MCP danh sách
+ * @property {Function} getFilteredItems - Nhận danh sách ứng viên được lọc dựa trên truy vấn
  */
 
 /**
- * Mention @提及 功能管理
+ * Mention @đề cập đến Quản lý chức năng
  * @returns {UseMentionReturn}
  */
 export function useMention() {
@@ -57,7 +57,7 @@ export function useMention() {
   })
 
   /**
-   * 设置完整的 mention 配置
+   * thiết lập hoàn thành mention Cấu hình
    * @param {MentionConfig} config
    */
   const setMention = (config) => {
@@ -69,7 +69,7 @@ export function useMention() {
   }
 
   /**
-   * 更新文件列表
+   * Cập nhật danh sách tập tin
    * @param {MentionFile[]} files
    */
   const updateFiles = (files) => {
@@ -77,7 +77,7 @@ export function useMention() {
   }
 
   /**
-   * 更新知识库列表
+   * Cập nhật danh sách cơ sở kiến thức
    * @param {MentionKnowledgeBase[]} knowledgeBases
    */
   const updateKnowledgeBases = (knowledgeBases) => {
@@ -85,7 +85,7 @@ export function useMention() {
   }
 
   /**
-   * 更新 MCP 服务器列表
+   * cập nhật MCP Danh sách máy chủ
    * @param {MentionMcp[]} mcps
    */
   const updateMcps = (mcps) => {
@@ -93,7 +93,7 @@ export function useMention() {
   }
 
   /**
-   * 获取分类后的所有候选项
+   * Nhận tất cả các ứng viên sau khi phân loại
    * @returns {{ files: MentionItem[], knowledgeBases: MentionItem[], mcps: MentionItem[] }}
    */
   const getCategorizedItems = () => {
@@ -128,8 +128,8 @@ export function useMention() {
   }
 
   /**
-   * 根据查询字符串过滤候选项
-   * @param {string} query - 查询字符串（不含 @ 符号）
+   * Lọc ứng viên dựa trên chuỗi truy vấn
+   * @param {string} query - chuỗi truy vấn（Không chứa @ biểu tượng）
    * @returns {{ files: MentionItem[], knowledgeBases: MentionItem[], mcps: MentionItem[] }}
    */
   const getFilteredItems = (query = '') => {

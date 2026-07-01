@@ -1,82 +1,82 @@
-# Yuxi 沙盒架构说明
+# Yuxi Mô tả kiến trúc hộp cát
 
 ::: tip info
-本文档是由 Codex 联合撰写，开发者审阅，尽管已经多次校对，但仍可能存在不准确或过时的描述。如果你发现任何问题，欢迎提交 issue 或 PR 来帮助我们改进文档。
+Tài liệu này được sản xuất bởi Codex Đồng tác giả，Đánh giá của nhà phát triển，Dù đã được chỉnh sửa nhiều lần，Tuy nhiên, vẫn có thể có những mô tả không chính xác hoặc lỗi thời。Nếu bạn tìm thấy bất kỳ vấn đề，Các bài nộp đều được chào đón issue hoặc PR để giúp chúng tôi cải thiện tài liệu của mình。
 :::
 
-我们在 Yuxi 里引入沙盒，不是为了让架构更“重”，而是因为 Agent 一旦从纯文本对话进入真实执行阶段，就一定会碰到一组很具体的运行时需求：执行命令、读写文件、处理用户上传附件、产出可下载结果，以及在受控目录里保留中间过程文件。如果把这些能力直接放进 API 进程本身，权限边界、租户隔离、环境一致性和后续运维成本都会迅速恶化。
+chúng tôi là Yuxi Giới thiệu hộp cát，Không để làm cho kiến trúc nhiều hơn“nặng nề”，Nhưng bởi vì Agent Khi bạn chuyển từ cuộc trò chuyện bằng văn bản đơn giản sang cuộc trò chuyện thực sự，Bạn chắc chắn sẽ gặp phải một tập hợp yêu cầu thời gian chạy rất cụ thể.：thực hiện lệnh、Đọc và ghi tập tin、Xử lý tệp đính kèm do người dùng tải lên、Tạo kết quả có thể tải xuống，Và giữ các tập tin tiến trình trung gian trong thư mục được kiểm soát。Nếu bạn đặt những khả năng này trực tiếp vào API quá trình tự nó，ranh giới cho phép、Cách ly người thuê nhà、Tính nhất quán về môi trường và chi phí vận hành và bảo trì tiếp theo sẽ nhanh chóng xấu đi。
 
-从设计目标上看，沙盒这一层主要解决三件事。第一，给 Agent 一个可写、可执行、可回收的独立运行空间，而不是让它直接操作应用主进程。第二，把模型可见文件系统整理成稳定的命名空间，例如 `/home/gem/user-data` 和 `/home/gem/skills`，这样 prompt、工具、viewer 和 artifact 下载接口可以共享同一套路径语义。第三，让这套能力既能在本地 Docker 开发环境里稳定工作，也能在需要时切到 Kubernetes 这类更适合多实例部署的承载方式。
+Từ góc độ mục tiêu thiết kế，Lớp hộp cát chủ yếu giải quyết ba việc:。đầu tiên，cho Agent một thứ có thể ghi được、Có thể thực thi、Không gian hoạt động độc lập có thể tái chế，Thay vì để nó trực tiếp vận hành tiến trình ứng dụng chính。thứ hai，Sắp xếp hệ thống tệp hiển thị mô hình vào một không gian tên ổn định，Ví dụ `/home/gem/user-data` và `/home/gem/skills`，Lối này prompt、Công cụ、viewer và artifact Giao diện tải xuống có thể chia sẻ cùng một bộ ngữ nghĩa đường dẫn。thứ ba，Hãy để bộ khả năng này có sẵn tại địa phương Docker Làm việc ổn định trong môi trường phát triển，Bạn cũng có thể cắt nó khi cần thiết Kubernetes Loại phương pháp lưu trữ này phù hợp hơn cho việc triển khai nhiều phiên bản.。
 
-这份文档说明当前项目中“沙盒”这一层到底是什么、为什么同时会看到 Docker 和 Kubernetes、默认开发环境实际启用的是哪一种模式，以及沙盒如何和 `skills`、附件、工作区文件系统组合在一起工作。内容以当前仓库实现为准，我们重点解释真实调用链、配置入口、路径语义和运维边界，而不是抽象地介绍容器技术。
+Tài liệu này mô tả dự án hiện tại“hộp cát”Chính xác thì lớp này là gì?、Tại sao tôi có thể nhìn thấy nó cùng một lúc? Docker và Kubernetes、Chế độ nào thực sự được kích hoạt trong môi trường phát triển mặc định?，và cách hộp cát hoạt động với `skills`、Phụ kiện、Hệ thống tệp không gian làm việc hoạt động cùng nhau。Nội dung tùy thuộc vào việc thực hiện kho hiện tại.，Chúng tôi tập trung vào việc giải thích chuỗi cuộc gọi thực sự、Mục cấu hình、Ngữ nghĩa đường dẫn và ranh giới hoạt động，Thay vì giới thiệu công nghệ container một cách trừu tượng。
 
-## 一、先说明白：Docker 和 K8s 在这里是什么关系
+## một、Hãy làm rõ trước：Docker và K8s Mối quan hệ ở đây là gì?
 
-Docker 和 Kubernetes 不是互斥关系。Docker 解决的是“把一个进程放进容器里运行”这个问题，Kubernetes 解决的是“如何在一组机器上批量调度、暴露、重建和管理这些容器”这个问题。可以把 Docker 理解成容器运行时和镜像分发方式，把 Kubernetes 理解成容器编排平台。
+Docker và Kubernetes Không phải là mối quan hệ loại trừ lẫn nhau。Docker Giải pháp là“Đặt một quy trình vào một thùng chứa và chạy nó”câu hỏi này，Kubernetes Giải pháp là“Cách lập lịch hàng loạt trên một nhóm máy、bị lộ、Xây dựng lại và quản lý các container này”câu hỏi này。có thể đặt Docker Được hiểu là thời gian chạy vùng chứa và phương thức phân phối hình ảnh，đặt Kubernetes Được hiểu là nền tảng điều phối vùng chứa。
 
-放到 Yuxi 里，这个关系更具体一些。Yuxi 本身并不直接决定“沙盒一定跑在 Docker 还是一定跑在 K8s 上”，它只要求后端拿到一个可访问的沙盒地址，然后通过 `agent-sandbox` 的 HTTP API 去执行命令、读写文件。真正负责创建和回收沙盒实例的是 `sandbox-provisioner` 这个单独的服务。也就是说，Yuxi 的应用层只依赖 “provisioner”，而 provisioner 的后端可以选择用本机 Docker 去起容器，也可以选择向 Kubernetes 集群创建 Pod 和 Service。
+đưa vào Yuxi bên trong，Mối quan hệ này cụ thể hơn。Yuxi bản thân nó không trực tiếp quyết định“Hộp cát phải đang chạy Docker Vẫn phải chạy K8s trên”，Nó chỉ yêu cầu phần phụ trợ để có được địa chỉ hộp cát có thể truy cập，sau đó vượt qua `agent-sandbox` của HTTP API để thực hiện lệnh、Đọc và ghi tập tin。Điều thực sự chịu trách nhiệm tạo và tái chế các phiên bản sandbox là `sandbox-provisioner` dịch vụ riêng biệt này。Tức là nói，Yuxi Lớp ứng dụng chỉ phụ thuộc vào “provisioner”，Và provisioner Phần phụ trợ có thể chọn sử dụng bản địa Docker Loại bỏ thùng chứa，Bạn cũng có thể chọn Kubernetes Tạo cụm Pod và Service。
 
-所以项目里看到的概念其实分成两层。第一层是应用层的 `SANDBOX_PROVIDER`，当前代码只支持 `provisioner`。第二层是 provisioner 内部的 `SANDBOX_PROVISIONER_BACKEND`，它决定具体用哪种底层实现去创建沙盒。当前真正应该对外理解和配置的是 `docker`、`kubernetes`，测试或占位场景可以使用 `memory`。
+Vì vậy, khái niệm nhìn thấy trong dự án thực sự được chia thành hai cấp độ。Lớp đầu tiên là lớp ứng dụng `SANDBOX_PROVIDER`，Mã hiện tại chỉ hỗ trợ `provisioner`。Lớp thứ hai là provisioner nội bộ `SANDBOX_PROVISIONER_BACKEND`，Nó xác định việc triển khai cơ bản nào sẽ được sử dụng để tạo hộp cát。Điều mà thế giới bên ngoài thực sự cần hiểu và định hình hiện nay là `docker`、`kubernetes`，Có thể sử dụng các kịch bản kiểm tra hoặc giữ chỗ `memory`。
 
-## 二、当前项目的真实沙盒调用链
+## hai、Chuỗi cuộc gọi sandbox thực sự của dự án hiện tại
 
-当前仓库里，后端只支持 `SANDBOX_PROVIDER=provisioner`。当某个对话线程第一次需要执行文件操作或命令执行时，后端会基于文件线程与 skills 线程生成稳定的 `sandbox_id`，然后请求 `sandbox-provisioner` 创建或复用对应沙盒；普通 Agent 的文件线程和 skills 线程都回退为当前 `thread_id`。应用层拿到返回的 `sandbox_url` 之后，才会真正通过 `agent-sandbox` 客户端去调用远程沙盒的文件 API 和 shell API。
+Tại kho hiện tại，Phần phụ trợ chỉ hỗ trợ `SANDBOX_PROVIDER=provisioner`。Khi một chuỗi hội thoại cần thực hiện thao tác tệp hoặc thực thi lệnh lần đầu tiên，Phần phụ trợ sẽ dựa trên luồng tệp và skills Tạo chủ đề ổn định `sandbox_id`，sau đó yêu cầu `sandbox-provisioner` Tạo hoặc sử dụng lại hộp cát tương ứng；Bình thường Agent chủ đề tập tin và skills Tất cả các chủ đề đều rơi trở lại hiện tại `thread_id`。Lớp ứng dụng được trả về `sandbox_url` sau，sẽ thực sự vượt qua `agent-sandbox` Máy khách gọi tệp sandbox từ xa API và shell API。
 
-调用链可以概括为：Web/API 请求进入 Yuxi 后端，后端构造 `ProvisionerSandboxBackend`，再经由 `ProvisionerClient` 调用 `sandbox-provisioner` 的 `/api/sandboxes` 接口。`sandbox-provisioner` 根据 `SANDBOX_PROVISIONER_BACKEND` 选择内存占位实现、Docker 容器实现或 Kubernetes 实现。沙盒真正启动后，对外暴露一个 HTTP 地址，Yuxi 再使用这个地址完成执行命令、上传文件、下载文件、目录遍历等操作。
+Chuỗi cuộc gọi có thể được tóm tắt là：Web/API Yêu cầu nhập Yuxi phụ trợ，Cấu trúc phụ trợ `ProvisionerSandboxBackend`，qua lại `ProvisionerClient` gọi `sandbox-provisioner` của `/api/sandboxes` giao diện。`sandbox-provisioner` Theo `SANDBOX_PROVISIONER_BACKEND` Chọn triển khai dấu chân bộ nhớ、Docker triển khai vùng chứa hoặc Kubernetes nhận ra。Sau khi hộp cát thực sự được bắt đầu，Đưa một người ra thế giới bên ngoài HTTP địa chỉ，Yuxi Sau đó sử dụng địa chỉ này để hoàn thành lệnh thực thi、Tải tập tin lên、Tải tập tin xuống、Duyệt thư mục và các hoạt động khác。
 
-当前仓库的默认配置和默认开发环境都应该理解为 `docker`。正常情况下运行中的 provisioner 健康检查应返回 `backend=docker`。这意味着我们用 `docker compose up -d` 启动项目时，应用并不是直接把代码跑在宿主机上，而是通过 `sandbox-provisioner` 再去用 Docker 启一个真正的沙盒容器。
+Cấu hình mặc định và môi trường phát triển mặc định của kho hiện tại nên được hiểu là `docker`。Chạy trong điều kiện bình thường provisioner Việc kiểm tra sức khỏe sẽ trở lại `backend=docker`。Điều này có nghĩa là chúng tôi sử dụng `docker compose up -d` Khi bắt đầu một dự án，Ứng dụng không chạy code trực tiếp trên máy chủ，nhưng thông qua `sandbox-provisioner` Sử dụng nó một lần nữa Docker Bắt đầu một thùng chứa hộp cát thực sự。
 
-## 三、`memory`、`docker`、`kubernetes` 分别是什么
+## ba、`memory`、`docker`、`kubernetes` sự khác biệt là gì
 
-当前实现里，`memory`、`docker`、`kubernetes` 是三种需要区分的语义。
+Trong thực hiện hiện tại，`memory`、`docker`、`kubernetes` Có ba ngữ nghĩa cần được phân biệt。
 
-`memory` 是一个纯内存登记实现。它不会真正创建容器，也不会提供真实隔离，主要适合测试或极轻量的占位场景。它只是记录一个 `sandbox_id -> sandbox_url` 的映射，因此不能把它理解成生产可用的沙盒。
+`memory` Là một triển khai đăng ký bộ nhớ thuần túy。Nó không thực sự tạo ra vùng chứa，Nó cũng sẽ không cung cấp sự cô lập thực sự，Chủ yếu thích hợp để thử nghiệm hoặc các tình huống giữ chỗ cực kỳ nhẹ。nó chỉ ghi lại một `sandbox_id -> sandbox_url` lập bản đồ，Vì vậy nó không thể được hiểu là một hộp cát sẵn sàng cho sản xuất。
 
-`docker` 是当前默认也是推荐的本机容器后端。`sandbox-provisioner` 会使用 `LocalContainerProvisionerBackend` 通过宿主机 Docker daemon 动态创建沙盒容器。
+`docker` Là chương trình phụ trợ vùng chứa gốc mặc định và được đề xuất hiện tại。`sandbox-provisioner` Sẽ sử dụng `LocalContainerProvisionerBackend` thông qua máy chủ Docker daemon Tự động tạo các thùng chứa hộp cát。
 
-`kubernetes` 则是另一条实现路径。它不会再去调用本机 Docker 起容器，而是使用 Kubernetes API 在指定 namespace 中创建一个 Pod 和一个 NodePort Service，然后把这个 Service 对应的可访问地址回传给 Yuxi 后端。
+`kubernetes` là một con đường thực hiện khác。Nó sẽ không gọi máy cục bộ nữa Docker thùng chứa，Thay vào đó hãy sử dụng Kubernetes API trong việc chỉ định namespace Tạo một cái trong Pod và một NodePort Service，sau đó đặt cái này Service Địa chỉ có thể truy cập tương ứng được chuyển trở lại Yuxi phụ trợ。
 
-因此，如果在界面、文档或者环境变量里看到 “docker / k8s” 这几个词，最准确的理解应该是：Yuxi 的应用层只有一种 provider，也就是 `provisioner`；provisioner 下面有多种 backend；其中 `docker` 是默认的本机 Docker 后端，`kubernetes` 是另一种远程集群后端。
+Vì thế，Nếu trong giao diện、Xem nó trong tài liệu hoặc các biến môi trường “docker / k8s” những từ này，Sự hiểu biết chính xác nhất phải là：Yuxi Chỉ có một lớp ứng dụng provider，Đó là `provisioner`；provisioner Có rất nhiều loại backend；Trong số đó `docker` Là địa phương mặc định Docker phụ trợ，`kubernetes` Là một phụ trợ cụm từ xa khác。
 
-## 四、默认开发模式到底是什么
+## bốn、Chế độ phát triển mặc định là gì?
 
-默认开发模式是 Docker Compose 启动整个项目，再由 `sandbox-provisioner` 按 `docker` 后端去创建沙盒容器。也就是说，项目本身跑在 Compose 里，沙盒也跑在 Docker 里，只不过沙盒不是 Compose 静态声明的长期服务，而是 provisioner 按需动态拉起和回收的短生命周期容器。
+Chế độ phát triển mặc định là Docker Compose Bắt đầu toàn bộ dự án，Sau đó bởi `sandbox-provisioner` nhấn `docker` Phần phụ trợ để tạo vùng chứa hộp cát。Tức là nói，Dự án tự chạy trên Compose bên trong，Hộp cát cũng chạy trong Docker bên trong，Nhưng hộp cát thì không Compose dịch vụ dài hạn được khai báo tĩnh，đúng hơn provisioner Các thùng chứa có tuổi thọ ngắn được kéo lên và tái chế linh hoạt theo yêu cầu。
 
-这也是为什么在 `docker-compose.yml` 中既能看到 `api`、`worker`、`sandbox-provisioner` 这样的常驻服务，又能看到 `sandbox-provisioner` 挂载了 `/var/run/docker.sock`。这不是重复设计，而是为了让 provisioner 有能力继续调用宿主机 Docker daemon 去创建新的“每线程沙盒容器”。
+Đây là lý do tại sao `docker-compose.yml` có thể được nhìn thấy trong `api`、`worker`、`sandbox-provisioner` Một dịch vụ lâu dài như vậy，Có thể nhìn thấy lại `sandbox-provisioner` Đã gắn kết `/var/run/docker.sock`。Đây không phải là một thiết kế lặp đi lặp lại，nhưng để cho provisioner Khả năng tiếp tục gọi máy chủ Docker daemon để tạo mới“Vùng chứa hộp cát trên mỗi luồng”。
 
-换句话说，当前项目不存在单独的 “纯宿主机 local 模式”。本机开发和单机部署应显式使用 `docker` 后端。
+Nói cách khác，Dự án hiện tại không có riêng biệt “vật chủ thuần khiết local chế độ”。Phát triển riêng và triển khai độc lập nên được sử dụng rõ ràng `docker` phụ trợ。
 
-这里还需要把 Compose 里的环境变量分两层看。`api` 和 `worker` 关注的是应用层变量，例如 `SANDBOX_PROVIDER`、`SANDBOX_PROVISIONER_URL`、`SANDBOX_VIRTUAL_PATH_PREFIX`、`SANDBOX_EXEC_TIMEOUT_SECONDS`、`SANDBOX_MAX_OUTPUT_BYTES`。`sandbox-provisioner` 自己则有另一组变量，负责决定具体如何创建沙盒实例。两层不要混看，否则很容易误以为改了 API 环境变量就能切换底层承载方式。
+Ở đây chúng ta vẫn cần đặt Compose Các biến môi trường được xem ở hai cấp độ。`api` và `worker` Tập trung vào các biến lớp ứng dụng，Ví dụ `SANDBOX_PROVIDER`、`SANDBOX_PROVISIONER_URL`、`SANDBOX_VIRTUAL_PATH_PREFIX`、`SANDBOX_EXEC_TIMEOUT_SECONDS`、`SANDBOX_MAX_OUTPUT_BYTES`。`sandbox-provisioner` chính nó có một tập hợp các biến khác，Chịu trách nhiệm quyết định cách tạo phiên bản hộp cát。Không trộn lẫn hai lớp.，Nếu không, rất dễ nhầm tưởng rằng nó đã bị thay đổi. API Biến môi trường có thể chuyển đổi chế độ lưu trữ cơ bản。
 
-## 五、Docker 本机后端是如何工作的
+## năm、Docker Cách hoạt động của chương trình phụ trợ gốc
 
-当 `SANDBOX_PROVISIONER_BACKEND=docker` 时，`sandbox-provisioner` 会进入 `LocalContainerProvisionerBackend`。它会检查 Docker 是否可用，解析自身容器里 `/app/saves` 这个挂载点在宿主机上的真实路径，并据此推导出线程数据目录。随后它为每组文件线程与 skills 线程准备一个稳定的 `sandbox_id`，把容器命名为类似 `yuxi-sandbox-<id>` 的形式，并在 Docker 网络中启动真正的沙盒镜像。
+Khi nào `SANDBOX_PROVISIONER_BACKEND=docker` thời gian，`sandbox-provisioner` sẽ vào `LocalContainerProvisionerBackend`。nó sẽ kiểm tra Docker Nó có sẵn không，Phân tích cú pháp trong vùng chứa riêng của nó `/app/saves` Đường dẫn thực sự của điểm gắn kết này trên máy chủ，Và lấy được thư mục dữ liệu luồng tương ứng。Sau đó, nó xâu chuỗi cho từng bộ tệp với skills Chủ đề chuẩn bị ổn định `sandbox_id`，Đặt tên cho vùng chứa giống như `yuxi-sandbox-<id>` hình thức，Và trong Docker Khởi chạy hình ảnh hộp cát thực trên mạng。
 
-这个沙盒镜像默认来自 `SANDBOX_IMAGE`，容器内部监听的端口默认是 `8080`。provisioner 在启动容器时，会把这个端口随机映射到宿主机上的一个可用端口，再用 `DOCKER_SANDBOX_HOST` 拼出形如 `http://host.docker.internal:<random_port>` 的访问地址。Yuxi 后端拿到的就是这个地址。
+Hình ảnh hộp cát này mặc định từ `SANDBOX_IMAGE`，Cổng nghe mặc định bên trong container là `8080`。provisioner Khi khởi động thùng chứa，Cổng này sẽ được ánh xạ ngẫu nhiên tới một cổng có sẵn trên máy chủ.，tái sử dụng `DOCKER_SANDBOX_HOST` đánh vần một cái gì đó như `http://host.docker.internal:<random_port>` địa chỉ truy cập。Yuxi Những gì chương trình phụ trợ nhận được là địa chỉ này。
 
-Docker 后端在启动沙盒时，会挂载三类关键目录。第一类是用户级 workspace，挂载到容器内的 `/home/gem/user-data/workspace`。第二类是文件线程级 uploads/outputs，分别挂载到 `/home/gem/user-data/uploads` 和 `/home/gem/user-data/outputs`。第三类是 skills 线程可见的 skills 目录，挂载到 `/home/gem/skills`，而且是只读挂载。除此之外，容器的 `/home/gem` 本身还会额外挂一个 `tmpfs`，原因是当前沙盒镜像启动时要求 `/home/gem` 可写，但 Yuxi 希望真正持久化的只有 `user-data` 下面的内容。
+Docker Khi khởi động hộp cát, phần phụ trợ，Ba thư mục chính sẽ được gắn kết。Danh mục đầu tiên là cấp độ người dùng workspace，Gắn vào thùng chứa `/home/gem/user-data/workspace`。Danh mục thứ hai là cấp độ luồng tệp uploads/outputs，Gắn vào `/home/gem/user-data/uploads` và `/home/gem/user-data/outputs`。Loại thứ ba là skills Chủ đề hiển thị skills Thư mục，gắn kết với `/home/gem/skills`，Và nó là một mount chỉ đọc。Ngoài ra，thùng chứa `/home/gem` Nó cũng sẽ treo thêm một cái nữa `tmpfs`，Lý do là hình ảnh hộp cát hiện tại yêu cầu `/home/gem` có thể ghi được，Nhưng Yuxi Chỉ những người hy vọng thực sự bền bỉ `user-data` nội dung bên dưới。
 
-为了避免长期空闲的沙盒一直占资源，provisioner 还带了一个 idle reaper。它会记录每个沙盒最近一次被 touch 的时间，超过 `SANDBOX_IDLE_TIMEOUT_SECONDS` 之后自动删除。当前默认空闲超时是 120 秒，但如果这个值小于命令执行超时，系统会自动把它提高到“命令超时 + 30 秒”，以免执行中的任务被误回收。
+Để tránh các hộp cát nhàn rỗi lâu dài chiếm tài nguyên，provisioner Tôi cũng mang theo một cái idle reaper。Nó ghi lại lần cuối cùng mỗi hộp cát được touch thời gian，vượt quá `SANDBOX_IDLE_TIMEOUT_SECONDS` Tự động xóa sau đó。Thời gian chờ không hoạt động mặc định hiện tại là 120 giây，Nhưng nếu giá trị này nhỏ hơn thời gian chờ thực hiện lệnh，Hệ thống sẽ tự động tăng lên“Hết thời gian lệnh + 30 giây”，Để ngăn chặn các tác vụ đang được thực thi vô tình bị tái chế。
 
-对应到 `docker-compose.yml` 和 `docker-compose.prod.yml`，当前 `sandbox-provisioner` 实际会读取的 Docker 后端相关变量主要是这些：
+tương ứng với `docker-compose.yml` và `docker-compose.prod.yml`，hiện tại `sandbox-provisioner` Sẽ thực sự đọc Docker Các biến liên quan đến phụ trợ chủ yếu là những：
 
-- 通用变量：`PROVISIONER_BACKEND`、`SANDBOX_IMAGE`、`SANDBOX_CONTAINER_PORT`、`SANDBOX_HEALTH_TIMEOUT_SECONDS`、`SANDBOX_IDLE_TIMEOUT_SECONDS`、`SANDBOX_IDLE_CHECK_INTERVAL_SECONDS`、`SANDBOX_EXEC_TIMEOUT_SECONDS`、`MEMORY_SANDBOX_URL_TEMPLATE`
-- Docker 后端变量：`DOCKER_NETWORK`、`DOCKER_THREADS_HOST_PATH`、`DOCKER_SANDBOX_PREFIX`、`DOCKER_SANDBOX_HOST`
-- 容器代理变量：`HTTP_PROXY`、`HTTPS_PROXY`、`NO_PROXY`
+- Biến phổ quát：`PROVISIONER_BACKEND`、`SANDBOX_IMAGE`、`SANDBOX_CONTAINER_PORT`、`SANDBOX_HEALTH_TIMEOUT_SECONDS`、`SANDBOX_IDLE_TIMEOUT_SECONDS`、`SANDBOX_IDLE_CHECK_INTERVAL_SECONDS`、`SANDBOX_EXEC_TIMEOUT_SECONDS`、`MEMORY_SANDBOX_URL_TEMPLATE`
+- Docker biến phụ trợ：`DOCKER_NETWORK`、`DOCKER_THREADS_HOST_PATH`、`DOCKER_SANDBOX_PREFIX`、`DOCKER_SANDBOX_HOST`
+- Biến proxy vùng chứa：`HTTP_PROXY`、`HTTPS_PROXY`、`NO_PROXY`
 
-其中 `DOCKER_SANDBOX_HOST` 只在 Docker 后端下用于拼接返回给 API 的 `sandbox_url`。`DOCKER_THREADS_HOST_PATH` 也是 Docker 后端专用；如果不显式传入，provisioner 会尝试根据自身容器挂载反推出宿主机路径。
+Trong số đó `DOCKER_SANDBOX_HOST` chỉ trong Docker Được sử dụng dưới phần phụ trợ để ghép nối và quay lại API của `sandbox_url`。`DOCKER_THREADS_HOST_PATH` Ngoài ra Docker Chỉ phụ trợ；Nếu không được thông qua một cách rõ ràng，provisioner Sẽ cố gắng lấy đường dẫn máy chủ dựa trên giá đỡ vùng chứa của chính nó。
 
-## 六、Kubernetes 后端是如何工作的
+## sáu、Kubernetes Phần phụ trợ hoạt động như thế nào
 
-当 `SANDBOX_PROVISIONER_BACKEND=kubernetes` 时，`sandbox-provisioner` 会改用 Kubernetes Python 客户端。它会先加载 kubeconfig 或集群内配置，然后在指定的 namespace 中创建一个沙盒 Pod，再创建一个同名的 NodePort Service，把这个 Service 的 `nodePort` 暴露给 Yuxi 后端使用。
+Khi nào `SANDBOX_PROVISIONER_BACKEND=kubernetes` thời gian，`sandbox-provisioner` Sẽ sử dụng thay thế Kubernetes Python khách hàng。nó sẽ tải đầu tiên kubeconfig Hoặc cấu hình trong cụm，Sau đó trong quy định namespace Tạo hộp cát trong Pod，Tạo một cái khác có cùng tên NodePort Service，đặt cái này Service của `nodePort` tiếp xúc với Yuxi Sử dụng phụ trợ。
 
-Kubernetes 后端下，沙盒还是同一套镜像，还是暴露同样的 HTTP API，但存储方式和暴露方式变了。它不会依赖宿主机 Docker bind mount，而是要求有一个可写的 PVC。当前实现里真正使用的是 `THREAD_PVC`，Pod 会把这块共享存储挂到 `/mnt/shared-data`，然后用 `subPath` 的方式把 `threads/shared/<uid>/workspace` 挂到 `/home/gem/user-data/workspace`，把 `threads/<file_thread_id>/user-data/uploads` 与 `threads/<file_thread_id>/user-data/outputs` 分别挂到 uploads/outputs，把 `threads/<skills_thread_id>/skills` 挂到 `/home/gem/skills`。这样做的好处是目录结构仍然可以和 Docker 模式保持一致，同时允许子智能体共享父对话文件但隔离 skills。
+Kubernetes Dưới phần phụ trợ，Sandbox vẫn là bộ ảnh như cũ，Vẫn lộ diện như cũ HTTP API，Nhưng phương pháp lưu trữ và phơi nhiễm đã thay đổi。Nó không phụ thuộc vào máy chủ Docker bind mount，Thay vào đó, nó yêu cầu một tệp có thể ghi PVC。Những gì thực sự được sử dụng trong việc thực hiện hiện tại là `THREAD_PVC`，Pod Bộ nhớ dùng chung này sẽ được đính kèm vào `/mnt/shared-data`，Sau đó sử dụng `subPath` cách để đặt `threads/shared/<uid>/workspace` Treo lên `/home/gem/user-data/workspace`，đặt `threads/<file_thread_id>/user-data/uploads` với `threads/<file_thread_id>/user-data/outputs` Treo tương ứng uploads/outputs，đặt `threads/<skills_thread_id>/skills` Treo lên `/home/gem/skills`。Ưu điểm của việc này là cấu trúc thư mục vẫn có thể được Docker Mẫu vẫn nhất quán，Đồng thời cho phép các tổng đài viên con chia sẻ tệp hội thoại gốc nhưng tách biệt nó skills。
 
-需要特别说明的是，代码里虽然读取了 `SKILLS_PVC` 这个环境变量，但当前 Pod 规格实际没有使用单独的 skills PVC，而是统一从 `THREAD_PVC` 中切 `threads/<thread_id>/skills` 这个子路径。因此，如果看到环境变量里同时出现 `SKILLS_PVC` 和 `THREAD_PVC`，应当以 `THREAD_PVC` 的真实挂载语义为准，`SKILLS_PVC` 目前更像一个预留字段。
+Điều cần giải thích đặc biệt là，Mặc dù nó được đọc trong mã `SKILLS_PVC` Biến môi trường này，Nhưng hiện tại Pod Đặc điểm kỹ thuật không thực sự sử dụng một skills PVC，Nhưng thống nhất từ `THREAD_PVC` cắt trung tâm `threads/<thread_id>/skills` đường dẫn phụ này。Vì thế，Nếu bạn thấy cả hai xuất hiện trong các biến môi trường `SKILLS_PVC` và `THREAD_PVC`，nên `THREAD_PVC` Ngữ nghĩa gắn kết thực tế của，`SKILLS_PVC` Hiện tại giống như một trường dành riêng。
 
-Kubernetes 后端还需要一个 `NODE_HOST`。这是因为当前实现使用的是 NodePort Service，而不是 Ingress，也不是 ClusterIP。provisioner 创建完 Service 之后，会把最终访问地址拼成 `http://<NODE_HOST>:<nodePort>` 返回给 Yuxi 后端。所以 `NODE_HOST` 必须是 Yuxi 后端能够访问到的 Kubernetes 节点地址、负载均衡地址或者对 NodePort 做了透出的外部域名。
+Kubernetes Phần phụ trợ cũng cần một `NODE_HOST`。Điều này là do việc triển khai hiện tại sử dụng NodePort Service，thay vì Ingress，cũng không ClusterIP。provisioner Đã tạo Service sau，Địa chỉ truy cập cuối cùng sẽ được đánh vần thành `http://<NODE_HOST>:<nodePort>` quay trở lại Yuxi phụ trợ。Vì vậy `NODE_HOST` phải là Yuxi Có thể truy cập được bởi phần phụ trợ Kubernetes Địa chỉ nút、Địa chỉ hoặc cặp cân bằng tải NodePort Tên miền bên ngoài bị lộ。
 
-当前 Compose 中与 Kubernetes 后端对应的变量主要是：
+hiện tại Compose trung hòa Kubernetes Các biến tương ứng với phần phụ trợ chủ yếu là：
 
 - `K8S_NAMESPACE`
 - `KUBECONFIG_PATH`
@@ -84,15 +84,15 @@ Kubernetes 后端还需要一个 `NODE_HOST`。这是因为当前实现使用的
 - `THREAD_PVC`
 - `SKILLS_PVC`
 
-其中真正决定运行时挂载的是 `THREAD_PVC`。`SKILLS_PVC` 目前只保留为代码层读取字段，并没有进入实际 Pod 挂载。
+Điều thực sự quyết định việc gắn kết thời gian chạy là `THREAD_PVC`。`SKILLS_PVC` Hiện chỉ dành riêng cho các trường đọc lớp mã，chưa nhập thực tế Pod gắn kết。
 
-## 七、如果要使用“远程 K8s”，应该怎么接
+## bảy、Nếu bạn muốn sử dụng“từ xa K8s”，Tôi nên trả lời thế nào
 
-这里最容易误解的一点是，所谓“选择远程 K8s”，并不是在 Yuxi 页面里点一个开关，然后系统自动发现一个集群。当前实现没有内建集群选择器，也没有多集群管理界面。它的工作方式很直接：我们把 `sandbox-provisioner` 配置成 `kubernetes` 后端，并让它能拿到目标集群的 kubeconfig 或者运行在集群内即可。对 provisioner 来说，只要 Kubernetes 客户端能连上 API Server，这个集群就是它要操作的“远程 K8s”。
+Điểm dễ hiểu lầm nhất ở đây là，cái gọi là“Chọn điều khiển từ xa K8s”，Không có trong Yuxi Bấm vào một công tắc trên trang，Sau đó hệ thống tự động phát hiện một cụm。Việc triển khai hiện tại không có bộ chọn cụm tích hợp，Không có giao diện quản lý đa cụm。Cách thức hoạt động rất đơn giản：chúng tôi đặt `sandbox-provisioner` được cấu hình như `kubernetes` phụ trợ，Và để nó lấy cụm mục tiêu kubeconfig Hoặc chỉ chạy nó trong một cụm。Có provisioner Hãy nói chuyện，miễn là Kubernetes Client có thể kết nối API Server，Cụm này chính là mục đích hoạt động của nó“từ xa K8s”。
 
-如果 Yuxi 部署在 Docker Compose 里，而 Kubernetes 集群在另一台机器或云厂商托管环境中，那么最常见的做法是把本地 kubeconfig 文件挂载进 `sandbox-provisioner` 容器，然后设置 `KUBECONFIG_PATH`。同时把 `SANDBOX_NODE_HOST` 改成一个从 `api` 容器也能访问的节点公网 IP、负载均衡域名，或者已经做过反向代理的地址。
+nếu Yuxi Đã triển khai ở Docker Compose bên trong，Và Kubernetes Cụm này nằm trên một máy khác hoặc môi trường lưu trữ của nhà cung cấp dịch vụ đám mây，Vì vậy cách tiếp cận phổ biến nhất là đặt địa phương kubeconfig Tập tin được gắn vào `sandbox-provisioner` thùng chứa，Sau đó đặt `KUBECONFIG_PATH`。cùng lúc `SANDBOX_NODE_HOST` Thay đổi thành một từ `api` Nút mạng công cộng mà container cũng có thể truy cập IP、Tên miền cân bằng tải，Hoặc một địa chỉ đã được ủy quyền ngược。
 
-一个典型的 Compose 覆盖配置会长这样：
+một điển hình Compose Cấu hình ghi đè sẽ trông như thế này：
 
 ```yaml
 services:
@@ -108,15 +108,15 @@ services:
       - ~/.kube/config:/root/.kube/config:ro
 ```
 
-这段配置表达的意思不是“把整个应用迁到 K8s”，而是“仍然用 Compose 跑 Yuxi 主服务，但沙盒实例改为由远程 Kubernetes 集群承载”。这是当前代码最自然的混合部署方式。
+Cấu hình này không có nghĩa“Di chuyển toàn bộ ứng dụng sang K8s”，đúng hơn“vẫn sử dụng Compose chạy Yuxi dịch vụ chính，Nhưng phiên bản hộp cát được thay đổi thành điều khiển từ xa Kubernetes Lưu trữ cụm”。Đây là phương pháp triển khai kết hợp tự nhiên nhất cho mã hiện tại。
 
-如果 `sandbox-provisioner` 本身就运行在 Kubernetes 集群内部，那么通常不需要显式提供 `KUBECONFIG_PATH`。它会优先尝试 `incluster_config`，也就是使用 Pod 的服务账号权限直接访问 Kubernetes API。此时更需要关注的是 namespace、PVC 和 NodePort 的可达性，而不是 kubeconfig 文件本身。
+nếu `sandbox-provisioner` chính nó chạy tiếp Kubernetes Bên trong cụm，thì thường không cần phải cung cấp rõ ràng `KUBECONFIG_PATH`。nó sẽ thử trước `incluster_config`，Tức là sử dụng Pod Quyền tài khoản dịch vụ để truy cập trực tiếp Kubernetes API。Điều cần quan tâm hơn lúc này là namespace、PVC và NodePort khả năng tiếp cận，thay vì kubeconfig chính tập tin。
 
-## 八、当前项目的沙盒文件系统是如何设计的
+## tám、Hệ thống tệp sandbox của dự án hiện tại được thiết kế như thế nào?
 
-从模型和工具调用的视角看，Yuxi 主要向 Agent 暴露两类路径：`/home/gem/user-data` 和 `/home/gem/skills`。其中 `user-data` 是可写的用户工作区，`skills` 是只读的技能目录。知识库不再映射为沙盒文件系统路径，模型应通过知识库工具检索和打开文档。
+Từ quan điểm của việc gọi mô hình và công cụ，Yuxi Chủ yếu để Agent Hiển thị hai loại đường dẫn：`/home/gem/user-data` và `/home/gem/skills`。Trong số đó `user-data` Là không gian làm việc của người dùng có thể ghi，`skills` Đây là một thư mục kỹ năng chỉ đọc。Cơ sở kiến thức không còn được ánh xạ tới đường dẫn hệ thống tệp hộp cát，Các mô hình nên truy xuất và mở tài liệu thông qua các công cụ cơ sở tri thức。
 
-在宿主机侧，和线程相关的数据主要放在 `saves` 目录下。当前可读的目录结构可以概括为下面这样：
+Về phía chủ nhà，Dữ liệu liên quan đến chủ đề chủ yếu được đặt trong `saves` dưới thư mục。Cấu trúc thư mục có thể đọc được hiện tại có thể được tóm tắt như sau：
 
 ```text
 saves/
@@ -138,33 +138,33 @@ saves/
 │   └── ...
 ```
 
-这里要重点理解 `workspace` 和 `uploads/outputs` 的区别。按照当前宿主机路径解析逻辑，`workspace` 被定义为用户级共享目录，位置是 `saves/threads/shared/<uid>/workspace`；而 `uploads` 和 `outputs` 属于文件线程目录，位置分别是 `saves/threads/<file_thread_id>/user-data/uploads` 和 `saves/threads/<file_thread_id>/user-data/outputs`。普通 Agent 的 `file_thread_id` 就是当前对话 `thread_id`，子智能体运行时则使用父对话作为 `file_thread_id`，因此可以读取父对话附件并把产物写回父对话 outputs。
+Điều quan trọng là phải hiểu ở đây `workspace` và `uploads/outputs` Sự khác biệt。Phân tích logic theo đường dẫn máy chủ hiện tại，`workspace` được định nghĩa là thư mục chia sẻ cấp người dùng，Vị trí là `saves/threads/shared/<uid>/workspace`；Và `uploads` và `outputs` Thuộc về thư mục chủ đề tập tin，Các địa điểm là `saves/threads/<file_thread_id>/user-data/uploads` và `saves/threads/<file_thread_id>/user-data/outputs`。Bình thường Agent của `file_thread_id` Đó là cuộc trò chuyện hiện tại `thread_id`，Khi tác nhân con chạy, nó sử dụng đoạn hội thoại cha mẹ làm `file_thread_id`，Vì vậy, bạn có thể đọc tệp đính kèm cuộc trò chuyện của phụ huynh và viết lại sản phẩm cho cuộc trò chuyện của phụ huynh outputs。
 
-与此同时，运行时 provisioner 在创建 Docker 容器或 Kubernetes Pod 时，会把用户级 `saves/threads/shared/<uid>/workspace` 单独挂到 `/home/gem/user-data/workspace`，再把文件线程的 `uploads/outputs` 分别挂到 `/home/gem/user-data/uploads` 和 `/home/gem/user-data/outputs`。因此在排查文件问题时，需要先明确一个前提：当前项目里同时存在“宿主机侧目录组织”和“容器内统一虚拟路径”两层概念。对外接口和 viewer 语义与底层挂载实现现在是一致的，workspace 是用户共享空间，而 uploads/outputs 跟随文件线程隔离或共享。
+Đồng thời，thời gian chạy provisioner Tạo Docker thùng chứa hoặc Kubernetes Pod thời gian，cấp độ người dùng `saves/threads/shared/<uid>/workspace` treo một mình `/home/gem/user-data/workspace`，Sau đó xâu chuỗi tập tin `uploads/outputs` Treo tương ứng `/home/gem/user-data/uploads` và `/home/gem/user-data/outputs`。Vì vậy khi khắc phục sự cố về file，Tiền đề cần được làm rõ trước：Cả hai đều tồn tại trong dự án hiện tại“Tổ chức thư mục phía máy chủ”và“Thống nhất các đường dẫn ảo trong vùng chứa”khái niệm hai tầng。giao diện bên ngoài và viewer Ngữ nghĩa hiện đã nhất quán với việc triển khai gắn kết cơ bản，workspace Đó là không gian chia sẻ của người dùng，Và uploads/outputs Theo dõi cách ly hoặc chia sẻ luồng tập tin。
 
-## 九、路径暴露规则是什么
+## chín、Các quy tắc tiếp xúc với đường dẫn là gì?
 
-Yuxi 不会把整个容器文件系统都开放给 Agent 或 viewer。当前 viewer 根目录只会列出几个命名空间入口，而不会直接暴露 `/` 的真实文件树。这样做是为了避免只看文件树就触发沙盒冷启动，也为了让权限边界更稳定。
+Yuxi không mở toàn bộ hệ thống tập tin vùng chứa để Agent hoặc viewer。hiện tại viewer Thư mục gốc sẽ chỉ liệt kê một vài mục không gian tên，không bộc lộ trực tiếp `/` cây tập tin thực sự của。Điều này được thực hiện để tránh kích hoạt khởi động nguội hộp cát bằng cách chỉ nhìn vào cây tệp.，Ngoài ra để làm cho ranh giới quyền ổn định hơn。
 
-`/home/gem/user-data` 是主要工作区。它允许模型和工具写入，但推荐语义并不相同。内置 prompt 中已经明确说明，`workspace` 应当放中间文件，`outputs` 应当放最终产物，`uploads` 是用户上传文件的位置。对于普通对话 Agent，文案甚至提示“非必要不要写 workspace，而优先写 outputs”。
+`/home/gem/user-data` là khu vực làm việc chính。Nó cho phép các mô hình và công cụ viết，Nhưng ngữ nghĩa đề xuất không giống nhau。Tích hợp sẵn prompt đã được nêu rõ ràng trong，`workspace` Nên đặt các tập tin trung gian，`outputs` Sản phẩm cuối cùng nên được đặt，`uploads` Là nơi người dùng upload file。để nói chuyện bình thường Agent，Copywriting thậm chí còn gợi ý“Đừng viết trừ khi cần thiết workspace，và viết đầu tiên outputs”。
 
-`/home/gem/skills` 是只读目录。它不是简单地把 `saves/skills` 整个暴露进去，而是先根据当前运行时的 `_readable_skills`，把这些技能从全局 skills 根目录同步复制到 `saves/threads/<skills_thread_id>/skills`，再把这个 skills 线程目录只读挂进沙盒。这样做的结果是，不同主/子 Agent 看到的 skill 集可能不同，而且模型永远不能在运行时修改 skills 内容。
+`/home/gem/skills` là một thư mục chỉ đọc。Nó không chỉ đơn giản là đặt `saves/skills` Toàn bộ sự việc được phơi bày，Thay vào đó, nó đầu tiên dựa trên thời gian chạy hiện tại `_readable_skills`，Đặt những kỹ năng này vào quan điểm skills Thư mục gốc được sao chép đồng bộ vào `saves/threads/<skills_thread_id>/skills`，đặt lại cái này skills Thư mục chủ đề ở chế độ chỉ đọc và được treo trong hộp cát。Kết quả của việc này là，Chủ sở hữu khác nhau/con trai Agent nhìn thấy skill Bộ có thể khác nhau，Và mô hình không bao giờ có thể được sửa đổi khi chạy skills nội dung。
 
-知识库访问不属于沙盒文件系统暴露规则。当前 Agent 可见知识库仍由用户权限和 Agent 配置共同决定，但只通过 `query_kb`、`open_kb_document` 等工具访问，不提供沙盒目录投影。
+Quyền truy cập cơ sở kiến ​​thức không thuộc quy tắc hiển thị hệ thống tệp hộp cát。hiện tại Agent Có thể thấy, cơ sở tri thức vẫn được kiểm soát bởi sự cho phép của người dùng và Agent Cấu hình cùng nhau quyết định，nhưng chỉ thông qua `query_kb`、`open_kb_document` Công cụ truy cập，Phép chiếu thư mục hộp cát không được cung cấp。
 
-## 十、skills、知识库、附件是怎么和沙盒结合的
+## mười、skills、cơ sở tri thức、Các tệp đính kèm được kết hợp với hộp cát như thế nào?
 
-skills 的结合方式分成两层。第一层是提示词层，`prepare_agent_runtime_context` 会先根据当前 Agent 配置的 `context.skills` 展开依赖闭包，`SkillsMiddleware` 再把 `_prompt_skills` 注入到系统提示里，让模型知道哪些 skill 存在、它们的入口文件一般在 `/home/gem/skills/<slug>/SKILL.md`。第二层是文件系统层，运行时会调用 `sync_thread_readable_skills`，把 `_readable_skills` 对应的 skill 目录复制到当前 `skills_thread_id` 的 `saves/threads/<skills_thread_id>/skills` 下，再由沙盒只读挂载到 `/home/gem/skills`。也就是说，skill 既是 prompt 中的能力说明，也是文件系统中的只读知识目录。
+skills Phương pháp kết hợp được chia thành hai lớp。Lớp đầu tiên là lớp từ nhắc，`prepare_agent_runtime_context` đầu tiên sẽ dựa trên hiện tại Agent được cấu hình `context.skills` Mở rộng việc đóng cửa phụ thuộc，`SkillsMiddleware` một lần nữa `_prompt_skills` Đưa vào dấu nhắc hệ thống，Hãy cho người mẫu biết điều gì skill tồn tại、Các tập tin nhập của họ thường ở dạng `/home/gem/skills/<slug>/SKILL.md`。Lớp thứ hai là lớp hệ thống tập tin，Sẽ được gọi khi chạy `sync_thread_readable_skills`，đặt `_readable_skills` tương ứng skill Thư mục được sao chép sang hiện tại `skills_thread_id` của `saves/threads/<skills_thread_id>/skills` xuống，Sau đó hộp cát được gắn ở chế độ chỉ đọc vào `/home/gem/skills`。Tức là nói，skill cả hai prompt Mô tả các khả năng trong，Cũng là một thư mục kiến thức chỉ đọc trong hệ thống tập tin。
 
-附件的结合方式更偏向“先落盘，再把路径告诉模型”。用户上传文件后，系统会先把原始文件写入 `saves/threads/<file_thread_id>/user-data/uploads`。如果该文件可以被解析，系统还会额外生成一个 Markdown 副本，写到 `saves/threads/<file_thread_id>/user-data/uploads/attachments/<name>.md`。普通 Agent 的文件线程就是当前对话线程；子智能体沿用父对话文件线程，所以能访问父对话附件。随后，LangGraph state 中会维护一份 `uploads` 列表，`AttachmentMiddleware` 会把这些可读路径注入系统提示，告诉模型优先用 `read_file` 去读取这些路径。因此，附件并不是“作为消息大段内联塞给模型”，而是被转换成沙盒文件系统中的路径对象。
+Cách kết hợp các phụ kiện có xu hướng thiên về“Đặt đầu tiên，Sau đó cho người mẫu biết đường dẫn”。Sau khi người dùng tải file lên，Đầu tiên hệ thống sẽ ghi file gốc `saves/threads/<file_thread_id>/user-data/uploads`。Nếu tập tin có thể được phân tích cú pháp，Hệ thống cũng sẽ tạo thêm Markdown sao chép，viết thư cho `saves/threads/<file_thread_id>/user-data/uploads/attachments/<name>.md`。Bình thường Agent Chuỗi tập tin là chuỗi hội thoại hiện tại；Tác nhân con kế thừa chuỗi tệp hội thoại gốc，Vì vậy, bạn có thể truy cập vào phần đính kèm cuộc trò chuyện của phụ huynh。sau đó，LangGraph state Ủy ban Trung ương sẽ lưu giữ một bản sao `uploads` danh sách，`AttachmentMiddleware` Những đường dẫn có thể đọc được này sẽ được đưa vào lời nhắc của hệ thống，Nói với mô hình để sử dụng `read_file` để đọc những con đường này。Vì thế，Tệp đính kèm không“Các khối tin nhắn nội tuyến dưới dạng tin nhắn đến mô hình”，Thay vào đó, nó được chuyển đổi thành một đối tượng đường dẫn trong hệ thống tệp hộp cát.。
 
-知识库不再与沙盒文件系统结合。它不会被复制到每个线程目录，也不会生成虚拟目录；模型通过专门的知识库工具检索，并在需要更完整上下文时用 `open_kb_document` 按 `resource_id` 和 `file_id` 打开文档内容。
+Cơ sở kiến thức không còn được tích hợp với hệ thống tệp sandbox。Nó sẽ không được sao chép vào mỗi thư mục chủ đề，Sẽ không có thư mục ảo nào được tạo；Các mô hình được truy xuất thông qua các công cụ cơ sở tri thức chuyên dụng，và khi cần một bối cảnh hoàn chỉnh hơn, hãy sử dụng `open_kb_document` nhấn `resource_id` và `file_id` Mở nội dung tài liệu。
 
-## 十一、当前推荐如何使用 Docker 沙盒
+## mười một、Khuyến nghị hiện tại để sử dụng Docker hộp cát
 
-如果只是正常开发、调试或单机部署，最简单也是当前默认的方式就是保留 `SANDBOX_PROVIDER=provisioner`，同时把 `SANDBOX_PROVISIONER_BACKEND` 设为 `docker`。这会让整个项目继续由 Docker Compose 管理，而沙盒实例由 provisioner 动态创建。通常不需要手工 `docker run` 沙盒镜像，也不需要在 Compose 文件里静态声明每一个沙盒容器。
+Nếu chỉ là sự phát triển bình thường、Gỡ lỗi hoặc triển khai độc lập，Cách đơn giản nhất và mặc định hiện nay là giữ `SANDBOX_PROVIDER=provisioner`，cùng lúc `SANDBOX_PROVISIONER_BACKEND` đặt thành `docker`。Điều này sẽ cho phép toàn bộ dự án tiếp tục được điều hành bởi Docker Compose quản lý，Phiên bản hộp cát bao gồm provisioner Được tạo động。Thông thường không cần làm việc thủ công `docker run` hình ảnh hộp cát，Không cần phải ở đó Compose Khai báo tĩnh mỗi sandbox container trong file。
 
-最小必要配置通常就是下面这几项：
+Cấu hình cần thiết tối thiểu thường là những mục sau:：
 
 ```env
 SANDBOX_PROVIDER=provisioner
@@ -174,133 +174,133 @@ SANDBOX_VIRTUAL_PATH_PREFIX=/home/gem/user-data
 SANDBOX_DOCKER_SANDBOX_HOST=host.docker.internal
 ```
 
-然后用常规方式启动即可：
+Sau đó chỉ cần khởi động nó theo cách thông thường：
 
 ```bash
 docker compose up -d
 curl http://localhost:8002/health
 ```
 
-如果健康检查返回 `backend: docker`，就说明 provisioner 已经处于默认的 Docker 本机后端。真正的沙盒容器不会在系统启动时立即全部出现，而是在你第一次创建线程并触发需要文件系统或命令执行的操作后才会被创建。
+Nếu kết quả kiểm tra sức khỏe trở lại `backend: docker`，Chỉ hiển thị provisioner đã mặc định rồi Docker phụ trợ gốc。Các thùng chứa hộp cát thực sự không xuất hiện ngay lập tức khi khởi động hệ thống，Thay vào đó, nó sẽ được tạo sau khi bạn tạo luồng lần đầu tiên và kích hoạt một thao tác yêu cầu hệ thống tệp hoặc thực thi lệnh.。
 
-如果运行在 Linux，而不是 Docker Desktop，那么 `host.docker.internal` 不一定总是可用。这时要把 `SANDBOX_DOCKER_SANDBOX_HOST` 改成一个从 `api` 容器可达的宿主机地址，或者改成当前网络环境里更稳定的名字。否则 provisioner 虽然能成功起容器，但后端可能拿到一个自己无法访问的 `sandbox_url`。
+Nếu chạy tiếp Linux，thay vì Docker Desktop，Sau đó `host.docker.internal` Không phải lúc nào cũng có sẵn。Lúc này cần phải `SANDBOX_DOCKER_SANDBOX_HOST` Thay đổi thành một từ `api` Địa chỉ máy chủ có thể truy cập được bằng container，Hoặc đổi sang một tên ổn định hơn trong môi trường mạng hiện tại.。Nếu không provisioner Mặc dù container có thể được khởi động thành công，Nhưng phần phụ trợ có thể nhận được một cái mà nó không thể truy cập. `sandbox_url`。
 
-## 十二、如何理解文件管理与暴露边界
+## mười hai、Làm thế nào để hiểu ranh giới quản lý tập tin và hiển thị
 
-从产品行为上看，viewer 文件系统和 artifact 下载接口优先走的是宿主机路径解析，而不是无条件透传到沙盒容器内部。这么设计有两个直接收益。第一，浏览 `/` 或 `/home/gem/user-data` 这样的树形入口时，不需要为了只读查看而冷启动沙盒。第二，权限边界更好做，因为 `resolve_virtual_path` 会把用户可见路径严格限制在预定义的 `user-data` 和 `skills` 命名空间内。
+Từ góc độ hành vi sản phẩm，viewer hệ thống tập tin và artifact Giao diện tải xuống ưu tiên độ phân giải đường dẫn máy chủ.，Thay vì truyền nó vô điều kiện vào bên trong hộp cát。Thiết kế này có hai lợi ích trực tiếp:。đầu tiên，Duyệt qua `/` hoặc `/home/gem/user-data` Một lối vào hình cây như vậy，Không cần khởi động nguội hộp cát để xem chỉ đọc。thứ hai，Ranh giới cho phép tốt hơn，bởi vì `resolve_virtual_path` Sẽ giới hạn nghiêm ngặt các đường dẫn mà người dùng có thể nhìn thấy ở những đường dẫn được xác định trước `user-data` và `skills` trong không gian tên。
 
-从工程上看，当前实现更像“双层文件系统”。对 Agent 执行来说，真正工作的对象是远程沙盒进程暴露的文件 API；对 viewer、附件下载和一部分 artifact 查看来说，系统会优先在宿主机侧解析虚拟路径，再用本地文件读取或只读 backend 下载内容。这也是为什么你会看到既有 `ProvisionerSandboxBackend`，又有 `viewer_filesystem_service`、`SelectedSkillsReadonlyBackend` 这样的配套实现。
+Từ góc độ kỹ thuật，Việc thực hiện hiện tại giống như“Hệ thống tập tin hai lớp”。Có Agent Về mặt thực hiện，Điều thực sự hiệu quả là các tệp được hiển thị bởi quy trình hộp cát từ xa API；Có viewer、Tải xuống tệp đính kèm và một phần artifact Xem nó，Đầu tiên hệ thống sẽ giải quyết đường dẫn ảo ở phía máy chủ.，Sau đó sử dụng các tệp cục bộ để đọc hoặc chỉ đọc backend Tải nội dung xuống。Đây là lý do tại sao bạn thấy cả hai `ProvisionerSandboxBackend`，một lần nữa `viewer_filesystem_service`、`SelectedSkillsReadonlyBackend` Việc hỗ trợ thực hiện như vậy。
 
-## 十三、环境变量配置与传递链
+## Mười ba、Cấu hình biến môi trường và chuỗi phân phối
 
-sandbox-provisioner 的环境变量传递分**两层**，需要分别理解：
+sandbox-provisioner điểm chuyển biến môi trường**hai tầng**，cần được hiểu riêng：
 
-### 第一层：应用层 → sandbox-provisioner
+### tầng một：Lớp ứng dụng → sandbox-provisioner
 
-`api` 和 `worker` 服务通过 `SANDBOX_*` 前缀的环境变量告诉后端如何连接 provisioner。这些变量定义在 `docker-compose.yml` 的 `x-api-worker-env` 锚点中：
+`api` và `worker` Dịch vụ đã được thông qua `SANDBOX_*` Biến môi trường có tiền tố cho phần phụ trợ biết cách kết nối provisioner。Các biến này được xác định trong `docker-compose.yml` của `x-api-worker-env` trong mỏ neo：
 
-| 变量名 | 说明 | 默认值 |
+| tên biến | Mô tả | Giá trị mặc định |
 |--------|------|--------|
-| `SANDBOX_PROVIDER` | 提供者类型，固定为 `provisioner` | `provisioner` |
-| `SANDBOX_PROVISIONER_URL` | provisioner 服务地址 | `http://sandbox-provisioner:8002` |
-| `SANDBOX_VIRTUAL_PATH_PREFIX` | 虚拟路径前缀 | `/home/gem/user-data` |
-| `SANDBOX_EXEC_TIMEOUT_SECONDS` | 命令执行超时时间 | `180` |
-| `SANDBOX_MAX_OUTPUT_BYTES` | 最大输出字节数 | `262144` |
+| `SANDBOX_PROVIDER` | loại nhà cung cấp，cố định vào `provisioner` | `provisioner` |
+| `SANDBOX_PROVISIONER_URL` | provisioner Địa chỉ dịch vụ | `http://sandbox-provisioner:8002` |
+| `SANDBOX_VIRTUAL_PATH_PREFIX` | tiền tố đường dẫn ảo | `/home/gem/user-data` |
+| `SANDBOX_EXEC_TIMEOUT_SECONDS` | Hết thời gian thực hiện lệnh | `180` |
+| `SANDBOX_MAX_OUTPUT_BYTES` | Số byte đầu ra tối đa | `262144` |
 
-### 第二层：sandbox-provisioner 内部配置
+### tầng hai：sandbox-provisioner Cấu hình bên trong
 
-`sandbox-provisioner` 服务本身读取另一组环境变量，决定如何创建沙盒容器。这些变量直接写在 `docker-compose.yml` 的 `sandbox-provisioner.environment` 中：
+`sandbox-provisioner` Bản thân dịch vụ sẽ đọc một bộ biến môi trường khác，Quyết định cách tạo vùng chứa hộp cát。Các biến này được viết trực tiếp trong `docker-compose.yml` của `sandbox-provisioner.environment` trong：
 
-**通用配置：**
+**Cấu hình chung：**
 
-| 变量名 | 说明 | 默认值 |
+| tên biến | Mô tả | Giá trị mặc định |
 |--------|------|--------|
-| `PROVISIONER_BACKEND` | 底层后端类型，`docker` 或 `kubernetes` | `docker` |
-| `SANDBOX_IMAGE` | 沙盒容器镜像 | 详见 compose 文件 |
-| `SANDBOX_CONTAINER_PORT` | 沙盒容器内部端口 | `8080` |
-| `SANDBOX_IDLE_TIMEOUT_SECONDS` | 空闲回收时间 | `120` |
-| `SANDBOX_HEALTH_TIMEOUT_SECONDS` | 健康检查超时 | `300` |
+| `PROVISIONER_BACKEND` | loại phụ trợ cơ bản，`docker` hoặc `kubernetes` | `docker` |
+| `SANDBOX_IMAGE` | Hình ảnh thùng chứa hộp cát | Xem chi tiết compose tập tin |
+| `SANDBOX_CONTAINER_PORT` | Cổng nội bộ của hộp cát | `8080` |
+| `SANDBOX_IDLE_TIMEOUT_SECONDS` | thời gian phục hồi nhàn rỗi | `120` |
+| `SANDBOX_HEALTH_TIMEOUT_SECONDS` | Hết thời gian kiểm tra sức khỏe | `300` |
 
-**Docker 后端专用：**
+**Docker Chỉ phụ trợ：**
 
-| 变量名 | 说明 | 默认值 |
+| tên biến | Mô tả | Giá trị mặc định |
 |--------|------|--------|
-| `DOCKER_NETWORK` | Docker 网络名称 | `yuxi-know_app-network` |
-| `DOCKER_SANDBOX_PREFIX` | 沙盒容器名前缀 | `yuxi-sandbox` |
-| `DOCKER_SANDBOX_HOST` | 宿主机访问地址 | `host.docker.internal` |
-| `DOCKER_THREADS_HOST_PATH` | 线程数据宿主机路径 | 自动推断 |
+| `DOCKER_NETWORK` | Docker tên mạng | `yuxi-know_app-network` |
+| `DOCKER_SANDBOX_PREFIX` | Tiền tố tên vùng chứa hộp cát | `yuxi-sandbox` |
+| `DOCKER_SANDBOX_HOST` | Địa chỉ truy cập máy chủ | `host.docker.internal` |
+| `DOCKER_THREADS_HOST_PATH` | Đường dẫn máy chủ dữ liệu chủ đề | suy luận tự động |
 
-**Kubernetes 后端专用：**
+**Kubernetes Chỉ phụ trợ：**
 
-| 变量名 | 说明 | 默认值 |
+| tên biến | Mô tả | Giá trị mặc định |
 |--------|------|--------|
 | `K8S_NAMESPACE` | Kubernetes namespace | `yuxi-know` |
-| `NODE_HOST` | Kubernetes 节点地址 | `host.docker.internal` |
-| `KUBECONFIG_PATH` | kubeconfig 文件路径 | 空（使用 incluster 配置） |
-| `THREAD_PVC` | 线程数据持久化卷 | `yuxi-thread` |
-| `SKILLS_PVC` | 技能目录持久化卷（预留） | `yuxi-skills` |
+| `NODE_HOST` | Kubernetes Địa chỉ nút | `host.docker.internal` |
+| `KUBECONFIG_PATH` | kubeconfig đường dẫn tập tin | trống rỗng（sử dụng incluster Cấu hình） |
+| `THREAD_PVC` | Khối lượng lưu trữ dữ liệu chủ đề | `yuxi-thread` |
+| `SKILLS_PVC` | Khối lượng kiên trì danh mục kỹ năng（dành riêng） | `yuxi-skills` |
 
-### 环境变量传递链
+### Chuỗi phân phối biến môi trường
 
 ```
-宿主机 .env / 系统环境变量
+Máy chủ .env / Biến môi trường hệ thống
          ↓
     docker-compose.yml
          ↓
     ┌────────────────────────────────┐
-    │  api/worker 服务               │  应用层变量 (SANDBOX_*)
+    │  api/worker dịch vụ               │  Biến lớp ứng dụng (SANDBOX_*)
     │    SANDBOX_PROVISIONER_URL     │
     └────────────┬───────────────────┘
-                 ↓  HTTP 调用
+                 ↓  HTTP gọi
     ┌────────────────────────────────┐
-    │  sandbox-provisioner 服务       │  沙盒层变量 (PROVISIONER_BACKEND, DOCKER_*, K8S_*)
+    │  sandbox-provisioner dịch vụ       │  Biến lớp hộp cát (PROVISIONER_BACKEND, DOCKER_*, K8S_*)
     │    PROVISIONER_BACKEND         │
     └────────────┬───────────────────┘
                  ↓  Docker API / K8s API
     ┌────────────────────────────────┐
-    │  动态创建的沙盒容器              │
+    │  Vùng chứa hộp cát được tạo động              │
     └────────────────────────────────┘
 ```
 
-两层变量不要混看。改了 `api/worker` 的 `SANDBOX_PROVISIONER_URL` 只是改了后端找 provisioner 的地址；改了 `sandbox-provisioner` 的 `PROVISIONER_BACKEND` 才是改了 provisioner 本身用什么方式创建沙盒。
+Đừng trộn lẫn hai cấp độ biến。Đã thay đổi `api/worker` của `SANDBOX_PROVISIONER_URL` Chỉ cần thay đổi phần phụ trợ để tìm provisioner địa chỉ；Đã thay đổi `sandbox-provisioner` của `PROVISIONER_BACKEND` Đó là điều đã thay đổi provisioner Cách tự tạo hộp cát。
 
-### sandbox.env 的特殊作用
+### sandbox.env vai trò đặc biệt
 
-`docker/sandbox_provisioner/sandbox.env` 文件的用途与上述两层变量不同。它通过 volume 挂载到 provisioner 容器内 (`/app/sandbox.env`)，然后由 `LocalContainerProvisionerBackend` 在创建沙盒容器时读取，解析后的键值对会作为**环境变量注入到每个动态创建的沙盒容器**中。
+`docker/sandbox_provisioner/sandbox.env` Mục đích của tệp khác với hai cấp độ biến trên.。nó trôi qua volume gắn kết với provisioner thùng chứa bên trong (`/app/sandbox.env`)，sau đó bởi `LocalContainerProvisionerBackend` Đọc khi tạo vùng chứa hộp cát，Các cặp khóa-giá trị được phân tích cú pháp sẽ là**Các biến môi trường được đưa vào từng vùng chứa hộp cát được tạo động**trong。
 
 ```yaml
-# docker-compose.yml 中 sandbox-provisioner 的挂载
+# docker-compose.yml trong sandbox-provisioner gắn kết
 sandbox-provisioner:
   volumes:
     - ./docker/sandbox_provisioner/sandbox.env:/app/sandbox.env:ro
 ```
 
-也就是说，`sandbox.env` 配置的是沙盒容器内部可见的环境变量，而不是 provisioner 本身的配置。当前该文件内容为：
+Tức là nói，`sandbox.env` Các biến môi trường hiển thị bên trong vùng chứa hộp cát đã được định cấu hình.，thay vì provisioner cấu hình riêng。Nội dung hiện tại của tập tin này là：
 
 ```env
 CHECK_YUXI_SANDBOX_ENV_EXISTS=True
 ```
 
-如果需要给所有沙盒容器注入额外的环境变量（如代理配置、认证信息等），可以添加到 `sandbox.env` 文件中。
+Nếu bạn cần đưa các biến môi trường bổ sung vào tất cả các vùng chứa hộp cát（Chẳng hạn như cấu hình proxy、Thông tin chứng nhận, v.v.），có thể được thêm vào `sandbox.env` trong tập tin。
 
-### 配置方式汇总
+### Tóm tắt các phương pháp cấu hình
 
-| 配置目标 | 配置位置 | 示例变量 |
+| Định cấu hình mục tiêu | Vị trí cấu hình | Biến ví dụ |
 |----------|----------|----------|
-| 应用层连接 provisioner | `.env` 或 compose 环境 | `SANDBOX_PROVISIONER_URL` |
-| provisioner 自身行为 | `.env` 或 compose 环境 | `PROVISIONER_BACKEND`, `DOCKER_*` |
-| 沙盒容器内部环境 | `sandbox.env` 文件 | 代理、认证等运行时变量 |
+| Kết nối lớp ứng dụng provisioner | `.env` hoặc compose môi trường | `SANDBOX_PROVISIONER_URL` |
+| provisioner hành vi của chính mình | `.env` hoặc compose môi trường | `PROVISIONER_BACKEND`, `DOCKER_*` |
+| Môi trường bên trong hộp cát | `sandbox.env` tập tin | đại lý、Xác thực và các biến thời gian chạy khác |
 
-## 十四、和旧版文档相比，今天最重要的理解方式
+## mười bốn、So với phiên bản cũ của tài liệu，Cách quan trọng nhất để hiểu ngày nay
 
-当前项目不应再按“应用直接管理一个长期存在的本地 sandbox 服务”去理解。更准确的认识应该是：Yuxi 只管理线程和上下文；provisioner 负责创建线程对应的沙盒实例；文件系统不是简单地暴露一个容器根目录，而是把可写工作区、只读 skills 等组合成一个受控命名空间（知识库不再映射为沙盒目录，改由 `query_kb`/`open_kb_document` 等工具访问）。
+Mục hiện tại không còn được nhấn nữa“Ứng dụng trực tiếp quản lý một địa phương tồn tại lâu dài sandbox dịch vụ”để hiểu。Cần có sự hiểu biết chính xác hơn：Yuxi Chỉ quản lý chủ đề và bối cảnh；provisioner Chịu trách nhiệm tạo các phiên bản hộp cát tương ứng với các luồng；Hệ thống tập tin không chỉ hiển thị thư mục gốc của vùng chứa，Thay vào đó, hãy đặt không gian làm việc có thể ghi、chỉ đọc skills kết hợp thành một không gian tên được kiểm soát（Cơ sở kiến thức không còn được ánh xạ dưới dạng thư mục hộp cát，Thay đổi thành `query_kb`/`open_kb_document` Công cụ truy cập）。
 
-因此，当你在界面上“启用沙盒”或者在文档里“选择 K8s”时，本质上做的不是切换一段业务逻辑，而是在切换 provisioner 的底层实例承载方式。选择 `docker` 时，沙盒由当前部署机上的 Docker daemon 动态创建；选择 `kubernetes` 时，沙盒由目标 K8s 集群动态创建。Yuxi 自己始终只面对一个 provisioner 服务地址。
+Vì thế，khi bạn đang ở trên giao diện“Bật hộp cát”Hoặc trong tài liệu“chọn K8s”thời gian，Về cơ bản, những gì chúng tôi đang làm không phải là chuyển đổi một phần logic kinh doanh.，Nhưng chuyển đổi provisioner Phương thức lưu trữ phiên bản cơ bản。chọn `docker` thời gian，Hộp cát bao gồm Docker daemon Được tạo động；chọn `kubernetes` thời gian，hộp cát theo mục tiêu K8s Tạo động cụm。Yuxi Tôi luôn phải đối mặt với chỉ một provisioner Địa chỉ dịch vụ。
 
-## 十五、排障时建议先看什么
+## mười lăm、Những điều nên xem xét đầu tiên khi khắc phục sự cố là gì?
 
-如果怀疑是 provisioner 级问题，先看 `http://localhost:8002/health`，确认 backend 类型和 idle timeout 是否符合预期。默认 Docker 部署下这里应看到 `backend=docker`。接着看 `docker logs sandbox-provisioner --tail 200`，因为这里能直接看到创建容器、复用旧实例、健康检查失败和 idle reaper 删除的日志。
+Nếu sự nghi ngờ là provisioner câu hỏi cấp độ，Nhìn đầu tiên `http://localhost:8002/health`，Xác nhận backend gõ và idle timeout Liệu nó có đáp ứng được mong đợi không?。Mặc định Docker Bạn sẽ thấy nó ở đây đang được triển khai `backend=docker`。Đọc tiếp `docker logs sandbox-provisioner --tail 200`，Vì các bạn có thể trực tiếp nhìn thấy quá trình tạo container tại đây、Sử dụng lại phiên bản cũ、kiểm tra sức khỏe không thành công và idle reaper Nhật ký đã xóa。
 
-如果怀疑是 Docker 地址不可达，重点检查 `SANDBOX_DOCKER_SANDBOX_HOST` 和随机映射端口是否从 `api` 容器可访问。可以在 `api` 容器内直接 `curl` provisioner 返回的 `sandbox_url`。如果怀疑是 Kubernetes 地址不可达，重点检查 `NODE_HOST` 和 NodePort 的外部连通性，因为当前实现并不是通过集群内部 Service 名称回连。
+Nếu sự nghi ngờ là Docker Địa chỉ không thể truy cập được，Kiểm tra chính `SANDBOX_DOCKER_SANDBOX_HOST` và liệu cổng được ánh xạ ngẫu nhiên có phải là từ `api` Có thể truy cập vùng chứa。Có thể tìm thấy ở `api` trực tiếp trong container `curl` provisioner trả lại `sandbox_url`。Nếu sự nghi ngờ là Kubernetes Địa chỉ không thể truy cập được，Kiểm tra chính `NODE_HOST` và NodePort kết nối bên ngoài，Vì việc triển khai hiện tại không thông qua cluster nội bộ Service liên kết ngược tên。
 
-如果怀疑是文件看得到但模型读不到，或者模型写了但 viewer 看不到，优先把问题拆成两层：一层是宿主机路径是否存在于 `saves/...` 下，另一层是该路径是否真的被当前线程沙盒挂载并暴露到了 `/home/gem/user-data` 或 `/home/gem/skills`。只要先分清“宿主机侧文件语义”和“沙盒侧运行时挂载语义”，定位问题通常会快很多。
+Nếu bạn nghi ngờ rằng tập tin có thể được nhìn thấy nhưng mô hình không thể đọc được，Hoặc mô hình được viết nhưng viewer không thể nhìn thấy，Ưu tiên chia vấn đề thành hai cấp độ：Một lớp là liệu đường dẫn máy chủ có tồn tại trong `saves/...` xuống，Một lớp khác là liệu đường dẫn có thực sự được gắn kết và hiển thị bởi hộp cát luồng hiện tại hay không `/home/gem/user-data` hoặc `/home/gem/skills`。Chỉ cần làm rõ trước“Ngữ nghĩa của tệp phía máy chủ”và“Ngữ nghĩa gắn kết thời gian chạy phía hộp cát”，Vấn đề định vị thường nhanh hơn nhiều。

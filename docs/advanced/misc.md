@@ -1,83 +1,83 @@
-# 其他配置
+# Các cấu hình khác
 
-本文档介绍 Yuxi 的其他配置选项，包括内容安全、网页搜索和服务端口等。
+Giới thiệu về tài liệu này Yuxi Các tùy chọn cấu hình khác cho，Bao gồm bảo mật nội dung、Cổng dịch vụ và tìm kiếm trên web, v.v.。
 
-## 内容安全
+## Bảo mật nội dung
 
-系统内置内容审查机制，帮助保障服务内容的合规性。
+Cơ chế xét duyệt nội dung tích hợp trong hệ thống，Giúp đảm bảo tính tuân thủ của nội dung dịch vụ。
 
-### 启用方式
+### Phương pháp kích hoạt
 
-在「系统设置」→「基本设置」页面中配置，可选择启用关键词过滤和 LLM 内容审查。
+trong「Cài đặt hệ thống」→「Cài đặt cơ bản」Cấu hình trong trang，Tùy chọn bật tính năng lọc từ khóa và LLM Kiểm duyệt nội dung。
 
-### 检测流程
+### Quá trình thử nghiệm
 
-系统会在以下时机进行检测：
+Hệ thống sẽ phát hiện vào những thời điểm sau：
 
-1. **用户输入检测**：接收到用户消息后立即检测
-2. **流式输出检测**：实时检测输出的关键词（仅关键词模式）
-3. **输出完成检测**：流式输出结束后进行全面检测
+1. **Phát hiện đầu vào của người dùng**：Phát hiện ngay sau khi nhận được tin nhắn của người dùng
+2. **Phát hiện đầu ra truyền phát**：Phát hiện thời gian thực của từ khóa đầu ra（chế độ chỉ từ khóa）
+3. **Kiểm tra hoàn thành đầu ra**：Kiểm tra toàn diện sau khi phát trực tuyến
 
-### 检测模式
+### chế độ phát hiện
 
-**关键词检测**
+**Phát hiện từ khóa**
 
-敏感词库位于 `backend/package/yuxi/config/static/bad_keywords.txt`，每行一个关键词。修改后实时生效，无需重启服务。
+Từ vựng nhạy cảm nằm ở `backend/package/yuxi/config/static/bad_keywords.txt`，Một từ khóa trên mỗi dòng。Các sửa đổi sẽ có hiệu lực ngay lập tức，Không cần khởi động lại dịch vụ。
 
-**LLM 检测**
+**LLM Phát hiện**
 
-使用大模型对内容进行审查，可以更好地识别提示词注入等复杂问题，但会增加响应延迟。
+Sử dụng mô hình lớn để xem xét nội dung，Có thể xác định tốt hơn các vấn đề phức tạp như chèn từ nhắc nhở，Nhưng nó sẽ làm tăng độ trễ phản hồi。
 
-::: warning 性能考虑
-LLM 检测会增加用户交互的延迟，请根据实际需求选择是否启用。
+::: warning Cân nhắc về hiệu suất
+LLM Phát hiện làm tăng độ trễ tương tác của người dùng，Vui lòng chọn kích hoạt tùy theo nhu cầu thực tế。
 :::
 
-## 网页搜索
+## tìm kiếm trên mạng
 
-系统集成了 Tavily 联网搜索能力，让大模型能够获取实时网页信息。
+Hệ thống được tích hợp Tavily Khả năng tìm kiếm trên Internet，Cho phép các mô hình lớn thu được thông tin trang web theo thời gian thực。
 
-### 配置步骤
+### Các bước cấu hình
 
-1. 访问 [Tavily 官网](https://app.tavily.com/) 注册并创建 API Key
-2. 在 `.env` 文件中添加：
+1. chuyến thăm [Tavily Trang web chính thức](https://app.tavily.com/) Đăng ký và tạo API Key
+2. trong `.env` Thêm vào tập tin：
    ```env
    TAVILY_API_KEY=sk-xxxxxxxxxxxxxxxx
    ```
-3. 重启服务：
+3. Khởi động lại dịch vụ：
    ```bash
    docker compose up -d api-dev web-dev
    ```
 
-### 使用方式
+### Cách sử dụng
 
-配置完成后，在智能体的工具配置区域会看到 Tavily 搜索工具。模型会自动判断何时需要调用搜索来获取最新信息。
+Sau khi cấu hình xong，Bạn sẽ thấy trong khu vực cấu hình công cụ của đại lý Tavily Công cụ tìm kiếm。Mô hình tự động xác định khi nào cần gọi tìm kiếm để có được thông tin mới nhất。
 
-如需关闭，删除或清空 `TAVILY_API_KEY` 后重启服务即可。
+Để đóng，Xóa hoặc xóa `TAVILY_API_KEY` Sau đó khởi động lại dịch vụ。
 
-## 服务端口
+## cảng dịch vụ
 
-系统各服务通过以下端口提供访问：
+Mỗi dịch vụ hệ thống cung cấp quyền truy cập thông qua các cổng sau：
 
-| 端口 | 服务 | 说明 |
+| hải cảng | dịch vụ | Mô tả |
 |------|------|------|
-| 5173 | Web 前端 | 用户界面 |
-| 5050 | API 后端 | 核心服务接口 |
-| 7474 | Neo4j HTTP | 图数据库管理界面 |
-| 7687 | Neo4j Bolt | 图数据库连接 |
-| 9000/9001 | MinIO | 对象存储 |
-| 19530/9091 | Milvus | 向量数据库 |
-| 5432 | PostgreSQL | 业务数据库 |
+| 5173 | Web giao diện người dùng | giao diện người dùng |
+| 5050 | API phụ trợ | Giao diện dịch vụ cốt lõi |
+| 7474 | Neo4j HTTP | Giao diện quản lý cơ sở dữ liệu đồ thị |
+| 7687 | Neo4j Bolt | Kết nối cơ sở dữ liệu đồ thị |
+| 9000/9001 | MinIO | lưu trữ đối tượng |
+| 19530/9091 | Milvus | cơ sở dữ liệu vector |
+| 5432 | PostgreSQL | cơ sở dữ liệu kinh doanh |
 
-### 可选服务端口
+### Cổng dịch vụ tùy chọn
 
-| 端口 | 服务 | 说明 |
+| hải cảng | dịch vụ | Mô tả |
 |------|------|------|
-| 30000 | MinerU | PDF 解析服务 |
-| 8080 | PP-Structure-V3 | OCR 服务 |
-| 8081 | vLLM | 本地推理服务 |
+| 30000 | MinerU | PDF dịch vụ phân tích cú pháp |
+| 8080 | PP-Structure-V3 | OCR dịch vụ |
+| 8081 | vLLM | Dịch vụ suy luận cục bộ |
 
-### 快速访问
+### truy cập nhanh
 
-- Web 界面：http://localhost:5173
-- API 文档：http://localhost:5050/docs
-- Neo4j 管理：http://localhost:7474
+- Web giao diện：http://localhost:5173
+- API Tài liệu：http://localhost:5050/docs
+- Neo4j quản lý：http://localhost:7474

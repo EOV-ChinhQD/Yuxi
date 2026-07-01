@@ -1,12 +1,12 @@
 <template>
   <div class="refs" v-if="showRefs">
     <div class="tags">
-      <!-- 反馈 -->
+      <!-- phản hồi -->
       <span
         class="item btn"
         :class="{ disabled: feedbackState.hasSubmitted }"
         @click="likeThisResponse(msg)"
-        :title="feedbackState.hasSubmitted && feedbackState.rating === 'like' ? '已点赞' : '点赞'"
+        :title="feedbackState.hasSubmitted && feedbackState.rating === 'like' ? 'Đã thích' : 'thích'"
       >
         <ThumbsUp size="12" :fill="feedbackState.rating === 'like' ? 'currentColor' : 'none'" />
       </span>
@@ -15,7 +15,7 @@
         :class="{ disabled: feedbackState.hasSubmitted }"
         @click="dislikeThisResponse(msg)"
         :title="
-          feedbackState.hasSubmitted && feedbackState.rating === 'dislike' ? '已点踩' : '点踩'
+          feedbackState.hasSubmitted && feedbackState.rating === 'dislike' ? 'Không thích' : 'Bấm vào để không thích'
         "
       >
         <ThumbsDown
@@ -23,37 +23,37 @@
           :fill="feedbackState.rating === 'dislike' ? 'currentColor' : 'none'"
         />
       </span>
-      <!-- 模型名称 -->
+      <!-- Tên mẫu -->
       <span v-if="showKey('model') && getModelName(msg)" class="item" @click="console.log(msg)">
         <Bot size="12" /> {{ getModelName(msg) }}
       </span>
-      <!-- 复制 -->
-      <span v-if="showKey('copy')" class="item btn" @click="copyText(msg.content)" title="复制">
+      <!-- Sao chép -->
+      <span v-if="showKey('copy')" class="item btn" @click="copyText(msg.content)" title="Sao chép">
         <Check v-if="isCopied" size="12" />
         <Copy v-else size="12" />
       </span>
 
-      <!-- 重试 -->
+      <!-- Thử lại -->
       <span
         v-if="showKey('regenerate')"
         class="item btn"
         @click="regenerateMessage()"
-        title="重新生成"
+        title="tái sinh"
         ><RotateCcw size="12" />
       </span>
 
-      <!-- 来源按钮 - 使用 flex-grow 占据剩余空间并右对齐 -->
+      <!-- nút nguồn - sử dụng flex-grow Chiếm không gian còn lại và căn chỉnh sang phải -->
       <div v-if="hasSources && showKey('sources')" class="sources-spacer"></div>
       <span
         v-if="hasSources && showKey('sources')"
         class="item btn sources-btn"
         :class="{ expanded: isSourcesExpanded }"
         @click="toggleSources"
-        :title="isSourcesExpanded ? '收起详情' : '查看来源详情'"
+        :title="isSourcesExpanded ? 'Thu gọn chi tiết' : 'Xem chi tiết nguồn'"
       >
         <BookOpen size="12" />
         <span class="sources-label">
-          来源
+          Nguồn
           <template v-if="sourceCount > 0">
             {{ sourceCount }}
           </template>
@@ -62,7 +62,7 @@
       </span>
     </div>
 
-    <!-- 来源详情面板 -->
+    <!-- Bảng chi tiết nguồn -->
     <div v-if="isSourcesExpanded" class="sources-panel-body">
       <KnowledgeSourceSection v-if="knowledgeChunks.length > 0" :chunks="knowledgeChunks" />
       <WebSearchSourceSection v-if="webSources.length > 0" :sources="webSources" />
@@ -72,17 +72,17 @@
   <!-- Dislike reason modal -->
   <a-modal
     v-model:open="dislikeModalVisible"
-    title="请告诉我们不满意的原因"
+    title="Hãy cho chúng tôi biết lý do không hài lòng"
     @ok="submitDislikeFeedback"
     @cancel="cancelDislike"
     :confirmLoading="submittingFeedback"
-    okText="提交"
-    cancelText="取消"
+    okText="Gửi"
+    cancelText="Hủy bỏ"
   >
     <a-textarea
       v-model:value="dislikeReason"
       :rows="4"
-      placeholder="您的反馈将帮助我们改进服务（可选）"
+      placeholder="Phản hồi của bạn sẽ giúp chúng tôi cải thiện dịch vụ của mình（Tùy chọn）"
       :maxlength="500"
       show-count
     />
@@ -151,7 +151,7 @@ const feedbackState = reactive({
   reason: null
 })
 
-// 初始化反馈状态 - 从 antMessage.feedback 读取历史反馈
+// Khởi tạo trạng thái phản hồi - từ antMessage.feedback Đọc phản hồi lịch sử
 const initFeedbackState = () => {
   if (msg.value?.feedback) {
     feedbackState.hasSubmitted = true
@@ -164,7 +164,7 @@ const initFeedbackState = () => {
   }
 }
 
-// 监听 message prop 变化 (用于切换对话时更新状态)
+// màn hình message prop thay đổi (Dùng để cập nhật trạng thái khi chuyển đổi cuộc trò chuyện)
 watch(
   () => props.message,
   () => {
@@ -179,7 +179,7 @@ const dislikeModalVisible = ref(false)
 const dislikeReason = ref('')
 const submittingFeedback = ref(false)
 
-// 使用 useClipboard 实现复制功能
+// sử dụng useClipboard Thực hiện chức năng sao chép
 const { copy, isSupported } = useClipboard()
 
 const showKey = (key) => {
@@ -189,47 +189,47 @@ const showKey = (key) => {
   return props.showRefs.includes(key)
 }
 
-// 复制状态
+// trạng thái sao chép
 const isCopied = ref(false)
 
-// 定义 copy 方法
+// độ nét copy phương pháp
 const copyText = async (text) => {
   if (isSupported) {
     try {
       await copy(text)
-      antMessage.success('文本已复制到剪贴板')
+      antMessage.success('Đã sao chép văn bản vào bảng nhớ tạm')
       isCopied.value = true
       setTimeout(() => {
         isCopied.value = false
       }, 2000)
     } catch (error) {
-      console.error('复制失败:', error)
-      antMessage.error('复制失败，请手动复制')
+      console.error('Sao chép không thành công:', error)
+      antMessage.error('Sao chép không thành công，Vui lòng sao chép thủ công')
     }
   } else {
-    console.warn('浏览器不支持自动复制')
-    antMessage.warning('浏览器不支持自动复制，请手动复制')
+    console.warn('Trình duyệt không hỗ trợ sao chép tự động')
+    antMessage.warning('Trình duyệt không hỗ trợ sao chép tự động，Vui lòng sao chép thủ công')
   }
 }
 
 const showRefs = computed(() => {
-  // 如果只是为了显示模型信息，不需要检查状态
+  // Nếu nó chỉ để hiển thị thông tin mô hình，Không cần kiểm tra trạng thái
   if (props.showRefs && Array.isArray(props.showRefs) && props.showRefs.includes('model')) {
     return true
   }
-  // 原有的逻辑
+  // logic gốc
   return (
     (msg.value.role == 'received' || msg.value.role == 'assistant') &&
     msg.value.status == 'finished'
   )
 })
 
-// 添加重新生成方法
+// Thêm phương pháp tái sinh
 const regenerateMessage = () => {
   emit('retry')
 }
 
-// 获取模型名称
+// Lấy tên mẫu
 const getModelName = (msg) => {
   if (msg.response_metadata?.model_name) {
     return msg.response_metadata.model_name
@@ -239,12 +239,12 @@ const getModelName = (msg) => {
 // Handle like action
 const likeThisResponse = async (msg) => {
   if (feedbackState.hasSubmitted) {
-    antMessage.info('您已经提交过反馈了')
+    antMessage.info('Bạn đã gửi phản hồi')
     return
   }
 
   if (!msg?.id) {
-    antMessage.error('无法提交反馈：消息ID不存在')
+    antMessage.error('Không thể gửi phản hồi：tin tứcIDkhông tồn tại')
     console.error('Message object:', msg)
     return
   }
@@ -256,14 +256,14 @@ const likeThisResponse = async (msg) => {
     feedbackState.hasSubmitted = true
     feedbackState.rating = 'like'
 
-    antMessage.success('感谢您的反馈！')
+    antMessage.success('Cảm ơn bạn đã phản hồi！')
   } catch (error) {
     console.error('Failed to submit like feedback:', error)
     if (error.message?.includes('already submitted')) {
-      antMessage.info('您已经提交过反馈了')
+      antMessage.info('Bạn đã gửi phản hồi')
       feedbackState.hasSubmitted = true
     } else {
-      antMessage.error('提交反馈失败，请稍后重试')
+      antMessage.error('Không thể gửi phản hồi，Vui lòng thử lại sau')
     }
   } finally {
     submittingFeedback.value = false
@@ -273,12 +273,12 @@ const likeThisResponse = async (msg) => {
 // Handle dislike action
 const dislikeThisResponse = async (msg) => {
   if (feedbackState.hasSubmitted) {
-    antMessage.info('您已经提交过反馈了')
+    antMessage.info('Bạn đã gửi phản hồi')
     return
   }
 
   if (!msg?.id) {
-    antMessage.error('无法提交反馈：消息ID不存在')
+    antMessage.error('Không thể gửi phản hồi：tin tứcIDkhông tồn tại')
     console.error('Message object:', msg)
     return
   }
@@ -300,15 +300,15 @@ const submitDislikeFeedback = async () => {
     dislikeModalVisible.value = false
     dislikeReason.value = ''
 
-    antMessage.success('感谢您的反馈！')
+    antMessage.success('Cảm ơn bạn đã phản hồi！')
   } catch (error) {
     console.error('Failed to submit dislike feedback:', error)
     if (error.message?.includes('already submitted')) {
-      antMessage.info('您已经提交过反馈了')
+      antMessage.info('Bạn đã gửi phản hồi')
       feedbackState.hasSubmitted = true
       dislikeModalVisible.value = false
     } else {
-      antMessage.error('提交反馈失败，请稍后重试')
+      antMessage.error('Không thể gửi phản hồi，Vui lòng thử lại sau')
     }
   } finally {
     submittingFeedback.value = false

@@ -1,30 +1,30 @@
-# 智能体配置
+# Cấu hình đại lý
 
-Yuxi 的智能体系统基于 LangGraph 构建。对开发者来说，最重要的不是单独理解某个页面或某个字段，而是理解三件事：
+Yuxi Hệ thống tác nhân thông minh dựa trên LangGraph xây dựng。dành cho nhà phát triển，Điều quan trọng nhất là không hiểu riêng một trang hay một lĩnh vực nào，Nhưng hãy hiểu ba điều：
 
-- Agent 如何被定义和发现
-- Context 如何驱动配置界面
-- Context 如何贯穿一次 Agent 运行周期
+- Agent Làm thế nào để được xác định và khám phá
+- Context Cách điều khiển giao diện cấu hình
+- Context Làm thế nào để thâm nhập một lần Agent Chạy chu kỳ
 
-本文聚焦这三部分。
+Bài viết này tập trung vào ba phần này。
 
-## 1. 整体结构
+## 1. cấu trúc tổng thể
 
-智能体开发围绕四个核心对象展开：
+Phát triển đại lý xoay quanh bốn đối tượng cốt lõi：
 
-- **`BaseAgent`**：统一的 Agent 抽象，定义 `get_graph()`、`context_schema`、`capabilities`
-- **`BaseContext`**：配置 Schema，也是前端配置项的来源
-- **Graph / Middleware**：LangGraph 图与中间件链，决定运行时行为
-- **Agent**：数据库中的一级智能体实例，保存展示信息、后端 `backend_id`、共享权限和 `config_json.context`
+- **`BaseAgent`**：thống nhất Agent trừu tượng，độ nét `get_graph()`、`context_schema`、`capabilities`
+- **`BaseContext`**：Cấu hình Schema，Nó cũng là nguồn của các mục cấu hình front-end
+- **Graph / Middleware**：LangGraph Đồ thị và chuỗi phần mềm trung gian，Xác định hành vi thời gian chạy
+- **Agent**：Phiên bản tác nhân cấp 1 trong cơ sở dữ liệu，Lưu thông tin hiển thị、phụ trợ `backend_id`、quyền chia sẻ và `config_json.context`
 
-仓库中已经内置了可直接参考的智能体：
+Đã có các tác nhân được tích hợp sẵn trong kho để bạn có thể tham khảo trực tiếp.：
 
-- `chatbot`：通用对话智能体，使用 `ChatBotContext` 扩展可调用子智能体配置
-- `subagent`：专用子智能体后端，使用 `SubAgentContext`，用于被主 Agent 通过 task 工具调用
+- `chatbot`：Tác nhân đàm thoại phổ quát，sử dụng `ChatBotContext` Cấu hình tác nhân phụ có thể gọi mở rộng
+- `subagent`：Phần phụ trợ của đại lý phụ chuyên dụng，sử dụng `SubAgentContext`，được sử dụng để làm chủ Agent Vượt qua task Cuộc gọi công cụ
 
-## 2. Agent 的代码组织
+## 2. Agent tổ chức mã
 
-建议在 `backend/package/yuxi/agents` 下按包组织一个智能体：
+Đó là khuyến khích để `backend/package/yuxi/agents` Tổ chức đại lý theo gói：
 
 ```text
 backend/package/yuxi/agents/
@@ -34,13 +34,13 @@ backend/package/yuxi/agents/
     └── graph.py
 ```
 
-最小实现通常包含：
+Việc triển khai tối thiểu thường chứa：
 
-- 一个继承 `BaseAgent` 的主类
-- 一个 `context_schema`
-- 一个 `get_graph()` 实现
+- một sự thừa kế `BaseAgent` lớp học chính
+- một `context_schema`
+- một `get_graph()` nhận ra
 
-示例：
+Ví dụ：
 
 ```python
 from yuxi.agents import BaseAgent, BaseContext, load_chat_model
@@ -48,8 +48,8 @@ from langchain.agents import create_agent
 
 
 class MyAgent(BaseAgent):
-    name = "我的智能体"
-    description = "示例智能体"
+    name = "đại lý của tôi"
+    description = "Đại lý mẫu"
     context_schema = BaseContext
 
     async def get_graph(self, context=None, **kwargs):
@@ -62,87 +62,87 @@ class MyAgent(BaseAgent):
         return graph
 ```
 
-## 3. Context 是配置模型，不只是运行时参数
+## 3. Context là mô hình cấu hình，Không chỉ các tham số thời gian chạy
 
-### 3.1 `BaseContext` 的角色
+### 3.1 `BaseContext` vai trò
 
-`BaseContext` 定义在 `backend/package/yuxi/agents/context.py`，它不是一个普通的数据类，而是整个智能体配置链路的核心：
+`BaseContext` được định nghĩa trong `backend/package/yuxi/agents/context.py`，Nó không phải là một lớp dữ liệu thông thường，Nó là cốt lõi của toàn bộ liên kết cấu hình tác nhân thông minh.：
 
-- 它定义了 Agent 可以配置哪些字段
-- 它定义了这些字段在前端如何展示
-- 它也是运行期传入 Graph 和中间件的上下文对象
+- nó định nghĩa Agent Những trường nào có thể được cấu hình
+- Nó xác định cách các trường này được hiển thị ở mặt trước
+- Nó cũng được truyền vào trong thời gian chạy Graph và các đối tượng bối cảnh phần mềm trung gian
 
-当前基础字段包括：
+Các trường cơ bản hiện tại bao gồm：
 
-| 字段 | 作用 |
+| trường | chức năng |
 | --- | --- |
-| `system_prompt` | 系统提示词 |
-| `model` | 主模型 |
-| `tools` | 启用的内置工具 |
-| `knowledges` | 关联知识库 |
-| `mcps` | 启用的 MCP 服务器 |
-| `skills` | 关联 Skills |
-| `summary_threshold` | 摘要触发阈值 |
-| `summary_prompt` | 摘要触发时使用的提示词 |
-| `summary_keep_messages` | 摘要后保留的最近消息数 |
-| `summary_tool_result_token_limit` | 摘要阶段工具结果预览上限 |
-| `max_execution_steps` | 单次运行最大执行步数 |
-| `thread_id` / `uid` | 运行期标识，不作为页面配置项暴露 |
+| `system_prompt` | Lời nhắc hệ thống |
+| `model` | mô hình bậc thầy |
+| `tools` | Đã bật công cụ tích hợp |
+| `knowledges` | Cơ sở kiến thức liên quan |
+| `mcps` | đã bật MCP máy chủ |
+| `skills` | hiệp hội Skills |
+| `summary_threshold` | Ngưỡng kích hoạt tóm tắt |
+| `summary_prompt` | Từ nhắc nhở sử dụng khi kích hoạt tóm tắt |
+| `summary_keep_messages` | Số lượng tin nhắn gần đây được giữ lại sau khi thông báo |
+| `summary_tool_result_token_limit` | Giới hạn xem trước kết quả của công cụ giai đoạn tóm tắt |
+| `max_execution_steps` | Số bước thực hiện tối đa trong một lần chạy |
+| `thread_id` / `uid` | mã định danh thời gian chạy，Không được hiển thị dưới dạng mục cấu hình trang |
 
-`tools`、`knowledges`、`mcps`、`skills` 在未显式配置时会默认启用当前用户可访问的全部资源。
+`tools`、`knowledges`、`mcps`、`skills` Khi không được định cấu hình rõ ràng, tất cả tài nguyên mà người dùng hiện tại có thể truy cập sẽ được bật theo mặc định.。
 
-`ChatBotContext` 在 `BaseContext` 之上增加 `subagents` 字段，表示当前主 Agent 允许调用的子智能体。`subagents` 未显式配置或保存空列表时会默认启用当前用户可见的全部子智能体；显式选择后则作为允许列表过滤。
+`ChatBotContext` trong `BaseContext` tăng ở trên `subagents` trường，Cho biết nội dung chính hiện tại Agent Các đại lý con được phép gọi。`subagents` Khi không được định cấu hình rõ ràng hoặc khi danh sách trống được lưu, tất cả các tác nhân phụ hiển thị cho người dùng hiện tại sẽ được bật theo mặc định.；Sau khi lựa chọn rõ ràng, nó sẽ được lọc dưới dạng danh sách cho phép.。
 
-`SubAgentContext` 在 `BaseContext` 之上增加 `parent_thread_id`、`file_thread_id`、`skills_thread_id` 与 `is_subagent_runtime` 等隐藏运行态字段，不包含 `subagents`，因此子智能体不能继续配置下一层子智能体。
+`SubAgentContext` trong `BaseContext` tăng ở trên `parent_thread_id`、`file_thread_id`、`skills_thread_id` với `is_subagent_runtime` Chờ để ẩn các trường trạng thái đang chạy，Không bao gồm `subagents`，Do đó, tác nhân phụ không thể tiếp tục định cấu hình lớp tác nhân phụ tiếp theo.。
 
-### 3.2 前端配置项如何从 Context 生成
+### 3.2 Cách thay đổi các mục cấu hình giao diện người dùng từ Context tạo ra
 
-`BaseContext.get_configurable_items()` 会遍历字段定义，把字段类型、默认值、描述、模板元数据整理成 `configurable_items`。
+`BaseContext.get_configurable_items()` Sẽ duyệt qua các định nghĩa trường，đặt loại trường、Giá trị mặc định、Mô tả、Siêu dữ liệu mẫu được tổ chức thành `configurable_items`。
 
-随后：
+sau đó：
 
-1. `BaseAgent.get_info()` 暴露 `configurable_items`
-2. 前端读取 Agent 详情
-3. `AgentRuntimeConfigForm` 按 `kind` 渲染不同控件
+1. `BaseAgent.get_info()` bị lộ `configurable_items`
+2. Đọc front-end Agent Chi tiết
+3. `AgentRuntimeConfigForm` nhấn `kind` Hiển thị các điều khiển khác nhau
 
-也就是说，`AgentRuntimeConfigForm` 不是手写每个字段，而是直接消费 `context_schema` 生成的配置描述。
+Tức là nói，`AgentRuntimeConfigForm` Thay vì viết tay vào mọi lĩnh vực，nhưng tiêu dùng trực tiếp `context_schema` Mô tả cấu hình đã tạo。
 
-这也是为什么：
+Đây là lý do tại sao：
 
-- 新增一个 Context 字段，往往会直接影响侧边栏
-- 字段的 `metadata` 信息会直接影响展示方式
+- Thêm một cái mới Context trường，Thường ảnh hưởng trực tiếp đến sidebar
+- lĩnh vực `metadata` Thông tin sẽ ảnh hưởng trực tiếp đến cách nó được hiển thị
 
-### 3.3 配置表单与 Agent 的联动关系
+### 3.3 Mẫu cấu hình với Agent mối quan hệ liên kết
 
-这部分是最关键的。
+Phần này là quan trọng nhất。
 
-在前端：
+ở mặt trước：
 
-- `AgentRuntimeConfigForm.vue` 负责渲染配置表单
-- `agentStore` 加载配置时，读取 `config_json.context`
-- 如果某些字段未配置，会用 `configurable_items` 中的默认值补全
-- 保存时，前端将当前表单写回 `config_json: { context: agentConfig }`
+- `AgentRuntimeConfigForm.vue` Chịu trách nhiệm hiển thị các biểu mẫu cấu hình
+- `agentStore` Khi tải cấu hình，đọc `config_json.context`
+- Nếu một số trường không được cấu hình，Sẽ sử dụng `configurable_items` Hoàn thành giá trị mặc định trong
+- khi lưu，Giao diện người dùng ghi lại biểu mẫu hiện tại `config_json: { context: agentConfig }`
 
-因此真实关系是：
+Do đó mối quan hệ thực sự là：
 
 ```text
 context_schema
   -> get_configurable_items()
-  -> Agent detail API 返回 configurable_items
-  -> AgentRuntimeConfigForm 渲染表单
-  -> 用户编辑后保存到 config_json.context
+  -> Agent detail API Trở lại configurable_items
+  -> AgentRuntimeConfigForm Kết xuất biểu mẫu
+  -> Sau khi người dùng chỉnh sửa, lưu vào config_json.context
 ```
 
-这里需要特别注意两点：
+Hai điểm cần đặc biệt chú ý ở đây：
 
-- **侧边栏展示结构来自 `context_schema`**
-- **配置实例值来自数据库中的 `config_json.context`**
+- **Cấu trúc hiển thị thanh bên xuất phát từ `context_schema`**
+- **Các giá trị phiên bản cấu hình đến từ cơ sở dữ liệu `config_json.context`**
 
-前者决定“能配什么、怎么展示”，后者决定“当前配置实际选了什么”。
+Người trước quyết định“Những gì có thể được ghép nối với nó?、Cách hiển thị”，Người sau quyết định“Điều gì thực sự được chọn cho cấu hình hiện tại?”。
 
-### 3.4 自定义 Context 的推荐方式
+### 3.4 Tùy chỉnh Context Phương pháp khuyến nghị
 
-如果某个智能体有额外配置，不要在前端单独加一套表单，而是直接扩展 Context：
+Nếu một tác nhân có cấu hình bổ sung，Không thêm một nhóm biểu mẫu riêng biệt vào giao diện người dùng，Thay vào đó, hãy mở rộng trực tiếp Context：
 
 ```python
 from dataclasses import dataclass, field
@@ -154,182 +154,182 @@ class MyAgentContext(BaseContext):
     custom_mode: str = field(
         default="default",
         metadata={
-            "name": "运行模式",
-            "description": "控制智能体的自定义行为",
+            "name": "chế độ hoạt động",
+            "description": "Kiểm soát hành vi tùy chỉnh của đại lý",
             "options": ["default", "strict"],
         },
     )
 ```
 
-然后在 Agent 中声明：
+sau đó vào Agent Tuyên bố trong：
 
 ```python
 class MyAgent(BaseAgent):
     context_schema = MyAgentContext
 ```
 
-这会同时影响：
+Điều này cũng sẽ ảnh hưởng：
 
-- 后端可接收的配置结构
-- 前端配置侧边栏的展示内容
-- 运行期 `context` 可访问的字段
+- Cấu trúc cấu hình mà chương trình phụ trợ có thể nhận được
+- Nội dung hiển thị thanh bên cấu hình giao diện người dùng
+- thời gian chạy `context` Các trường có thể truy cập
 
-## 4. Context 如何贯穿 Agent 的运行周期
+## 4. Context làm thế nào để thâm nhập Agent chu kỳ hoạt động
 
-Context 的价值不只在“配置页面”。它贯穿了从配置加载到实际执行的整条链路。
+Context Giá trị của“Trang cấu hình”。Nó chạy qua toàn bộ liên kết từ tải cấu hình đến thực thi thực tế。
 
-### 4.1 配置加载阶段
+### 4.1 Giai đoạn tải cấu hình
 
-在聊天请求进入后端时，服务会先解析请求中的 `agent_id` 或线程已绑定的 Agent，再加载对应配置。
+Khi có yêu cầu trò chuyện đến phần phụ trợ，Dịch vụ đầu tiên sẽ phân tích yêu cầu `agent_id` hoặc bị ràng buộc bởi chủ đề Agent，Sau đó tải cấu hình tương ứng。
 
-当前主流程在 `chat_service.py` 中：
+Quá trình chính hiện tại là ở `chat_service.py` trong：
 
-1. 新线程通过 `agent_id` 查找用户可访问的 Agent
-2. 已有线程通过 `thread_id` 读取 `Conversation.agent_id`，并拒绝运行中切换 Agent
-3. 取出 Agent 的 `config_json.context`
-4. 与 `uid`、`thread_id` 合并成运行时输入
+1. Chủ đề mới đã được thông qua `agent_id` Tìm người dùng có thể truy cập Agent
+2. Một chủ đề đã trôi qua `thread_id` đọc `Conversation.agent_id`，và từ chối chuyển đổi nhanh chóng Agent
+3. lấy ra Agent của `config_json.context`
+4. với `uid`、`thread_id` Được kết hợp vào đầu vào thời gian chạy
 
-也就是说，运行期 Context 的基础来源并不是前端临时状态，而是数据库中保存的 Agent。
+Tức là nói，thời gian chạy Context Nguồn cơ bản không phải là trạng thái tạm thời của giao diện người dùng，Nó được lưu trong cơ sở dữ liệu Agent。
 
-此外，用户工作区会默认创建 `agents/AGENTS.md`。当 Agent 开始执行时，后端会读取当前用户工作区下的这个文件，并将其内容追加到 `system_prompt`，用于补充该用户对 Agent 的长期指令或工作区约定。该文件属于用户级共享工作区，内容会随 `uid` 和当前运行的线程作用域映射到运行时工作区路径；文件不存在、为空或不可读时不会影响 Agent 启动，单次注入内容最多读取 64 KiB，超出部分会截断并追加提示。
+Ngoài ra，Không gian làm việc của người dùng được tạo theo mặc định `agents/AGENTS.md`。Khi nào Agent Khi bắt đầu thực hiện，Phần phụ trợ sẽ đọc tệp này trong không gian làm việc của người dùng hiện tại，và nối thêm nội dung của nó vào `system_prompt`，được sử dụng để bổ sung cho người dùng Agent chỉ thị thường trực hoặc cam kết về không gian làm việc。Tệp này thuộc về không gian làm việc chung ở cấp độ người dùng，Nội dung sẽ thay đổi `uid` và phạm vi luồng hiện đang chạy được ánh xạ tới đường dẫn không gian làm việc thời gian chạy；Tập tin không tồn tại、Nó sẽ không ảnh hưởng nếu nó trống hoặc không thể đọc được. Agent bắt đầu，Số lần đọc tối đa cho một nội dung được chèn 64 KiB，Phần thừa sẽ bị cắt bớt và thêm lời nhắc.。
 
-合并后的提示词结构可以理解为：
+Cấu trúc từ nhắc gộp có thể hiểu là：
 
 ```text
 Agent.config_json.context.system_prompt
-  + 用户工作区 agents/AGENTS.md 内容
-  + 运行期中间件继续追加的系统提示段
+  + Không gian làm việc của người dùng agents/AGENTS.md nội dung
+  + Phần lời nhắc hệ thống mà phần mềm trung gian tiếp tục thêm vào trong thời gian chạy
 ```
 
-因此，`agents/AGENTS.md` 适合放置用户维度的稳定约束，不适合放置一次性任务要求；一次性要求仍应直接写在当前对话中。
+Vì thế，`agents/AGENTS.md` Các ràng buộc ổn định phù hợp để đặt kích thước người dùng，Không phù hợp để đặt yêu cầu nhiệm vụ một lần；Yêu cầu một lần vẫn phải được viết trực tiếp trong cuộc trò chuyện hiện tại。
 
-### 4.2 Context 实例化阶段
+### 4.2 Context giai đoạn khởi tạo
 
-`BaseAgent` 在运行前会创建 `context_schema()` 实例，并通过 `update_from_dict()` 注入配置值。
+`BaseAgent` sẽ được tạo trước khi chạy `context_schema()` Ví dụ，và vượt qua `update_from_dict()` Chèn giá trị cấu hình。
 
-这一步完成后，Context 才真正成为运行期对象。
+Sau khi bước này hoàn tất，Context Nó thực sự trở thành một đối tượng thời gian chạy。
 
-可以把它理解为：
+Nó có thể được hiểu là：
 
 ```text
 config_json.context + runtime ids -> context_schema instance
 ```
 
-### 4.3 Graph 构建阶段
+### 4.3 Graph giai đoạn xây dựng
 
-`get_graph(context=context)` 会收到这份 Context。
+`get_graph(context=context)` sẽ nhận được điều này Context。
 
-以内置 `chatbot` 为例，Context 会直接参与：
+có tích hợp sẵn `chatbot` Ví dụ，Context sẽ tham gia trực tiếp：
 
-- 主模型选择：`context.model`
-- 系统提示词拼接：`context.system_prompt`
-- 可调用子智能体列表：`context.subagents`
-- 摘要阈值：`context.summary_threshold`
+- Lựa chọn mô hình chính：`context.model`
+- Nối từ nhắc nhở hệ thống：`context.system_prompt`
+- Danh sách các đại lý phụ có thể gọi：`context.subagents`
+- ngưỡng tóm tắt：`context.summary_threshold`
 
-因此 Graph 不是和 Context 解耦的。相反，Graph 的构造本身就依赖 Context。普通 Agent 在归一化后的 `context.subagents` 非空时会挂载 Yuxi 的 task middleware；`SubAgentBackend` 自身隐藏并清空 `subagents` 字段，因此子智能体不会继续调用子智能体。
+Vì thế Graph không và Context tách rời。Ngược lại，Graph Bản thân cấu trúc phụ thuộc vào Context。Bình thường Agent sau khi bình thường hóa `context.subagents` Sẽ được gắn kết khi nó không trống Yuxi của task middleware；`SubAgentBackend` Ẩn chính nó và xóa nó `subagents` trường，Do đó đại lý phụ sẽ không tiếp tục gọi đại lý phụ。
 
-### 4.4 Graph 构建与中间件运行阶段
+### 4.4 Graph Các giai đoạn xây dựng và chạy phần mềm trung gian
 
-`get_graph()` 创建 LangGraph 前会先调用 `prepare_agent_runtime_context`，用当前用户重新过滤资源字段，并派生运行时字段：
+`get_graph()` tạo ra LangGraph sẽ được gọi đầu tiên `prepare_agent_runtime_context`，Lọc lại các trường tài nguyên với người dùng hiện tại，và lấy được các trường thời gian chạy：
 
-- `_visible_knowledge_bases`：当前会话实际可查询的知识库对象
-- `_prompt_skills`：需要注入提示词的 Skill 闭包
-- `_readable_skills`：`/home/gem/skills` 和沙盒可读的 Skill 闭包
+- `_visible_knowledge_bases`：Các đối tượng cơ sở kiến thức thực sự có thể được truy vấn trong phiên hiện tại
+- `_prompt_skills`：Cần tiêm những lời nhắc nhở Skill đóng cửa
+- `_readable_skills`：`/home/gem/skills` và hộp cát có thể đọc được Skill đóng cửa
 
-随后 Graph 构建会直接使用这份 Context：
+sau đó Graph Bản dựng sẽ sử dụng trực tiếp cái này Context：
 
-- `load_chat_model(context.model)` 选择主模型
-- `build_prompt_with_context(context)` 生成系统提示词
-- `resolve_configured_runtime_tools(context)` 组装已配置的内置工具和 MCP 工具
-- `KnowledgeBaseMiddleware` 根据 `_visible_knowledge_bases` 暴露知识库工具
-- `SkillsMiddleware` 根据 `_prompt_skills` 注入 Skill 提示段，并在 Skill 被激活后按需挂载工具与 MCP 依赖
-- `save_attachments_to_fs` 将线程附件转换为运行时可读的文件提示
+- `load_chat_model(context.model)` Chọn mô hình chính
+- `build_prompt_with_context(context)` Tạo các từ nhắc hệ thống
+- `resolve_configured_runtime_tools(context)` Lắp ráp các công cụ cài sẵn đã được cấu hình và MCP Công cụ
+- `KnowledgeBaseMiddleware` Theo `_visible_knowledge_bases` Trình bày các công cụ cơ sở tri thức
+- `SkillsMiddleware` Theo `_prompt_skills` tiêm Skill Phần nhắc nhở，Và trong Skill Sau khi được kích hoạt, hãy gắn các công cụ và MCP phụ thuộc vào
+- `save_attachments_to_fs` Chuyển đổi phần đính kèm của luồng thành gợi ý tệp có thể đọc được trong thời gian chạy
 
-文件系统与沙盒接入同样读取这些运行时字段：
+Quyền truy cập hệ thống tệp và hộp cát cũng đọc các trường thời gian chạy này：
 
-- 普通 Agent 默认使用当前 `thread_id` 作为文件与 Skills 作用域
-- 子智能体使用 child `thread_id` 做 checkpoint，`file_thread_id` 指向父会话 uploads/outputs，`skills_thread_id` 指向子智能体自身 Skills 作用域
-- 通过 `_readable_skills` 决定 `/home/gem/skills` 的可读范围
+- Bình thường Agent Theo mặc định, hiện tại `thread_id` dưới dạng tập tin với Skills Phạm vi
+- Sử dụng chất phụ child `thread_id` làm checkpoint，`file_thread_id` Trỏ tới phiên cha mẹ uploads/outputs，`skills_thread_id` Chỉ vào chính tác nhân phụ Skills Phạm vi
+- Vượt qua `_readable_skills` quyết định `/home/gem/skills` Phạm vi có thể đọc được của
 
-所以 Context 既是输入配置，也是 Graph 创建前整理出的运行时资源上下文。
+Vì vậy Context Cả hai cấu hình đầu vào，Ngoài ra Graph Bối cảnh tài nguyên thời gian chạy được sắp xếp trước khi tạo。
 
-### 4.5 文件系统与 Viewer 阶段
+### 4.5 Hệ thống tập tin và Viewer sân khấu
 
-文件系统服务不会重新发明一套配置结构，而是再次从 `config_json.context` 还原出 runtime context，用于：
+Dịch vụ hệ thống tệp không phát minh lại cấu trúc cấu hình，Nhưng một lần nữa từ `config_json.context` khôi phục lại runtime context，dùng cho：
 
-- 判断当前线程下 Agent 可见的 Skills
-- 构造 Agent 视图的 composite backend
-- 构造 Viewer 视图的文件系统展示
+- Xác định chủ đề hiện tại Agent có thể nhìn thấy Skills
+- cấu trúc Agent quan điểm của composite backend
+- cấu trúc Viewer Xem hiển thị hệ thống tập tin
 
-这也是为什么 Context 不只是聊天链路的一部分，它还影响：
+Đây là lý do tại sao Context Không chỉ là một phần của liên kết trò chuyện，nó cũng ảnh hưởng：
 
-- Agent 文件工具
-- Viewer 文件浏览器
-- Skills 可见性
-- 沙盒挂载语义
+- Agent công cụ tập tin
+- Viewer Trình duyệt tập tin
+- Skills khả năng hiển thị
+- Ngữ nghĩa gắn kết hộp cát
 
-### 4.6 恢复运行阶段
+### 4.6 Giai đoạn phục hồi
 
-在 `resume` 流程中，系统同样会通过线程绑定的 Agent 重新构造 Context，再继续执行 Graph。
+trong `resume` đang trong quá trình，Hệ thống cũng sẽ bị ràng buộc thông qua các chủ đề Agent Tái cơ cấu Context，tiếp tục thực hiện Graph。
 
-也就是说，无论是：
+Tức là nói，Cho dù đó là：
 
-- 首次对话
-- 中断恢复
-- 文件系统查看
+- cuộc trò chuyện đầu tiên
+- Phục hồi ngắt
+- Chế độ xem hệ thống tập tin
 
-它们都依赖同一份 Context 配置来源。
+Tất cả đều phụ thuộc vào cùng Context Nguồn cấu hình。
 
-## 5. `capabilities` 的作用
+## 5. `capabilities` vai trò
 
-`capabilities` 用于声明前端可直接从 Agent 静态元数据判断的能力开关，控制上传入口、文件面板等固定 UI，不等同于 Context，也不适合表达运行中才会出现的状态。
+`capabilities` Được sử dụng để khai báo giao diện người dùng trực tiếp từ Agent Công tắc khả năng phán đoán siêu dữ liệu tĩnh，Kiểm soát mục tải lên、Bảng điều khiển tập tin, v.v. đã được sửa UI，không tương đương với Context，Nó cũng không thích hợp để biểu diễn các trạng thái chỉ xảy ra trong quá trình hoạt động.。
 
-示例：
+Ví dụ：
 
 ```python
 class MyAgent(BaseAgent):
     capabilities = ["file_upload", "files"]
 ```
 
-当前常见能力包括：
+Các khả năng phổ biến hiện tại bao gồm：
 
-| capability | 说明 |
+| capability | Mô tả |
 | --- | --- |
-| `file_upload` | 启用上传入口 |
-| `files` | 启用文件面板 |
+| `file_upload` | Kích hoạt cổng tải lên |
+| `files` | Kích hoạt bảng tập tin |
 
-像 todo 这类运行态信息，不建议再放进 `capabilities`。Yuxi 当前会直接从 LangGraph state 中提取 `agent_state`，前端在创建对话后常态化展示状态入口，并在状态面板中渲染 `todos`、`files`、`artifacts`、`subagent_runs` 等运行时内容。
+thích todo Loại thông tin trạng thái đang chạy này，Không nên đặt lại `capabilities`。Yuxi Hiện nay nó sẽ được gửi trực tiếp từ LangGraph state chiết xuất từ ​​ `agent_state`，Giao diện người dùng hiển thị mục trạng thái bình thường sau khi tạo cuộc trò chuyện.，và hiển thị trong bảng trạng thái `todos`、`files`、`artifacts`、`subagent_runs` Chờ nội dung thời gian chạy。
 
-它解决的是“Agent 先天支持什么固定入口”，而不是“运行时当前产生了什么状态”。
+Những gì nó giải quyết là“Agent Nó hỗ trợ lối vào cố định nào?”，thay vì“Trạng thái nào hiện được tạo trong thời gian chạy”。
 
-## 6. 开发建议
+## 6. Đề xuất phát triển
 
-### 6.1 新增配置时优先改 Context
+### 6.1 Ưu tiên thay đổi khi thêm cấu hình mới Context
 
-如果一个配置项会影响 Agent 行为，优先考虑把它做成 `context_schema` 字段，而不是前端单独维护状态。
+Nếu một mục cấu hình ảnh hưởng Agent hành vi，Hãy ưu tiên nó `context_schema` trường，Thay vì giao diện người dùng duy trì trạng thái riêng biệt。
 
-### 6.2 把 Graph 逻辑和配置逻辑分开
+### 6.2 đặt Graph Logic riêng biệt và logic cấu hình
 
-推荐做法：
+Các phương pháp được đề xuất：
 
-- `context.py` 定义配置模型
-- `graph.py` 使用这些配置构建 Graph
+- `context.py` Xác định mô hình cấu hình
+- `graph.py` Xây dựng với các cấu hình này Graph
 
-这样前后端联动关系会清晰很多。
+Bằng cách này, mối quan hệ liên kết giữa mặt trước và mặt sau sẽ rõ ràng hơn rất nhiều.。
 
-### 6.3 把“配置来源”和“运行时状态”区分开
+### 6.3 đặt“Nguồn cấu hình”và“trạng thái thời gian chạy”phân biệt
 
-建议始终区分两层语义：
+Nên luôn phân biệt giữa hai cấp độ ngữ nghĩa：
 
-- `config_json.context`：持久化配置来源
-- `runtime.context`：实际运行对象，可能被中间件继续补充或修改
+- `config_json.context`：Nguồn cấu hình liên tục
+- `runtime.context`：đối tượng đang chạy thực tế，Có thể được bổ sung hoặc sửa đổi thêm bởi phần mềm trung gian
 
-## 7. 相关主题
+## 7. Chủ đề liên quan
 
-- [工具系统](./tools-system.md)
-- [中间件](./middleware.md)
-- [沙盒架构与设计](./sandbox-architecture.md)
-- [MCP 集成](./mcp-integration.md)
-- [Skills 管理](./skills-management.md)
-- [子智能体](./subagents-management.md)
-- [Langfuse 集成](../advanced/langfuse-integration.md)
+- [Hệ thống công cụ](./tools-system.md)
+- [phần mềm trung gian](./middleware.md)
+- [Kiến trúc và thiết kế hộp cát](./sandbox-architecture.md)
+- [MCP Tích hợp](./mcp-integration.md)
+- [Skills quản lý](./skills-management.md)
+- [chất phụ](./subagents-management.md)
+- [Langfuse Tích hợp](../advanced/langfuse-integration.md)

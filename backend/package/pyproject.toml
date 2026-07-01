@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "yuxi"
 version = "0.7.1.dev0"
-description = "Yuxi 智能知识库与知识图谱平台核心后端包"
+description = "Yuxi Cơ sở kiến ​​thức thông minh và gói phụ trợ cốt lõi của nền tảng đồ thị kiến ​​thức"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
@@ -76,7 +76,7 @@ dependencies = [
     "typer>=0.16.0",
     "unstructured>=0.17.2",
     "wcmatch>=8.0.0",
-    # Markdown 解析语义切分相关依赖
+    # Markdown Phân tích các phụ thuộc liên quan đến phân đoạn ngữ nghĩa
     "markdown-it-py>=3.0.0",
     "mdit-py-plugins>=0.4.0",
     "scikit-learn>=1.3.0",

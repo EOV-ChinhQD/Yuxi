@@ -1,18 +1,18 @@
 <template>
   <div class="user-management">
-    <!-- 头部区域 -->
+    <!-- vùng đầu -->
     <div class="header-section">
       <div class="header-content">
-        <div class="section-title">用户管理</div>
+        <div class="section-title">Quản lý người dùng</div>
         <p class="section-description">
-          管理系统用户，请谨慎操作。删除用户后该用户将无法登录系统。
+          Quản lý người dùng hệ thống，Hãy hoạt động một cách thận trọng。Sau khi xóa người dùng, người dùng sẽ không thể đăng nhập vào hệ thống.。
         </p>
       </div>
       <div class="header-actions">
         <a-button
           @click="handleRefresh"
           :loading="userManagement.refreshing"
-          title="刷新"
+          title="Làm mới"
           class="refresh-btn lucide-icon-btn"
         >
           <template #icon>
@@ -21,7 +21,7 @@
         </a-button>
         <a-button type="primary" @click="showAddUserModal" class="add-btn lucide-icon-btn">
           <template #icon><Plus :size="16" /></template>
-          添加用户
+          Thêm người dùng
         </a-button>
       </div>
     </div>
@@ -30,14 +30,14 @@
       <a-input
         v-model:value="userManagement.searchKeyword"
         class="search-input"
-        placeholder="搜索用户名 / ID / 手机号"
+        placeholder="Tìm kiếm tên người dùng / ID / Số điện thoại di động"
         allow-clear
       >
         <template #prefix><Search :size="16" /></template>
       </a-input>
       <div class="filter-actions">
         <a-select v-model:value="userManagement.departmentFilter" class="filter-select">
-          <a-select-option value="">全部部门</a-select-option>
+          <a-select-option value="">Tất cả các phòng ban</a-select-option>
           <a-select-option
             v-for="dept in departmentFilterOptions"
             :key="dept.value"
@@ -47,15 +47,15 @@
           </a-select-option>
         </a-select>
         <a-select v-model:value="userManagement.roleFilter" class="filter-select">
-          <a-select-option value="">全部权限</a-select-option>
-          <a-select-option value="superadmin">超级管理员</a-select-option>
-          <a-select-option value="admin">管理员</a-select-option>
-          <a-select-option value="user">普通用户</a-select-option>
+          <a-select-option value="">Tất cả các quyền</a-select-option>
+          <a-select-option value="superadmin">siêu quản trị viên</a-select-option>
+          <a-select-option value="admin">Quản trị viên</a-select-option>
+          <a-select-option value="user">Người dùng thông thường</a-select-option>
         </a-select>
       </div>
     </div>
 
-    <!-- 主内容区域 -->
+    <!-- khu vực nội dung chính -->
     <div class="content-section">
       <a-spin :spinning="userManagement.loading">
         <div v-if="userManagement.error" class="error-message">
@@ -65,7 +65,7 @@
         <div class="cards-container">
           <div v-if="filteredUsers.length === 0" class="empty-state">
             <a-empty
-              :description="userManagement.users.length === 0 ? '暂无用户数据' : '没有匹配的用户'"
+              :description="userManagement.users.length === 0 ? 'Chưa có dữ liệu người dùng' : 'Không có người dùng phù hợp'"
             />
           </div>
           <div v-else class="user-cards-grid">
@@ -116,7 +116,7 @@
                       <a-menu-item key="edit" @click.stop="showEditUserModal(user)">
                         <span class="user-card-menu-item">
                           <SquarePen :size="14" />
-                          编辑用户
+                          Chỉnh sửa người dùng
                         </span>
                       </a-menu-item>
                       <a-menu-item
@@ -129,7 +129,7 @@
                           :class="{ danger: !isUserDeleteDisabled(user) }"
                         >
                           <Trash2 :size="14" />
-                          删除用户
+                          Xóa người dùng
                         </span>
                       </a-menu-item>
                     </a-menu>
@@ -138,7 +138,7 @@
                     type="text"
                     size="small"
                     class="card-menu-trigger lucide-icon-btn"
-                    aria-label="用户操作"
+                    aria-label="Hành động của người dùng"
                     @click.stop
                   >
                     <MoreVertical :size="16" />
@@ -148,15 +148,15 @@
 
               <div class="card-content">
                 <div class="info-item">
-                  <span class="info-label">手机号:</span>
+                  <span class="info-label">Số điện thoại di động:</span>
                   <span class="info-value phone-text">{{ user.phone_number || '-' }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">创建时间:</span>
+                  <span class="info-label">thời gian sáng tạo:</span>
                   <span class="info-value time-text">{{ formatTime(user.created_at) }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">最后登录:</span>
+                  <span class="info-label">lần đăng nhập cuối cùng:</span>
                   <span class="info-value time-text">{{ formatTime(user.last_login) }}</span>
                 </div>
               </div>
@@ -176,7 +176,7 @@
       </a-spin>
     </div>
 
-    <!-- 用户表单模态框 -->
+    <!-- Hộp phương thức biểu mẫu người dùng -->
     <a-modal
       v-model:open="userManagement.modalVisible"
       :title="userManagement.modalTitle"
@@ -188,10 +188,10 @@
       class="user-modal"
     >
       <a-form layout="vertical" class="user-form">
-        <a-form-item label="用户名" required class="form-item">
+        <a-form-item label="Tên người dùng" required class="form-item">
           <a-input
             v-model:value="userManagement.form.username"
-            placeholder="请输入用户名（2-20个字符）"
+            placeholder="Vui lòng nhập tên người dùng（2-20nhân vật）"
             @blur="validateAndGenerateUid"
             :maxlength="20"
           />
@@ -202,15 +202,15 @@
             v-if="userManagement.form.generatedUid && !userManagement.editMode"
             class="help-text"
           >
-            登录ID：{{ userManagement.form.generatedUid }}，此ID将用于登录，根据用户名自动生成
+            Đăng nhậpID：{{ userManagement.form.generatedUid }}，cái nàyIDsẽ được sử dụng để đăng nhập，Tự động tạo dựa trên tên người dùng
           </div>
         </a-form-item>
 
-        <!-- 手机号字段 -->
-        <a-form-item label="手机号" class="form-item">
+        <!-- Trường số điện thoại di động -->
+        <a-form-item label="Số điện thoại di động" class="form-item">
           <a-input
             v-model:value="userManagement.form.phoneNumber"
-            placeholder="请输入手机号（可选，可用于登录）"
+            placeholder="Vui lòng nhập số điện thoại di động（Tùy chọn，Có sẵn để đăng nhập）"
             :maxlength="11"
           />
           <div v-if="userManagement.form.phoneError" class="error-text">
@@ -221,45 +221,45 @@
         <template v-if="userManagement.editMode">
           <div class="password-toggle">
             <a-checkbox v-model:checked="userManagement.displayPasswordFields">
-              修改密码
+              Thay đổi mật khẩu
             </a-checkbox>
           </div>
         </template>
 
         <template v-if="!userManagement.editMode || userManagement.displayPasswordFields">
-          <a-form-item label="密码" required class="form-item">
+          <a-form-item label="Mật khẩu" required class="form-item">
             <a-input-password
               v-model:value="userManagement.form.password"
-              placeholder="请输入密码"
+              placeholder="Vui lòng nhập mật khẩu"
             />
           </a-form-item>
 
-          <a-form-item label="确认密码" required class="form-item">
+          <a-form-item label="Xác nhận mật khẩu" required class="form-item">
             <a-input-password
               v-model:value="userManagement.form.confirmPassword"
-              placeholder="请再次输入密码"
+              placeholder="Vui lòng nhập lại mật khẩu"
             />
           </a-form-item>
         </template>
 
         <a-form-item
           v-if="userManagement.editMode && userManagement.form.role === 'superadmin'"
-          label="角色"
+          label="vai trò"
           class="form-item"
         >
-          <a-input value="超级管理员" disabled />
-          <div class="help-text">超级管理员账户无法修改角色</div>
+          <a-input value="siêu quản trị viên" disabled />
+          <div class="help-text">Tài khoản quản trị viên cấp cao không thể sửa đổi vai trò</div>
         </a-form-item>
-        <a-form-item v-else label="角色" class="form-item">
+        <a-form-item v-else label="vai trò" class="form-item">
           <a-select v-model:value="userManagement.form.role">
-            <a-select-option value="user">普通用户</a-select-option>
-            <a-select-option value="admin" v-if="userStore.isSuperAdmin">管理员</a-select-option>
+            <a-select-option value="user">Người dùng thông thường</a-select-option>
+            <a-select-option value="admin" v-if="userStore.isSuperAdmin">Quản trị viên</a-select-option>
           </a-select>
         </a-form-item>
 
-        <!-- 部门选择器（仅超级管理员可见） -->
-        <a-form-item v-if="userStore.isSuperAdmin" label="部门" class="form-item">
-          <a-select v-model:value="userManagement.form.departmentId" placeholder="请选择部门">
+        <!-- Bộ chọn bộ phận（Chỉ hiển thị với quản trị viên cấp cao） -->
+        <a-form-item v-if="userStore.isSuperAdmin" label="Sở" class="form-item">
+          <a-select v-model:value="userManagement.form.departmentId" placeholder="Vui lòng chọn một bộ phận">
             <a-select-option
               v-for="dept in departmentManagement.departments"
               :key="dept.id"
@@ -296,7 +296,7 @@ import FallbackAvatar from '@/components/common/FallbackAvatar.vue'
 
 const userStore = useUserStore()
 
-// 用户管理相关状态
+// Trạng thái liên quan đến quản lý người dùng
 const userManagement = reactive({
   loading: false,
   refreshing: false,
@@ -308,24 +308,24 @@ const userManagement = reactive({
   pageSize: 50,
   error: null,
   modalVisible: false,
-  modalTitle: '添加用户',
+  modalTitle: 'Thêm người dùng',
   editMode: false,
   editUserId: null,
   form: {
     username: '',
-    generatedUid: '', // 自动生成的uid
-    phoneNumber: '', // 手机号
+    generatedUid: '', // được tạo tự độnguid
+    phoneNumber: '', // Số điện thoại di động
     password: '',
     confirmPassword: '',
-    role: 'user', // 默认角色
-    departmentId: null, // 部门ID
-    usernameError: '', // 用户名错误信息
-    phoneError: '' // 手机号错误信息
+    role: 'user', // Vai trò mặc định
+    departmentId: null, // SởID
+    usernameError: '', // Thông báo lỗi tên người dùng
+    phoneError: '' // Thông báo lỗi số điện thoại di động
   },
-  displayPasswordFields: true // 编辑时是否显示密码字段
+  displayPasswordFields: true // Có hiển thị trường mật khẩu khi chỉnh sửa hay không
 })
 
-// 部门列表（仅超级管理员使用）
+// Danh sách khoa（Chỉ dành cho quản trị viên cấp cao）
 const departmentManagement = reactive({
   departments: []
 })
@@ -351,7 +351,7 @@ const departmentFilterOptions = computed(() => {
     if (!options.has(value)) {
       options.set(value, {
         value,
-        label: departmentName || `部门 ${departmentId}`
+        label: departmentName || `Sở ${departmentId}`
       })
     }
   })
@@ -385,22 +385,22 @@ const paginatedUsers = computed(() => {
   return filteredUsers.value.slice(start, start + pageSize)
 })
 
-// 获取部门列表
+// Nhận danh sách bộ phận
 const fetchDepartments = async () => {
-  if (!userStore.isSuperAdmin) return // 普通管理员不需要获取所有部门列表
+  if (!userStore.isSuperAdmin) return // Quản trị viên thông thường không cần phải có danh sách tất cả các phòng ban
   try {
     const departments = await departmentApi.getDepartments()
     departmentManagement.departments = departments
   } catch (error) {
-    console.error('获取部门列表失败:', error)
+    console.error('Không lấy được danh sách phòng ban:', error)
   }
 }
 
-// 添加验证用户名并生成uid的函数
+// Thêm tên người dùng xác minh và tạouidchức năng
 const validateAndGenerateUid = async () => {
   const username = userManagement.form.username.trim()
 
-  // 清空之前的错误和生成的ID
+  // Xóa các lỗi trước đó và tạo raID
   userManagement.form.usernameError = ''
   userManagement.form.generatedUid = ''
 
@@ -408,7 +408,7 @@ const validateAndGenerateUid = async () => {
     return
   }
 
-  // 在编辑模式下，不需要重新生成uid
+  // ở chế độ chỉnh sửa，Không cần phải tái sinhuid
   if (userManagement.editMode) {
     return
   }
@@ -417,26 +417,26 @@ const validateAndGenerateUid = async () => {
     const result = await userStore.validateUsernameAndGenerateUid(username)
     userManagement.form.generatedUid = result.uid
   } catch (error) {
-    userManagement.form.usernameError = error.message || '用户名验证失败'
+    userManagement.form.usernameError = error.message || 'Xác minh tên người dùng không thành công'
   }
 }
 
-// 验证手机号格式
+// Xác minh định dạng số điện thoại di động
 const validatePhoneNumber = (phone) => {
   if (!phone) {
-    return true // 手机号可选
+    return true // Số điện thoại di động tùy chọn
   }
 
-  // 中国大陆手机号格式验证
+  // Xác minh định dạng số điện thoại di động Trung Quốc đại lục
   const phoneRegex = /^1[3-9]\d{9}$/
   return phoneRegex.test(phone)
 }
 
-// 监听密码字段显示状态变化
+// Theo dõi các thay đổi trạng thái hiển thị trường mật khẩu
 watch(
   () => userManagement.displayPasswordFields,
   (newVal) => {
-    // 当取消显示密码字段时，清空密码输入
+    // Khi trường mật khẩu bị chặn，Xóa mật khẩu đã nhập
     if (!newVal) {
       userManagement.form.password = ''
       userManagement.form.confirmPassword = ''
@@ -444,14 +444,14 @@ watch(
   }
 )
 
-// 监听手机号输入变化
+// Theo dõi những thay đổi khi nhập số điện thoại di động
 watch(
   () => userManagement.form.phoneNumber,
   (newPhone) => {
     userManagement.form.phoneError = ''
 
     if (newPhone && !validatePhoneNumber(newPhone)) {
-      userManagement.form.phoneError = '请输入正确的手机号格式'
+      userManagement.form.phoneError = 'Vui lòng nhập đúng định dạng số điện thoại di động'
     }
   }
 )
@@ -473,7 +473,7 @@ watch(
   }
 )
 
-// 格式化时间显示
+// Định dạng hiển thị thời gian
 const formatTime = (timeStr) => formatDateTime(timeStr)
 
 const getUserDefaultAvatarSrc = (user) => (user.uid ? generatePixelAvatar(user.uid) : '')
@@ -482,7 +482,7 @@ const isUserDeleteDisabled = (user) =>
   user.id === userStore.userId ||
   (user.role === 'superadmin' && userStore.userRole !== 'superadmin')
 
-// 获取用户列表
+// Lấy danh sách người dùng
 const fetchUsers = async () => {
   try {
     userManagement.loading = true
@@ -490,31 +490,31 @@ const fetchUsers = async () => {
     userManagement.users = users
     userManagement.error = null
   } catch (error) {
-    console.error('获取用户列表失败:', error)
-    userManagement.error = '获取用户列表失败'
+    console.error('Không lấy được danh sách người dùng:', error)
+    userManagement.error = 'Không lấy được danh sách người dùng'
   } finally {
     userManagement.loading = false
   }
 }
 
-// 刷新用户和部门信息
+// Làm mới thông tin người dùng và bộ phận
 const handleRefresh = async () => {
   if (userManagement.refreshing) return
   userManagement.refreshing = true
   try {
     await Promise.all([fetchUsers(), fetchDepartments()])
-    message.success('刷新成功')
+    message.success('Làm mới thành công')
   } catch (error) {
-    console.error('刷新失败:', error)
-    message.error('刷新失败')
+    console.error('Làm mới không thành công:', error)
+    message.error('Làm mới không thành công')
   } finally {
     userManagement.refreshing = false
   }
 }
 
-// 打开添加用户模态框
+// Mở hộp phương thức thêm người dùng
 const showAddUserModal = () => {
-  userManagement.modalTitle = '添加用户'
+  userManagement.modalTitle = 'Thêm người dùng'
   userManagement.editMode = false
   userManagement.editUserId = null
   userManagement.form = {
@@ -523,7 +523,7 @@ const showAddUserModal = () => {
     phoneNumber: '',
     password: '',
     confirmPassword: '',
-    role: 'user', // 默认角色为普通用户
+    role: 'user', // Vai trò mặc định là người dùng thông thường
     departmentId: null,
     usernameError: '',
     phoneError: ''
@@ -532,14 +532,14 @@ const showAddUserModal = () => {
   userManagement.modalVisible = true
 }
 
-// 打开编辑用户模态框
+// Mở hộp phương thức chỉnh sửa người dùng
 const showEditUserModal = (user) => {
-  userManagement.modalTitle = '编辑用户'
+  userManagement.modalTitle = 'Chỉnh sửa người dùng'
   userManagement.editMode = true
   userManagement.editUserId = user.id
   userManagement.form = {
     username: user.username,
-    generatedUid: user.uid || '', // 编辑模式显示现有的uid
+    generatedUid: user.uid || '', // Chế độ chỉnh sửa hiển thị hiện cóuid
     phoneNumber: user.phone_number || '',
     password: '',
     confirmPassword: '',
@@ -548,131 +548,131 @@ const showEditUserModal = (user) => {
     usernameError: '',
     phoneError: ''
   }
-  userManagement.displayPasswordFields = false // 默认不显示密码字段
+  userManagement.displayPasswordFields = false // Trường mật khẩu không được hiển thị theo mặc định
   userManagement.modalVisible = true
 }
 
-// 处理用户表单提交
+// Xử lý việc gửi biểu mẫu của người dùng
 const handleUserFormSubmit = async () => {
   try {
-    // 简单验证
+    // Xác minh đơn giản
     if (!userManagement.form.username.trim()) {
-      message.error('用户名不能为空')
+      message.error('Tên người dùng không thể trống')
       return
     }
 
-    // 验证用户名长度
+    // Xác minh độ dài tên người dùng
     if (
       userManagement.form.username.trim().length < 2 ||
       userManagement.form.username.trim().length > 20
     ) {
-      message.error('用户名长度必须在 2-20 个字符之间')
+      message.error('Độ dài tên người dùng phải nằm trong 2-20 giữa các ký tự')
       return
     }
 
-    // 验证手机号
+    // Xác minh số điện thoại di động
     if (userManagement.form.phoneNumber && !validatePhoneNumber(userManagement.form.phoneNumber)) {
-      message.error('请输入正确的手机号格式')
+      message.error('Vui lòng nhập đúng định dạng số điện thoại di động')
       return
     }
 
     if (userManagement.displayPasswordFields) {
       if (!userManagement.form.password) {
-        message.error('密码不能为空')
+        message.error('Mật khẩu không thể trống')
         return
       }
 
       if (userManagement.form.password !== userManagement.form.confirmPassword) {
-        message.error('两次输入的密码不一致')
+        message.error('Mật khẩu nhập hai lần không nhất quán')
         return
       }
     }
 
     userManagement.loading = true
 
-    // 根据模式决定创建还是更新用户
+    // Quyết định tạo hoặc cập nhật người dùng dựa trên chế độ
     if (userManagement.editMode) {
-      // 创建更新数据对象
+      // Tạo đối tượng dữ liệu cập nhật
       const updateData = {
         username: userManagement.form.username.trim(),
         role: userManagement.form.role
       }
 
-      // 添加手机号字段
+      // Thêm trường số điện thoại di động
       if (userManagement.form.phoneNumber) {
         updateData.phone_number = userManagement.form.phoneNumber
       }
 
-      // 超级管理员可以修改部门
+      // Quản trị viên cấp cao có thể sửa đổi các phòng ban
       if (userStore.isSuperAdmin && userManagement.form.departmentId) {
         updateData.department_id = userManagement.form.departmentId
       }
 
-      // 如果显示了密码字段并且填写了密码，才更新密码
+      // Nếu trường mật khẩu được hiển thị và mật khẩu được điền vào，Chỉ cần cập nhật mật khẩu
       if (userManagement.displayPasswordFields && userManagement.form.password) {
         updateData.password = userManagement.form.password
       }
 
       await userStore.updateUser(userManagement.editUserId, updateData)
-      message.success('用户更新成功')
+      message.success('Cập nhật người dùng thành công')
     } else {
-      // 创建新用户
+      // Tạo người dùng mới
       const createData = {
         username: userManagement.form.username.trim(),
         password: userManagement.form.password,
         role: userManagement.form.role
       }
 
-      // 超级管理员可以指定部门
+      // Quản trị viên cấp cao có thể chỉ định các phòng ban
       if (userStore.isSuperAdmin && userManagement.form.departmentId) {
         createData.department_id = userManagement.form.departmentId
       }
 
-      // 添加手机号字段（如果填写了）
+      // Thêm trường số điện thoại di động（Nếu điền vào）
       if (userManagement.form.phoneNumber) {
         createData.phone_number = userManagement.form.phoneNumber
       }
 
       await userStore.createUser(createData)
-      message.success('用户创建成功')
+      message.success('Người dùng được tạo thành công')
     }
 
-    // 重新获取用户列表
+    // Truy xuất danh sách người dùng
     await fetchUsers()
     userManagement.modalVisible = false
   } catch (error) {
-    console.error('用户操作失败:', error)
-    message.error(error.message || '操作失败，请稍后重试')
+    console.error('Thao tác của người dùng không thành công:', error)
+    message.error(error.message || 'Thao tác không thành công，Vui lòng thử lại sau')
   } finally {
     userManagement.loading = false
   }
 }
 
-// 删除用户
+// Xóa người dùng
 const confirmDeleteUser = (user) => {
-  // 自己不能删除自己
+  // Bạn không thể xóa chính mình
   if (user.id === userStore.userId) {
-    message.error('不能删除自己的账户')
+    message.error('Không thể xóa tài khoản của chính mình')
     return
   }
 
-  // 确认对话框
+  // Hộp thoại xác nhận
   Modal.confirm({
-    title: '确认删除用户',
-    content: `确定要删除用户 "${user.username}" 吗？此操作不可撤销。`,
-    okText: '删除',
+    title: 'Xác nhận xóa người dùng',
+    content: `Bạn có chắc chắn muốn xóa người dùng này không? "${user.username}" ?？Hành động này không thể thay đổi được。`,
+    okText: 'Xóa',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy bỏ',
     async onOk() {
       try {
         userManagement.loading = true
         await userStore.deleteUser(user.id)
-        message.success('用户删除成功')
-        // 重新获取用户列表
+        message.success('Người dùng đã xóa thành công')
+        // Truy xuất danh sách người dùng
         await fetchUsers()
       } catch (error) {
-        console.error('删除用户失败:', error)
-        message.error(error.message || '删除失败，请稍后重试')
+        console.error('Không thể xóa người dùng:', error)
+        message.error(error.message || 'Xóa không thành công，Vui lòng thử lại sau')
       } finally {
         userManagement.loading = false
       }
@@ -693,7 +693,7 @@ const getRoleClass = (role) => {
   }
 }
 
-// 在组件挂载时获取用户列表
+// Lấy danh sách người dùng khi thành phần được gắn kết
 onMounted(async () => {
   await fetchUsers()
   await fetchDepartments()

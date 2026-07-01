@@ -1,13 +1,13 @@
 <template>
   <a-modal
     :open="props.modelValue"
-    title="检索配置"
+    title="Truy xuất cấu hình"
     width="800px"
     :confirm-loading="saving"
     @ok="handleSave"
     @cancel="handleCancel"
-    ok-text="保存"
-    cancel-text="取消"
+    ok-text="lưu lại"
+    cancel-text="Hủy bỏ"
   >
     <SearchConfigPanel
       v-if="props.modelValue"

@@ -1,25 +1,25 @@
-# 配置系统详解
+# Giải thích chi tiết về hệ thống cấu hình
 
-## 概述
+## Tổng quan
 
-系统采用多层配置架构，模型配置由网页界面管理，应用配置基于 Pydantic + TOML。
+Hệ thống áp dụng kiến trúc cấu hình nhiều lớp，Cấu hình mô hình được quản lý bằng giao diện web，Cấu hình ứng dụng dựa trên Pydantic + TOML。
 
-## 配置层级
+## Cấp độ cấu hình
 
 ```
-代码默认值 → TOML 文件 → 环境变量
-   (低)                      (高)
+Mặc định mã → TOML tập tin → biến môi trường
+   (thấp)                      (cao)
 ```
 
-## 模型配置
+## Cấu hình mô hình
 
-由网页统一管理，详见 [模型配置](../intro/model-config.md)。
+Quản lý thống nhất theo trang web，Xem chi tiết [Cấu hình mô hình](../intro/model-config.md)。
 
-## 应用配置
+## Cấu hình ứng dụng
 
-配置项定义于 `backend/package/yuxi/config/app.py`，用户修改保存至 `saves/config/base.toml`。
+Các mục cấu hình được xác định trong `backend/package/yuxi/config/app.py`，Lưu các sửa đổi của người dùng vào `saves/config/base.toml`。
 
-### 修改配置
+### Sửa đổi cấu hình
 
 ```python
 from yuxi.config import config
@@ -28,10 +28,10 @@ config.default_model = "provider-id:model-id"
 config.save()
 ```
 
-配置会在保存 `base.toml` 后写入 Redis 快照（`yuxi:runtime_config`）。快照包含可运行时同步的公开配置字段，不包含 `_` 开头的内部属性和 `save_dir`；API/worker 进程在启动时各拉起一个后台同步线程，按 5 秒间隔从该快照刷新内存值，读取端无需感知。Redis 不可用时继续使用当前内存值。
+Cấu hình sẽ được lưu vào `base.toml` viết sau Redis Ảnh chụp nhanh（`yuxi:runtime_config`）。Ảnh chụp nhanh chứa các trường cấu hình hiển thị có thể được đồng bộ hóa khi chạy，Không bao gồm `_` tính chất bên trong lúc đầu và `save_dir`；API/worker Mỗi quá trình bắt đầu một luồng đồng bộ hóa nền khi nó bắt đầu.，nhấn 5 khoảng thời gian giây để làm mới giá trị bộ nhớ từ ảnh chụp nhanh này，Người đọc không cần phải cảm nhận。Redis Tiếp tục sử dụng giá trị bộ nhớ hiện tại khi không có sẵn。
 
-`save_dir` 是启动期内部路径配置，不在管理员配置中展示，也不支持通过管理员配置接口、`base.toml` 或运行时 Redis 快照修改。sandbox 相关配置仍属于启动期敏感配置，运行中的已初始化组件不承诺完整热更新，修改后需要重启服务保证生效。
+`save_dir` Là cấu hình đường dẫn nội bộ trong quá trình khởi động，Không hiển thị trong cấu hình quản trị viên，Cấu hình giao diện thông qua quản trị viên cũng không được hỗ trợ、`base.toml` hoặc thời gian chạy Redis Sửa đổi ảnh chụp nhanh。sandbox Các cấu hình liên quan vẫn là những cấu hình nhạy cảm trong quá trình khởi động，Chạy các thành phần khởi tạo không cam kết cập nhật đầy đủ nóng，Sau khi sửa đổi, bạn cần khởi động lại dịch vụ để đảm bảo nó có hiệu lực.。
 
-## 常见问题
+## Câu hỏi thường gặp
 
-**配置文件损坏**：删除 `saves/config/base.toml`，系统将重新生成默认配置。
+**Tập tin cấu hình bị hỏng**：Xóa `saves/config/base.toml`，Hệ thống sẽ tạo lại cấu hình mặc định。

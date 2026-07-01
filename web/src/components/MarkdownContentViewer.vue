@@ -1,17 +1,17 @@
 <template>
   <div class="markdown-content-viewer">
     <div class="viewer-header">
-      <h4>文件内容</h4>
+      <h4>Nội dung tập tin</h4>
       <div class="header-controls">
         <div class="header-info">
-          <span v-if="mappedChunks.length > 0">共 {{ mappedChunks.length }} 个片段</span>
-          <span>总长度 {{ formatTextLength(mergedContent.length) }}</span>
+          <span v-if="mappedChunks.length > 0">tổng cộng {{ mappedChunks.length }} mảnh vỡ</span>
+          <span>tổng chiều dài {{ formatTextLength(mergedContent.length) }}</span>
         </div>
         <button
           class="toggle-btn"
           v-if="mappedChunks.length > 0"
           @click="toggleChunkPanel"
-          :title="chunkPanelVisible ? '隐藏片段列表' : '显示片段列表'"
+          :title="chunkPanelVisible ? 'Ẩn danh sách clip' : 'hiển thị danh sách clip'"
         >
           <ChevronLeft v-if="chunkPanelVisible" :size="14" />
           <ChevronRight v-else :size="14" />
@@ -20,12 +20,12 @@
     </div>
 
     <div class="viewer-container">
-      <!-- 左侧：Markdown内容 -->
+      <!-- bên trái：Markdownnội dung -->
       <div class="content-panel">
         <MarkdownPreview :content="mergedContent" class="markdown-content" />
       </div>
 
-      <!-- 右侧：Chunk信息 -->
+      <!-- bên phải：Chunkthông tin -->
       <div class="chunk-panel" v-show="chunkPanelVisible">
         <div class="chunk-list">
           <div
@@ -54,10 +54,10 @@
       </div>
     </div>
 
-    <!-- 悬浮提示 -->
+    <!-- Lời nhắc di chuột -->
     <div v-if="showTooltip && currentChunk" class="chunk-tooltip" :style="tooltipStyle">
       <div class="tooltip-header">
-        <strong>片段信息</strong>
+        <strong>thông tin mảnh</strong>
       </div>
       <div class="tooltip-content">
         <div class="tooltip-row">
@@ -65,15 +65,15 @@
           <span class="value">{{ currentChunk.id }}</span>
         </div>
         <div class="tooltip-row">
-          <span class="label">序号:</span>
+          <span class="label">số sê-ri:</span>
           <span class="value">{{ currentChunk.chunk_order_index }}</span>
         </div>
         <div class="tooltip-row">
-          <span class="label">位置:</span>
+          <span class="label">vị trí:</span>
           <span class="value">{{ currentChunk.startOffset }} - {{ currentChunk.endOffset }}</span>
         </div>
         <div class="tooltip-row">
-          <span class="label">长度:</span>
+          <span class="label">chiều dài:</span>
           <span class="value">{{ formatTextLength(currentChunk.content.length) }}</span>
         </div>
       </div>
@@ -98,7 +98,7 @@ const props = defineProps({
   }
 })
 
-// 响应式引用
+// Báo giá phản ứng
 const showTooltip = ref(false)
 const currentChunk = ref(null)
 const tooltipStyle = ref({ top: '0px', left: '0px' })
@@ -106,23 +106,23 @@ const activeChunkIndex = ref(null)
 const highlightedChunkIndex = ref(null)
 const chunkPanelVisible = ref(false)
 
-// 合并chunks
+// hợp nhấtchunks
 const mergeResult = computed(() => mergeChunks(props.chunks))
 const mergedContent = computed(() => props.content || mergeResult.value.content)
 const mappedChunks = computed(() => mergeResult.value.chunks)
 
-// 格式化文本长度
+// Định dạng độ dài văn bản
 function formatTextLength(length) {
-  if (!length && length !== 0) return '0 字符'
+  if (!length && length !== 0) return '0 nhân vật'
 
   if (length < 1000) {
-    return `${length} 字符`
+    return `${length} nhân vật`
   } else {
-    return `${(length / 1000).toFixed(1)}k 字符`
+    return `${(length / 1000).toFixed(1)}k nhân vật`
   }
 }
 
-// 高亮chunk
+// Đánh dấuchunk
 function highlightChunk(index) {
   if (!mappedChunks.value?.[index]) return
   highlightedChunkIndex.value = index
@@ -134,18 +134,18 @@ function unhighlightChunk() {
   currentChunk.value = null
 }
 
-// 处理chunk点击
+// Quy trìnhchunknhấp chuột
 function handleChunkClick(index) {
   if (!mappedChunks.value?.[index]) return
   activeChunkIndex.value = index
 }
 
-// 切换chunk面板显示
+// chuyển đổichunkMàn hình hiển thị
 function toggleChunkPanel() {
   chunkPanelVisible.value = !chunkPanelVisible.value
 }
 
-// 处理鼠标移动显示tooltip
+// Xử lý hiển thị chuyển động của chuộttooltip
 function handleMouseMove(event) {
   if (!currentChunk.value) return
 
@@ -155,7 +155,7 @@ function handleMouseMove(event) {
   }
 }
 
-// 生命周期
+// vòng đời
 onMounted(() => {
   document.addEventListener('mousemove', handleMouseMove)
 })
@@ -234,7 +234,7 @@ onUnmounted(() => {
   padding: 16px;
   background: var(--gray-0);
   border-right: 1px solid var(--gray-200);
-  min-height: 0; /* 关键：确保flex项目可以缩小 */
+  min-height: 0; /* chìa khóa：đảm bảoflexCác dự án có thể được thu nhỏ lại */
 }
 
 .markdown-content {
@@ -247,7 +247,7 @@ onUnmounted(() => {
   overflow-y: auto;
   background: var(--gray-25);
   padding: 16px;
-  min-height: 0; /* 确保flex项目可以缩小 */
+  min-height: 0; /* đảm bảoflexCác dự án có thể được thu nhỏ lại */
 }
 
 .chunk-list {

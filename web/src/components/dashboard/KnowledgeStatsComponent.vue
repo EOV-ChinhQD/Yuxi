@@ -1,27 +1,27 @@
 <template>
-  <a-card title="知识库使用情况" :loading="loading" class="dashboard-card">
-    <!-- 知识库概览 -->
+  <a-card title="Cách sử dụng cơ sở kiến thức" :loading="loading" class="dashboard-card">
+    <!-- Tổng quan về cơ sở kiến thức -->
     <div class="stats-overview">
       <a-row :gutter="16">
         <a-col :span="8">
           <a-statistic
-            title="知识库总数"
+            title="Tổng số cơ sở kiến thức"
             :value="knowledgeStats?.total_databases || 0"
             :value-style="{ color: 'var(--color-info-500)' }"
-            suffix="个"
+            suffix="một"
           />
         </a-col>
         <a-col :span="8">
           <a-statistic
-            title="文件总数"
+            title="tổng số tập tin"
             :value="knowledgeStats?.total_files || 0"
             :value-style="{ color: 'var(--color-success-500)' }"
-            suffix="个"
+            suffix="một"
           />
         </a-col>
         <a-col :span="8">
           <a-statistic
-            title="存储容量"
+            title="dung lượng lưu trữ"
             :value="formattedStorageSize"
             :value-style="{ color: 'var(--color-warning-500)' }"
           />
@@ -31,12 +31,12 @@
 
     <a-divider />
 
-    <!-- 图表区域 -->
+    <!-- khu vực biểu đồ -->
     <a-row :gutter="24">
-      <!-- 文件类型分布 -->
+      <!-- Phân phối loại tệp -->
       <a-col :span="24">
         <div class="chart-container">
-          <h4>文件类型分布</h4>
+          <h4>Phân phối loại tệp</h4>
           <div ref="fileTypeChartRef" class="chart donut-chart-container">
             <div class="carousel-info" v-if="fileTypeData.length > 0">
               <div
@@ -57,28 +57,28 @@
       </a-col>
     </a-row>
 
-    <!-- 详细统计信息 -->
+    <!-- Thống kê chi tiết -->
     <!-- <a-divider />
     <a-row :gutter="16">
       <a-col :span="8">
         <a-statistic
-          title="平均每库文件数"
+          title="Số lượng tệp trung bình trên mỗi thư viện"
           :value="averageFilesPerDatabase"
-          suffix="个"
+          suffix="một"
           :precision="1"
         />
       </a-col>
       <a-col :span="8">
         <a-statistic
-          title="平均每文件节点数"
+          title="Số nút trung bình trên mỗi tệp"
           :value="averageNodesPerFile"
-          suffix="个"
+          suffix="một"
           :precision="1"
         />
       </a-col>
       <a-col :span="8">
         <a-statistic
-          title="平均节点大小"
+          title="kích thước nút trung bình"
           :value="averageNodeSize"
           suffix="KB"
           :precision="2"
@@ -94,7 +94,7 @@ import * as echarts from 'echarts'
 import { getColorPalette } from '@/utils/chartColors'
 import { useThemeStore } from '@/stores/theme'
 
-// CSS 变量解析工具函数
+// CSS Chức năng công cụ phân tích cú pháp biến
 function getCSSVariable(variableName, element = document.documentElement) {
   return getComputedStyle(element).getPropertyValue(variableName).trim()
 }
@@ -124,7 +124,7 @@ const totalFiles = ref(0)
 const currentCarouselIndex = ref(0)
 let carouselTimer = null
 
-// 计算属性
+// Thuộc tính tính toán
 const formattedStorageSize = computed(() => {
   const size = props.knowledgeStats?.total_storage_size || 0
   if (size < 1024) return `${size} B`
@@ -142,14 +142,14 @@ const formattedStorageSize = computed(() => {
 // const averageNodeSize = computed(() => {
 //   const nodes = props.knowledgeStats?.total_nodes || 0
 //   const size = props.knowledgeStats?.total_storage_size || 0
-//   return nodes > 0 ? size / (nodes * 1024) : 0 // 转换为KB
+//   return nodes > 0 ? size / (nodes * 1024) : 0 // Chuyển đổi thànhKB
 // })
 
-// 初始化文件类型分布图
+// Bản đồ phân phối loại tệp khởi tạo
 const initFileTypeChart = () => {
   if (!fileTypeChartRef.value) return
 
-  // 如果已存在图表实例，先销毁
+  // Nếu một phiên bản biểu đồ đã tồn tại，Tiêu diệt đầu tiên
   if (fileTypeChart) {
     fileTypeChart.dispose()
     fileTypeChart = null
@@ -161,16 +161,16 @@ const initFileTypeChart = () => {
   if (Object.keys(fileTypesData).length > 0) {
     const data = Object.entries(fileTypesData)
       .map(([type, count]) => ({
-        name: type || '未知',
+        name: type || 'không rõ',
         value: count
       }))
-      .sort((a, b) => b.value - a.value) // 按数量排序
+      .sort((a, b) => b.value - a.value) // Sắp xếp theo số lượng
 
-    // 设置轮播数据
+    // Đặt dữ liệu băng chuyền
     fileTypeData.value = data
     totalFiles.value = data.reduce((sum, item) => sum + item.value, 0)
 
-    // 启动轮播
+    // Bắt đầu băng chuyền
     startCarousel()
 
     const option = {
@@ -198,18 +198,18 @@ const initFileTypeChart = () => {
       },
       series: [
         {
-          name: '文件类型',
+          name: 'Loại tệp',
           type: 'pie',
-          radius: ['45%', '75%'], // 调整为更大的环，为中心信息留出更多空间
-          center: ['50%', '45%'], // 向上移动，为中心和底部图例留出空间
-          avoidLabelOverlap: true, // 避免标签重叠
+          radius: ['45%', '75%'], // Điều chỉnh các vòng lớn hơn，Tạo thêm không gian cho thông tin trung tâm
+          center: ['50%', '45%'], // di chuyển lên，Để lại khoảng trống cho các chú giải ở giữa và dưới cùng
+          avoidLabelOverlap: true, // Tránh dán nhãn chồng chéo
           itemStyle: {
             borderRadius: 8,
             borderColor: getCSSVariable('--gray-0'),
             borderWidth: 2
           },
           label: {
-            show: false // 隐藏饼图上的标签，使用图例代替
+            show: false // Ẩn nhãn trên biểu đồ hình tròn，Thay vào đó hãy sử dụng chú giải
           },
           emphasis: {
             itemStyle: {
@@ -219,7 +219,7 @@ const initFileTypeChart = () => {
             }
           },
           labelLine: {
-            show: false // 隐藏标签线
+            show: false // Ẩn dòng nhãn
           },
           data: data,
           color: getColorPalette()
@@ -229,12 +229,12 @@ const initFileTypeChart = () => {
 
     fileTypeChart.setOption(option)
   } else {
-    // 清空轮播数据
+    // Xóa dữ liệu băng chuyền
     fileTypeData.value = []
     totalFiles.value = 0
     stopCarousel()
 
-    // 如果没有文件类型数据，显示一个占位图表
+    // Nếu không có dữ liệu loại tệp，Hiển thị biểu đồ giữ chỗ
     const option = {
       tooltip: {
         trigger: 'item',
@@ -248,7 +248,7 @@ const initFileTypeChart = () => {
       },
       series: [
         {
-          name: '文件类型',
+          name: 'Loại tệp',
           type: 'pie',
           radius: ['45%', '75%'],
           center: ['50%', '45%'],
@@ -271,7 +271,7 @@ const initFileTypeChart = () => {
           labelLine: {
             show: false
           },
-          data: [{ name: '暂无数据', value: 1 }],
+          data: [{ name: 'Chưa có dữ liệu', value: 1 }],
           color: [getCSSVariable('--color-info-500')]
         }
       ]
@@ -281,15 +281,15 @@ const initFileTypeChart = () => {
   }
 }
 
-// 轮播功能
+// Chức năng băng chuyền
 const startCarousel = () => {
-  stopCarousel() // 先停止之前的轮播
+  stopCarousel() // Dừng băng chuyền trước đó trước
   if (fileTypeData.value.length <= 1) return
 
-  // 重置索引
+  // Đặt lại chỉ mục
   currentCarouselIndex.value = 0
 
-  // 启动新的轮播，每3秒切换一次
+  // Bắt đầu một băng chuyền mới，mỗi3Chuyển đổi một lần mỗi giây
   carouselTimer = setInterval(() => {
     currentCarouselIndex.value = (currentCarouselIndex.value + 1) % fileTypeData.value.length
   }, 3000)
@@ -302,14 +302,14 @@ const stopCarousel = () => {
   }
 }
 
-// 更新图表
+// Cập nhật biểu đồ
 const updateCharts = () => {
   nextTick(() => {
     initFileTypeChart()
   })
 }
 
-// 监听数据变化
+// Theo dõi sự thay đổi dữ liệu
 watch(
   () => props.knowledgeStats,
   () => {
@@ -318,7 +318,7 @@ watch(
   { deep: true }
 )
 
-// 窗口大小变化时重新调整图表
+// Thay đổi kích thước biểu đồ khi kích thước cửa sổ thay đổi
 const handleResize = () => {
   if (fileTypeChart) fileTypeChart.resize()
 }
@@ -328,7 +328,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
-// 监听主题变化，重新渲染图表
+// Theo dõi thay đổi chủ đề，Hiển thị lại biểu đồ
 watch(
   () => themeStore.isDark,
   () => {
@@ -340,31 +340,31 @@ watch(
   }
 )
 
-// 组件卸载时清理
+// Dọn dẹp khi các thành phần được gỡ cài đặt
 const cleanup = () => {
   window.removeEventListener('resize', handleResize)
-  stopCarousel() // 停止轮播
+  stopCarousel() // Dừng băng chuyền
   if (fileTypeChart) {
     fileTypeChart.dispose()
     fileTypeChart = null
   }
 }
 
-// 导出清理函数供父组件调用
+// Xuất hàm dọn dẹp cho thành phần cha để gọi
 defineExpose({
   cleanup
 })
 </script>
 
 <style scoped lang="less">
-// KnowledgeStatsComponent 特有的样式
+// KnowledgeStatsComponent phong cách độc đáo
 .chart-container {
   .chart {
     height: 300px;
     width: 100%;
   }
 
-  // 环形图容器样式
+  // Kiểu hộp đựng biểu đồ bánh rán
   .donut-chart-container {
     position: relative;
 

@@ -3,10 +3,10 @@ import { defineStore } from 'pinia'
 import { theme } from 'ant-design-vue'
 
 export const useThemeStore = defineStore('theme', () => {
-  // 从 localStorage 读取保存的主题，默认为浅色
+  // từ localStorage Đọc chủ đề đã lưu，Mặc định là nhẹ
   const isDark = ref(localStorage.getItem('theme') === 'dark')
 
-  // 公共主题配置
+  // Cấu hình chủ đề công khai
   const commonTheme = {
     token: {
       fontFamily:
@@ -20,26 +20,26 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  // 浅色主题配置
+  // Cấu hình chủ đề nhẹ
   const lightTheme = {
     ...commonTheme
   }
 
-  // 深色主题配置
+  // Cấu hình chủ đề tối
   const darkTheme = {
     ...commonTheme,
     algorithm: theme.darkAlgorithm
   }
 
-  // 当前主题配置
+  // Cấu hình chủ đề hiện tại
   const currentTheme = ref(isDark.value ? darkTheme : lightTheme)
 
-  // 切换主题
+  // chuyển đổi chủ đề
   function toggleTheme() {
     setTheme(!isDark.value)
   }
 
-  // 设置主题
+  // Đặt chủ đề
   function setTheme(dark) {
     isDark.value = dark
     currentTheme.value = dark ? darkTheme : lightTheme
@@ -47,7 +47,7 @@ export const useThemeStore = defineStore('theme', () => {
     updateDocumentTheme()
   }
 
-  // 更新 document 的主题类
+  // cập nhật document lớp chủ đề
   function updateDocumentTheme() {
     if (isDark.value) {
       document.documentElement.classList.add('dark')
@@ -56,7 +56,7 @@ export const useThemeStore = defineStore('theme', () => {
     }
   }
 
-  // 初始化时设置主题
+  // Đặt chủ đề khi khởi tạo
   updateDocumentTheme()
 
   return {

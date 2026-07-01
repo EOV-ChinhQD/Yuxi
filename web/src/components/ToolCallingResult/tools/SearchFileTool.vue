@@ -4,7 +4,7 @@
       <div class="sep-header">
         <span class="note">Search File</span>
         <span class="separator" v-if="kbNameLabel">|</span>
-        <span class="description" v-if="kbNameLabel">知识库: {{ kbNameLabel }}</span>
+        <span class="description" v-if="kbNameLabel">cơ sở tri thức: {{ kbNameLabel }}</span>
         <span class="separator" v-if="queryLabel">|</span>
         <span class="description" v-if="queryLabel">{{ queryLabel }}</span>
       </div>
@@ -16,10 +16,10 @@
       </div>
       <div v-else class="search-file-result">
         <div class="result-count">
-          共 {{ resultData(resultContent).total }} 个文件<span
+          tổng cộng {{ resultData(resultContent).total }} tập tin<span
             v-if="resultData(resultContent).has_more"
             class="more-hint"
-            >（仅展示前 {{ resultData(resultContent).files.length }} 个）</span
+            >（Chỉ trước khi hiển thị {{ resultData(resultContent).files.length }} một）</span
           >
         </div>
         <div v-if="resultData(resultContent).files.length" class="file-list">
@@ -33,7 +33,7 @@
             <span class="file-name" :title="file.filename">{{ file.filename }}</span>
           </div>
         </div>
-        <div v-else class="empty-result">未找到匹配的文件</div>
+        <div v-else class="empty-result">Không tìm thấy tập tin phù hợp</div>
       </div>
       <FileDetailModal v-model:open="modalOpen" :kb-id="selectedKbId" :file-id="selectedFileId" />
     </template>
@@ -86,7 +86,7 @@ const parseResult = (content) => {
   }
 }
 
-// 工具在缺少参数 / 知识库不可见等情况下返回字符串提示，其余返回结构化对象。
+// Công cụ bị thiếu tham số / Trả về lời nhắc chuỗi khi không hiển thị cơ sở kiến ​​thức, v.v.，Phần còn lại trả về các đối tượng có cấu trúc。
 const isError = (content) => typeof parseResult(content) !== 'object'
 
 const resultData = (content) => {

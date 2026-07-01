@@ -1,6 +1,6 @@
 <template>
   <div class="file-table-container">
-    <!-- 入库/重新入库参数配置模态框 -->
+    <!-- Kho/Hộp phương thức cấu hình tham số kiểm kê lại -->
     <a-modal
       v-model:open="indexConfigModalVisible"
       :title="indexConfigModalTitle"
@@ -9,8 +9,8 @@
       @cancel="handleIndexConfigCancel"
     >
       <template #footer>
-        <a-button key="back" @click="handleIndexConfigCancel">取消</a-button>
-        <a-button key="submit" type="primary" @click="handleIndexConfigConfirm">确定</a-button>
+        <a-button key="back" @click="handleIndexConfigCancel">Hủy bỏ</a-button>
+        <a-button key="submit" type="primary" @click="handleIndexConfigConfirm">được rồi</a-button>
       </template>
       <div class="index-params">
         <a-alert
@@ -18,7 +18,7 @@
           class="index-pending-alert"
           type="info"
           show-icon
-          :message="`将提交 ${pendingIndexTotalText} 个待入库文件，任务会在后台按批处理，可在任务中心查看进度。`"
+          :message="`sẽ nộp ${pendingIndexTotalText} các tập tin sẽ được lưu trữ，Các tác vụ sẽ được xử lý theo đợt trong nền，Tiến trình có thể được xem trong trung tâm tác vụ。`"
         />
         <ChunkParamsConfig
           :temp-chunk-params="indexParams"
@@ -31,16 +31,16 @@
       </div>
     </a-modal>
 
-    <!-- 新建文件夹模态框 -->
+    <!-- Hộp phương thức thư mục mới -->
     <a-modal
       v-model:open="createFolderModalVisible"
-      title="新建文件夹"
+      title="Tạo thư mục mới"
       :confirm-loading="createFolderLoading"
       @ok="handleCreateFolder"
     >
       <a-input
         v-model:value="newFolderName"
-        placeholder="请输入文件夹名称"
+        placeholder="Vui lòng nhập tên thư mục"
         @pressEnter="handleCreateFolder"
       />
     </a-modal>
@@ -63,7 +63,7 @@
       @page-change="handleTablePageChange"
     >
       <template #breadcrumb-suffix>
-        <span v-if="isFilteredView" class="file-breadcrumb-filter">筛选结果</span>
+        <span v-if="isFilteredView" class="file-breadcrumb-filter">Lọc kết quả</span>
       </template>
 
       <template #toolbar-actions>
@@ -74,13 +74,13 @@
                 type="text"
                 class="panel-action-btn"
                 :class="{ active: statusFilter !== 'all' }"
-                title="筛选状态"
+                title="trạng thái lọc"
               >
                 <template #icon><Filter size="16" /></template>
               </a-button>
               <template #overlay>
                 <a-menu :selectedKeys="[statusFilter]" @click="handleStatusMenuClick">
-                  <a-menu-item key="all">全部状态</a-menu-item>
+                  <a-menu-item key="all">Tất cả trạng thái</a-menu-item>
                   <a-menu-item v-for="opt in statusOptions" :key="opt.value">
                     {{ opt.label }}
                   </a-menu-item>
@@ -91,7 +91,7 @@
             <a-button
               type="text"
               @click="toggleSelectionMode"
-              title="多选"
+              title="Nhiều lựa chọn"
               class="panel-action-btn"
               :class="{ active: isSelectionMode }"
             >
@@ -105,7 +105,7 @@
             :overlayStyle="{ minWidth: '220px' }"
             overlayClassName="panel-overflow-popover"
           >
-            <a-button type="text" class="panel-action-btn overflow-trigger" title="更多">
+            <a-button type="text" class="panel-action-btn overflow-trigger" title="Thêm">
               <template #icon><MoreHorizontal size="16" /></template>
             </a-button>
             <template #overlay>
@@ -117,18 +117,18 @@
                     @click="handleRefresh"
                   >
                     <RotateCw size="16" :class="{ spin: refreshing }" />
-                    <span>刷新</span>
+                    <span>Làm mới</span>
                   </div>
 
                   <a-dropdown trigger="click" placement="bottomLeft">
                     <div class="overflow-action-item" :class="{ active: statusFilter !== 'all' }">
                       <Filter size="16" />
-                      <span>筛选</span>
+                      <span>Lọc</span>
                       <span class="overflow-action-hint">{{ currentStatusLabel }}</span>
                     </div>
                     <template #overlay>
                       <a-menu :selectedKeys="[statusFilter]" @click="handleStatusMenuClick">
-                        <a-menu-item key="all">全部状态</a-menu-item>
+                        <a-menu-item key="all">Tất cả trạng thái</a-menu-item>
                         <a-menu-item v-for="opt in statusOptions" :key="opt.value">
                           {{ opt.label }}
                         </a-menu-item>
@@ -142,7 +142,7 @@
                     @click="toggleSelectionMode"
                   >
                     <CheckSquare size="16" />
-                    <span>多选</span>
+                    <span>Nhiều lựa chọn</span>
                   </div>
                 </div>
               </div>
@@ -160,7 +160,7 @@
               @change="onSelectAllChange"
               style="margin-right: 8px"
             />
-            <span>{{ selectedRowKeys.length }} 项</span>
+            <span>{{ selectedRowKeys.length }} mục</span>
           </div>
           <div style="display: flex; gap: 2px">
             <a-button
@@ -170,7 +170,7 @@
               :disabled="!canBatchParse"
               :icon="h(FileText, { size: 16 })"
             >
-              批量解析
+              Phân tích hàng loạt
             </a-button>
             <a-button
               type="link"
@@ -179,7 +179,7 @@
               :disabled="!canBatchIndex"
               :icon="h(Database, { size: 16 })"
             >
-              批量入库
+              Lưu trữ hàng loạt
             </a-button>
             <a-button
               type="link"
@@ -189,7 +189,7 @@
               :disabled="!canBatchDelete"
               :icon="h(Trash2, { size: 16 })"
             >
-              批量删除
+              Xóa hàng loạt
             </a-button>
           </div>
         </div>
@@ -266,11 +266,11 @@
                 <template v-if="row.is_folder">
                   <a-button type="text" block @click="showCreateFolderModal(row.file_id)">
                     <template #icon><component :is="h(FolderPlus)" size="14" /></template>
-                    新建子文件夹
+                    Tạo thư mục con mới
                   </a-button>
                   <a-button type="text" block danger @click="handleDeleteFolder(row)">
                     <template #icon><component :is="h(Trash2)" size="14" /></template>
-                    删除文件夹
+                    xóa thư mục
                   </a-button>
                 </template>
                 <template v-else>
@@ -281,7 +281,7 @@
                     :disabled="lock || !canDownloadFile(row)"
                   >
                     <template #icon><component :is="h(Download)" size="14" /></template>
-                    下载文件
+                    Tải tập tin xuống
                   </a-button>
 
                   <!-- Parse Action -->
@@ -293,7 +293,7 @@
                     :disabled="lock"
                   >
                     <template #icon><component :is="h(FileText)" size="14" /></template>
-                    {{ getFilePrimaryAction(row)?.label || '解析文件' }}
+                    {{ getFilePrimaryAction(row)?.label || 'tập tin phân tích' }}
                   </a-button>
 
                   <!-- Index Action -->
@@ -305,7 +305,7 @@
                     :disabled="lock"
                   >
                     <template #icon><component :is="h(Database)" size="14" /></template>
-                    {{ getFilePrimaryAction(row)?.label || '入库' }}
+                    {{ getFilePrimaryAction(row)?.label || 'Kho' }}
                   </a-button>
 
                   <!-- Reindex Action -->
@@ -317,7 +317,7 @@
                     :disabled="lock"
                   >
                     <template #icon><component :is="h(RotateCw)" size="14" /></template>
-                    重新入库
+                    Bổ sung thêm
                   </a-button>
 
                   <a-button
@@ -328,7 +328,7 @@
                     :disabled="!canDeleteFile(row, lock)"
                   >
                     <template #icon><component :is="h(Trash2)" size="14" /></template>
-                    删除文件
+                    Xóa tập tin
                   </a-button>
                 </template>
               </div>
@@ -439,7 +439,7 @@ const fileBreadcrumbItems = computed(() =>
   folderBreadcrumbs.value.map((item, index) => ({
     ...item,
     key: item.file_id || `root-${index}`,
-    name: item.filename || '全部文件'
+    name: item.filename || 'Tất cả các tập tin'
   }))
 )
 const isFilteredView = computed(() => Boolean(store.fileBrowser.recursive))
@@ -493,7 +493,7 @@ const closePopover = (fileId) => {
   }
 }
 
-// 新建文件夹相关
+// Thư mục mới liên quan
 const createFolderModalVisible = ref(false)
 const newFolderName = ref('')
 const createFolderLoading = ref(false)
@@ -504,7 +504,7 @@ const showCreateFolderModal = (parentId = null) => {
     closePopover(parentId)
   }
   newFolderName.value = ''
-  // 如果是事件对象（来自顶部按钮点击），则设为null
+  // Nếu nó là một đối tượng sự kiện（từ nút trên cùng nhấp vào），sau đó đặt thànhnull
   if (parentId && typeof parentId === 'object') {
     parentId = store.fileBrowser.parentId
   }
@@ -537,28 +537,28 @@ const toggleSelectionMode = () => {
 
 const handleCreateFolder = async () => {
   if (!newFolderName.value.trim()) {
-    message.warning('请输入文件夹名称')
+    message.warning('Vui lòng nhập tên thư mục')
     return
   }
 
   createFolderLoading.value = true
   try {
     await documentApi.createFolder(store.kbId, newFolderName.value, currentParentId.value)
-    message.success('创建成功')
+    message.success('Đã tạo thành công')
     createFolderModalVisible.value = false
     handleRefresh()
   } catch (error) {
     console.error(error)
-    message.error('创建失败: ' + (error.message || '未知错误'))
+    message.error('Tạo không thành công: ' + (error.message || 'lỗi không xác định'))
   } finally {
     createFolderLoading.value = false
   }
 }
 
-// 入库/重新入库参数配置相关
+// Kho/Nhập lại cấu hình tham số liên quan
 const indexConfigModalVisible = ref(false)
 const indexConfigModalLoading = computed(() => store.state.chunkLoading)
-const indexConfigModalTitle = ref('入库参数配置')
+const indexConfigModalTitle = ref('Cấu hình tham số kho')
 
 const createDefaultIndexParams = () => ({
   chunk_preset_id: '',
@@ -582,18 +582,18 @@ const pendingIndexTotalText = computed(() =>
 
 const pageSizeOptions = ['100', '300', '500']
 
-// 表格分页配置
+// Cấu hình phân trang bảng
 const tablePagination = computed(() => ({
   current: store.fileBrowser.page,
   pageSize: store.fileBrowser.pageSize,
   total: store.fileBrowser.total,
   showSizeChanger: true,
-  showTotal: (total) => `共 ${total} 项`,
+  showTotal: (total) => `tổng cộng ${total} mục`,
   pageSizeOptions,
   hideOnSinglePage: true
 }))
 
-// 处理页码和每页条数切换
+// Xử lý số trang và số mục trên mỗi trang chuyển đổi
 const handleTablePageChange = ({ page, pageSize }) => {
   store.loadDocumentFiles({
     page,
@@ -604,14 +604,14 @@ const handleTablePageChange = ({ page, pageSize }) => {
 const statusFilter = ref('all')
 const statusOptions = FILE_STATUS_FILTER_OPTIONS
 
-// 紧凑表格列定义
+// Định nghĩa cột trong bảng thu gọn
 const columnsCompact = [
   {
-    title: '文件名',
+    title: 'tên tập tin',
     dataIndex: 'filename',
     key: 'filename',
     ellipsis: true,
-    width: undefined, // 不设置宽度，让它占据剩余空间
+    width: undefined, // Không có chiều rộng được đặt，hãy để nó chiếm không gian còn lại
     sorter: (a, b) => {
       if (a.is_folder && !b.is_folder) return -1
       if (!a.is_folder && b.is_folder) return 1
@@ -620,7 +620,7 @@ const columnsCompact = [
     sortDirections: ['ascend', 'descend']
   },
   {
-    title: '状态',
+    title: 'Trạng thái',
     dataIndex: 'status',
     key: 'status',
     width: 104,
@@ -630,22 +630,22 @@ const columnsCompact = [
     sortDirections: ['ascend', 'descend']
   },
   {
-    title: '时间',
+    title: 'thời gian',
     dataIndex: 'created_at',
     key: 'created_at',
     width: 180,
     sorter: (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0),
     sortDirections: ['ascend', 'descend']
   },
-  { title: '操作', key: 'action', dataIndex: 'file_id', width: 64, align: 'center' }
+  { title: 'hoạt động', key: 'action', dataIndex: 'file_id', width: 64, align: 'center' }
 ]
 
-// 空状态文本
+// Văn bản trạng thái trống
 const emptyText = computed(() => {
-  return '暂无文件'
+  return 'Chưa có tập tin nào'
 })
 
-// 计算是否可以批量删除
+// Tính toán xem có thể xóa hàng loạt hay không
 const canBatchDelete = computed(() => {
   return selectedRowKeys.value.some((key) => {
     const file = files.value.find((f) => f.file_id === key)
@@ -653,7 +653,7 @@ const canBatchDelete = computed(() => {
   })
 })
 
-// 计算是否可以批量解析
+// Tính toán xem có thể phân tích hàng loạt hay không
 const canBatchParse = computed(() => {
   return selectedRowKeys.value.some((key) => {
     const file = files.value.find((f) => f.file_id === key)
@@ -661,7 +661,7 @@ const canBatchParse = computed(() => {
   })
 })
 
-// 计算是否可以批量入库
+// Tính toán xem có thể nhập kho hàng loạt hay không
 const canBatchIndex = computed(() => {
   return selectedRowKeys.value.some((key) => {
     const file = files.value.find((f) => f.file_id === key)
@@ -692,7 +692,7 @@ const handleOpenRow = (record) => {
 }
 
 const onSelectChange = (keys, selectedRows) => {
-  // 只保留非文件夹的文件ID
+  // Chỉ giữ các tập tin không phải là thư mụcID
   const fileKeys = selectedRows.filter((row) => !row.is_folder).map((row) => row.file_id)
 
   selectedRowKeys.value = fileKeys
@@ -719,14 +719,14 @@ const handleDeleteFile = (fileId) => {
 const handleDeleteFolder = (record) => {
   closePopover(record.file_id)
   Modal.confirm({
-    title: '删除文件夹',
-    content: `确定要删除文件夹 "${record.filename}" 及其包含的所有内容吗？`,
-    okText: '确认',
-    cancelText: '取消',
+    title: 'xóa thư mục',
+    content: `Xác nhận bạn muốn xóa thư mục "${record.filename}" và tất cả những gì nó chứa đựng?？`,
+    okText: 'Xác nhận',
+    cancelText: 'Hủy bỏ',
     onOk: async () => {
       try {
         await store.deleteFile(record.file_id)
-        message.success('删除成功')
+        message.success('Xóa thành công')
       } catch {
         // Error handled in store but we can add extra handling if needed
       }
@@ -745,7 +745,7 @@ const handleBatchParse = async () => {
   })
 
   if (validKeys.length === 0) {
-    message.warning('没有可解析的文件')
+    message.warning('Không có tập tin có thể phân tích cú pháp')
     return
   }
 
@@ -760,7 +760,7 @@ const handleBatchIndex = async () => {
   })
 
   if (validKeys.length === 0) {
-    message.warning('没有可入库的文件')
+    message.warning('Không có tập tin nào để thêm vào cơ sở dữ liệu')
     return
   }
 
@@ -768,19 +768,19 @@ const handleBatchIndex = async () => {
   isBatchIndexOperation.value = true
   isPendingIndexOperation.value = false
   pendingIndexTotal.value = 0
-  indexConfigModalTitle.value = '批量入库参数配置'
+  indexConfigModalTitle.value = 'Cấu hình tham số kho hàng loạt'
   indexConfigModalVisible.value = true
 }
 
 const startPendingIndex = (count = 0) => {
   if (lock.value) {
-    message.warning('当前有文件处理中，请稍后再试')
+    message.warning('Có những tập tin hiện đang được xử lý，Vui lòng thử lại sau')
     return false
   }
 
   const total = Number(count || 0)
   if (total <= 0) {
-    message.info('没有待入库文档')
+    message.info('Không có tài liệu nào được thêm vào cơ sở dữ liệu')
     return false
   }
 
@@ -788,7 +788,7 @@ const startPendingIndex = (count = 0) => {
   isBatchIndexOperation.value = false
   isPendingIndexOperation.value = true
   pendingIndexTotal.value = total
-  indexConfigModalTitle.value = '待入库文件参数配置'
+  indexConfigModalTitle.value = 'Cấu hình tham số của các tệp sẽ được lưu trữ trong cơ sở dữ liệu'
   resetIndexParams()
   indexConfigModalVisible.value = true
   return true
@@ -796,7 +796,7 @@ const startPendingIndex = (count = 0) => {
 
 const openFileDetail = (record) => {
   if (!canOpenFileDetail(record)) {
-    message.error('文件未处理完成，请稍后再试')
+    message.error('Tệp chưa được xử lý，Vui lòng thử lại sau')
     return
   }
   store.openFileDetail(record.file_id)
@@ -806,21 +806,21 @@ const handleDownloadFile = async (record) => {
   closePopover(record.file_id)
   const kbId = store.kbId
   if (!kbId) {
-    console.error('无法获取数据库ID，数据库ID:', store.kbId, '记录:', record)
-    message.error('无法获取数据库ID，请刷新页面后重试')
+    console.error('Không thể lấy cơ sở dữ liệuID，cơ sở dữ liệuID:', store.kbId, 'ghi lại:', record)
+    message.error('Không thể lấy cơ sở dữ liệuID，Vui lòng làm mới trang và thử lại')
     return
   }
 
-  console.log('开始下载文件:', { kbId, fileId: record.file_id, record })
+  console.log('Bắt đầu tải tập tin:', { kbId, fileId: record.file_id, record })
 
   try {
     const response = await documentApi.downloadDocument(kbId, record.file_id)
 
-    // 获取文件名
+    // Lấy tên tập tin
     const contentDisposition = response.headers.get('content-disposition')
     let filename = record.filename
     if (contentDisposition) {
-      // 首先尝试匹配RFC 2231格式 filename*=UTF-8''...
+      // Đầu tiên hãy thử để phù hợpRFC 2231định dạng filename*=UTF-8''...
       const rfc2231Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/)
       if (rfc2231Match) {
         try {
@@ -829,22 +829,22 @@ const handleDownloadFile = async (record) => {
           console.warn('Failed to decode RFC2231 filename:', rfc2231Match[1], error)
         }
       } else {
-        // 回退到标准格式 filename="..."
+        // dự phòng về định dạng chuẩn filename="..."
         const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1].replace(/['"]/g, '')
-          // 解码URL编码的文件名
+          // Giải mãURLtên tệp được mã hóa
           try {
             filename = decodeURIComponent(filename)
           } catch (error) {
             console.warn('Failed to decode filename:', filename, error)
-            // 如果解码失败，使用原文件名
+            // Nếu giải mã không thành công，Sử dụng tên tập tin gốc
           }
         }
       }
     }
 
-    // 创建blob并下载
+    // tạo rablobvà tải về
     const blob = await response.blob()
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -856,8 +856,8 @@ const handleDownloadFile = async (record) => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
   } catch (error) {
-    console.error('下载文件时出错:', error)
-    const errorMessage = error.message || '下载失败，请稍后重试'
+    console.error('Lỗi tải tập tin xuống:', error)
+    const errorMessage = error.message || 'Tải xuống không thành công，Vui lòng thử lại sau'
     message.error(errorMessage)
   }
 }
@@ -909,7 +909,7 @@ const handleIndexFile = async (record) => {
   isBatchIndexOperation.value = false
   isPendingIndexOperation.value = false
   pendingIndexTotal.value = 0
-  indexConfigModalTitle.value = '入库参数配置'
+  indexConfigModalTitle.value = 'Cấu hình tham số kho'
 
   const processingParams = await loadRecordProcessingParams(record)
   resetIndexParams(processingParams)
@@ -923,7 +923,7 @@ const handleReindexFile = async (record) => {
   isBatchIndexOperation.value = false
   isPendingIndexOperation.value = false
   pendingIndexTotal.value = 0
-  indexConfigModalTitle.value = '重新入库参数配置'
+  indexConfigModalTitle.value = 'Cấu hình tham số hàng tồn kho lại'
 
   const processingParams = await loadRecordProcessingParams(record)
   resetIndexParams(processingParams)
@@ -931,7 +931,7 @@ const handleReindexFile = async (record) => {
   indexConfigModalVisible.value = true
 }
 
-// 入库确认 (统一处理 Index 和 Reindex)
+// Xác nhận lưu kho (Xử lý thống nhất Index và Reindex)
 const handleIndexConfigConfirm = async () => {
   try {
     const params = buildIndexParamsPayload()
@@ -941,27 +941,27 @@ const handleIndexConfigConfirm = async () => {
     if (result) {
       currentIndexFileIds.value = []
       pendingIndexTotal.value = 0
-      // 清空选择
+      // Xóa lựa chọn
       if (isBatchIndexOperation.value || isPendingIndexOperation.value) {
         selectedRowKeys.value = []
       }
-      // 关闭模态框
+      // Đóng hộp phương thức
       indexConfigModalVisible.value = false
 
       isBatchIndexOperation.value = false
       isPendingIndexOperation.value = false
       resetIndexParams()
     } else {
-      // message.error(`入库失败: ${result.message}`); // store already shows message
+      // message.error(`Lưu trữ không thành công: ${result.message}`); // store already shows message
     }
   } catch (error) {
-    console.error('入库失败:', error)
-    const errorMessage = error.message || '入库失败，请稍后重试'
+    console.error('Lưu trữ không thành công:', error)
+    const errorMessage = error.message || 'Lưu trữ không thành công，Vui lòng thử lại sau'
     message.error(errorMessage)
   }
 }
 
-// 入库取消
+// Hủy bỏ nhập kho
 const handleIndexConfigCancel = () => {
   indexConfigModalVisible.value = false
   currentIndexFileIds.value = []
@@ -988,13 +988,13 @@ const formatFileTableTime = (value) => {
 
   const oneYearAgo = parseToShanghai(Date.now()).subtract(1, 'year')
   if (parsed.isAfter(oneYearAgo)) {
-    return parsed.format('MM月DD日 HH:mm:ss')
+    return parsed.format('MMthángDDngày HH:mm:ss')
   }
 
-  return parsed.format('YYYY年MM月DD日')
+  return parsed.format('YYYYnămMMthángDDngày')
 }
 
-// 导入工具函数
+// Nhập chức năng công cụ
 import { parseToShanghai } from '@/utils/time'
 import { buildChunkParamsPayload, isPlainObject } from '@/utils/chunk_presets'
 import ChunkParamsConfig from '@/components/ChunkParamsConfig.vue'

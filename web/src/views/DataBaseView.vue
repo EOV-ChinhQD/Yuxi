@@ -2,23 +2,23 @@
   <div class="database-container layout-container">
     <PageHeader
       v-if="!props.embedded"
-      title="知识库"
+      title="cơ sở tri thức"
       :active-key="knowledgeActiveView"
       :tabs="knowledgeViewItems"
       :loading="dbState.listLoading"
       :show-border="true"
-      aria-label="知识库视图切换"
+      aria-label="Chuyển đổi chế độ xem cơ sở kiến thức"
     />
 
-    <PageShoulder v-model:search="searchQuery" search-placeholder="搜索知识库...">
+    <PageShoulder v-model:search="searchQuery" search-placeholder="Tìm kiếm cơ sở kiến thức...">
       <template #filters>
         <a-select
           v-model:value="typeFilter"
           style="width: 120px"
-          placeholder="全部类型"
+          placeholder="Tất cả các loại"
           allow-clear
         >
-          <a-select-option :value="null">全部类型</a-select-option>
+          <a-select-option :value="null">Tất cả các loại</a-select-option>
           <a-select-option v-for="t in kbTypes" :key="t" :value="t">
             {{ getKbTypeLabel(t) }}
           </a-select-option>
@@ -31,14 +31,14 @@
           :disabled="!kbTypes.length"
           @click="state.openNewDatabaseModel = true"
         >
-          <Plus :size="16" /> 新建知识库
+          <Plus :size="16" /> Tạo nền tảng kiến thức mới
         </a-button>
       </template>
     </PageShoulder>
 
     <a-modal
       :open="state.openNewDatabaseModel"
-      title="新建知识库"
+      title="Tạo nền tảng kiến thức mới"
       :confirm-loading="dbState.creating"
       @ok="handleCreateDatabase"
       @cancel="cancelCreateDatabase"
@@ -47,9 +47,9 @@
       destroyOnClose
     >
       <div class="new-database-form">
-        <!-- 知识库类型选择 -->
+        <!-- Lựa chọn loại cơ sở kiến thức -->
         <div class="form-section">
-          <h3 class="section-title">知识库类型<span class="required-mark">*</span></h3>
+          <h3 class="section-title">Loại cơ sở tri thức<span class="required-mark">*</span></h3>
           <div class="kb-type-cards">
             <div
               v-for="(typeInfo, typeKey) in orderedKbTypes"
@@ -69,23 +69,23 @@
         </div>
 
         <div class="form-section">
-          <h3 class="section-title">知识库名称<span class="required-mark">*</span></h3>
-          <a-input v-model:value="newDatabase.name" placeholder="新建知识库名称" />
+          <h3 class="section-title">Tên cơ sở kiến thức<span class="required-mark">*</span></h3>
+          <a-input v-model:value="newDatabase.name" placeholder="Tạo tên cơ sở kiến thức mới" />
         </div>
 
         <div v-if="selectedKbTypeInfo?.requires_embedding_model" class="form-grid two-columns">
           <div class="form-section compact-section">
-            <h3 class="section-title">嵌入模型</h3>
+            <h3 class="section-title">mô hình nhúng</h3>
             <EmbeddingModelSelector
               v-model:value="newDatabase.embedding_model_spec"
               class="full-width"
-              placeholder="请选择嵌入模型"
+              placeholder="Vui lòng chọn một mô hình để nhúng"
             />
           </div>
 
           <div class="form-section compact-section">
             <div class="chunk-preset-title-row">
-              <h3 class="section-title">分块策略</h3>
+              <h3 class="section-title">chiến lược phân chia</h3>
               <a-tooltip :title="selectedPresetDescription">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
@@ -141,21 +141,21 @@
         </div>
 
         <div class="form-section">
-          <h3 class="section-title">知识库描述</h3>
+          <h3 class="section-title">Mô tả cơ sở kiến thức</h3>
           <p class="field-hint description-hint">
-            在智能体流程中，这里的描述会作为工具的描述。智能体会根据知识库的标题和描述来选择合适的工具。所以这里描述的越详细，智能体越容易选择到合适的工具。
+            trong quá trình đại lý，Mô tả ở đây sẽ đóng vai trò là mô tả của công cụ。Tác nhân chọn công cụ thích hợp dựa trên tiêu đề và mô tả của cơ sở tri thức。Vì vậy, mô tả chi tiết hơn ở đây là，Đại lý càng dễ dàng lựa chọn công cụ phù hợp。
           </p>
           <AiTextarea
             v-model="newDatabase.description"
             :name="newDatabase.name"
-            placeholder="新建知识库描述"
+            placeholder="Tạo mô tả cơ sở kiến thức mới"
             :auto-size="{ minRows: 3, maxRows: 10 }"
           />
         </div>
 
-        <!-- 共享配置 -->
+        <!-- Cấu hình chia sẻ -->
         <div class="form-section compact-section">
-          <h3 class="section-title">共享设置</h3>
+          <h3 class="section-title">Cài đặt chia sẻ</h3>
           <ShareConfigForm
             ref="shareConfigFormRef"
             v-model="shareConfig"
@@ -164,29 +164,29 @@
         </div>
       </div>
       <template #footer>
-        <a-button key="back" @click="cancelCreateDatabase">取消</a-button>
+        <a-button key="back" @click="cancelCreateDatabase">Hủy bỏ</a-button>
         <a-button
           key="submit"
           type="primary"
           :loading="dbState.creating"
           :disabled="!selectedKbTypeInfo"
           @click="handleCreateDatabase"
-          >创建</a-button
+          >tạo ra</a-button
         >
       </template>
     </a-modal>
 
-    <!-- 加载状态 -->
+    <!-- Trạng thái tải -->
     <div v-if="dbState.listLoading" class="loading-container">
       <a-spin size="large" />
-      <p>正在加载知识库...</p>
+      <p>Đang tải cơ sở kiến thức...</p>
     </div>
 
-    <!-- 空状态显示 -->
+    <!-- Hiển thị trạng thái trống -->
     <ResourceEmptyState
       v-else-if="!databases || databases.length === 0"
-      title="暂无知识库"
-      description="创建知识库后，可以上传文件并配置检索、图谱和评估能力。"
+      title="Chưa có nền tảng kiến thức"
+      description="Sau khi tạo ra cơ sở kiến thức，Có thể tải tệp lên và định cấu hình truy xuất、Khả năng lập bản đồ và đánh giá。"
       :icon="getKbTypeIcon('milvus')"
     >
       <template #actions>
@@ -200,19 +200,19 @@
           <template #icon>
             <Plus :size="16" />
           </template>
-          创建知识库
+          Tạo nền tảng kiến thức
         </a-button>
       </template>
     </ResourceEmptyState>
 
-    <!-- 数据库列表 -->
+    <!-- Danh sách cơ sở dữ liệu -->
     <ExtensionCardGrid v-else>
       <InfoCard
         v-for="database in filteredDatabases"
         :key="database.kb_id"
         :title="database.name"
         :subtitle="cardSubtitle(database)"
-        :description="database.description || '暂无描述'"
+        :description="database.description || 'Chưa có mô tả'"
         :tags="cardTags(database)"
         @click="navigateToDatabase(database)"
       >
@@ -256,12 +256,12 @@ const props = defineProps({
   embedded: { type: Boolean, default: false }
 })
 
-// 使用 store 的状态
+// sử dụng store trạng thái
 const { databases, state: dbState } = storeToRefs(databaseStore)
 
 const knowledgeActiveView = 'documents'
 const knowledgeViewItems = [
-  { key: 'documents', label: '文档知识库', path: '/extensions?tab=knowledge' }
+  { key: 'documents', label: 'Cơ sở kiến thức tài liệu', path: '/extensions?tab=knowledge' }
 ]
 
 const kbTypes = computed(() => Object.keys(supportedKbTypes.value))
@@ -315,10 +315,10 @@ const selectedPresetDescription = computed(() =>
   getChunkPresetDescription(newDatabase.chunk_preset_id)
 )
 
-// 支持的知识库类型
+// Các loại cơ sở kiến thức được hỗ trợ
 const supportedKbTypes = ref({})
 
-// 有序的知识库类型
+// Loại cơ sở tri thức được sắp xếp
 const orderedKbTypes = computed(() => supportedKbTypes.value)
 
 const selectedKbTypeInfo = computed(() => supportedKbTypes.value[newDatabase.kb_type] || null)
@@ -340,7 +340,7 @@ const resetCreateParamValues = () => {
   }
 }
 
-// 加载支持的知识库类型
+// Tải các loại cơ sở kiến thức được hỗ trợ
 const loadSupportedKbTypes = async () => {
   try {
     const data = await typeApi.getKnowledgeBaseTypes()
@@ -348,11 +348,11 @@ const loadSupportedKbTypes = async () => {
     newDatabase.kb_type = kbTypes.value[0] || ''
     resetCreateParamValues()
   } catch (error) {
-    console.error('加载知识库类型失败:', error)
+    console.error('Không thể tải loại cơ sở kiến thức:', error)
     supportedKbTypes.value = {}
     newDatabase.kb_type = ''
     resetCreateParamValues()
-    message.error('加载知识库类型失败，请稍后重试')
+    message.error('Không thể tải loại cơ sở kiến thức，Vui lòng thử lại sau')
   }
 }
 
@@ -368,7 +368,7 @@ const cancelCreateDatabase = () => {
   resetNewDatabase()
 }
 
-// 格式化创建时间
+// Thời gian tạo định dạng
 const formatCreatedTime = (createdAt) => {
   if (!createdAt) return ''
   const parsed = parseToShanghai(createdAt)
@@ -379,35 +379,35 @@ const formatCreatedTime = (createdAt) => {
   const diffInDays = today.diff(createdDay, 'day')
 
   if (diffInDays === 0) {
-    return '今天创建'
+    return 'Được tạo hôm nay'
   }
   if (diffInDays === 1) {
-    return '昨天创建'
+    return 'Đã tạo ngày hôm qua'
   }
   if (diffInDays < 7) {
-    return `${diffInDays} 天前创建`
+    return `${diffInDays} Đã tạo vài ngày trước`
   }
   if (diffInDays < 30) {
     const weeks = Math.floor(diffInDays / 7)
-    return `${weeks} 周前创建`
+    return `${weeks} Đã tạo vài tuần trước`
   }
   if (diffInDays < 365) {
     const months = Math.floor(diffInDays / 30)
-    return `${months} 个月前创建`
+    return `${months} Đã tạo vài tháng trước`
   }
   const years = Math.floor(diffInDays / 365)
-  return `${years} 年前创建`
+  return `${years} Được tạo cách đây nhiều năm`
 }
 
-// 处理知识库类型改变
+// Xử lý các thay đổi về loại cơ sở kiến thức
 const handleKbTypeChange = (type) => {
-  console.log('知识库类型改变:', type)
+  console.log('Thay đổi loại cơ sở kiến thức:', type)
   resetNewDatabase()
   newDatabase.kb_type = type
   resetCreateParamValues()
 }
 
-// 构建请求数据（只负责表单数据转换）
+// Xây dựng dữ liệu yêu cầu（Chỉ chịu trách nhiệm chuyển đổi dữ liệu biểu mẫu）
 const buildRequestData = () => {
   const requestData = {
     database_name: newDatabase.name.trim(),
@@ -429,7 +429,7 @@ const buildRequestData = () => {
     user_uids: shareConfig.value.access_level === 'user' ? shareConfig.value.user_uids || [] : []
   }
 
-  // 根据类型添加特定配置
+  // Thêm cấu hình cụ thể dựa trên loại
   if (['milvus'].includes(newDatabase.kb_type)) {
     if (newDatabase.storage) {
       requestData.additional_params.storage = newDatabase.storage
@@ -444,10 +444,10 @@ const buildRequestData = () => {
   return requestData
 }
 
-// 创建按钮处理
+// Tạo trình xử lý nút
 const handleCreateDatabase = async () => {
   if (!selectedKbTypeInfo.value) {
-    message.error('知识库类型加载失败，无法创建知识库')
+    message.error('Tải loại cơ sở kiến thức không thành công，Không thể tạo cơ sở kiến thức')
     return
   }
 
@@ -455,7 +455,7 @@ const handleCreateDatabase = async () => {
     if (!field.required) continue
     const value = newDatabase.additional_params[field.key]
     if (value === undefined || value === null || (typeof value === 'string' && !value.trim())) {
-      message.error(`请填写${field.label || field.key}`)
+      message.error(`Vui lòng điền vào${field.label || field.key}`)
       return
     }
   }
@@ -474,7 +474,7 @@ const handleCreateDatabase = async () => {
     resetNewDatabase()
     state.openNewDatabaseModel = false
   } catch {
-    // 错误已在 store 中处理
+    // Lỗi đã có rồi store xử lý trung bình
   }
 }
 
@@ -484,7 +484,7 @@ const cardSubtitle = (database) => {
     parts.push(formatCreatedTime(database.created_at))
   }
   if (!kbUtils.isReadOnlyDatabase(database)) {
-    parts.push(`${database.row_count || 0} 文件`)
+    parts.push(`${database.row_count || 0} tập tin`)
   }
   return parts.join(' · ')
 }

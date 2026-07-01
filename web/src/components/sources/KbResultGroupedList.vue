@@ -1,7 +1,7 @@
 <template>
   <div class="kb-result-grouped-list">
     <div v-if="showSummary" class="result-summary">
-      找到 {{ normalizedChunks.length }} 个相关文档片段，来自 {{ fileGroupList.length }} 个文件
+      tìm thấy {{ normalizedChunks.length }} đoạn tài liệu liên quan，từ {{ fileGroupList.length }} tập tin
     </div>
 
     <div class="kb-results" v-if="normalizedChunks.length > 0">
@@ -26,7 +26,7 @@
             v-if="fileGroup.kb_id && fileGroup.file_id"
             class="view-file-btn"
             @click.stop="openFileDetail(fileGroup)"
-            title="查看文件"
+            title="Xem tập tin"
           >
             <Eye :size="14" />
           </button>
@@ -44,10 +44,10 @@
               <span class="chunk-index">#{{ index + 1 }}</span>
               <div class="chunk-scores">
                 <span v-if="typeof chunk.score === 'number'" class="score-item"
-                  >相似度 {{ (chunk.score * 100).toFixed(0) }}%</span
+                  >Sự tương đồng {{ (chunk.score * 100).toFixed(0) }}%</span
                 >
                 <span v-if="typeof chunk.rerank_score === 'number'" class="score-item"
-                  >重排序 {{ (chunk.rerank_score * 100).toFixed(0) }}%</span
+                  >Sắp xếp lại {{ (chunk.rerank_score * 100).toFixed(0) }}%</span
                 >
                 <span v-if="getLineRange(chunk)" class="score-item">{{ getLineRange(chunk) }}</span>
               </div>
@@ -66,7 +66,7 @@
     <KbChunkDetailModal
       v-model:open="modalVisible"
       :chunk="selectedChunk"
-      :title-prefix="`文档片段 #${selectedChunkIndex || '-'} `"
+      :title-prefix="`mảnh tài liệu #${selectedChunkIndex || '-'} `"
     />
 
     <FileDetailModal
@@ -94,7 +94,7 @@ const props = defineProps({
   },
   emptyText: {
     type: String,
-    default: '未找到相关知识库内容'
+    default: 'Không tìm thấy nội dung cơ sở kiến thức liên quan'
   }
 })
 
@@ -130,7 +130,7 @@ const normalizedChunks = computed(() =>
         item.filename ||
         item.file_id ||
         item.kb_id ||
-        '未知来源'
+        'nguồn không rõ'
 
       return {
         ...item,
@@ -147,7 +147,7 @@ const normalizedChunks = computed(() =>
 const fileGroupList = computed(() => {
   const groups = new Map()
   for (const item of normalizedChunks.value) {
-    const filename = item?.metadata?.source || '未知来源'
+    const filename = item?.metadata?.source || 'nguồn không rõ'
     if (!groups.has(filename)) {
       groups.set(filename, {
         filename,
@@ -165,7 +165,7 @@ const fileGroupList = computed(() => {
 watch(
   fileGroupList,
   (groups) => {
-    // 分组变化时仅清理失效展开项，默认保持折叠状态。
+    // Chỉ dọn sạch các mục mở rộng không hợp lệ khi nhóm các thay đổi，Giữ thu gọn theo mặc định。
     const validFilenames = new Set(groups.map((item) => item.filename))
     expandedFiles.value = new Set(
       [...expandedFiles.value].filter((filename) => validFilenames.has(filename))
@@ -196,7 +196,7 @@ const getLineRange = (chunk) => {
   const startLine = Number(chunk?.metadata?.start_line || 0)
   const endLine = Number(chunk?.metadata?.end_line || 0)
   if (!startLine || !endLine) return ''
-  return startLine === endLine ? `第 ${startLine} 行` : `第 ${startLine}-${endLine} 行`
+  return startLine === endLine ? `Không. ${startLine} được rồi` : `Không. ${startLine}-${endLine} được rồi`
 }
 
 const openChunkDetail = (chunk, index) => {

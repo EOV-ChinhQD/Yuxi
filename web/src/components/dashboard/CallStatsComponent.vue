@@ -1,10 +1,10 @@
 <template>
   <div class="grid-item call-stats">
-    <a-card class="dashboard-card call-stats-section" title="调用统计" :loading="loading">
+    <a-card class="dashboard-card call-stats-section" title="Thống kê cuộc gọi" :loading="loading">
       <template #extra>
         <div class="simple-controls">
           <div class="simple-toggle-group">
-            <!-- <span class="simple-toggle-label">时间</span> -->
+            <!-- <span class="simple-toggle-label">thời gian</span> -->
             <span
               v-for="opt in timeRangeOptions"
               :key="opt.value"
@@ -16,7 +16,7 @@
           </div>
           <div class="divider"></div>
           <div class="simple-toggle-group">
-            <!-- <span class="simple-toggle-label">类型</span> -->
+            <!-- <span class="simple-toggle-label">Loại</span> -->
             <span
               v-for="opt in dataTypeOptions"
               :key="opt.value"
@@ -26,7 +26,7 @@
               >{{ opt.label }}
             </span>
           </div>
-          <!-- <div class="subtitle">总计：{{ callStatsData?.total_count || 0 }}</div> -->
+          <!-- <div class="subtitle">tổng cộng：{{ callStatsData?.total_count || 0 }}</div> -->
         </div>
       </template>
 
@@ -46,7 +46,7 @@ import { dashboardApi } from '@/apis/dashboard_api'
 import { getColorByIndex, truncateLegend } from '@/utils/chartColors'
 import { useThemeStore } from '@/stores/theme'
 
-// CSS 变量解析工具函数
+// CSS Chức năng công cụ phân tích cú pháp biến
 function getCSSVariable(variableName, element = document.documentElement) {
   return getComputedStyle(element).getPropertyValue(variableName).trim()
 }
@@ -64,15 +64,15 @@ const callStatsLoading = ref(false)
 const callTimeRange = ref('14days')
 const callDataType = ref('agents')
 const timeRangeOptions = [
-  { value: '14hours', label: '近14小时' },
-  { value: '14days', label: '近14天' },
-  { value: '14weeks', label: '近14周' }
+  { value: '14hours', label: 'gần14giờ' },
+  { value: '14days', label: 'gần14ngày' },
+  { value: '14weeks', label: 'gần14tuần' }
 ]
 const dataTypeOptions = [
-  { value: 'models', label: '模型调用' },
-  { value: 'agents', label: '智能体调用' },
-  { value: 'tokens', label: 'Token消耗' },
-  { value: 'tools', label: '工具调用' }
+  { value: 'models', label: 'Cuộc gọi mẫu' },
+  { value: 'agents', label: 'Cuộc gọi đại lý' },
+  { value: 'tokens', label: 'Tokentiêu thụ' },
+  { value: 'tools', label: 'Cuộc gọi công cụ' }
 ]
 const isTokenView = computed(() => callDataType.value === 'tokens')
 
@@ -122,7 +122,7 @@ const loadCallStats = async () => {
     await nextTick()
     renderCallStatsChart()
   } catch (error) {
-    console.error('加载调用统计数据失败:', error)
+    console.error('Không tải được số liệu thống kê cuộc gọi:', error)
   } finally {
     callStatsLoading.value = false
   }
@@ -132,7 +132,7 @@ const renderCallStatsChart = () => {
   const container = callStatsChartRef.value
   if (!container || !callStatsData.value) return
 
-  // 若父卡片仍在 loading，等待 loading 结束
+  // Nếu thẻ gốc vẫn còn đó loading，chờ đã loading kết thúc
   if (props.loading) {
     scheduleRetry()
     return
@@ -165,7 +165,7 @@ const renderCallStatsChart = () => {
     if (callTimeRange.value === '14hours') {
       return date.split(' ')[1]
     } else if (callTimeRange.value === '14weeks') {
-      return `第${date.split('-')[1]}周`
+      return `Không.${date.split('-')[1]}tuần`
     } else {
       return date.split('-').slice(1).join('-')
     }
@@ -174,7 +174,7 @@ const renderCallStatsChart = () => {
   const agentNames = callStatsData.value.agent_names || {}
 
   const resolveCategoryLabel = (cat) => {
-    if (cat === 'None') return '未知模型'
+    if (cat === 'None') return 'mô hình không xác định'
     return agentNames[cat] || cat
   }
 
@@ -194,8 +194,8 @@ const renderCallStatsChart = () => {
     grid: {
       left: '3%',
       right: '4%',
-      top: '5%' /* 减少顶部留白 */,
-      bottom: 50 /* 减少底部留白，从60减少到50 */,
+      top: '5%' /* Giảm khoảng trắng ở trên cùng */,
+      bottom: 50 /* Giảm khoảng trắng ở phía dưới，từ60giảm xuống50 */,
       containLabel: true
     },
     xAxis: {
@@ -237,19 +237,19 @@ const renderCallStatsChart = () => {
           result += `<span style="${itemStyle}">${truncatedName}: ${formatValueForDisplay(param.value)}</span><br/>`
         })
         const labelMap = {
-          models: '模型调用',
-          agents: '智能体调用',
-          tokens: 'Token消耗',
-          tools: '工具调用'
+          models: 'Cuộc gọi mẫu',
+          agents: 'Cuộc gọi đại lý',
+          tokens: 'Tokentiêu thụ',
+          tools: 'Cuộc gọi công cụ'
         }
         const formattedTotal = formatValueForDisplay(total)
-        return `<div style="font-weight:bold;margin-bottom:5px">${labelMap[callDataType.value]}</div>${result}<strong>总计: ${formattedTotal}</strong>`
+        return `<div style="font-weight:bold;margin-bottom:5px">${labelMap[callDataType.value]}</div>${result}<strong>tổng cộng: ${formattedTotal}</strong>`
       }
     },
     legend: {
       type: 'scroll',
       data: categories.map(resolveCategoryLabel),
-      bottom: 5 /* 调整图例位置，从0改为5 */,
+      bottom: 5 /* Điều chỉnh vị trí chú giải，từ0Thay đổi thành5 */,
       textStyle: { color: getCSSVariable('--gray-500'), fontSize: 12 },
       itemWidth: 14,
       itemHeight: 14,
@@ -318,7 +318,7 @@ watch(
   }
 )
 
-// 监听主题变化，重新渲染图表
+// Theo dõi thay đổi chủ đề，Hiển thị lại biểu đồ
 watch(
   () => themeStore.isDark,
   () => {
@@ -336,7 +336,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="less">
-/* 复用 dashboard.css 样式：此处仅做最小覆盖以避免重复 */
+/* Tái sử dụng dashboard.css phong cách：Chỉ có phạm vi bảo hiểm tối thiểu được thực hiện ở đây để tránh trùng lặp */
 .call-stats-section {
   background-color: var(--gray-0);
   height: 100%;
@@ -347,8 +347,8 @@ onUnmounted(() => {
 :deep(.ant-card-body) {
   flex: 1;
   display: flex;
-  padding: 16px; /* 减少padding从20px到16px */
-  overflow-x: hidden; /* 防止横向滚动条 */
+  padding: 16px; /* giảm bớtpaddingtừ20pxĐến16px */
+  overflow-x: hidden; /* Ngăn chặn thanh cuộn ngang */
 }
 
 .call-stats-container {
@@ -360,15 +360,15 @@ onUnmounted(() => {
 .call-stats .chart-container {
   height: 100%;
   flex: 1;
-  padding: 0; /* 移除默认padding */
+  padding: 0; /* Xóa mặc địnhpadding */
 }
 
 .call-stats .chart {
   height: 100% !important;
   width: 100%;
-  padding: 0; /* 移除chart的padding */
-  border: none; /* 移除chart的border */
-  background-color: transparent; /* 移除背景色 */
+  padding: 0; /* Xóachartcủapadding */
+  border: none; /* Xóachartcủaborder */
+  background-color: transparent; /* Xóa màu nền */
 }
 
 .simple-controls {

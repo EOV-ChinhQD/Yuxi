@@ -10,7 +10,7 @@
   >
     <div v-if="chunk" class="detail-meta">
       <span v-if="typeof chunk.score === 'number'" class="score"
-        >相似度 {{ (chunk.score * 100).toFixed(1) }}%</span
+        >Sự tương đồng {{ (chunk.score * 100).toFixed(1) }}%</span
       >
       <span v-if="chunk.metadata?.chunk_id" class="meta-item"
         >chunk_id: {{ chunk.metadata.chunk_id }}</span
@@ -23,7 +23,7 @@
       :content="chunk.content"
       class="chunk-markdown-content"
     />
-    <div v-else class="empty-text">暂无内容</div>
+    <div v-else class="empty-text">Chưa có nội dung</div>
   </a-modal>
 </template>
 
@@ -42,7 +42,7 @@ const props = defineProps({
   },
   titlePrefix: {
     type: String,
-    default: '文档片段详情'
+    default: 'Chi tiết đoạn tài liệu'
   }
 })
 
@@ -62,7 +62,7 @@ const lineRange = computed(() => {
   const startLine = Number(props.chunk?.metadata?.start_line || 0)
   const endLine = Number(props.chunk?.metadata?.end_line || 0)
   if (!startLine || !endLine) return ''
-  return startLine === endLine ? `第 ${startLine} 行` : `第 ${startLine}-${endLine} 行`
+  return startLine === endLine ? `Không. ${startLine} được rồi` : `Không. ${startLine}-${endLine} được rồi`
 })
 </script>
 

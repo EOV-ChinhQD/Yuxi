@@ -18,12 +18,12 @@
     />
     <div v-else-if="loading" class="preview-state">
       <a-spin />
-      <span>正在加载预览...</span>
+      <span>Đang tải bản xem trước...</span>
     </div>
     <div v-else class="preview-empty">
       <FileSearch :size="28" />
-      <h3>选择文件以预览</h3>
-      <p>支持 Markdown、TXT 编辑，其他格式保持只读预览。</p>
+      <h3>Chọn tập tin để xem trước</h3>
+      <p>hỗ trợ Markdown、TXT Chỉnh sửa，Các định dạng khác vẫn ở chế độ xem trước chỉ đọc。</p>
     </div>
   </aside>
 </template>

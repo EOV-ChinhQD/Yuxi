@@ -1,6 +1,6 @@
-// 复刻后端 yuxi/utils/subagent_thread_utils.py 的 make_child_thread_id：
+// Phần phụ trợ rẽ nhánh yuxi/utils/subagent_thread_utils.py của make_child_thread_id：
 // child_thread_id = "subagent_" + sha256("{parent}:{slug}:{tool_call_id}")[:55]
-// 子智能体由 graph.ainvoke 独立调用，流式事件不带 tool_call_id，前端据此自行推算 child_thread_id。
+// Đại lý phụ bao gồm graph.ainvoke cuộc gọi độc lập，Sự kiện phát trực tuyến không có tool_call_id，Giao diện người dùng tự tính toán dựa trên điều này child_thread_id。
 const PREFIX = 'subagent_'
 const DIGEST_LENGTH = 64 - PREFIX.length
 

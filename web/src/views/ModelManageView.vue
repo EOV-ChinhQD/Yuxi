@@ -16,8 +16,8 @@ const agentPanelRef = ref(null)
 const providerPanelRef = ref(null)
 
 const modelManageTabs = computed(() => {
-  const tabs = [{ key: 'agents', label: '智能体' }]
-  if (userStore.isAdmin) tabs.push({ key: 'providers', label: '模型供应商' })
+  const tabs = [{ key: 'agents', label: 'đại lý' }]
+  if (userStore.isAdmin) tabs.push({ key: 'providers', label: 'nhà cung cấp mô hình' })
   return tabs
 })
 
@@ -57,26 +57,26 @@ watch(activeTab, (tab) => {
   <div class="model-manage-view">
     <PageHeader
       v-model:active-key="activeTab"
-      title="智能体管理"
+      title="Quản lý đại lý"
       :tabs="modelManageTabs"
       :loading="activeLoading"
       :show-border="true"
-      aria-label="智能体管理视图切换"
+      aria-label="Chuyển đổi chế độ xem quản lý đại lý"
     >
       <template #info>
         <div v-if="activeTab === 'agents'" class="summary-strip">
-          <span>{{ activeStats.total || 0 }} 个智能体</span>
-          <span>{{ activeStats.global || 0 }} 个全局</span>
-          <span v-if="activeStats.builtin">{{ activeStats.builtin }} 个内置</span>
-          <span>{{ activeStats.manageable || 0 }} 个可管理</span>
+          <span>{{ activeStats.total || 0 }} đại lý</span>
+          <span>{{ activeStats.global || 0 }} tình hình chung</span>
+          <span v-if="activeStats.builtin">{{ activeStats.builtin }} tích hợp sẵn</span>
+          <span>{{ activeStats.manageable || 0 }} có thể quản lý được</span>
         </div>
         <div v-else class="summary-strip">
-          <span>{{ activeStats.total || 0 }} 个供应商</span>
-          <span>{{ activeStats.enabled || 0 }} 个启用</span>
+          <span>{{ activeStats.total || 0 }} nhà cung cấp</span>
+          <span>{{ activeStats.enabled || 0 }} đã bật</span>
           <span v-if="activeStats.warning > 0" class="warning-count">
-            {{ activeStats.warning }} 个凭证缺失
+            {{ activeStats.warning }} Chứng từ bị thiếu
           </span>
-          <span>{{ activeStats.models || 0 }} 个模型</span>
+          <span>{{ activeStats.models || 0 }} mô hình</span>
         </div>
       </template>
     </PageHeader>

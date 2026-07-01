@@ -1,30 +1,30 @@
 <template>
-  <a-card title="AI智能体分析" :loading="loading" class="dashboard-card">
-    <!-- 智能体概览 -->
+  <a-card title="AIphân tích tác nhân" :loading="loading" class="dashboard-card">
+    <!-- Tổng quan về đại lý -->
     <div class="stats-overview">
       <a-row :gutter="16">
         <a-col :span="8">
           <a-statistic
-            title="智能体总数"
+            title="Tổng số đại lý"
             :value="agentStats?.total_agents || 0"
             :value-style="{ color: 'var(--color-info-500)' }"
-            suffix="个"
+            suffix="một"
           />
         </a-col>
         <a-col :span="8">
           <a-statistic
-            title="总对话数"
+            title="Tổng số cuộc trò chuyện"
             :value="totalConversations"
             :value-style="{ color: 'var(--color-accent-500)' }"
-            suffix="次"
+            suffix="lần"
           />
         </a-col>
         <a-col :span="8">
           <a-statistic
-            title="工具调用总数"
+            title="Tổng số cuộc gọi công cụ"
             :value="totalToolUsage"
             :value-style="{ color: 'var(--color-warning-500)' }"
-            suffix="次"
+            suffix="lần"
           />
         </a-col>
       </a-row>
@@ -32,21 +32,21 @@
 
     <a-divider />
 
-    <!-- 图表区域 -->
+    <!-- khu vực biểu đồ -->
     <a-row :gutter="24">
-      <!-- 对话数和工具调用数分布 -->
+      <!-- Phân phối số lượng cuộc hội thoại và số lượng cuộc gọi công cụ -->
       <a-col :span="24">
         <div class="chart-container">
-          <h4>对话/工具调用分布 (TOP 3)</h4>
+          <h4>đối thoại/Phân phối cuộc gọi công cụ (TOP 3)</h4>
           <div ref="conversationToolChartRef" class="chart"></div>
         </div>
       </a-col>
     </a-row>
 
-    <!-- 表现排行榜 -->
+    <!-- Xếp hạng hiệu suất -->
     <a-divider />
     <div class="top-performers">
-      <h4>表现最佳智能体 TOP 5</h4>
+      <h4>đại lý hoạt động tốt nhất TOP 5</h4>
       <a-table
         :columns="performerColumns"
         :data-source="topPerformers"
@@ -94,7 +94,7 @@ import * as echarts from 'echarts'
 import { getColorByIndex } from '@/utils/chartColors'
 import { useThemeStore } from '@/stores/theme'
 
-// CSS 变量解析工具函数
+// CSS Chức năng công cụ phân tích cú pháp biến
 function getCSSVariable(variableName, element = document.documentElement) {
   return getComputedStyle(element).getPropertyValue(variableName).trim()
 }
@@ -118,34 +118,34 @@ const props = defineProps({
 const conversationToolChartRef = ref(null)
 let conversationToolChart = null
 
-// 表格列定义
+// định nghĩa cột trong bảng
 const performerColumns = [
   {
-    title: '排名',
+    title: 'Xếp hạng',
     key: 'rank',
     width: '80px',
     align: 'center'
   },
   {
-    title: '智能体',
+    title: 'đại lý',
     key: 'agent_id',
     width: '30%'
   },
   {
-    title: '满意度',
+    title: 'Sự hài lòng',
     key: 'satisfaction_rate',
     width: '25%',
     align: 'center'
   },
   {
-    title: '对话数',
+    title: 'Số lượng cuộc trò chuyện',
     key: 'conversation_count',
     width: '20%',
     align: 'center'
   }
 ]
 
-// 计算属性
+// Thuộc tính tính toán
 const totalConversations = computed(() => {
   const conversationCounts = props.agentStats?.agent_conversation_counts || []
   return conversationCounts.reduce((sum, item) => sum + item.conversation_count, 0)
@@ -164,7 +164,7 @@ const agentNames = computed(() => props.agentStats?.agent_names || {})
 
 const resolveAgentName = (agentId) => agentNames.value[agentId] || agentId
 
-// 初始化对话数和工具调用数合并图表
+// Biểu đồ đã hợp nhất về số lượng cuộc trò chuyện khởi tạo và số lượng cuộc gọi công cụ
 const initConversationToolChart = () => {
   if (
     !conversationToolChartRef.value ||
@@ -173,7 +173,7 @@ const initConversationToolChart = () => {
   )
     return
 
-  // 如果已存在图表实例，先销毁
+  // Nếu một phiên bản biểu đồ đã tồn tại，Tiêu diệt đầu tiên
   if (conversationToolChart) {
     conversationToolChart.dispose()
     conversationToolChart = null
@@ -184,10 +184,10 @@ const initConversationToolChart = () => {
   const conversationData = props.agentStats.agent_conversation_counts || []
   const toolData = props.agentStats.agent_tool_usage || []
 
-  // 获取所有智能体ID并按对话数+工具调用数排序，取前3个
+  // Nhận tất cả các đại lýIDvà theo số lượng cuộc trò chuyện+Sắp xếp số lượng cuộc gọi công cụ，Trước khi nhặt3một
   const allAgentStats = {}
 
-  // 统计每个智能体的总数据量（对话数 + 工具调用数）
+  // Đếm tổng lượng dữ liệu cho mỗi tác nhân（Số lượng cuộc trò chuyện + Số lần gọi công cụ）
   conversationData.forEach((item) => {
     if (!allAgentStats[item.agent_id]) {
       allAgentStats[item.agent_id] = { conversation: 0, tool: 0, total: 0 }
@@ -204,7 +204,7 @@ const initConversationToolChart = () => {
     allAgentStats[item.agent_id].total += item.tool_usage_count
   })
 
-  // 按总数据量降序排序，取前3个
+  // Sắp xếp theo tổng khối lượng dữ liệu theo thứ tự giảm dần，Trước khi nhặt3một
   const topAgentIds = Object.entries(allAgentStats)
     .sort(([, a], [, b]) => b.total - a.total)
     .slice(0, 3)
@@ -221,7 +221,7 @@ const initConversationToolChart = () => {
       }
     },
     legend: {
-      data: ['对话数', '工具调用数'],
+      data: ['Số lượng cuộc trò chuyện', 'Số lần gọi công cụ'],
       right: '0%',
       top: '0%',
       orient: 'horizontal',
@@ -268,7 +268,7 @@ const initConversationToolChart = () => {
     },
     series: [
       {
-        name: '对话数',
+        name: 'Số lượng cuộc trò chuyện',
         type: 'bar',
         data: topAgentIds.map((agentId) => {
           const item = conversationData.find((d) => d.agent_id === agentId)
@@ -287,7 +287,7 @@ const initConversationToolChart = () => {
         }
       },
       {
-        name: '工具调用数',
+        name: 'Số lần gọi công cụ',
         type: 'bar',
         data: topAgentIds.map((agentId) => {
           const item = toolData.find((d) => d.agent_id === agentId)
@@ -311,14 +311,14 @@ const initConversationToolChart = () => {
   conversationToolChart.setOption(option)
 }
 
-// 更新图表
+// Cập nhật biểu đồ
 const updateCharts = () => {
   nextTick(() => {
     initConversationToolChart()
   })
 }
 
-// 监听数据变化
+// Theo dõi sự thay đổi dữ liệu
 watch(
   () => props.agentStats,
   () => {
@@ -327,7 +327,7 @@ watch(
   { deep: true }
 )
 
-// 窗口大小变化时重新调整图表
+// Thay đổi kích thước biểu đồ khi kích thước cửa sổ thay đổi
 const handleResize = () => {
   if (conversationToolChart) conversationToolChart.resize()
 }
@@ -337,7 +337,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
-// 监听主题变化，重新渲染图表
+// Theo dõi thay đổi chủ đề，Hiển thị lại biểu đồ
 watch(
   () => themeStore.isDark,
   () => {
@@ -349,7 +349,7 @@ watch(
   }
 )
 
-// 组件卸载时清理
+// Dọn dẹp khi các thành phần được gỡ cài đặt
 const cleanup = () => {
   window.removeEventListener('resize', handleResize)
   if (conversationToolChart) {
@@ -358,21 +358,21 @@ const cleanup = () => {
   }
 }
 
-// 导出清理函数供父组件调用
+// Xuất hàm dọn dẹp cho thành phần cha để gọi
 defineExpose({
   cleanup
 })
 </script>
 
 <style scoped lang="less">
-/* 指标值样式 */
+/* Kiểu giá trị chỉ báo */
 .metric-value {
   font-weight: 500;
   color: var(--gray-1000);
   font-size: 14px;
 }
 
-/* 排名显示样式 */
+/* Phong cách hiển thị xếp hạng */
 .rank-display {
   display: flex;
   align-items: center;
@@ -412,7 +412,7 @@ defineExpose({
   white-space: nowrap;
 }
 
-// AgentStatsComponent 特有的样式
+// AgentStatsComponent phong cách độc đáo
 .top-performers,
 .metrics-comparison {
   h4 {

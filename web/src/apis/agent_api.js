@@ -2,40 +2,40 @@ import { apiGet, apiPost, apiDelete, apiPut, apiRequest } from './base'
 import { useUserStore } from '@/stores/user'
 
 /**
- * 智能体API模块
- * 包含智能体管理、聊天、配置等功能
- * 权限要求: 任何已登录用户（普通用户、管理员、超级管理员）
+ * đại lýAPImô-đun
+ * Bao gồm quản lý đại lý、trò chuyện、Cấu hình và các chức năng khác
+ * Yêu cầu về quyền: bất kỳ người dùng nào đã đăng nhập（Người dùng thông thường、Quản trị viên、siêu quản trị viên）
  */
 
 // =============================================================================
-// === 智能体聊天分组 ===
+// === Nhóm trò chuyện đại lý ===
 // =============================================================================
 
 export const agentApi = {
   /**
-   * 简单聊天调用（非流式）
-   * @param {string} query - 查询内容
-   * @returns {Promise} - 聊天响应
+   * Cuộc gọi trò chuyện đơn giản（không phát trực tuyến）
+   * @param {string} query - Nội dung truy vấn
+   * @returns {Promise} - Phản hồi trò chuyện
    */
   simpleCall: (query) => apiPost('/api/chat/call', { query }),
 
   /**
-   * 生成对话标题
-   * @param {string} query - 查询内容
-   * @param {Object} modelSpec - 模型配置
-   * @returns {Promise<string>} - 生成的标题
+   * Tạo tiêu đề cuộc trò chuyện
+   * @param {string} query - Nội dung truy vấn
+   * @param {Object} modelSpec - Cấu hình mô hình
+   * @returns {Promise<string>} - tiêu đề được tạo
    */
   generateTitle: async (query, modelSpec) => {
     const response = await apiPost('/api/chat/call', {
-      query: `根据以下对话内容生成一个简短的标题（最多30个字符，中英文均可），不要包含 markdown 标记：\n\n${query.slice(0, 2000)}`,
+      query: `Tạo tiêu đề ngắn dựa trên cuộc trò chuyện sau（nhất30nhân vật，Có cả tiếng Trung và tiếng Anh），không bao gồm markdown đánh dấu：\n\n${query.slice(0, 2000)}`,
       meta: { model_spec: modelSpec }
     })
     return response.response
   },
 
   /**
-   * 获取智能体列表
-   * @returns {Promise} - 智能体列表
+   * Lấy danh sách đại lý
+   * @returns {Promise} - Danh sách đại lý
    */
   getAgents: ({ includeSubagents = false } = {}) => {
     const params = new URLSearchParams()
@@ -47,24 +47,24 @@ export const agentApi = {
   getAgentBackends: () => apiGet('/api/agent/backends'),
 
   /**
-   * 获取单个智能体详情
-   * @param {string} agentId - 智能体ID
-   * @returns {Promise} - 智能体详情
+   * Nhận chi tiết đại lý cá nhân
+   * @param {string} agentId - đại lýID
+   * @returns {Promise} - Chi tiết đại lý
    */
   getAgentDetail: (agentId) => apiGet(`/api/agent/${agentId}`),
 
   /**
-   * 获取智能体历史消息
-   * @param {string} agentId - 智能体ID
-   * @param {string} threadId - 会话ID
-   * @returns {Promise} - 历史消息
+   * Nhận tin nhắn lịch sử của đại lý
+   * @param {string} agentId - đại lýID
+   * @param {string} threadId - phiênID
+   * @returns {Promise} - tin tức lịch sử
    */
   getAgentHistory: (threadId) => apiGet(`/api/chat/thread/${threadId}/history`),
 
   /**
-   * 获取指定会话的 AgentState
-   * @param {string} agentId - 智能体ID
-   * @param {string} threadId - 会话ID
+   * Nhận phiên được chỉ định AgentState
+   * @param {string} agentId - đại lýID
+   * @param {string} threadId - phiênID
    * @returns {Promise} - AgentState
    */
   getAgentState: (threadId, { includeMessages = false } = {}) =>
@@ -94,8 +94,8 @@ export const agentApi = {
   deleteAgent: (agentId) => apiDelete(`/api/agent/${agentId}`),
 
   /**
-   * 创建异步运行任务（Run）
-   * @param {Object} data - run 请求体
+   * Tạo một tác vụ không đồng bộ（Run）
+   * @param {Object} data - run Nội dung yêu cầu
    * @returns {Promise<Object>}
    */
   createAgentRun: (data) =>
@@ -112,30 +112,30 @@ export const agentApi = {
     }),
 
   /**
-   * 获取 Run 状态
+   * Nhận Run Trạng thái
    * @param {string} runId - run ID
    * @returns {Promise<Object>}
    */
   getAgentRun: (runId) => apiGet(`/api/agent/runs/${runId}`),
 
   /**
-   * 取消 Run
+   * Hủy bỏ Run
    * @param {string} runId - run ID
    * @returns {Promise<Object>}
    */
   cancelAgentRun: (runId) => apiPost(`/api/agent/runs/${runId}/cancel`, {}),
 
   /**
-   * 获取线程活跃 Run
-   * @param {string} threadId - 线程ID
+   * Nhận chủ đề hoạt động Run
+   * @param {string} threadId - chủ đềID
    * @returns {Promise<Object>}
    */
   getThreadActiveRun: (threadId) => apiGet(`/api/agent/thread/${threadId}/active_run`),
 
   /**
-   * 打开 Run 事件 SSE 连接（调用方负责关闭）
+   * mở Run sự kiện SSE kết nối（Người gọi có trách nhiệm đóng）
    * @param {string} runId - run ID
-   * @param {string} afterSeq - 起始 seq/cursor
+   * @param {string} afterSeq - bắt đầu seq/cursor
    * @param {Object} options - { signal, verbose }
    * @returns {Promise<Response>}
    */
@@ -158,14 +158,14 @@ export const agentApi = {
 }
 
 // =============================================================================
-// === 多模态图片支持分组 ===
+// === Hỗ trợ nhóm hình ảnh đa phương thức ===
 // =============================================================================
 
 export const multimodalApi = {
   /**
-   * 上传图片并获取base64编码
-   * @param {File} file - 图片文件
-   * @returns {Promise} - 上传结果
+   * Tải ảnh lên và nhậnbase64mã hóa
+   * @param {File} file - Tệp hình ảnh
+   * @returns {Promise} - Tải kết quả lên
    */
   uploadImage: (file) => {
     const formData = new FormData()
@@ -183,16 +183,16 @@ export const multimodalApi = {
 }
 
 // =============================================================================
-// === 对话线程分组 ===
+// === Nhóm chủ đề hội thoại ===
 // =============================================================================
 
 export const threadApi = {
   /**
-   * 获取对话线程列表
-   * @param {string | null | undefined} agentId - 智能体ID，可选；不传时返回全部智能体对话
-   * @param {number} limit - 返回数量限制，默认100
-   * @param {number} offset - 偏移量，默认0
-   * @returns {Promise} - 对话线程列表
+   * Lấy danh sách các chủ đề hội thoại
+   * @param {string | null | undefined} agentId - đại lýID，Tùy chọn；Trả về tất cả các cuộc hội thoại của tổng đài viên nếu không được thông qua
+   * @param {number} limit - Giới hạn số lượng trả lại，Mặc định100
+   * @param {number} offset - bù đắp，Mặc định0
+   * @returns {Promise} - Danh sách chủ đề hội thoại
    */
   getThreads: (agentId = null, limit = 100, offset = 0) => {
     const params = new URLSearchParams({
@@ -207,13 +207,13 @@ export const threadApi = {
   },
 
   /**
-   * 搜索历史对话
-   * @param {string} query - 搜索关键词
-   * @param {Object} options - 搜索选项
-   * @param {string | null | undefined} options.agentId - 智能体ID，可选
-   * @param {number} options.limit - 返回数量限制
-   * @param {number} options.offset - 偏移量
-   * @returns {Promise} - 搜索结果
+   * Tìm kiếm các cuộc trò chuyện lịch sử
+   * @param {string} query - Tìm kiếm từ khóa
+   * @param {Object} options - Tùy chọn tìm kiếm
+   * @param {string | null | undefined} options.agentId - đại lýID，Tùy chọn
+   * @param {number} options.limit - Giới hạn số lượng trả lại
+   * @param {number} options.offset - bù đắp
+   * @returns {Promise} - Kết quả tìm kiếm
    */
   searchThreads: (query, { agentId = null, limit = 20, offset = 0 } = {}) => {
     const params = new URLSearchParams({
@@ -228,25 +228,25 @@ export const threadApi = {
   },
 
   /**
-   * 创建新对话线程
-   * @param {string} agentId - 智能体ID
-   * @param {string} title - 对话标题
-   * @param {Object} metadata - 元数据
-   * @returns {Promise} - 创建结果
+   * Tạo chủ đề trò chuyện mới
+   * @param {string} agentId - đại lýID
+   * @param {string} title - Tiêu đề cuộc trò chuyện
+   * @param {Object} metadata - Siêu dữ liệu
+   * @returns {Promise} - Tạo kết quả
    */
   createThread: (agentId, title, metadata) =>
     apiPost('/api/chat/thread', {
       agent_id: agentId,
-      title: title || '新的对话',
+      title: title || 'cuộc trò chuyện mới',
       metadata: metadata || {}
     }),
 
   /**
-   * 更新对话线程
-   * @param {string} threadId - 对话线程ID
-   * @param {string} title - 对话标题
-   * @param {boolean} is_pinned - 是否置顶
-   * @returns {Promise} - 更新结果
+   * Cập nhật chuỗi cuộc trò chuyện
+   * @param {string} threadId - chủ đề hội thoạiID
+   * @param {string} title - Tiêu đề cuộc trò chuyện
+   * @param {boolean} is_pinned - Có nên ghim nó lên đầu không
+   * @returns {Promise} - Cập nhật kết quả
    */
   updateThread: (threadId, title, is_pinned) =>
     apiPut(`/api/chat/thread/${threadId}`, {
@@ -255,21 +255,21 @@ export const threadApi = {
     }),
 
   /**
-   * 删除对话线程
-   * @param {string} threadId - 对话线程ID
-   * @returns {Promise} - 删除结果
+   * Xóa chuỗi cuộc trò chuyện
+   * @param {string} threadId - chủ đề hội thoạiID
+   * @returns {Promise} - Xóa kết quả
    */
   deleteThread: (threadId) => apiDelete(`/api/chat/thread/${threadId}`),
 
   /**
-   * 获取线程附件列表
-   * @param {string} threadId - 对话线程ID
+   * Nhận danh sách các tệp đính kèm chủ đề
+   * @param {string} threadId - chủ đề hội thoạiID
    * @returns {Promise}
    */
   getThreadAttachments: (threadId) => apiGet(`/api/chat/thread/${threadId}/attachments`),
 
   /**
-   * 列出线程文件（目录）
+   * Liệt kê các tập tin chủ đề（Thư mục）
    * @param {string} threadId
    * @param {string} path
    * @param {boolean} recursive
@@ -281,7 +281,7 @@ export const threadApi = {
     ),
 
   /**
-   * 读取线程文本文件内容（分页）
+   * Đọc nội dung tập tin văn bản chủ đề（Phân trang）
    * @param {string} threadId
    * @param {string} path
    * @param {number} offset
@@ -294,7 +294,7 @@ export const threadApi = {
     ),
 
   /**
-   * 获取线程文件下载/预览 URL
+   * Tải xuống tập tin chủ đề/Xem trước URL
    * @param {string} threadId
    * @param {string} path
    * @param {boolean} download
@@ -311,7 +311,7 @@ export const threadApi = {
   },
 
   /**
-   * 下载线程文件（带鉴权）
+   * Tải xuống tập tin chủ đề（Với xác thực）
    * @param {string} threadId
    * @param {string} path
    * @returns {Promise<Response>}
@@ -320,7 +320,7 @@ export const threadApi = {
     apiGet(threadApi.getThreadArtifactUrl(threadId, path, true), {}, true, 'blob'),
 
   /**
-   * 保存交付物到 workspace/saved_artifacts
+   * Lưu sản phẩm bàn giao vào workspace/saved_artifacts
    * @param {string} threadId
    * @param {string} path
    * @returns {Promise}
@@ -329,7 +329,7 @@ export const threadApi = {
     apiPost(`/api/chat/thread/${threadId}/artifacts/save`, { path }),
 
   /**
-   * 上传临时附件
+   * Tải lên tệp đính kèm tạm thời
    * @param {File} file
    * @returns {Promise}
    */
@@ -343,14 +343,14 @@ export const threadApi = {
   },
 
   /**
-   * 解析临时附件
+   * Phân tích các tệp đính kèm tạm thời
    * @param {Object} payload
    * @returns {Promise}
    */
   parseTmpAttachment: (payload) => apiPost('/api/chat/attachments/tmp/parse', payload),
 
   /**
-   * 确认添加临时附件到线程
+   * Xác nhận thêm tệp đính kèm tạm thời vào chuỗi
    * @param {string} threadId
    * @param {Array} attachments
    * @returns {Promise}
@@ -359,7 +359,7 @@ export const threadApi = {
     apiPost(`/api/chat/thread/${threadId}/attachments/confirm`, { attachments }),
 
   /**
-   * 上传附件
+   * Tải lên tệp đính kèm
    * @param {string} threadId
    * @param {File} file
    * @returns {Promise}
@@ -374,7 +374,7 @@ export const threadApi = {
   },
 
   /**
-   * 删除附件
+   * Xóa tệp đính kèm
    * @param {string} threadId
    * @param {string} fileId
    * @returns {Promise}

@@ -1,24 +1,24 @@
 <template>
   <div class="home-container">
-    <!-- 加载中状态 -->
+    <!-- Trạng thái tải -->
     <div v-if="isLoading" class="loading-container">
       <a-spin size="large" />
-      <p class="loading-text">正在连接服务...</p>
+      <p class="loading-text">Đang kết nối dịch vụ...</p>
     </div>
 
-    <!-- 错误状态 -->
+    <!-- trạng thái lỗi -->
     <div v-else-if="error" class="error-container">
       <a-result status="error" :title="error.title" :sub-title="error.message">
         <template #extra>
-          <a-button type="primary" @click="retryLoad">重试</a-button>
-          <a-button :href="faqUrl" target="_blank" rel="noopener noreferrer">常见问题</a-button>
+          <a-button type="primary" @click="retryLoad">Thử lại</a-button>
+          <a-button :href="faqUrl" target="_blank" rel="noopener noreferrer">Câu hỏi thường gặp</a-button>
         </template>
       </a-result>
     </div>
 
-    <!-- 正常内容 -->
+    <!-- nội dung bình thường -->
     <template v-else>
-      <!-- 氛围装饰背景 -->
+      <!-- Nền trang trí khí quyển -->
       <div class="ambient" aria-hidden="true">
         <span class="orb orb-1"></span>
         <span class="orb orb-2"></span>
@@ -81,7 +81,7 @@
             </Transition>
             <div class="hero-actions reveal-up delay-2">
               <button class="button-base primary" @click="goToChat">
-                <span>开始体验</span>
+                <span>Bắt đầu trải nghiệm</span>
                 <ArrowRight :size="18" />
               </button>
               <a
@@ -91,7 +91,7 @@
                 rel="noopener noreferrer"
               >
                 <BookText :size="18" />
-                <span>查看文档</span>
+                <span>Xem tài liệu</span>
               </a>
             </div>
           </div>
@@ -126,7 +126,7 @@
                 <div class="flow-row">
                   <div class="flow-node">
                     <span class="flow-icon"><Workflow :size="22" /></span>
-                    <span class="flow-name">智能体 Harness</span>
+                    <span class="flow-name">Harness Agent</span>
                   </div>
 
                   <div class="flow-link" aria-hidden="true">
@@ -150,7 +150,7 @@
                       <span class="hub-ring"></span>
                       <Sparkles :size="24" />
                     </span>
-                    <span class="flow-name">RAG 引擎</span>
+                    <span class="flow-name">RAG Engine</span>
                   </div>
 
                   <div class="flow-link" aria-hidden="true">
@@ -171,11 +171,11 @@
 
                   <div class="flow-node">
                     <span class="flow-icon"><Library :size="22" /></span>
-                    <span class="flow-name">知识库</span>
+                    <span class="flow-name">Cơ sở kiến thức</span>
                   </div>
                 </div>
 
-                <p class="flow-caption">智能体发起检索 · 引擎融合向量与图谱 · 召回知识增强生成</p>
+                <p class="flow-caption">Agent khởi tạo truy vấn · Engine kết hợp vector và đồ thị · Truy xuất kiến thức tăng cường tạo</p>
               </div>
 
               <div class="stat-row" v-if="realtimeStats.length">
@@ -227,7 +227,7 @@ const infoStore = useInfoStore()
 const repoUrl = 'https://github.com/xerrors/Yuxi'
 const faqUrl = 'https://xerrors.github.io/Yuxi/'
 
-// 加载状态
+// Trạng thái tải
 const isLoading = ref(true)
 const error = ref(null)
 const typedBadge = ref('')
@@ -342,7 +342,7 @@ const fetchGithubRepo = async () => {
 
 const getHeroBadgeText = (starsCount = null) => {
   const realtimeStars = formatStars(starsCount)
-  return realtimeStars ? `已获得 ${realtimeStars} GitHub Stars` : ''
+  return realtimeStars ? `Đã nhận được ${realtimeStars} GitHub Stars` : ''
 }
 
 const stopBadgeTyping = () => {
@@ -377,12 +377,12 @@ const checkHealth = async () => {
   try {
     const response = await healthApi.checkHealth()
     if (response.status !== 'ok') {
-      throw new Error('服务不可用')
+      throw new Error('Dịch vụ không có sẵn')
     }
   } catch (e) {
     error.value = {
-      title: '服务连接失败',
-      message: '后端服务无法响应，请检查服务是否正常运行'
+      title: 'Kết nối dịch vụ thất bại',
+      message: 'Dịch vụ backend không phản hồi, vui lòng kiểm tra xem dịch vụ có đang chạy bình thường không'
     }
     throw e
   }
@@ -393,16 +393,16 @@ const loadData = async () => {
   error.value = null
 
   try {
-    // 先检查健康状态
+    // Kiểm tra tình trạng sức khỏe trước
     await checkHealth()
-    // 健康检查通过后加载配置
+    // Tải cấu hình sau khi vượt qua kiểm tra sức khỏe
     await infoStore.loadInfoConfig()
     startSubtitleCarousel()
     const repo = await fetchGithubRepo()
     githubStats.value = repo
     startBadgeTyping(repo?.stars ?? null)
   } catch (e) {
-    console.error('加载失败:', e)
+    console.error('Tải không thành công:', e)
     stopBadgeTyping()
     stopSubtitleCarousel()
     stopStarsFetch()
@@ -427,7 +427,7 @@ const goToChat = async () => {
 }
 
 onMounted(() => {
-  // 加载数据
+  // Tải dữ liệu
   loadData()
 })
 
@@ -440,7 +440,7 @@ onUnmounted(() => {
 const formatCount = (count) =>
   Number.isFinite(count) && count >= 0 ? count.toLocaleString('en-US') : ''
 
-// 首页统计直接展示实时的 GitHub 仓库数据，不再依赖 branding 配置
+// Thống kê trang chủ hiển thị trực tiếp theo thời gian thực GitHub dữ liệu kho，Không còn phụ thuộc vào branding Cấu hình
 const realtimeStats = computed(() => {
   const stats = githubStats.value
   if (!stats) {
@@ -466,7 +466,7 @@ const realtimeStats = computed(() => {
   overflow-x: hidden;
 }
 
-// 加载中状态
+// Trạng thái tải
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -481,7 +481,7 @@ const realtimeStats = computed(() => {
   }
 }
 
-// 错误状态
+// trạng thái lỗi
 .error-container {
   display: flex;
   align-items: center;
@@ -490,7 +490,7 @@ const realtimeStats = computed(() => {
   padding: 2rem;
 }
 
-// 氛围装饰背景
+// Nền trang trí khí quyển
 .ambient {
   position: absolute;
   inset: 0;
@@ -548,7 +548,7 @@ const realtimeStats = computed(() => {
   mask-image: radial-gradient(ellipse 75% 55% at 50% 8%, #000, transparent 72%);
 }
 
-// 顶部导航
+// điều hướng hàng đầu
 .glass-header {
   display: flex;
   justify-content: space-between;
@@ -805,7 +805,7 @@ const realtimeStats = computed(() => {
   }
 }
 
-// Hero 右侧可视化卡片
+// Hero Thẻ trực quan bên phải
 .hero-visual {
   display: flex;
   justify-content: center;
@@ -845,7 +845,7 @@ const realtimeStats = computed(() => {
   pointer-events: none;
 }
 
-// Harness → RAG 引擎 → 知识库 横向数据流
+// Harness → RAG động cơ → cơ sở tri thức luồng dữ liệu ngang
 .flow-diagram {
   position: relative;
   z-index: 1;
@@ -897,7 +897,7 @@ const realtimeStats = computed(() => {
   line-height: 1.3;
 }
 
-// 中间枢纽：主色高亮 + 脉冲环
+// trung tâm trung gian：Màu sắc nổi bật chủ đạo + vòng xung
 .flow-icon--hub {
   position: relative;
   width: 60px;
@@ -1025,7 +1025,7 @@ const realtimeStats = computed(() => {
   color: var(--gray-600);
 }
 
-// 页脚
+// chân trang
 .footer {
   position: relative;
   z-index: 1;
@@ -1117,7 +1117,7 @@ const realtimeStats = computed(() => {
   }
 }
 
-// 暗色模式
+// chế độ tối
 :global(:root.dark) {
   .home-container {
     background: var(--main-5);

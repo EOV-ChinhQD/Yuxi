@@ -1,11 +1,11 @@
 /**
- * 问题和选项规范化工具
+ * Công cụ chuẩn hóa câu hỏi và tùy chọn
  */
 
 const DEFAULT_OTHER_OPTION_VALUE = '__other__'
 
 /**
- * 判断选项是否为"其他"选项
+ * Xác định xem liệu lựa chọn này có"Khác"Tùy chọn
  */
 export const isOtherOption = (option) => {
   if (!option || typeof option !== 'object') return false
@@ -19,13 +19,13 @@ export const isOtherOption = (option) => {
   return (
     value === DEFAULT_OTHER_OPTION_VALUE ||
     value === 'other' ||
-    label.includes('其他') ||
+    label.includes('Khác') ||
     label.includes('other')
   )
 }
 
 /**
- * 规范化选项列表
+ * Danh sách tùy chọn chuẩn hóa
  */
 export const normalizeOptions = (rawOptions) => {
   if (!Array.isArray(rawOptions)) return []
@@ -45,7 +45,7 @@ export const normalizeOptions = (rawOptions) => {
 }
 
 /**
- * 规范化问题列表
+ * Danh sách câu hỏi chuẩn hóa
  */
 export const normalizeQuestions = (rawQuestions) => {
   if (!Array.isArray(rawQuestions)) return []
@@ -65,7 +65,7 @@ export const normalizeQuestions = (rawQuestions) => {
       const hasOtherOption = baseOptions.some((option) => isOtherOption(option))
       const options =
         allowOther && !hasOtherOption
-          ? [...baseOptions, { label: '其他', value: DEFAULT_OTHER_OPTION_VALUE }]
+          ? [...baseOptions, { label: 'Khác', value: DEFAULT_OTHER_OPTION_VALUE }]
           : baseOptions
 
       return {

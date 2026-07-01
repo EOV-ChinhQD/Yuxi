@@ -14,7 +14,7 @@
         <div class="window-title">
           <span>{{ windowTitle(window, windowIndex) }}</span>
           <span v-if="window.matched_lines?.length" class="matched-count">
-            命中 {{ window.matched_lines.length }} 行
+            đánh {{ window.matched_lines.length }} được rồi
           </span>
         </div>
         <pre class="content-preview"><span
@@ -26,7 +26,7 @@
       </div>
     </div>
 
-    <div v-else class="empty-text">暂无可预览内容</div>
+    <div v-else class="empty-text">Chưa có nội dung xem trước nào</div>
   </div>
 </template>
 
@@ -52,15 +52,15 @@ const documentWindows = computed(() => {
 
 const summaryText = computed(() => {
   if (props.mode === 'find') {
-    const modeText = props.result.match_mode === 'regex' ? '正则' : '关键词'
-    return `${modeText}查找: ${props.result.total_matches || 0} 处匹配，${documentWindows.value.length} 个上下文窗口`
+    const modeText = props.result.match_mode === 'regex' ? 'đều đặn' : 'từ khóa'
+    return `${modeText}Tìm: ${props.result.total_matches || 0} trận đấu ở khắp mọi nơi，${documentWindows.value.length} cửa sổ ngữ cảnh`
   }
 
   const startLine = props.result.start_line || 0
   const endLine = props.result.end_line || 0
   const totalLines = props.result.total_lines || 0
-  const moreText = props.result.has_more_after ? `，下一段 offset ${props.result.next_offset}` : ''
-  return `打开文档: 第 ${startLine}-${endLine} 行 / 共 ${totalLines} 行${moreText}`
+  const moreText = props.result.has_more_after ? `，đoạn tiếp theo offset ${props.result.next_offset}` : ''
+  return `Mở tài liệu: Không. ${startLine}-${endLine} được rồi / tổng cộng ${totalLines} được rồi${moreText}`
 })
 
 const splitContent = (content = '') => String(content).split('\n')
@@ -80,8 +80,8 @@ const windowKey = (window, index) => `${window.start_line || 0}-${window.end_lin
 const windowTitle = (window, index) => {
   const startLine = window.start_line || 0
   const endLine = window.end_line || 0
-  if (startLine || endLine) return `窗口 ${index + 1}: 第 ${startLine}-${endLine} 行`
-  return `窗口 ${index + 1}`
+  if (startLine || endLine) return `cửa sổ ${index + 1}: Không. ${startLine}-${endLine} được rồi`
+  return `cửa sổ ${index + 1}`
 }
 </script>
 

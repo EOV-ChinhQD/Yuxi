@@ -11,23 +11,23 @@
           class="config-form-content"
           :class="{ 'is-readonly': isReadOnlyConfig }"
         >
-          <!-- 配置表单 -->
+          <!-- Biểu mẫu cấu hình -->
           <a-form :model="agentConfig" layout="vertical" class="config-form">
             <a-alert
               v-if="isEmptyConfig"
               type="warning"
-              message="该智能体没有配置项"
+              message="Tác nhân không có mục cấu hình"
               show-icon
               class="config-alert"
             />
-            <!-- 统一显示所有配置项 -->
-            <a-empty v-if="isCurrentSegmentEmpty" description="暂无配置项" class="config-empty" />
+            <!-- Hiển thị tất cả các mục cấu hình một cách thống nhất -->
+            <a-empty v-if="isCurrentSegmentEmpty" description="Chưa có mục cấu hình" class="config-empty" />
             <template v-for="(value, key) in filteredConfigurableItems" :key="key">
               <a-form-item :label="getConfigLabel(key, value)" :name="key" class="config-item">
                 <p v-if="value.description" class="config-description">{{ value.description }}</p>
 
                 <!-- <div>{{ value }}</div> -->
-                <!-- 模型选择 -->
+                <!-- Lựa chọn mô hình -->
                 <div
                   v-if="value.kind === 'llm'"
                   class="model-selector"
@@ -39,7 +39,7 @@
                   />
                 </div>
 
-                <!-- 系统提示词 -->
+                <!-- Lời nhắc hệ thống -->
                 <div v-else-if="value.kind === 'prompt'" class="system-prompt-container">
                   <div class="system-prompt-display" @click="openSystemPromptModal(key)">
                     <div
@@ -49,12 +49,12 @@
                       {{ agentConfig[key] || getPlaceholder(key, value) }}
                     </div>
                     <div class="edit-hint">
-                      {{ isReadOnlyConfig ? '查看' : '点击查看并编辑' }}
+                      {{ isReadOnlyConfig ? 'Xem' : 'Bấm vào để xem và chỉnh sửa' }}
                     </div>
                   </div>
                 </div>
 
-                <!-- 布尔类型 -->
+                <!-- kiểu Boolean -->
                 <a-switch
                   v-else-if="typeof agentConfig[key] === 'boolean'"
                   :checked="agentConfig[key]"
@@ -62,7 +62,7 @@
                   @update:checked="(val) => updateConfigValue(key, val)"
                 />
 
-                <!-- 单选 -->
+                <!-- Lựa chọn duy nhất -->
                 <a-select
                   v-else-if="
                     getConfigOptions(value).length > 0 &&
@@ -82,14 +82,14 @@
                   </a-select-option>
                 </a-select>
 
-                <!-- 多选 / 工具列表 (统一处理) -->
+                <!-- Nhiều lựa chọn / Danh sách công cụ (Xử lý thống nhất) -->
                 <div v-else-if="isListConfig(key, value)" class="list-config-container">
                   <!-- Case 1: <= 5 options, inline list -->
                   <div v-if="getConfigOptions(value).length <= 5" class="multi-select-cards">
                     <div class="multi-select-label">
                       <span
-                        >已选择 {{ getSelectedCount(key) }} 项 | 共
-                        {{ getConfigOptions(value).length }} 项</span
+                        >Đã chọn {{ getSelectedCount(key) }} mục | tổng cộng
+                        {{ getConfigOptions(value).length }} mục</span
                       >
                       <div v-if="!isReadOnlyConfig" class="label-actions">
                         <a-button
@@ -99,7 +99,7 @@
                           @click="clearSelection(key)"
                           v-if="getSelectedCount(key) > 0"
                         >
-                          清空
+                          Xóa
                         </a-button>
                         <template v-if="isToolsKind(value.kind)">
                           <a-divider type="vertical" />
@@ -110,7 +110,7 @@
                             class="inline-action-btn lucide-icon-btn"
                           >
                             <RotateCw :size="12" />
-                            刷新
+                            Làm mới
                           </a-button>
                           <a-button
                             type="link"
@@ -119,7 +119,7 @@
                             class="inline-action-btn lucide-icon-btn"
                           >
                             <Settings :size="12" />
-                            配置
+                            Cấu hình
                           </a-button>
                         </template>
                       </div>
@@ -161,8 +161,8 @@
                     <div class="selection-summary">
                       <div class="selection-summary-info">
                         <span class="selection-count"
-                          >已选择 {{ getSelectedCount(key) }} 项 | 共
-                          {{ getConfigOptions(value).length }} 项</span
+                          >Đã chọn {{ getSelectedCount(key) }} mục | tổng cộng
+                          {{ getConfigOptions(value).length }} mục</span
                         >
 
                         <a-button
@@ -172,7 +172,7 @@
                           class="clear-btn"
                           @click="clearSelection(key)"
                         >
-                          清空
+                          Xóa
                         </a-button>
                       </div>
 
@@ -183,7 +183,7 @@
                         class="selection-trigger-btn"
                         @click="openSelectionModal(key)"
                       >
-                        选择...
+                        chọn...
                       </a-button>
                     </div>
 
@@ -203,7 +203,7 @@
                   </div>
                 </div>
 
-                <!-- 数字 -->
+                <!-- con số -->
                 <a-input-number
                   v-else-if="
                     value?.type === 'number' || value?.type === 'int' || value?.type === 'float'
@@ -215,7 +215,7 @@
                   class="config-input-number"
                 />
 
-                <!-- 滑块 -->
+                <!-- Thanh trượt -->
                 <a-slider
                   v-else-if="value?.type === 'slider'"
                   :value="agentConfig[key]"
@@ -227,7 +227,7 @@
                   class="config-slider"
                 />
 
-                <!-- 其他类型 -->
+                <!-- Các loại khác -->
                 <a-input
                   v-else
                   :value="agentConfig[key]"
@@ -244,8 +244,8 @@
                 >
                   <AlertTriangle :size="14" />
                   <span>
-                    已启用知识库，但未选择 knowledge-base Skill。Agent
-                    可能无法调用知识库检索、打开文档等工具。
+                    Đã bật cơ sở kiến thức，nhưng không được chọn knowledge-base Skill。Agent
+                    Tìm kiếm cơ sở kiến thức có thể không được gọi、Mở tài liệu và các công cụ khác。
                   </span>
                 </div>
               </a-form-item>
@@ -257,7 +257,7 @@
 
     <a-modal
       v-model:open="selectionModalOpen"
-      :title="`选择${configurableItems[currentConfigKey]?.name || '项目'}`"
+      :title="`chọn${configurableItems[currentConfigKey]?.name || 'dự án'}`"
       :width="800"
       :footer="null"
       :maskClosable="false"
@@ -267,7 +267,7 @@
         <div class="selection-search">
           <a-input
             v-model:value="selectionSearchText"
-            placeholder="搜索..."
+            placeholder="Tìm kiếm..."
             allow-clear
             class="search-input"
           >
@@ -281,20 +281,20 @@
               size="small"
               @click="refreshConfigOptions(currentConfigKey, currentConfigKind)"
               class="inline-action-btn lucide-icon-btn"
-              title="刷新列表"
+              title="Làm mới danh sách"
             >
               <RotateCw :size="14" />
-              刷新
+              Làm mới
             </a-button>
             <a-button
               type="text"
               size="small"
               @click="navigateToConfigPage(currentConfigKind)"
               class="inline-action-btn lucide-icon-btn"
-              title="跳转配置"
+              title="Cấu hình nhảy"
             >
               <Settings :size="14" />
-              配置
+              Cấu hình
             </a-button>
           </template>
         </div>
@@ -326,13 +326,13 @@
         </div>
 
         <div class="selection-modal-footer">
-          <div class="selected-count">已选择 {{ tempSelectedValues.length }} 项</div>
+          <div class="selected-count">Đã chọn {{ tempSelectedValues.length }} mục</div>
 
           <div class="modal-actions">
-            <a-button @click="closeSelectionModal">取消</a-button>
+            <a-button @click="closeSelectionModal">Hủy bỏ</a-button>
 
             <a-button v-if="!isReadOnlyConfig" type="primary" @click="confirmSelection">
-              确认
+              Xác nhận
             </a-button>
           </div>
         </div>
@@ -368,14 +368,14 @@
             <template #icon>
               <RotateCcw :size="14" />
             </template>
-            恢复默认
+            Khôi phục mặc định
           </a-button>
           <div class="system-prompt-modal-actions">
             <a-button @click="closeSystemPromptModal">{{
-              isReadOnlyConfig ? '关闭' : '取消'
+              isReadOnlyConfig ? 'đóng' : 'Hủy bỏ'
             }}</a-button>
             <a-button v-if="!isReadOnlyConfig" type="primary" @click="saveSystemPrompt">
-              保存
+              lưu lại
             </a-button>
           </div>
         </div>
@@ -418,7 +418,7 @@ const { selectedAgent, selectedAgentId, agentConfig, configurableItems } = store
 
 // console.log(availableTools.value)
 
-// 本地状态
+// tình trạng địa phương
 const selectionModalOpen = ref(false)
 const currentConfigKey = ref(null)
 const tempSelectedValues = ref([])
@@ -428,9 +428,9 @@ const currentSystemPromptKey = ref(null)
 const systemPromptDraft = ref('')
 const currentSegment = ref('model')
 const segmentOptions = [
-  { label: '模型', value: 'model' },
-  { label: '工具', value: 'tools' },
-  { label: '其他', value: 'other' }
+  { label: 'người mẫu', value: 'model' },
+  { label: 'Công cụ', value: 'tools' },
+  { label: 'Khác', value: 'other' }
 ]
 const activeSegment = computed(() => (props.showSegmented ? currentSegment.value : props.segment))
 const isToolResourceKind = (kind) => isDefaultAllAgentResourceKind(kind)
@@ -475,29 +475,29 @@ const isCurrentSegmentEmpty = computed(
   () => !isEmptyConfig.value && Object.keys(filteredConfigurableItems.value).length === 0
 )
 
-// 判断是否为需要跳转的配置类型
+// Xác định xem đó có phải là loại cấu hình cần nhảy không
 const isToolsKind = (kind) => {
   return isToolResourceKind(kind)
 }
 
-// 强制刷新对应配置项的选项列表
+// Buộc làm mới danh sách tùy chọn của mục cấu hình tương ứng
 const refreshConfigOptions = async () => {
   if (isReadOnlyConfig.value || !selectedAgentId.value) return
   try {
     await agentStore.fetchAgentDetail(selectedAgentId.value, true)
-    message.success('配置选项已刷新')
+    message.success('Tùy chọn cấu hình được làm mới')
   } catch (error) {
-    console.error('刷新配置选项失败:', error)
-    message.error('刷新失败')
+    console.error('Không thể làm mới các tùy chọn cấu hình:', error)
+    message.error('Làm mới không thành công')
   }
 }
 
-// 跳转到对应管理页面
+// Chuyển đến trang quản lý tương ứng
 const navigateToConfigPage = (kind) => {
   if (isReadOnlyConfig.value) return
-  // 先关闭选择弹窗
+  // Trước tiên hãy đóng cửa sổ bật lên lựa chọn
   closeSelectionModal()
-  // 延迟跳转，确保弹窗先关闭
+  // nhảy chậm，Đảm bảo cửa sổ bật lên được đóng trước
   setTimeout(() => {
     switch (kind) {
       case 'knowledges':
@@ -554,9 +554,9 @@ const systemPromptModalTitle = computed(() => {
 })
 
 const systemPromptModalPlaceholder = computed(() => {
-  if (!currentSystemPromptKey.value) return '请输入系统提示词'
+  if (!currentSystemPromptKey.value) return 'Vui lòng nhập từ nhắc hệ thống'
   const currentItem = configurableItems.value[currentSystemPromptKey.value]
-  if (!currentItem) return '请输入系统提示词'
+  if (!currentItem) return 'Vui lòng nhập từ nhắc hệ thống'
   return getPlaceholder(currentSystemPromptKey.value, currentItem)
 })
 
@@ -596,7 +596,7 @@ const filteredOptions = computed(() => {
   })
 })
 
-// 方法
+// phương pháp
 const updateConfigValue = (key, value) => {
   if (isReadOnlyConfig.value) return
   agentStore.updateAgentConfig({
@@ -614,7 +614,7 @@ const getConfigLabel = (key, value) => {
 }
 
 const getPlaceholder = (_key, value) => {
-  return `（默认: ${value.default}）`
+  return `（Mặc định: ${value.default}）`
 }
 
 const handleModelChange = (key, spec) => {
@@ -625,7 +625,7 @@ const handleModelChange = (key, spec) => {
   })
 }
 
-// 多选相关方法
+// Nhiều phương pháp liên quan đến lựa chọn
 const ensureArray = (key) => {
   const config = agentConfig.value || {}
   const configItem = configurableItems.value[key]
@@ -675,7 +675,7 @@ const clearSelection = (key) => {
   })
 }
 
-// 统一选择弹窗相关方法
+// Lựa chọn thống nhất các phương pháp liên quan đến cửa sổ bật lên
 const getOptionLabelFromValue = (key, val) => {
   const options = getConfigOptions(configurableItems.value[key])
   const option = options.find((opt) => getOptionValue(opt) === val)
@@ -719,7 +719,7 @@ const closeSelectionModal = () => {
   selectionSearchText.value = ''
 }
 
-// 系统提示词弹窗编辑相关方法
+// Các phương pháp liên quan đến chỉnh sửa cửa sổ pop-up word của dấu nhắc hệ thống
 const openSystemPromptModal = (key) => {
   currentSystemPromptKey.value = key
   systemPromptDraft.value = agentConfig.value[key] || ''
@@ -746,12 +746,12 @@ const saveSystemPrompt = () => {
   closeSystemPromptModal()
 }
 
-// 验证和过滤配置项
+// Xác thực và lọc các mục cấu hình
 const validateAndFilterConfig = () => {
   const validatedConfig = { ...agentConfig.value }
   const configItems = configurableItems.value
 
-  // 遍历所有配置项
+  // Duyệt qua tất cả các mục cấu hình
   Object.keys(configItems).forEach((key) => {
     const configItem = configItems[key]
     const currentValue = validatedConfig[key]
@@ -766,7 +766,7 @@ const validateAndFilterConfig = () => {
 
       validatedConfig[key] = currentValue.filter((value) => validValues.has(String(value)))
       if (validatedConfig[key].length !== currentValue.length) {
-        console.warn(`配置项 ${key} 中包含无效选项，已自动过滤`)
+        console.warn(`Các mục cấu hình ${key} chứa các tùy chọn không hợp lệ，Tự động lọc`)
       }
     }
   })
@@ -977,7 +977,7 @@ defineExpose({ validateAndFilterConfig })
   }
 }
 
-// 选择器样式
+// Kiểu chọn
 .selection-container {
   .selection-summary {
     display: flex;
@@ -1036,7 +1036,7 @@ defineExpose({ validateAndFilterConfig })
   }
 }
 
-// 多选卡片样式
+// Kiểu thẻ nhiều lựa chọn
 .multi-select-cards {
   .multi-select-label {
     display: flex;
@@ -1121,7 +1121,7 @@ defineExpose({ validateAndFilterConfig })
   }
 }
 
-// 选择弹窗样式
+// Chọn kiểu bật lên
 .selection-modal {
   .selection-modal-content {
     .selection-search {
@@ -1168,7 +1168,7 @@ defineExpose({ validateAndFilterConfig })
       border-radius: 8px;
       margin-bottom: 16px;
 
-      // 在小屏幕下调整为单列布局
+      // Điều chỉnh bố cục một cột trên màn hình nhỏ
       @media (max-width: 480px) {
         grid-template-columns: 1fr;
       }

@@ -60,8 +60,8 @@ const loadingMessageChunk = (chunk) => {
   return msg || null
 }
 
-// 工具结果不走 messages 流，而是以 method=tools 的 stream_event 事件返回（tool-started/tool-finished）。
-// 取出 tool-finished 的 output（一条 ToolMessage 字典），交给 msgChunks 与 AI 消息按 tool_call_id 关联。
+// Kết quả công cụ không hoạt động messages dòng chảy，Nhưng với method=tools của stream_event sự kiện trở lại（tool-started/tool-finished）。
+// lấy ra tool-finished của output（một mảnh ToolMessage từ điển），bàn giao msgChunks với AI nút tin nhắn tool_call_id hiệp hội。
 const toolFinishedMessage = (chunk) => {
   const streamEvent = chunk?.event
   if (!streamEvent || streamEvent.method !== 'tools') return null
@@ -123,7 +123,7 @@ export function useAgentStreamHandler({
             threadState.onGoingConv.msgChunks[resolvedRequestId] = [initMessage]
           }
         }
-        // 只有在服务端确认 init 后，才展示“正在回复”的加载动画。
+        // Chỉ được xác nhận ở phía máy chủ init sau，Chỉ hiển thị“Đang trả lời”đang tải hình ảnh động。
         threadState.replyLoadingVisible = true
         return false
 
@@ -145,8 +145,8 @@ export function useAgentStreamHandler({
 
       case 'stream_event':
         {
-          // 工具结果需立即落地（不经平滑层），写入 msgChunks 后由 convertToolResultToMessages
-          // 按 tool_call_id 关联到对应 AI 消息的 tool_call，驱动其完成态。
+          // Kết quả tool cần được triển khai ngay（không có lớp làm mịn），viết msgChunks Sau đó bởi convertToolResultToMessages
+          // nhấn tool_call_id liên kết tương ứng AI tin tức tool_call，điều khiển trạng thái hoàn thành của nó。
           const toolMessage = toolFinishedMessage(chunk)
           if (toolMessage) {
             if (!threadState.onGoingConv.msgChunks[toolMessage.id]) {
@@ -177,7 +177,7 @@ export function useAgentStreamHandler({
           threadId,
           currentAgentId: unref(currentAgentId)
         })
-        // 使用审批 composable 处理审批请求
+        // Sử dụng phê duyệt composable Xử lý yêu cầu phê duyệt
         return processApprovalInStream(chunk, threadId, unref(currentAgentId))
 
       case 'agent_state':
@@ -211,7 +211,7 @@ export function useAgentStreamHandler({
 
       case 'finished':
         streamSmoother?.flushThread(threadId)
-        // 先标记流式结束，但保持消息显示直到历史记录加载完成
+        // Đánh dấu kết thúc phát trực tuyến trước，Nhưng hãy giữ thông báo hiển thị cho đến khi lịch sử được tải
         if (threadState) {
           threadState.isStreaming = false
           threadState.replyLoadingVisible = false
@@ -238,7 +238,7 @@ export function useAgentStreamHandler({
 
       case 'interrupted':
         streamSmoother?.flushThread(threadId)
-        // 中断状态，刷新消息历史
+        // trạng thái gián đoạn，Làm mới lịch sử tin nhắn
         console.warn(`${debugPrefix}[interrupted]`, {
           threadId,
           message: chunkMessage,
@@ -253,7 +253,7 @@ export function useAgentStreamHandler({
             threadState.pendingInterrupt = pendingInterrupt
           }
         }
-        // 如果有 message 字段，显示提示（例如：敏感内容检测）
+        // nếu có message trường，hiển thị gợi ý（Ví dụ：Phát hiện nội dung nhạy cảm）
         if (chunkMessage) {
           message.info(chunkMessage)
         }

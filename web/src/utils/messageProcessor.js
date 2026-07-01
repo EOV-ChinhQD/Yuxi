@@ -1,19 +1,19 @@
 /**
- * 消息处理工具类
+ * Lớp công cụ xử lý tin nhắn
  */
 export class MessageProcessor {
   /**
-   * 将工具结果与消息合并
-   * @param {Array} msgs - 消息数组
-   * @returns {Array} 合并后的消息数组
+   * Hợp nhất kết quả công cụ với tin nhắn
+   * @param {Array} msgs - mảng tin nhắn
+   * @returns {Array} Mảng tin nhắn được hợp nhất
    */
   static convertToolResultToMessages(msgs) {
     const toolResponseMap = new Map()
 
-    // 构建工具响应映射
+    // Xây dựng bản đồ phản hồi của công cụ
     for (const item of msgs) {
       if (item.type === 'tool') {
-        // 使用多种可能的ID字段来匹配工具调用
+        // Sử dụng nhiều thứ có thểIDcác trường để khớp với các lệnh gọi công cụ
         const toolCallId = item.tool_call_id || item.id
         if (toolCallId) {
           toolResponseMap.set(toolCallId, item)
@@ -21,7 +21,7 @@ export class MessageProcessor {
       }
     }
 
-    // 合并工具调用和响应
+    // Hợp nhất các cuộc gọi và phản hồi của công cụ
     const convertedMsgs = msgs.map((item) => {
       if (item.type === 'ai' && item.tool_calls && item.tool_calls.length > 0) {
         return {
@@ -42,9 +42,9 @@ export class MessageProcessor {
   }
 
   /**
-   * 将服务器历史记录转换为对话格式
-   * @param {Array} serverHistory - 服务器历史记录
-   * @returns {Array} 对话数组
+   * Chuyển đổi lịch sử máy chủ sang định dạng hội thoại
+   * @param {Array} serverHistory - Lịch sử máy chủ
+   * @returns {Array} mảng đối thoại
    */
   static convertServerHistoryToMessages(serverHistory) {
     // Filter out standalone 'tool' messages since tool results are already in AI messages' tool_calls
@@ -55,7 +55,7 @@ export class MessageProcessor {
         !(item.type === 'human' && item.extra_metadata?.source === 'ask_user_question_resume')
     )
 
-    // 按照对话分组
+    // Nhóm theo cuộc trò chuyện
     const conversations = []
     let currentConv = null
 
@@ -98,10 +98,10 @@ export class MessageProcessor {
   }
 
   /**
-   * 提取一轮对话中所有知识库检索块
-   * @param {Object} conv - 单轮对话
-   * @param {Array} databases - 知识库列表
-   * @returns {Array} 归一化后的检索块
+   * Trích xuất tất cả các khối truy xuất cơ sở tri thức trong một vòng đối thoại
+   * @param {Object} conv - cuộc trò chuyện một chiều
+   * @param {Array} databases - Danh sách cơ sở kiến thức
+   * @returns {Array} Khối tìm kiếm được chuẩn hóa
    */
   static extractKnowledgeChunksFromConversation(conv, databases = []) {
     if (!conv || !Array.isArray(conv.messages) || conv.messages.length === 0) return []
@@ -167,7 +167,7 @@ export class MessageProcessor {
         const parsed = parseToolResultContent(content)
         if (!parsed) continue
 
-        // Milvus / Dify: 直接是 chunks 数组
+        // Milvus / Dify: trực tiếp chunks mảng
         if (Array.isArray(parsed)) {
           for (const chunk of parsed) appendChunk(chunk, kbName)
           continue
@@ -190,9 +190,9 @@ export class MessageProcessor {
   }
 
   /**
-   * 提取一轮对话中的网络搜索来源
-   * @param {Object} conv - 单轮对话
-   * @returns {Array} 归一化后的网络来源
+   * Trích xuất các nguồn tìm kiếm trên web trong cuộc trò chuyện
+   * @param {Object} conv - cuộc trò chuyện một chiều
+   * @returns {Array} Nguồn mạng được chuẩn hóa
    */
   static extractWebSourcesFromConversation(conv) {
     if (!conv || !Array.isArray(conv.messages) || conv.messages.length === 0) return []
@@ -233,7 +233,7 @@ export class MessageProcessor {
           dedupSet.add(url)
 
           webSources.push({
-            tool_name: toolCall?.name || toolCall?.function?.name || '网络搜索',
+            tool_name: toolCall?.name || toolCall?.function?.name || 'tìm kiếm trên mạng',
             title,
             url,
             score: typeof item?.score === 'number' ? item.score : null,
@@ -254,15 +254,15 @@ export class MessageProcessor {
   }
 
   /**
-   * 提取单个消息中的来源
-   * @param {Object} message - 消息对象
-   * @param {Array} databases - 知识库列表
+   * Trích xuất nguồn từ một tin nhắn
+   * @param {Object} message - đối tượng tin nhắn
+   * @param {Array} databases - Danh sách cơ sở kiến thức
    * @returns {{knowledgeChunks: Array, webSources: Array}}
    */
   static extractSourcesFromMessage(message, databases = []) {
     if (!message || message.type !== 'ai') return { knowledgeChunks: [], webSources: [] }
 
-    // 复用提取逻辑，通过构建临时对话对象
+    // Tái sử dụng logic trích xuất，Bằng cách xây dựng một đối tượng hội thoại tạm thời
     const mockConv = { messages: [message] }
     return {
       knowledgeChunks: MessageProcessor.extractKnowledgeChunksFromConversation(mockConv, databases),
@@ -271,9 +271,9 @@ export class MessageProcessor {
   }
 
   /**
-   * 提取一轮对话中的全部来源（知识库+网络搜索）
-   * @param {Object} conv - 单轮对话
-   * @param {Array} databases - 知识库列表
+   * Trích xuất tất cả các nguồn trong một cuộc trò chuyện（cơ sở tri thức+tìm kiếm trên mạng）
+   * @param {Object} conv - cuộc trò chuyện một chiều
+   * @param {Array} databases - Danh sách cơ sở kiến thức
    * @returns {{knowledgeChunks: Array, webSources: Array}}
    */
   static extractSourcesFromConversation(conv, databases = []) {
@@ -284,8 +284,8 @@ export class MessageProcessor {
   }
 
   /**
-   * 解析助手消息正文与推理内容，保持渲染和列表拆分使用同一套规则。
-   * @param {Object} message - AI 消息对象
+   * Phân tích văn bản tin nhắn trợ lý và nội dung lý luận，Tiếp tục hiển thị và chia tách danh sách bằng cách sử dụng cùng một bộ quy tắc。
+   * @param {Object} message - AI đối tượng tin nhắn
    * @returns {{content: string, reasoningContent: string}}
    */
   static parseAssistantMessageBody(message) {
@@ -306,19 +306,19 @@ export class MessageProcessor {
   }
 
   /**
-   * 合并消息块
-   * @param {Array} chunks - 消息块数组
-   * @returns {Object|null} 合并后的消息
+   * Hợp nhất các khối tin nhắn
+   * @param {Array} chunks - mảng khối tin nhắn
+   * @returns {Object|null} Tin nhắn đã hợp nhất
    */
   static mergeMessageChunk(chunks) {
     if (chunks.length === 0) return null
 
-    // 深拷贝第一个chunk作为结果
+    // Bản sao sâu đầu tiênchunkkết quả là
     const result = JSON.parse(JSON.stringify(chunks[0]))
 
-    // 处理用户消息的内容格式 - 确保显示纯文本
+    // Xử lý định dạng nội dung tin nhắn của người dùng - Đảm bảo văn bản thuần túy được hiển thị
     if (result.type === 'human' || result.role === 'user') {
-      // 如果content是数组格式（LangChain多模态消息），提取文本部分
+      // nếucontentlà một định dạng mảng（LangChainnhắn tin đa phương thức），Trích xuất phần văn bản
       if (Array.isArray(result.content)) {
         const textPart = result.content.find((item) => item.type === 'text')
         result.content = textPart ? textPart.text : ''
@@ -329,16 +329,16 @@ export class MessageProcessor {
       result.content = result.content || ''
     }
 
-    // 合并后续chunks
+    // Hợp nhất theo dõichunks
     for (let i = 1; i < chunks.length; i++) {
       const chunk = chunks[i]
 
-      // 合并内容
+      // Hợp nhất nội dung
       if (chunk.content) {
         result.content += chunk.content
       }
 
-      // 合并reasoning_content
+      // hợp nhấtreasoning_content
       if (chunk.reasoning_content) {
         if (!result.reasoning_content) {
           result.reasoning_content = ''
@@ -346,7 +346,7 @@ export class MessageProcessor {
         result.reasoning_content += chunk.reasoning_content
       }
 
-      // 合并additional_kwargs中的reasoning_content
+      // hợp nhấtadditional_kwargstrongreasoning_content
       if (chunk.additional_kwargs?.reasoning_content) {
         if (!result.additional_kwargs) result.additional_kwargs = {}
         if (!result.additional_kwargs.reasoning_content) {
@@ -355,11 +355,11 @@ export class MessageProcessor {
         result.additional_kwargs.reasoning_content += chunk.additional_kwargs.reasoning_content
       }
 
-      // 合并tool_calls (处理新的数据结构)
+      // hợp nhấttool_calls (Xử lý cấu trúc dữ liệu mới)
       MessageProcessor._mergeToolCalls(result, chunk)
     }
 
-    // 处理AIMessageChunk类型
+    // Quy trìnhAIMessageChunkLoại
     if (result.type === 'AIMessageChunk') {
       result.type = 'ai'
     }
@@ -368,27 +368,27 @@ export class MessageProcessor {
   }
 
   /**
-   * 合并工具调用
+   * Hợp nhất các cuộc gọi công cụ
    * @private
-   * @param {Object} result - 结果对象
-   * @param {Object} chunk - 当前块
+   * @param {Object} result - đối tượng kết quả
+   * @param {Object} chunk - khối hiện tại
    */
   static _mergeToolCalls(result, chunk) {
     if (chunk.tool_call_chunks && chunk.tool_call_chunks.length > 0) {
-      // 确保 result 有 tool_calls 数组
+      // đảm bảo result Có tool_calls mảng
       if (!result.tool_calls) result.tool_calls = []
 
       for (const toolCallChunk of chunk.tool_call_chunks) {
-        // 使用 index 来标识工具调用（因为可能有多个工具调用）
+        // sử dụng index để xác định các cuộc gọi công cụ（Bởi vì có thể có nhiều lệnh gọi công cụ）
         const existingToolCallIndex = result.tool_calls.findIndex(
           (t) => t.index === toolCallChunk.index
         )
 
         if (existingToolCallIndex !== -1) {
-          // 合并相同index的tool call
+          // hợp nhất tương tựindexcủatool call
           const existingToolCall = result.tool_calls[existingToolCallIndex]
 
-          // 更新名称和ID（如果存在）
+          // Cập nhật tên vàID（nếu tồn tại）
           if (toolCallChunk.name && !existingToolCall.function?.name) {
             if (!existingToolCall.function) existingToolCall.function = {}
             existingToolCall.function.name = toolCallChunk.name
@@ -398,14 +398,14 @@ export class MessageProcessor {
             existingToolCall.id = toolCallChunk.id
           }
 
-          // 合并参数
+          // Hợp nhất các tham số
           if (toolCallChunk.args) {
             if (!existingToolCall.function) existingToolCall.function = {}
             if (!existingToolCall.function.arguments) existingToolCall.function.arguments = ''
             existingToolCall.function.arguments += toolCallChunk.args
           }
         } else {
-          // 添加新的tool call
+          // thêm mớitool call
           const newToolCall = {
             index: toolCallChunk.index,
             id: toolCallChunk.id,

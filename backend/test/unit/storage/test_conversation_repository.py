@@ -89,28 +89,28 @@ async def test_search_conversations_by_message_content_filters_user_status_and_t
             Message(
                 conversation=active,
                 role="assistant",
-                content="大陆部署方案需要保留",
+                content="Kế hoạch triển khai trên đất liền cần được giữ lại",
                 message_type="text",
                 created_at=now,
             ),
             Message(
                 conversation=deleted,
                 role="assistant",
-                content="大陆 deleted should not show",
+                content="đại lục deleted should not show",
                 message_type="text",
                 created_at=now,
             ),
             Message(
                 conversation=other_user,
                 role="assistant",
-                content="大陆 other user should not show",
+                content="đại lục other user should not show",
                 message_type="text",
                 created_at=now,
             ),
             Message(
                 conversation=tool_only,
                 role="tool",
-                content="大陆 tool output should not show",
+                content="đại lục tool output should not show",
                 message_type="tool_result",
                 created_at=now,
             ),
@@ -121,7 +121,7 @@ async def test_search_conversations_by_message_content_filters_user_status_and_t
     repo = ConversationRepository(conversation_session)
     items, has_more = await repo.search_conversations_by_message_content(
         uid="user-a",
-        query="大陆",
+        query="đại lục",
         limit=20,
         offset=0,
     )
@@ -130,7 +130,7 @@ async def test_search_conversations_by_message_content_filters_user_status_and_t
     assert [item["conversation"].thread_id for item in items] == ["thread-active"]
     assert items[0]["matched_count"] == 1
     assert items[0]["message_id"] is not None
-    assert "大陆部署方案" in items[0]["snippets"][0]["content"]
+    assert "Kế hoạch triển khai đại lục" in items[0]["snippets"][0]["content"]
 
 
 @pytest.mark.asyncio
@@ -171,21 +171,21 @@ async def test_search_conversations_by_message_content_filters_agent_and_paginat
             Message(
                 conversation=first,
                 role="user",
-                content="大陆关键词 old",
+                content="Từ khóa đại lục old",
                 message_type="text",
                 created_at=old,
             ),
             Message(
                 conversation=second,
                 role="assistant",
-                content="大陆关键词 latest",
+                content="Từ khóa đại lục latest",
                 message_type="text",
                 created_at=now,
             ),
             Message(
                 conversation=other_agent,
                 role="assistant",
-                content="大陆关键词 other agent",
+                content="Từ khóa đại lục other agent",
                 message_type="text",
                 created_at=now,
             ),
@@ -197,14 +197,14 @@ async def test_search_conversations_by_message_content_filters_agent_and_paginat
     first_page, has_more = await repo.search_conversations_by_message_content(
         uid="user-a",
         agent_id="agent-a",
-        query="大陆",
+        query="đại lục",
         limit=1,
         offset=0,
     )
     second_page, second_has_more = await repo.search_conversations_by_message_content(
         uid="user-a",
         agent_id="agent-a",
-        query="大陆",
+        query="đại lục",
         limit=1,
         offset=1,
     )

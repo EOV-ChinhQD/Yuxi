@@ -1,7 +1,7 @@
 <template>
   <a-modal
     :open="isOpen"
-    title="任务中心"
+    title="trung tâm truyền giáo"
     :width="680"
     :footer="null"
     :destroy-on-close="false"
@@ -12,7 +12,7 @@
       type="info"
       show-icon
       class="task-tip"
-      message="状态为「已完成」仅代表任务执行结束，其内部仍可能存在已捕获的问题，请留意日志。"
+      message="Tình trạng là「Đã hoàn thành」Nó chỉ đại diện cho sự kết thúc thực hiện nhiệm vụ，Có thể vẫn còn những vấn đề được ghi lại bên trong nó，Hãy chú ý đến nhật ký。"
     />
     <div class="task-center">
       <div class="task-toolbar">
@@ -20,7 +20,7 @@
           <a-segmented v-model:value="statusFilter" :options="taskFilterOptions" />
         </div>
         <div class="task-toolbar-actions">
-          <a-button type="text" @click="handleRefresh" :loading="loadingState"> 刷新 </a-button>
+          <a-button type="text" @click="handleRefresh" :loading="loadingState"> Làm mới </a-button>
         </div>
       </div>
 
@@ -29,7 +29,7 @@
         type="error"
         show-icon
         class="task-alert"
-        :message="lastErrorState.message || '加载任务信息失败'"
+        :message="lastErrorState.message || 'Không tải được thông tin nhiệm vụ'"
       />
 
       <div v-if="hasTasks" class="task-list">
@@ -40,7 +40,7 @@
           :class="taskCardClasses(task)"
           @click="handleDetail(task.id)"
         >
-          <!-- 状态指示器 -->
+          <!-- chỉ báo trạng thái -->
           <div class="task-card-status-indicator" :class="`status-${task.status}`">
             <span class="status-dot"></span>
             <span class="status-text">{{ statusLabel(task.status) }}</span>
@@ -59,7 +59,7 @@
             </div>
           </div>
 
-          <!-- 进度信息 -->
+          <!-- thông tin tiến độ -->
           <div v-if="!isTaskCompleted(task)" class="task-card-progress">
             <a-progress
               :percent="Math.round(task.progress || 0)"
@@ -76,14 +76,14 @@
             {{ task.error }}
           </div>
 
-          <!-- 底部信息 -->
+          <!-- Thông tin đáy -->
           <div class="task-card-footer">
             <div class="task-card-times">
-              <span v-if="task.started_at">开始 {{ formatTime(task.started_at, 'short') }}</span>
+              <span v-if="task.started_at">bắt đầu {{ formatTime(task.started_at, 'short') }}</span>
               <span v-if="task.completed_at"
-                >· 完成 {{ formatTime(task.completed_at, 'short') }}</span
+                >· Hoàn thành {{ formatTime(task.completed_at, 'short') }}</span
               >
-              <span v-if="!task.started_at">创建 {{ formatTime(task.created_at, 'short') }}</span>
+              <span v-if="!task.started_at">tạo ra {{ formatTime(task.created_at, 'short') }}</span>
             </div>
             <div class="task-card-actions">
               <a-button
@@ -93,7 +93,7 @@
                 v-if="canCancel(task)"
                 @click.stop="handleCancel(task.id)"
               >
-                取消
+                Hủy bỏ
               </a-button>
               <a-button
                 type="text"
@@ -102,7 +102,7 @@
                 v-if="isTaskCompleted(task)"
                 @click.stop="handleDelete(task.id, task.name)"
               >
-                删除
+                Xóa
               </a-button>
             </div>
           </div>
@@ -150,7 +150,7 @@ const taskFilterOptions = computed(() => [
   {
     label: () =>
       h('span', { class: 'task-filter-option' }, [
-        '全部',
+        'Tất cả',
         h('span', { class: 'filter-count' }, totalTaskCount.value)
       ]),
     value: 'all'
@@ -158,7 +158,7 @@ const taskFilterOptions = computed(() => [
   {
     label: () =>
       h('span', { class: 'task-filter-option' }, [
-        '进行中',
+        'Đang tiến hành',
         h('span', { class: 'filter-count' }, inProgressCount.value)
       ]),
     value: 'active'
@@ -166,7 +166,7 @@ const taskFilterOptions = computed(() => [
   {
     label: () =>
       h('span', { class: 'task-filter-option' }, [
-        '已完成',
+        'Đã hoàn thành',
         h('span', { class: 'filter-count' }, completedCount.value)
       ]),
     value: 'success'
@@ -174,7 +174,7 @@ const taskFilterOptions = computed(() => [
   {
     label: () =>
       h('span', { class: 'task-filter-option' }, [
-        '失败',
+        'thất bại',
         h('span', { class: 'filter-count' }, failedTaskCount.value)
       ]),
     value: 'failed'
@@ -182,20 +182,20 @@ const taskFilterOptions = computed(() => [
 ])
 
 const STATUS_CONFIG = {
-  pending: { label: '等待中', terminal: false, cancelable: true, progress: 'active' },
-  queued: { label: '已排队', terminal: false, cancelable: true, progress: 'active' },
-  running: { label: '进行中', terminal: false, cancelable: true, progress: 'active' },
-  success: { label: '已完成', terminal: true, cancelable: false, progress: 'success' },
-  failed: { label: '失败', terminal: true, cancelable: false, progress: 'exception' },
-  cancelled: { label: '已取消', terminal: true, cancelable: false, progress: 'normal' }
+  pending: { label: 'Đang chờ', terminal: false, cancelable: true, progress: 'active' },
+  queued: { label: 'Đã xếp hàng', terminal: false, cancelable: true, progress: 'active' },
+  running: { label: 'Đang tiến hành', terminal: false, cancelable: true, progress: 'active' },
+  success: { label: 'Đã hoàn thành', terminal: true, cancelable: false, progress: 'success' },
+  failed: { label: 'thất bại', terminal: true, cancelable: false, progress: 'exception' },
+  cancelled: { label: 'Đã hủy', terminal: true, cancelable: false, progress: 'normal' }
 }
 const TASK_TYPE_LABELS = {
-  knowledge_ingest: '知识库导入',
-  knowledge_parse: '文档解析',
-  knowledge_index: '文档入库',
-  knowledge_graph_index: '图谱构建',
-  dataset_generation: '评估集生成',
-  rag_evaluation: 'RAG 评估'
+  knowledge_ingest: 'Nhập khẩu cơ sở kiến thức',
+  knowledge_parse: 'Phân tích tài liệu',
+  knowledge_index: 'Lưu trữ tài liệu',
+  knowledge_graph_index: 'Xây dựng bản đồ',
+  dataset_generation: 'Tạo tập đánh giá',
+  rag_evaluation: 'RAG Đánh giá'
 }
 
 const isActiveStatus = (status) => Boolean(STATUS_CONFIG[status]) && !STATUS_CONFIG[status].terminal
@@ -220,15 +220,15 @@ const hasTasks = computed(() => filteredTasks.value.length > 0)
 const emptyHint = computed(() => {
   switch (statusFilter.value) {
     case 'active':
-      return { title: '暂无进行中的任务', subtitle: '当前没有正在执行的后台任务。' }
+      return { title: 'Không có nhiệm vụ nào đang diễn ra', subtitle: 'Không có tác vụ nền nào hiện đang thực thi。' }
     case 'success':
-      return { title: '暂无已完成的任务', subtitle: '执行成功的后台任务会显示在这里。' }
+      return { title: 'Chưa hoàn thành nhiệm vụ nào', subtitle: 'Các tác vụ nền được thực hiện thành công sẽ được hiển thị ở đây。' }
     case 'failed':
-      return { title: '暂无失败的任务', subtitle: '失败或已取消的后台任务会显示在这里。' }
+      return { title: 'Chưa có nhiệm vụ thất bại nào', subtitle: 'Các tác vụ nền bị lỗi hoặc bị hủy sẽ xuất hiện ở đây。' }
     default:
       return {
-        title: '暂无任务',
-        subtitle: '提交知识库导入等后台任务后，将在这里展示实时进度（仅展示最近的 100 个任务）。'
+        title: 'Chưa có nhiệm vụ nào',
+        subtitle: 'Sau khi gửi các tác vụ nền như nhập cơ sở kiến thức,，Tiến trình theo thời gian thực sẽ được hiển thị ở đây（Chỉ hiển thị gần đây nhất 100 nhiệm vụ）。'
       }
   }
 })
@@ -242,7 +242,7 @@ function taskCardClasses(task) {
 }
 
 function taskTypeLabel(type) {
-  if (!type) return '后台任务'
+  if (!type) return 'Tác vụ nền'
   return TASK_TYPE_LABELS[type] || type
 }
 
@@ -296,15 +296,15 @@ function handleDetail(taskId) {
     return
   }
   const rows = [
-    ['类型', taskTypeLabel(task.type)],
-    ['状态', statusLabel(task.status)],
-    ['进度', `${Math.round(task.progress || 0)}%`],
-    ['创建时间', formatTime(task.created_at)],
-    ['开始时间', task.started_at ? formatTime(task.started_at) : '-'],
-    ['完成时间', task.completed_at ? formatTime(task.completed_at) : '-'],
-    ['耗时', getTaskDuration(task) || '-'],
-    ['描述', task.message || '-'],
-    ['错误', task.error || '-']
+    ['Loại', taskTypeLabel(task.type)],
+    ['Trạng thái', statusLabel(task.status)],
+    ['Tiến độ', `${Math.round(task.progress || 0)}%`],
+    ['thời gian sáng tạo', formatTime(task.created_at)],
+    ['thời gian bắt đầu', task.started_at ? formatTime(task.started_at) : '-'],
+    ['thời gian hoàn thành', task.completed_at ? formatTime(task.completed_at) : '-'],
+    ['Tốn thời gian', getTaskDuration(task) || '-'],
+    ['Mô tả', task.message || '-'],
+    ['Lỗi', task.error || '-']
   ]
   const children = rows.map(([label, value]) =>
     h('div', { style: DETAIL_ROW_STYLE }, [
@@ -313,11 +313,11 @@ function handleDetail(taskId) {
     ])
   )
   if (hasContent(task.payload)) {
-    children.push(h('div', { style: DETAIL_TITLE_STYLE }, '参数'))
+    children.push(h('div', { style: DETAIL_TITLE_STYLE }, 'thông số'))
     children.push(h('pre', { style: DETAIL_JSON_STYLE }, prettyJson(task.payload)))
   }
   if (hasContent(task.result)) {
-    children.push(h('div', { style: DETAIL_TITLE_STYLE }, '结果'))
+    children.push(h('div', { style: DETAIL_TITLE_STYLE }, 'kết quả'))
     children.push(h('pre', { style: DETAIL_JSON_STYLE }, prettyJson(task.result)))
   }
   Modal.info({
@@ -333,11 +333,11 @@ function handleCancel(taskId) {
 
 function handleDelete(taskId, taskName) {
   Modal.confirm({
-    title: '确认删除',
-    content: `确定要删除任务"${taskName}"吗？此操作不可恢复。`,
-    okText: '删除',
+    title: 'Xác nhận xóa',
+    content: `Xác nhận bạn muốn xóa nhiệm vụ"${taskName}"?？Hoạt động này là không thể đảo ngược。`,
+    okText: 'Xóa',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy bỏ',
     onOk: () => {
       taskerStore.deleteTask(taskId)
     }
@@ -367,15 +367,15 @@ function getTaskDuration(task) {
     const seconds = diffSeconds % 60
 
     if (hours > 0) {
-      return `${hours}小时${minutes}分钟`
+      return `${hours}giờ${minutes}phút`
     }
     if (minutes > 0) {
-      return `${minutes}分钟${seconds}秒`
+      return `${minutes}phút${seconds}giây`
     }
     if (seconds > 0) {
-      return `${seconds}秒`
+      return `${seconds}giây`
     }
-    return '小于1秒'
+    return 'ít hơn1giây'
   } catch {
     return null
   }
@@ -475,7 +475,7 @@ function canCancel(task) {
   box-shadow: 0 2px 8px var(--shadow-1);
 }
 
-/* 状态指示器 */
+/* chỉ báo trạng thái */
 .task-card-status-indicator {
   position: absolute;
   top: 14px;
@@ -550,7 +550,7 @@ function canCancel(task) {
 }
 
 .task-card-header {
-  padding-right: 80px; /* 为状态指示器留出空间 */
+  padding-right: 80px; /* Để lại khoảng trống cho các chỉ báo trạng thái */
 }
 
 .task-card-info {

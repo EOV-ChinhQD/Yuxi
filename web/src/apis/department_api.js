@@ -1,5 +1,5 @@
 /**
- * 部门管理 API
+ * Quản lý bộ phận API
  */
 
 import {
@@ -13,49 +13,49 @@ import {
 const BASE_URL = '/api/departments'
 
 /**
- * 获取部门列表（普通管理员可访问）
- * @returns {Promise<Array>} 部门列表
+ * Nhận danh sách bộ phận（Có thể truy cập được đối với quản trị viên thông thường）
+ * @returns {Promise<Array>} Danh sách khoa
  */
 export const getDepartments = () => {
   return apiAdminGet(BASE_URL)
 }
 
 /**
- * 获取部门详情
- * @param {number} departmentId - 部门ID
- * @returns {Promise<Object>} 部门详情
+ * Nhận thông tin chi tiết bộ phận
+ * @param {number} departmentId - SởID
+ * @returns {Promise<Object>} Chi tiết bộ phận
  */
 export const getDepartment = (departmentId) => {
   return apiSuperAdminGet(`${BASE_URL}/${departmentId}`)
 }
 
 /**
- * 创建部门
- * @param {Object} data - 部门数据
- * @param {string} data.name - 部门名称
- * @param {string} [data.description] - 部门描述
- * @returns {Promise<Object>} 创建的部门
+ * Tạo bộ phận
+ * @param {Object} data - dữ liệu bộ phận
+ * @param {string} data.name - Tên khoa
+ * @param {string} [data.description] - Mô tả bộ phận
+ * @returns {Promise<Object>} Bộ phận đã tạo
  */
 export const createDepartment = (data) => {
   return apiSuperAdminPost(BASE_URL, data)
 }
 
 /**
- * 更新部门
- * @param {number} departmentId - 部门ID
- * @param {Object} data - 部门数据
- * @param {string} [data.name] - 部门名称
- * @param {string} [data.description] - 部门描述
- * @returns {Promise<Object>} 更新后的部门
+ * Bộ phận cập nhật
+ * @param {number} departmentId - SởID
+ * @param {Object} data - dữ liệu bộ phận
+ * @param {string} [data.name] - Tên khoa
+ * @param {string} [data.description] - Mô tả bộ phận
+ * @returns {Promise<Object>} bộ phận cập nhật
  */
 export const updateDepartment = (departmentId, data) => {
   return apiSuperAdminPut(`${BASE_URL}/${departmentId}`, data)
 }
 
 /**
- * 删除部门
- * @param {number} departmentId - 部门ID
- * @returns {Promise<Object>} 删除结果
+ * Xóa bộ phận
+ * @param {number} departmentId - SởID
+ * @returns {Promise<Object>} Xóa kết quả
  */
 export const deleteDepartment = (departmentId) => {
   return apiSuperAdminDelete(`${BASE_URL}/${departmentId}`)

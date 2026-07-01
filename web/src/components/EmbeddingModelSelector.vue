@@ -52,7 +52,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: '请选择嵌入模型'
+    default: 'Vui lòng chọn một mô hình để nhúng'
   },
   size: {
     type: String,
@@ -94,7 +94,7 @@ const fetchV2Models = async () => {
       await checkV2ModelStatuses()
     }
   } catch (error) {
-    console.error('获取 embedding 模型失败:', error)
+    console.error('Nhận embedding Mô hình không thành công:', error)
   }
 }
 
@@ -105,7 +105,7 @@ const checkV2ModelStatuses = async () => {
     )
     await checkV2Statuses(models)
   } catch (error) {
-    console.error('检查 embedding 模型状态失败:', error)
+    console.error('Kiểm tra embedding Trạng thái mô hình không thành công:', error)
   }
 }
 

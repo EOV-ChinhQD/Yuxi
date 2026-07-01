@@ -24,7 +24,7 @@ const run = () => {
   const activeThreadState = {
     activeRunId: 'run-1',
     runLastSeq: '1700000000005-0',
-    onGoingConv: { msgChunks: { 'msg-1': [{ id: 'msg-1', content: '已渲染' }] } }
+    onGoingConv: { msgChunks: { 'msg-1': [{ id: 'msg-1', content: 'Đã kết xuất' }] } }
   }
 
   assert.equal(hasOngoingRunChunks(emptyThreadState), false)

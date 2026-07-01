@@ -1,18 +1,18 @@
 <template>
   <div class="rag-evaluation-container">
-    <!-- 评估结果区域 -->
+    <!-- Khu vực kết quả đánh giá -->
     <div class="evaluation-results">
       <template v-if="!selectedDataset">
         <ResourceEmptyState
           class="rag-evaluation-empty"
-          title="暂无可用评估基准"
-          description="先上传或生成评估基准，再运行 RAG 评估。"
+          title="Chưa có điểm chuẩn đánh giá"
+          description="Tải lên hoặc tạo điểm chuẩn đánh giá trước，Chạy lại RAG Đánh giá。"
           :icon="BarChart3"
         >
           <template #actions>
             <a-button type="primary" class="lucide-icon-btn" @click="$emit('switch-to-benchmarks')">
               <ClipboardList :size="16" />
-              前往基准管理
+              Đi đến quản lý điểm chuẩn
             </a-button>
           </template>
         </ResourceEmptyState>
@@ -20,7 +20,7 @@
       <template v-else>
         <div class="last-evaluation-section">
           <div class="section-header">
-            <h4 class="section-title">最后一次评估</h4>
+            <h4 class="section-title">đánh giá cuối cùng</h4>
             <a-dropdown
               v-model:open="evaluationDropdownOpen"
               :trigger="['click']"
@@ -33,31 +33,31 @@
                 :disabled="availableDatasets.length === 0"
                 class="lucide-icon-btn"
               >
-                开始评估
+                Bắt đầu đánh giá
                 <ChevronDown :size="14" />
               </a-button>
               <template #overlay>
                 <div class="evaluation-start-dropdown" @click.stop>
                   <div class="dropdown-header">
-                    <div class="dropdown-title">配置本次评估</div>
-                    <div class="dropdown-subtitle">选择评估基准与可选模型后开始评估</div>
+                    <div class="dropdown-title">Cấu hình đánh giá này</div>
+                    <div class="dropdown-subtitle">Bắt đầu đánh giá sau khi chọn đường cơ sở đánh giá và các mô hình tùy chọn</div>
                   </div>
 
                   <div class="dropdown-model-fields">
-                    <a-form-item label="评估名称">
+                    <a-form-item label="Tên đánh giá">
                       <a-input
                         v-model:value="configForm.name"
-                        placeholder="请输入评估名称"
+                        placeholder="Vui lòng nhập tên đánh giá"
                         :maxlength="100"
                         show-count
                       />
                     </a-form-item>
 
-                    <a-form-item label="评估基准">
+                    <a-form-item label="Đường cơ sở đánh giá">
                       <div class="dropdown-benchmark-row">
                         <a-select
                           v-model:value="selectedDatasetId"
-                          placeholder="请选择评估基准"
+                          placeholder="Hãy chọn cơ sở đánh giá"
                           style="width: 100%"
                           :loading="datasetsLoading"
                           @change="onDatasetChanged"
@@ -67,7 +67,7 @@
                             :key="benchmark.dataset_id"
                             :value="benchmark.dataset_id"
                           >
-                            {{ benchmark.name }} ({{ benchmark.item_count }} 个问题)
+                            {{ benchmark.name }} ({{ benchmark.item_count }} câu hỏi)
                           </a-select-option>
                         </a-select>
                         <a-button
@@ -75,7 +75,7 @@
                           :loading="datasetsLoading"
                           :icon="h(RefreshCw, { size: 16 })"
                           class="refresh-benchmarks-btn lucide-icon-btn"
-                          title="刷新评估基准列表"
+                          title="Làm mới danh sách điểm chuẩn đánh giá"
                           @click="() => loadDatasets(true)"
                         />
                       </div>
@@ -84,8 +84,8 @@
                     <a-form-item
                       :label="
                         selectedDataset?.has_gold_answers
-                          ? '答案生成模型（可选）'
-                          : '答案生成模型（当前基准无需）'
+                          ? 'mô hình tạo câu trả lời（Tùy chọn）'
+                          : 'mô hình tạo câu trả lời（Không bắt buộc đối với điểm chuẩn hiện tại）'
                       "
                     >
                       <ModelSelectorComponent
@@ -101,8 +101,8 @@
                     <a-form-item
                       :label="
                         selectedDataset?.has_gold_answers
-                          ? '答案评判模型（可选）'
-                          : '答案评判模型（当前基准无需）'
+                          ? 'mô hình phán đoán câu trả lời（Tùy chọn）'
+                          : 'mô hình phán đoán câu trả lời（Không bắt buộc đối với điểm chuẩn hiện tại）'
                       "
                     >
                       <ModelSelectorComponent
@@ -127,7 +127,7 @@
                     :disabled="!selectedDataset"
                     @click="startEvaluation"
                   >
-                    开始评估
+                    Bắt đầu đánh giá
                   </a-button>
                 </div>
               </template>
@@ -180,28 +180,28 @@
                 </strong>
               </div>
               <div class="metric-card">
-                <span class="metric-label">耗时</span>
+                <span class="metric-label">Tốn thời gian</span>
                 <strong>{{ formatRunDuration(latestEvaluation) }}</strong>
               </div>
               <div class="metric-card">
-                <span class="metric-label">数据量</span>
+                <span class="metric-label">Khối lượng dữ liệu</span>
                 <strong>{{ formatRunItems(latestEvaluation) }}</strong>
               </div>
               <div class="metric-card">
-                <span class="metric-label">完成率</span>
+                <span class="metric-label">tỷ lệ hoàn thành</span>
                 <strong>{{ formatCompletionRate(latestEvaluation) }}</strong>
               </div>
             </div>
           </div>
 
           <div v-else class="last-evaluation-empty">
-            暂无评估记录，开始评估后会在这里展示最近一次结果。
+            Chưa có hồ sơ đánh giá，Sau khi bắt đầu đánh giá, kết quả mới nhất sẽ được hiển thị tại đây.。
           </div>
         </div>
 
         <div class="history-section">
           <div class="section-header">
-            <h4 class="section-title">历史评估记录</h4>
+            <h4 class="section-title">Hồ sơ đánh giá lịch sử</h4>
             <a-button
               type="text"
               size="small"
@@ -210,7 +210,7 @@
               :icon="h(RefreshCw, { size: 14 })"
               class="refresh-btn lucide-icon-btn"
             >
-              刷新
+              Làm mới
             </a-button>
           </div>
           <a-table
@@ -230,21 +230,21 @@
                     class="history-action-link"
                     @click.prevent="viewResults(record.run_id)"
                   >
-                    查看
+                    Xem
                   </a>
                   <a-popconfirm
-                    title="确定要删除这条评估记录吗？"
-                    description="删除后将无法恢复"
+                    title="Bạn có chắc chắn muốn xóa bản ghi đánh giá này không?？"
+                    description="Việc xóa không thể được khôi phục"
                     @confirm="deleteEvaluationRecord(record.run_id)"
-                    ok-text="确定"
-                    cancel-text="取消"
+                    ok-text="được rồi"
+                    cancel-text="Hủy bỏ"
                   >
                     <a
                       href=""
                       class="history-action-link history-action-link-danger"
                       @click.prevent
                     >
-                      删除
+                      Xóa
                     </a>
                   </a-popconfirm>
                 </a-space>
@@ -260,12 +260,12 @@
     <div v-if="resultModalVisible" class="evaluation-detail-overlay">
       <div class="evaluation-detail-panel">
         <div class="evaluation-detail-titlebar">
-          <div class="evaluation-detail-title">评估结果 - {{ getRunName(selectedResult) }}</div>
+          <div class="evaluation-detail-title">Kết quả đánh giá - {{ getRunName(selectedResult) }}</div>
           <a-button
             type="text"
             size="small"
             class="lucide-icon-btn"
-            title="关闭"
+            title="đóng"
             @click="resultModalVisible = false"
           >
             <X :size="16" />
@@ -274,23 +274,23 @@
 
         <div v-if="resultsLoading" class="loading-container">
           <a-spin size="large" />
-          <p style="margin-top: 16px; color: var(--gray-600)">正在加载评估结果...</p>
+          <p style="margin-top: 16px; color: var(--gray-600)">Đang tải kết quả đánh giá...</p>
         </div>
 
         <div v-else-if="selectedResult && detailedResults.length > 0" class="result-detail-content">
           <div class="result-summary-bar">
             <div class="summary-items">
               <span class="summary-item summary-run-id" :title="selectedResult.run_id">
-                运行ID：{{ selectedResult.run_id }}
+                chạyID：{{ selectedResult.run_id }}
               </span>
               <span class="summary-item">
-                状态：
+                Trạng thái：
                 <a-tag :color="getStatusColor(selectedResult.status)">
                   {{ getStatusText(selectedResult.status) }}
                 </a-tag>
               </span>
               <span class="summary-item">
-                总体评分：
+                Đánh giá chung：
                 <a-tag
                   v-if="selectedResult.overall_score != null"
                   :color="getScoreTagColor(selectedResult.overall_score)"
@@ -299,10 +299,10 @@
                 </a-tag>
                 <span v-else>-</span>
               </span>
-              <span class="summary-item">总问题数：{{ selectedResult.total_items }}</span>
-              <span class="summary-item">完成数：{{ selectedResult.completed_items }}</span>
+              <span class="summary-item">Tổng số câu hỏi：{{ selectedResult.total_items }}</span>
+              <span class="summary-item">Số lần hoàn thành：{{ selectedResult.completed_items }}</span>
               <span class="summary-item">
-                总耗时：{{
+                Tổng thời gian sử dụng：{{
                   evaluationStats.totalDuration
                     ? formatDuration(evaluationStats.totalDuration)
                     : '-'
@@ -315,7 +315,7 @@
               @click="toggleErrorOnly"
               :class="{ 'error-only-active': showErrorsOnly }"
             >
-              {{ showErrorsOnly ? '显示全部' : '仅查看错误' }}
+              {{ showErrorsOnly ? 'Hiển thị tất cả' : 'Chỉ xem lỗi' }}
             </a-button>
           </div>
 
@@ -324,8 +324,8 @@
               <span class="result-count">
                 {{
                   showErrorsOnly
-                    ? `仅显示错误结果，共 ${paginationTotal} 条`
-                    : `显示全部结果，共 ${paginationTotal} 条`
+                    ? `Chỉ hiển thị kết quả lỗi，tổng cộng ${paginationTotal} Bài viết`
+                    : `Hiển thị tất cả kết quả，tổng cộng ${paginationTotal} Bài viết`
                 }}
               </span>
               <template v-if="Object.keys(evaluationStats.retrievalMetrics || {}).length > 0">
@@ -340,7 +340,7 @@
                 </span>
               </template>
               <span v-if="evaluationStats.totalQuestions" class="compact-metric">
-                答案准确率：<strong
+                Trả lời chính xác：<strong
                   :style="{ color: getScoreColor(evaluationStats.answerAccuracy) }"
                 >
                   {{ (evaluationStats.answerAccuracy * 100).toFixed(1) }}%
@@ -349,8 +349,8 @@
             </div>
             <a-switch
               v-model:checked="resultAutoWrap"
-              checked-children="换行"
-              un-checked-children="不换行"
+              checked-children="dòng mới"
+              un-checked-children="Không ngắt dòng"
             />
           </div>
 
@@ -364,7 +364,7 @@
               showSizeChanger: true,
               pageSizeOptions: ['10', '20', '50', '100'],
               showQuickJumper: true,
-              showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+              showTotal: (total, range) => `Không. ${range[0]}-${range[1]} Bài viết，tổng cộng ${total} Bài viết`,
               onChange: handlePageChange,
               onShowSizeChange: handlePageSizeChange
             }"
@@ -420,7 +420,7 @@
                   class="answer-judgement"
                 >
                   <a-tag :color="record.metrics.score > 0.5 ? 'green' : 'red'">
-                    {{ record.metrics.score === 1.0 ? '正确' : '错误' }}
+                    {{ record.metrics.score === 1.0 ? 'đúng' : 'Lỗi' }}
                   </a-tag>
                   <div
                     v-if="record.metrics.reasoning"
@@ -437,8 +437,8 @@
         </div>
 
         <div v-else-if="selectedResult" class="empty-results">
-          <a-empty description="暂无详细结果数据">
-            <a-button @click="viewDetails(selectedResult)">查看基本信息</a-button>
+          <a-empty description="Chưa có dữ liệu kết quả chi tiết">
+            <a-button @click="viewDetails(selectedResult)">Xem thông tin cơ bản</a-button>
           </a-empty>
         </div>
       </div>
@@ -464,10 +464,10 @@ const props = defineProps({
 
 defineEmits(['switch-to-benchmarks'])
 
-// 使用任务中心 store
+// Sử dụng trung tâm tác vụ store
 const taskerStore = useTaskerStore()
 
-// 状态
+// Trạng thái
 const selectedDatasetId = ref(null)
 const selectedDataset = ref(null)
 const datasetsLoading = ref(false)
@@ -522,42 +522,42 @@ const buildDefaultEvaluationName = () => {
   return `eval-${year}${month}${day}-${createDefaultNameHash()}`
 }
 
-// 评估配置表单（使用知识库默认配置）
+// Mẫu cấu hình đánh giá（Sử dụng cấu hình mặc định của cơ sở kiến thức）
 const configForm = reactive({
   name: buildDefaultEvaluationName(),
-  answer_llm: '', // 答案生成模型
-  judge_llm: '' // 评判模型
+  answer_llm: '', // mô hình tạo câu trả lời
+  judge_llm: '' // Mô hình phán đoán
 })
 
 const evaluationStartHint = computed(() => {
-  if (!selectedDataset.value?.has_gold_answers) return '当前基准只会执行检索评估，无需选择模型。'
-  if (!configForm.answer_llm && !configForm.judge_llm) return '不选择模型时，将仅执行检索评估。'
-  if (configForm.answer_llm && configForm.judge_llm) return '将执行检索评估与答案评估。'
-  return '答案生成模型和答案评判模型需要同时选择。'
+  if (!selectedDataset.value?.has_gold_answers) return 'Điểm chuẩn hiện tại chỉ thực hiện đánh giá truy xuất，Không cần chọn mẫu。'
+  if (!configForm.answer_llm && !configForm.judge_llm) return 'Khi không chọn mẫu，Chỉ đánh giá tìm kiếm sẽ được thực hiện。'
+  if (configForm.answer_llm && configForm.judge_llm) return 'Đánh giá tìm kiếm và đánh giá câu trả lời sẽ được thực hiện。'
+  return 'Mô hình tạo câu trả lời và mô hình đánh giá câu trả lời cần được lựa chọn đồng thời。'
 })
 
-// 表格列定义
+// định nghĩa cột trong bảng
 const resultColumns = computed(() => {
   const columns = [
     {
-      title: '问题',
+      title: 'câu hỏi',
       dataIndex: 'query',
       key: 'query',
       width: resultColumnWidths.query
     },
     {
-      title: '生成答案',
+      title: 'tạo câu trả lời',
       key: 'generated_answer',
       width: resultColumnWidths.generated_answer
     },
     {
-      title: '答案评判',
+      title: 'Đánh giá câu trả lời',
       key: 'answer_score',
       width: resultColumnWidths.answer_score
     }
   ]
 
-  // 检查是否有检索指标数据
+  // Kiểm tra xem có dữ liệu chỉ báo truy xuất hay không
   const hasRetrievalMetrics = detailedResults.value.some((item) => {
     if (!item.metrics) return false
     return Object.keys(item.metrics).some(
@@ -566,10 +566,10 @@ const resultColumns = computed(() => {
     )
   })
 
-  // 如果有检索指标数据，添加检索指标列
+  // Nếu có dữ liệu chỉ báo truy xuất，Thêm cột chỉ mục tìm kiếm
   if (hasRetrievalMetrics) {
     columns.splice(2, 0, {
-      title: '检索指标',
+      title: 'Chỉ mục tìm kiếm',
       key: 'retrieval_score',
       width: resultColumnWidths.retrieval_score
     })
@@ -627,7 +627,7 @@ const withResizableTitle = (column) => ({
 
 const historyColumns = [
   {
-    title: '评估名称',
+    title: 'Tên đánh giá',
     dataIndex: 'name',
     key: 'name',
     width: 180,
@@ -635,20 +635,20 @@ const historyColumns = [
     customRender: ({ record }) => getRunName(record)
   },
   {
-    title: '评估基准',
+    title: 'Đường cơ sở đánh giá',
     key: 'dataset_name',
     width: 180,
     ellipsis: true,
     customRender: ({ record }) => getDatasetName(record.dataset_id)
   },
   {
-    title: '数据量',
+    title: 'Khối lượng dữ liệu',
     key: 'items',
     width: 92,
     customRender: ({ record }) => formatRunItems(record)
   },
   {
-    title: '耗时',
+    title: 'Tốn thời gian',
     key: 'duration',
     width: 100,
     customRender: ({ record }) => formatRunDuration(record)
@@ -660,36 +660,36 @@ const historyColumns = [
     customRender: ({ record }) => renderMetricTag(getRecall10(record), record.status)
   },
   {
-    title: '综合评分',
+    title: 'Đánh giá chung',
     key: 'overall_score',
     width: 100,
     customRender: ({ record }) => renderMetricTag(record.overall_score, record.status, 0)
   },
   {
-    title: '状态',
+    title: 'Trạng thái',
     key: 'status',
     width: 86,
     customRender: ({ record }) =>
       h('a-tag', { color: getStatusColor(record.status) }, getStatusText(record.status))
   },
   {
-    title: '操作',
+    title: 'hoạt động',
     key: 'actions',
     width: 120
   }
 ]
 
-// 切换错误显示模式
+// Chuyển chế độ hiển thị lỗi
 const toggleErrorOnly = async () => {
   resultsLoading.value = true
   showErrorsOnly.value = !showErrorsOnly.value
-  currentPage.value = 1 // 切换模式时重置到第一页
+  currentPage.value = 1 // Đặt lại về trang đầu tiên khi chuyển chế độ
 
-  // 立即加载新的分页数据
+  // Tải dữ liệu được phân trang mới ngay lập tức
   await loadResultsWithPagination()
 }
 
-// 处理分页变化
+// Xử lý các thay đổi về phân trang
 const handlePageChange = (page, size) => {
   currentPage.value = page
   if (size !== pageSize.value) {
@@ -698,14 +698,14 @@ const handlePageChange = (page, size) => {
   loadResultsWithPagination()
 }
 
-// 处理页面大小变化
+// Xử lý các thay đổi kích thước trang
 const handlePageSizeChange = (current, size) => {
   currentPage.value = 1
   pageSize.value = size
   loadResultsWithPagination()
 }
 
-// 加载分页结果
+// Tải kết quả được phân trang
 const loadResultsWithPagination = async () => {
   if (!selectedResult.value) return
 
@@ -720,28 +720,28 @@ const loadResultsWithPagination = async () => {
     if (response.message === 'success' && response.data) {
       const resultData = response.data
 
-      // 更新详细结果
+      // Cập nhật kết quả chi tiết
       detailedResults.value = resultData.items || []
 
-      // 更新分页信息
+      // Cập nhật thông tin phân trang
       paginationTotal.value = resultData.pagination.total
       paginationTotalPages.value = resultData.pagination.total_pages
 
-      // 更新统计信息
-      // 如果是过滤模式，需要基于过滤后的总数计算统计
+      // Cập nhật số liệu thống kê
+      // Nếu là chế độ lọc，Cần tính toán số liệu thống kê dựa trên tổng số đã lọc
       if (showErrorsOnly.value) {
-        // 在过滤模式下，只计算当前页的统计（避免重复计算）
+        // ở chế độ lọc，Chỉ tính toán số liệu thống kê cho trang hiện tại（Tránh tính hai lần）
         evaluationStats.value = {
           ...evaluationStats.value,
           totalQuestions: paginationTotal.value
-          // 可以在这里添加其他基于过滤后数据的统计
+          // Số liệu thống kê bổ sung dựa trên dữ liệu đã lọc có thể được thêm vào đây
         }
       } else if (currentPage.value === 1) {
-        // 非过滤模式且是第一页时，才计算完整统计
+        // Khi ở chế độ không lọc và ở trang đầu tiên，Tính toán thống kê đầy đủ
         evaluationStats.value = calculateEvaluationStats(detailedResults.value)
       }
 
-      // 更新其他基本信息（保持原有的信息不变）
+      // Cập nhật các thông tin cơ bản khác（Giữ nguyên thông tin ban đầu）
       if (resultData.started_at && resultData.completed_at) {
         const startTime = new Date(resultData.started_at)
         const endTime = new Date(resultData.completed_at)
@@ -749,14 +749,14 @@ const loadResultsWithPagination = async () => {
       }
     }
   } catch (error) {
-    console.error('加载评估结果失败:', error)
-    message.error('加载评估结果失败')
+    console.error('Không tải được kết quả đánh giá:', error)
+    message.error('Không tải được kết quả đánh giá')
   } finally {
     resultsLoading.value = false
   }
 }
 
-// 加载基准列表
+// Tải danh sách điểm chuẩn
 const loadDatasets = async (showSuccessMessage = false) => {
   if (!props.kbId) return
 
@@ -768,41 +768,41 @@ const loadDatasets = async (showSuccessMessage = false) => {
       const completedDatasets = response.data.filter(isDatasetCompleted)
       availableDatasets.value = completedDatasets
 
-      // 如果没有选中的基准，且有可用基准，默认选中第一个
+      // Nếu không có mốc thời gian nào được chọn，và có sẵn các điểm chuẩn，Cái đầu tiên được chọn theo mặc định
       if (!selectedDatasetId.value && completedDatasets.length > 0) {
         selectedDatasetId.value = completedDatasets[0].dataset_id
         selectedDataset.value = completedDatasets[0]
       } else if (selectedDatasetId.value) {
-        // 如果之前有选中的基准，重新验证其有效性
+        // Nếu có một điểm chuẩn được chọn trước đó，Xác minh lại tính hợp lệ của nó
         const exists = completedDatasets.some((b) => b.dataset_id === selectedDatasetId.value)
         if (!exists) {
           selectedDatasetId.value = null
           selectedDataset.value = null
         } else {
-          // 更新选中的基准对象
+          // Cập nhật các đối tượng cơ sở đã chọn
           selectedDataset.value = completedDatasets.find(
             (b) => b.dataset_id === selectedDatasetId.value
           )
         }
       }
 
-      // 如果是手动刷新，显示成功提示
+      // Nếu bạn làm mới theo cách thủ công，Hiển thị thông báo thành công
       if (showSuccessMessage) {
-        message.success(`已刷新，找到 ${completedDatasets.length} 个可评估基准`)
+        message.success(`Đã làm mới，tìm thấy ${completedDatasets.length} một điểm chuẩn có thể đánh giá được`)
       }
     } else {
-      console.error('响应格式不符合预期:', response)
-      message.error('基准数据格式错误')
+      console.error('Định dạng phản hồi không như mong đợi:', response)
+      message.error('Lỗi định dạng dữ liệu điểm chuẩn')
     }
   } catch (error) {
-    console.error('加载评估基准失败:', error)
-    message.error('加载评估基准失败')
+    console.error('Không tải được điểm chuẩn đánh giá:', error)
+    message.error('Không tải được điểm chuẩn đánh giá')
   } finally {
     datasetsLoading.value = false
   }
 }
 
-// 下拉框选择变化
+// Thay đổi lựa chọn hộp thả xuống
 const onDatasetChanged = (datasetId) => {
   const benchmark = availableDatasets.value.find((b) => b.dataset_id === datasetId)
   selectedDataset.value = benchmark || null
@@ -832,24 +832,24 @@ const syncEvaluationRefresh = () => {
   }
 }
 
-// 刷新历史评估记录
+// Làm mới hồ sơ đánh giá lịch sử
 const refreshHistory = async () => {
   refreshingHistory.value = true
   try {
     await loadEvaluationHistory()
-    message.success('历史记录已刷新')
+    message.success('Lịch sử đã được làm mới')
   } catch (error) {
-    console.error('刷新历史记录失败:', error)
-    message.error('刷新历史记录失败')
+    console.error('Không thể làm mới lịch sử:', error)
+    message.error('Không thể làm mới lịch sử')
   } finally {
     refreshingHistory.value = false
   }
 }
 
-// 开始评估
+// Bắt đầu đánh giá
 const startEvaluation = async () => {
   if (!selectedDataset.value) {
-    message.error('请先选择评估基准')
+    message.error('Vui lòng chọn cơ sở đánh giá trước')
     return
   }
 
@@ -860,11 +860,11 @@ const startEvaluation = async () => {
   const runName = configForm.name.trim()
 
   if (hasAnswerModel !== hasJudgeModel) {
-    message.warning('生成模型和评估模型必须同时选择或者同时不选择')
+    message.warning('Mô hình phát điện và mô hình đánh giá phải được chọn cùng lúc hoặc không được chọn cùng lúc.')
     return
   }
   if (!runName) {
-    message.warning('请输入评估名称')
+    message.warning('Vui lòng nhập tên đánh giá')
     return
   }
 
@@ -883,23 +883,23 @@ const startEvaluation = async () => {
     const response = await evaluationApi.runEvaluation(props.kbId, params)
 
     if (response.message === 'success') {
-      message.success('评估任务已开始')
+      message.success('Nhiệm vụ đánh giá đã bắt đầu')
       evaluationDropdownOpen.value = false
       configForm.name = buildDefaultEvaluationName()
       loadEvaluationHistory()
       taskerStore.loadTasks()
     } else {
-      message.error(response.message || '启动评估失败')
+      message.error(response.message || 'Đánh giá khởi động không thành công')
     }
   } catch (error) {
-    console.error('启动评估失败:', error)
-    message.error('启动评估失败')
+    console.error('Đánh giá khởi động không thành công:', error)
+    message.error('Đánh giá khởi động không thành công')
   } finally {
     startingEvaluation.value = false
   }
 }
 
-// 加载评估历史
+// Tải lịch sử đánh giá
 const loadEvaluationHistory = async (silent = false) => {
   try {
     const response = await evaluationApi.listRuns(props.kbId)
@@ -907,14 +907,14 @@ const loadEvaluationHistory = async (silent = false) => {
       evaluationHistory.value = response.data || []
     }
   } catch (error) {
-    console.error('加载评估历史失败:', error)
-    if (!silent) message.error('加载评估历史失败')
+    console.error('Tải lịch sử đánh giá không thành công:', error)
+    if (!silent) message.error('Tải lịch sử đánh giá không thành công')
   } finally {
     syncEvaluationRefresh()
   }
 }
 
-// 计算评估统计信息
+// Tính toán thống kê đánh giá
 const calculateEvaluationStats = (results) => {
   if (!results || results.length === 0) {
     return {}
@@ -933,14 +933,14 @@ const calculateEvaluationStats = (results) => {
   const metricCounts = {}
 
   results.forEach((item) => {
-    // 答案准确率
+    // Trả lời chính xác
     if (item.metrics && item.metrics.score !== undefined) {
       if (item.metrics.score > 0.5) {
         stats.correctAnswers++
       }
     }
 
-    // 检索指标统计
+    // Thống kê chỉ mục tìm kiếm
     if (item.metrics) {
       Object.keys(item.metrics).forEach((key) => {
         if (
@@ -960,33 +960,33 @@ const calculateEvaluationStats = (results) => {
     }
   })
 
-  // 计算平均值
+  // Tính trung bình
   Object.keys(metricSums).forEach((key) => {
     stats.retrievalMetrics[key] = metricSums[key] / metricCounts[key]
   })
 
-  // 计算答案准确率
+  // Tính toán độ chính xác của câu trả lời
   stats.answerAccuracy = stats.totalQuestions > 0 ? stats.correctAnswers / stats.totalQuestions : 0
 
   return stats
 }
 
-// 查看结果
+// Xem kết quả
 const viewResults = async (runId) => {
   try {
     resultsLoading.value = true
 
-    // 重置分页状态
+    // Đặt lại trạng thái phân trang
     currentPage.value = 1
     showErrorsOnly.value = false
 
-    // 先获取基本信息（不分页）
+    // Nhận thông tin cơ bản đầu tiên（Không phân trang）
     const response = await evaluationApi.getRunResults(props.kbId, runId)
 
     if (response.message === 'success' && response.data) {
       const resultData = response.data
 
-      // 从历史记录中找到对应的任务信息，如果没有则使用API返回的数据
+      // Tìm thông tin nhiệm vụ tương ứng từ hồ sơ lịch sử，Nếu không thì sử dụngAPIDữ liệu trả về
       selectedResult.value = evaluationHistory.value.find((r) => r.run_id === runId) || {
         run_id: resultData.run_id,
         name: resultData.name,
@@ -999,31 +999,31 @@ const viewResults = async (runId) => {
         retrieval_config: resultData.retrieval_config
       }
 
-      // 如果是从历史记录获取的，确保也有 retrieval_config
+      // Nếu nó được lấy từ hồ sơ lịch sử，Hãy chắc chắn rằng cũng có retrieval_config
       if (selectedResult.value && !selectedResult.value.retrieval_config) {
         selectedResult.value.retrieval_config = resultData.retrieval_config
       }
 
-      // 打开模态框
+      // Mở hộp phương thức
       resultModalVisible.value = true
 
-      // 加载分页数据
+      // Tải dữ liệu được phân trang
       await loadResultsWithPagination()
     } else {
-      message.error('获取评估结果失败：数据格式错误')
+      message.error('Không thu được kết quả đánh giá：Lỗi định dạng dữ liệu')
     }
   } catch (error) {
-    console.error('获取评估结果失败:', error)
-    message.error('获取评估结果失败')
+    console.error('Không thu được kết quả đánh giá:', error)
+    message.error('Không thu được kết quả đánh giá')
   } finally {
     resultsLoading.value = false
   }
 }
 
-// 删除评估记录
+// Xóa hồ sơ đánh giá
 const deleteEvaluationRecord = async (runId) => {
   try {
-    // 找到对应的记录并设置loading状态
+    // Tìm bản ghi tương ứng và thiết lập nóloadingTrạng thái
     const record = evaluationHistory.value.find((r) => r.run_id === runId)
     if (record) {
       record.deleting = true
@@ -1031,15 +1031,15 @@ const deleteEvaluationRecord = async (runId) => {
 
     const response = await evaluationApi.deleteRun(props.kbId, runId)
     if (response.message === 'success') {
-      message.success('删除成功')
-      // 重新加载评估历史
+      message.success('Xóa thành công')
+      // Tải lại lịch sử đánh giá
       await loadEvaluationHistory()
     }
   } catch (error) {
-    console.error('删除评估记录失败:', error)
-    message.error('删除评估记录失败')
+    console.error('Không thể xóa bản ghi đánh giá:', error)
+    message.error('Không thể xóa bản ghi đánh giá')
   } finally {
-    // 清除loading状态
+    // XóaloadingTrạng thái
     const record = evaluationHistory.value.find((r) => r.run_id === runId)
     if (record) {
       record.deleting = false
@@ -1079,7 +1079,7 @@ const formatCompletionRate = (record) => {
 }
 
 const formatRunDuration = (record) => {
-  if (record?.status === 'running') return '进行中'
+  if (record?.status === 'running') return 'Đang tiến hành'
   if (!record?.started_at || !record?.completed_at) return '-'
   const duration = (new Date(record.completed_at) - new Date(record.started_at)) / 1000
   return Number.isFinite(duration) && duration >= 0 ? formatDuration(duration) : '-'
@@ -1098,8 +1098,8 @@ const getRunProgress = (record) => {
 const getRunProgressMessage = (record) => {
   if (record?.message) return record.message
   const total = Number(record?.total_items || 0)
-  if (total) return `评估 ${Number(record?.completed_items || 0)}/${total}`
-  return '评估进行中'
+  if (total) return `Đánh giá ${Number(record?.completed_items || 0)}/${total}`
+  return 'Đang tiến hành đánh giá'
 }
 
 const formatLatestRingValue = (record) =>
@@ -1120,8 +1120,8 @@ const renderMetricTag = (value, status, digits = 3) => {
       digits === 0 ? formatPercent(value, 0) : formatMetricValue(value)
     )
   }
-  if (status === 'running') return h('a-tag', { color: 'processing' }, '计算中')
-  if (status === 'completed') return h('a-tag', { color: 'default' }, '无数据')
+  if (status === 'running') return h('a-tag', { color: 'processing' }, 'Tính toán')
+  if (status === 'completed') return h('a-tag', { color: 'default' }, 'Không có dữ liệu')
   return h('span', '-')
 }
 
@@ -1156,35 +1156,35 @@ const getStatusColor = (status) => {
 
 const getStatusText = (status) => {
   const texts = {
-    running: '运行中',
-    completed: '已完成',
-    failed: '失败',
-    paused: '已暂停'
+    running: 'Đang chạy',
+    completed: 'Đã hoàn thành',
+    failed: 'thất bại',
+    paused: 'Bị đình chỉ'
   }
   return texts[status] || status
 }
 
 const getMetricTitle = (key) => {
   const titles = {
-    precision: '精确率',
-    recall: '召回率',
-    map: '平均精度',
+    precision: 'Độ chính xác',
+    recall: 'thu hồi',
+    map: 'độ chính xác trung bình',
     ndcg: 'NDCG',
-    bleu: 'BLEU分数',
-    rouge: 'ROUGE分数',
-    answer_correctness: '答案准确性',
-    score: '评分',
-    reasoning: '理由',
-    overall_score: '综合评分'
+    bleu: 'BLEUghi điểm',
+    rouge: 'ROUGEghi điểm',
+    answer_correctness: 'Trả lời chính xác',
+    score: 'Đánh giá',
+    reasoning: 'Lý do',
+    overall_score: 'Đánh giá chung'
   }
-  // 处理 recall@k
-  if (key.startsWith('recall@')) return `召回率 (${key.split('@')[1]})`
-  if (key.startsWith('precision@')) return `精确率 (${key.split('@')[1]})`
+  // Quy trình recall@k
+  if (key.startsWith('recall@')) return `thu hồi (${key.split('@')[1]})`
+  if (key.startsWith('precision@')) return `Độ chính xác (${key.split('@')[1]})`
 
   return titles[key] || key
 }
 
-// 获取指标类型
+// Nhận loại chỉ báo
 const getMetricType = (key) => {
   if (key.startsWith('recall')) return 'recall'
   if (key.startsWith('precision')) return 'precision'
@@ -1193,7 +1193,7 @@ const getMetricType = (key) => {
   return 'default'
 }
 
-// 获取指标短名称
+// Nhận tên ngắn chỉ báo
 const getMetricShortName = (key) => {
   if (key.startsWith('recall@')) return `R@${key.split('@')[1]}`
   if (key.startsWith('precision@')) return `P@${key.split('@')[1]}`
@@ -1204,24 +1204,24 @@ const getMetricShortName = (key) => {
   return key
 }
 
-// 格式化指标值
+// Giá trị chỉ báo định dạng
 const formatMetricValue = (val) => {
   if (typeof val !== 'number') return '-'
   return val.toFixed(3)
 }
 
-// 格式化持续时间
+// Định dạng thời lượng
 const formatDuration = (seconds) => {
   if (seconds < 60) {
-    return `${Math.round(seconds)}秒`
+    return `${Math.round(seconds)}giây`
   } else if (seconds < 3600) {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = Math.round(seconds % 60)
-    return `${minutes}分${remainingSeconds}秒`
+    return `${minutes}điểm${remainingSeconds}giây`
   } else {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
-    return `${hours}小时${minutes}分`
+    return `${hours}giờ${minutes}điểm`
   }
 }
 
@@ -1233,7 +1233,7 @@ watch(evaluationDropdownOpen, (open) => {
   }
 })
 
-// 组件挂载时加载数据
+// Tải dữ liệu khi thành phần được gắn kết
 onMounted(() => {
   loadDatasets()
   loadEvaluationHistory()
@@ -1318,7 +1318,7 @@ onUnmounted(() => {
   line-height: 1.5;
 }
 
-// 评估内容区域
+// Đánh giá lĩnh vực nội dung
 .evaluation-content {
   flex: 1;
   overflow: hidden;
@@ -1329,7 +1329,7 @@ onUnmounted(() => {
   gap: 16px;
 }
 
-// 评估结果区域
+// Khu vực kết quả đánh giá
 .evaluation-results {
   flex: 1;
   display: flex;
@@ -1414,7 +1414,7 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
-// 优化表格样式
+// Tối ưu hóa kiểu bảng
 :deep(.ant-table) {
   overflow: auto;
   .ant-table-tbody > tr > td {
@@ -1429,7 +1429,7 @@ onUnmounted(() => {
   }
 }
 
-// 优化卡片间距
+// Tối ưu hóa khoảng cách thẻ
 :deep(.ant-card) {
   .ant-card-head {
     padding: 8px 16px;
@@ -1443,7 +1443,7 @@ onUnmounted(() => {
   }
 }
 
-// 优化时间线样式
+// Tối ưu hóa phong cách dòng thời gian
 :deep(.ant-timeline) {
   .ant-timeline-item-content {
     margin-left: 20px;
@@ -1451,7 +1451,7 @@ onUnmounted(() => {
   }
 }
 
-// 优化描述列表样式
+// Tối ưu hóa kiểu danh sách mô tả
 :deep(.ant-descriptions) {
   .ant-descriptions-item-label {
     font-size: 13px;
@@ -1464,7 +1464,7 @@ onUnmounted(() => {
   }
 }
 
-// 优化表单项间距
+// Tối ưu hóa khoảng cách mục biểu mẫu
 :deep(.ant-form) {
   .ant-form-item {
     margin-bottom: 16px;
@@ -1482,7 +1482,7 @@ onUnmounted(() => {
   }
 }
 
-// 优化统计数字样式
+// Tối ưu hóa phong cách thống kê
 :deep(.ant-row) {
   .ant-col {
     .ant-statistic {
@@ -1500,7 +1500,7 @@ onUnmounted(() => {
   }
 }
 
-// 检索指标样式
+// Truy xuất kiểu chỉ báo
 .retrieval-metrics {
   display: inline-flex;
   flex-wrap: wrap;
@@ -1569,7 +1569,7 @@ onUnmounted(() => {
   }
 }
 
-// 答案推理样式
+// Trả lời kiểu lập luận
 .answer-reasoning {
   font-size: 12px;
   color: var(--gray-600);
@@ -1584,7 +1584,7 @@ onUnmounted(() => {
   }
 }
 
-// 加载和空状态样式
+// Đang tải và kiểu trạng thái trống
 .loading-container {
   display: flex;
   flex-direction: column;
@@ -1802,7 +1802,7 @@ onUnmounted(() => {
   }
 }
 
-// 评估报告样式
+// Phong cách báo cáo đánh giá
 .evaluation-report {
   margin-bottom: 20px;
 
@@ -2052,7 +2052,7 @@ onUnmounted(() => {
   }
 }
 
-// 历史评估记录区域
+// Khu vực hồ sơ đánh giá lịch sử
 .history-section {
   .section-header {
     display: flex;
@@ -2115,7 +2115,7 @@ onUnmounted(() => {
   }
 }
 
-// JSON 查看器样式
+// JSON Kiểu người xem
 .json-viewer-container {
   max-height: 400px;
   overflow: auto;
@@ -2136,7 +2136,7 @@ onUnmounted(() => {
   }
 }
 
-// 仅查看错误按钮样式
+// Chỉ xem kiểu nút lỗi
 .error-only-active {
   background-color: var(--color-error-500) !important;
   border-color: var(--color-error-500) !important;

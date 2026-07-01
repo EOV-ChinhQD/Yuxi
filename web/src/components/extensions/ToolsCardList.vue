@@ -1,21 +1,21 @@
 <template>
   <div class="tools-cards-page extension-page-root">
-    <PageShoulder search-placeholder="搜索工具..." v-model:search="searchQuery">
+    <PageShoulder search-placeholder="Công cụ tìm kiếm..." v-model:search="searchQuery">
       <template #filters>
         <a-select
           v-model:value="selectedCategory"
           style="width: 120px"
-          placeholder="全部分类"
+          placeholder="Tất cả danh mục"
           allow-clear
         >
-          <a-select-option value="">全部分类</a-select-option>
+          <a-select-option value="">Tất cả danh mục</a-select-option>
           <a-select-option v-for="cat in categories" :key="cat" :value="cat">
             {{ categoryLabels[cat] || cat }}
           </a-select-option>
         </a-select>
       </template>
       <template #actions>
-        <a-tooltip title="刷新工具" placement="bottom">
+        <a-tooltip title="công cụ làm mới" placement="bottom">
           <a-button class="lucide-icon-btn" :disabled="loading" @click="fetchTools">
             <RefreshCw :size="14" />
           </a-button>
@@ -24,7 +24,7 @@
     </PageShoulder>
 
     <div v-if="filteredTools.length === 0" class="extension-card-grid-empty-state">
-      <a-empty :image="false" :description="searchQuery ? '无匹配工具' : '暂无工具'" />
+      <a-empty :image="false" :description="searchQuery ? 'Không có công cụ phù hợp' : 'Chưa có công cụ nào'" />
     </div>
 
     <ExtensionCardGrid v-else>
@@ -33,7 +33,7 @@
         :key="getToolSlug(tool)"
         :title="formatExtensionCardTitle(tool.name)"
         :subtitle="getToolSlug(tool)"
-        :description="tool.description || '无描述'"
+        :description="tool.description || 'Không có mô tả'"
         :default-icon="getToolIcon(getToolSlug(tool)) || WrenchIcon"
         :tags="toolTags(tool)"
         @click="selectTool(tool)"
@@ -43,7 +43,7 @@
 
     <a-modal
       v-model:open="detailVisible"
-      :title="currentTool?.name || '工具详情'"
+      :title="currentTool?.name || 'Chi tiết công cụ'"
       :footer="null"
       width="640px"
     >
@@ -51,14 +51,14 @@
         <div class="tool-detail-content detail-section-container">
           <div class="detail-section">
             <div class="section-content description">
-              {{ currentTool.description || '无描述' }}
+              {{ currentTool.description || 'Không có mô tả' }}
             </div>
           </div>
 
           <div class="detail-section" v-if="currentTool.config_guide">
             <div class="section-header">
               <FileText :size="14" />
-              <span>配置说明</span>
+              <span>Hướng dẫn cấu hình</span>
             </div>
             <div class="section-content description config-guide">
               {{ currentTool.config_guide }}
@@ -68,7 +68,7 @@
           <div class="detail-section">
             <div class="section-header">
               <Tag :size="14" />
-              <span>分类</span>
+              <span>Phân loại</span>
             </div>
             <div class="section-content">
               <a-tag :color="categoryColors[currentTool.category] || 'default'">
@@ -80,18 +80,18 @@
           <div class="detail-section">
             <div class="section-header">
               <Tags :size="14" />
-              <span>标签</span>
+              <span>nhãn</span>
             </div>
             <div class="section-content">
               <a-tag v-for="tag in currentTool.tags" :key="tag">{{ tag }}</a-tag>
-              <span v-if="!currentTool.tags?.length" class="text-muted">无</span>
+              <span v-if="!currentTool.tags?.length" class="text-muted">không có</span>
             </div>
           </div>
 
           <div class="detail-section" v-if="currentTool.args?.length">
             <div class="section-header">
               <List :size="14" />
-              <span>参数</span>
+              <span>thông số</span>
             </div>
             <div class="section-content">
               <a-table
@@ -131,7 +131,7 @@ const currentTool = ref(null)
 const detailVisible = ref(false)
 
 const categories = ['buildin', 'knowledge', 'mysql', 'debug']
-const categoryLabels = { buildin: '内置工具', knowledge: '知识库', mysql: 'MySQL', debug: '调试' }
+const categoryLabels = { buildin: 'Công cụ tích hợp', knowledge: 'cơ sở tri thức', mysql: 'MySQL', debug: 'Gỡ lỗi' }
 const categoryColors = { buildin: 'blue', knowledge: 'purple', mysql: 'green', debug: 'orange' }
 
 const getToolSlug = (tool) => tool?.slug || tool?.id || ''
@@ -149,9 +149,9 @@ const toolTags = (tool) => {
 }
 
 const argColumns = [
-  { title: '参数名', dataIndex: 'name', key: 'name' },
-  { title: '类型', dataIndex: 'type', key: 'type', width: 80 },
-  { title: '描述', dataIndex: 'description', key: 'description' }
+  { title: 'Tên tham số', dataIndex: 'name', key: 'name' },
+  { title: 'Loại', dataIndex: 'type', key: 'type', width: 80 },
+  { title: 'Mô tả', dataIndex: 'description', key: 'description' }
 ]
 
 const filteredTools = computed(() => {
@@ -183,7 +183,7 @@ const fetchTools = async () => {
     const result = await toolApi.getTools()
     tools.value = result?.data || []
   } catch {
-    message.error('加载工具失败')
+    message.error('Không thể tải công cụ')
   } finally {
     loading.value = false
   }

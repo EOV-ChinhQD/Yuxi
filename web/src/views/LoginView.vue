@@ -1,20 +1,20 @@
 <template>
   <div class="login-view" :class="{ 'has-alert': serverStatus === 'error' }">
-    <!-- 服务状态提示 -->
+    <!-- Lời nhắc trạng thái dịch vụ -->
     <div v-if="serverStatus === 'error'" class="server-status-alert">
       <div class="alert-content">
         <exclamation-circle-icon class="alert-icon" size="20" />
         <div class="alert-text">
-          <div class="alert-title">服务端连接失败</div>
+          <div class="alert-title">Kết nối máy chủ thất bại</div>
           <div class="alert-message">{{ serverError }}</div>
         </div>
         <a-button type="link" size="small" @click="checkServerHealth" :loading="healthChecking">
-          重试
+          Thử lại
         </a-button>
       </div>
     </div>
 
-    <!-- 顶部导航：品牌名称 & 操作按钮 -->
+    <!-- điều hướng hàng đầu：thương hiệu & Nút hành động -->
     <nav class="login-navbar">
       <div class="navbar-content">
         <div class="brand-container" @click="goHome" style="cursor: pointer">
@@ -28,62 +28,62 @@
       </div>
     </nav>
 
-    <!-- 主要内容区：居中卡片 -->
+    <!-- Khu vực nội dung chính：thẻ trung tâm -->
     <main class="login-main">
       <div class="login-card">
-        <!-- 左侧图片 -->
+        <!-- Hình bên trái -->
         <div class="card-side is-image">
-          <img :src="loginBgImage" alt="登录背景" class="login-bg-image" />
+          <img :src="loginBgImage" alt="Nền đăng nhập" class="login-bg-image" />
         </div>
 
-        <!-- 右侧表单 -->
+        <!-- Mẫu đúng -->
         <div class="card-side is-form">
           <div class="form-wrapper">
             <header class="form-header">
-              <!-- 如果是在初始化，显示特定标题 -->
-              <h2 v-if="isFirstRun" class="init-title">系统初始化，请创建超级管理员</h2>
-              <p v-else class="welcome-text">欢迎登录</p>
+              <!-- Nếu nó đang khởi tạo，Hiển thị tiêu đề cụ thể -->
+              <h2 v-if="isFirstRun" class="init-title">Khởi tạo hệ thống, vui lòng tạo tài khoản Quản trị viên tối cao</h2>
+              <p v-else class="welcome-text">Chào mừng bạn đăng nhập</p>
             </header>
 
             <div class="login-content" :class="{ 'is-initializing': isFirstRun }">
-              <!-- 初始化管理员表单 -->
+              <!-- Khởi tạo biểu mẫu quản trị -->
               <div v-if="isFirstRun" class="login-form login-form--init">
                 <a-form :model="adminForm" @finish="handleInitialize" layout="vertical">
                   <a-form-item
                     label="UID"
                     name="uid"
                     :rules="[
-                      { required: true, message: '请输入UID' },
+                      { required: true, message: 'Vui lòng nhập UID' },
                       {
                         pattern: /^[a-zA-Z0-9_]+$/,
-                        message: 'UID只能包含字母、数字和下划线'
+                        message: 'UID chỉ được chứa chữ cái, số và dấu gạch dưới'
                       },
                       {
                         min: 3,
                         max: 20,
-                        message: 'UID长度必须在3-20个字符之间'
+                        message: 'Độ dài UID phải từ 3 đến 20 ký tự'
                       }
                     ]"
                   >
                     <a-input
                       v-model:value="adminForm.uid"
-                      placeholder="请输入UID（3-20个字符）"
+                      placeholder="Vui lòng nhập UID (3-20 ký tự)"
                       :maxlength="20"
                     />
                   </a-form-item>
 
                   <a-form-item
-                    label="手机号（可选）"
+                    label="Số điện thoại (tùy chọn)"
                     name="phone_number"
                     :rules="[
                       {
                         validator: async (rule, value) => {
                           if (!value || value.trim() === '') {
-                            return // 空值允许
+                            return // Cho phép giá trị NULL
                           }
                           const phoneRegex = /^1[3-9]\d{9}$/
                           if (!phoneRegex.test(value)) {
-                            throw new Error('请输入正确的手机号格式')
+                            throw new Error('Vui lòng nhập định dạng số điện thoại chính xác')
                           }
                         }
                       }
@@ -91,24 +91,24 @@
                   >
                     <a-input
                       v-model:value="adminForm.phone_number"
-                      placeholder="可用于登录，可不填写"
+                      placeholder="Có thể dùng để đăng nhập, có thể bỏ trống"
                       :max-length="11"
                     />
                   </a-form-item>
 
                   <a-form-item
-                    label="密码"
+                    label="Mật khẩu"
                     name="password"
-                    :rules="[{ required: true, message: '请输入密码' }]"
+                    :rules="[{ required: true, message: 'Vui lòng nhập mật khẩu' }]"
                   >
                     <a-input-password v-model:value="adminForm.password" prefix-icon="lock" />
                   </a-form-item>
 
                   <a-form-item
-                    label="确认密码"
+                    label="Xác nhận mật khẩu"
                     name="confirmPassword"
                     :rules="[
-                      { required: true, message: '请确认密码' },
+                      { required: true, message: 'Vui lòng xác nhận mật khẩu' },
                       { validator: validateConfirmPassword }
                     ]"
                   >
@@ -121,14 +121,14 @@
                   <a-form-item v-if="showAgreementConsent" class="agreement-form-item">
                     <div class="agreement-row">
                       <a-checkbox v-model:checked="agreementAccepted">
-                        登录即代表同意
+                        Đăng nhập đồng nghĩa với việc bạn đồng ý với
                         <a
                           class="agreement-link"
                           :href="userAgreementUrl"
                           target="_blank"
                           rel="noopener noreferrer"
                           @click.stop
-                          >《用户协议》</a
+                          >《Điều khoản người dùng》</a
                         >
                         <a
                           class="agreement-link"
@@ -136,7 +136,7 @@
                           target="_blank"
                           rel="noopener noreferrer"
                           @click.stop
-                          >《隐私协议》</a
+                          >《Chính sách bảo mật》</a
                         >
                       </a-checkbox>
                     </div>
@@ -144,21 +144,21 @@
 
                   <a-form-item>
                     <a-button type="primary" html-type="submit" :loading="loading" block
-                      >创建管理员账户</a-button
+                      >Tạo tài khoản Quản trị viên</a-button
                     >
                   </a-form-item>
                 </a-form>
               </div>
 
-              <!-- 登录表单 -->
+              <!-- Mẫu đăng nhập -->
               <div v-else class="login-form">
                 <a-form :model="loginForm" @finish="handleLogin" layout="vertical">
                   <a-form-item
-                    label="登录账号"
+                    label="Tài khoản đăng nhập"
                     name="loginId"
-                    :rules="[{ required: true, message: '请输入UID或手机号' }]"
+                    :rules="[{ required: true, message: 'Vui lòng nhập UID hoặc số điện thoại' }]"
                   >
-                    <a-input v-model:value="loginForm.loginId" placeholder="UID或手机号">
+                    <a-input v-model:value="loginForm.loginId" placeholder="UID hoặc số điện thoại">
                       <template #prefix>
                         <user-icon size="18" />
                       </template>
@@ -166,9 +166,9 @@
                   </a-form-item>
 
                   <a-form-item
-                    label="密码"
+                    label="Mật khẩu"
                     name="password"
-                    :rules="[{ required: true, message: '请输入密码' }]"
+                    :rules="[{ required: true, message: 'Vui lòng nhập mật khẩu' }]"
                   >
                     <a-input-password v-model:value="loginForm.password">
                       <template #prefix>
@@ -180,14 +180,14 @@
                   <a-form-item v-if="showAgreementConsent" class="agreement-form-item">
                     <div class="agreement-row">
                       <a-checkbox v-model:checked="agreementAccepted">
-                        登录即代表同意
+                        Đăng nhập đồng nghĩa với việc bạn đồng ý với
                         <a
                           class="agreement-link"
                           :href="userAgreementUrl"
                           target="_blank"
                           rel="noopener noreferrer"
                           @click.stop
-                          >《用户协议》</a
+                          >《Điều khoản người dùng》</a
                         >
                         <a
                           class="agreement-link"
@@ -195,7 +195,7 @@
                           target="_blank"
                           rel="noopener noreferrer"
                           @click.stop
-                          >《隐私协议》</a
+                          >《Chính sách bảo mật》</a
                         >
                       </a-checkbox>
                     </div>
@@ -210,23 +210,23 @@
                       block
                       size="large"
                     >
-                      <span v-if="isLocked">账户已锁定 {{ formatTime(lockRemainingTime) }}</span>
-                      <span v-else>登录</span>
+                      <span v-if="isLocked">Tài khoản đã bị khóa {{ formatTime(lockRemainingTime) }}</span>
+                      <span v-else>Đăng nhập</span>
                     </a-button>
                   </a-form-item>
                 </a-form>
 
-                <!-- OIDC 登录选项  -->
+                <!-- OIDC Tùy chọn đăng nhập  -->
                 <div v-if="oidcChecking || oidcEnabled" class="third-party-login">
                   <div class="divider">
-                    <span>或使用以下方式登录</span>
+                    <span>Hoặc sử dụng các phương thức sau để đăng nhập</span>
                   </div>
                   <div class="login-icons">
-                    <!-- 检查中显示骨架屏 -->
+                    <!-- Màn hình bộ xương hiển thị trong quá trình kiểm tra -->
                     <div v-if="oidcChecking" class="login-skeleton">
                       <a-skeleton-button block size="large" :active="true" />
                     </div>
-                    <!-- 检查完成后显示按钮 -->
+                    <!-- Nút hiển thị sau khi kiểm tra hoàn tất -->
                     <a-button
                       v-else
                       type="default"
@@ -244,7 +244,7 @@
                 </div>
               </div>
 
-              <!-- 错误提示 -->
+              <!-- Thông báo lỗi -->
               <div v-if="errorMessage" class="error-message">
                 {{ errorMessage }}
               </div>
@@ -254,12 +254,12 @@
       </div>
     </main>
 
-    <!-- 页面底部：版权信息等 -->
+    <!-- cuối trang：Thông tin bản quyền, v.v. -->
     <footer class="page-footer">
       <div class="footer-links">
-        <a href="https://github.com/xerrors" target="_blank">联系我们</a>
+        <a href="https://github.com/xerrors" target="_blank">Liên hệ với chúng tôi</a>
         <span class="divider">|</span>
-        <a href="https://github.com/xerrors/Yuxi" target="_blank">使用帮助</a>
+        <a href="https://github.com/xerrors/Yuxi" target="_blank">Hướng dẫn sử dụng</a>
       </div>
       <div class="copyright">
         &copy; {{ new Date().getFullYear() }} {{ brandName }}. All Rights Reserved.
@@ -291,7 +291,7 @@ const userStore = useUserStore()
 const infoStore = useInfoStore()
 const agentStore = useAgentStore()
 
-// 品牌展示数据
+// Dữ liệu hiển thị thương hiệu
 const loginBgImage = computed(() => {
   return infoStore.organization?.login_bg || '/login-bg.jpg'
 })
@@ -321,7 +321,7 @@ const showAgreementConsent = computed(() => {
   return Boolean(userAgreementUrl.value && privacyPolicyUrl.value)
 })
 
-// 状态
+// Trạng thái
 const isFirstRun = ref(false)
 const loading = ref(false)
 const errorMessage = ref('')
@@ -330,36 +330,36 @@ const serverStatus = ref('loading')
 const serverError = ref('')
 const healthChecking = ref(false)
 
-// OIDC 相关状态
+// OIDC Trạng thái liên quan
 const oidcEnabled = ref(false)
 const oidcLoading = ref(false)
 const oidcChecking = ref(true)
-const oidcButtonText = ref('OIDC 登录')
+const oidcButtonText = ref('OIDC Đăng nhập')
 
-// 登录锁定相关状态
+// Trạng thái liên quan đến khóa đăng nhập
 const isLocked = ref(false)
 const lockRemainingTime = ref(0)
 const lockCountdown = ref(null)
 
-// 登录表单
+// Mẫu đăng nhập
 const loginForm = reactive({
-  loginId: '', // 支持uid或phone_number登录
+  loginId: '', // hỗ trợuidhoặcphone_numberĐăng nhập
   password: ''
 })
 
-// 管理员初始化表单
+// Biểu mẫu khởi tạo quản trị viên
 const adminForm = reactive({
-  uid: '', // 改为直接输入uid
+  uid: '', // Nhập trực tiếp thay thếuid
   password: '',
   confirmPassword: '',
-  phone_number: '' // 手机号字段（可选）
+  phone_number: '' // Trường số điện thoại di động（Tùy chọn）
 })
 
 const goHome = () => {
   router.push('/')
 }
 
-// 清理倒计时器
+// Dọn dẹp đồng hồ đếm ngược
 const clearLockCountdown = () => {
   if (lockCountdown.value) {
     clearInterval(lockCountdown.value)
@@ -367,7 +367,7 @@ const clearLockCountdown = () => {
   }
 }
 
-// 启动锁定倒计时
+// Bắt đầu đếm ngược khóa
 const startLockCountdown = (remainingSeconds) => {
   clearLockCountdown()
   isLocked.value = true
@@ -383,32 +383,32 @@ const startLockCountdown = (remainingSeconds) => {
   }, 1000)
 }
 
-// 格式化时间显示
+// Định dạng hiển thị thời gian
 const formatTime = (seconds) => {
   if (seconds < 60) {
-    return `${seconds}秒`
+    return `${seconds} giây`
   } else if (seconds < 3600) {
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = seconds % 60
-    return `${minutes}分${remainingSeconds}秒`
+    return `${minutes} phút ${remainingSeconds} giây`
   } else if (seconds < 86400) {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
-    return `${hours}小时${minutes}分钟`
+    return `${hours} giờ ${minutes} phút`
   } else {
     const days = Math.floor(seconds / 86400)
     const hours = Math.floor((seconds % 86400) / 3600)
-    return `${days}天${hours}小时`
+    return `${days} ngày ${hours} giờ`
   }
 }
 
-// 密码确认验证
+// Xác minh xác nhận mật khẩu
 const validateConfirmPassword = async (rule, value) => {
   if (value === '') {
-    throw new Error('请确认密码')
+    throw new Error('Vui lòng xác nhận mật khẩu')
   }
   if (value !== adminForm.password) {
-    throw new Error('两次输入的密码不一致')
+    throw new Error('Hai mật khẩu đã nhập không khớp')
   }
 }
 
@@ -417,16 +417,16 @@ const ensureAgreementAccepted = () => {
     return true
   }
 
-  const warningMessage = '请先阅读并同意《用户协议》《隐私协议》'
+  const warningMessage = 'Vui lòng đọc và đồng ý với 《Điều khoản người dùng》 và 《Chính sách bảo mật》 trước'
   message.warning(warningMessage)
   return false
 }
 
-// 处理登录
+// Xử lý đăng nhập
 const handleLogin = async () => {
-  // 如果当前被锁定，不允许登录
+  // nếu hiện đang bị khóa，Đăng nhập không được phép
   if (isLocked.value) {
-    message.warning(`账户被锁定，请等待 ${formatTime(lockRemainingTime.value)}`)
+    message.warning(`Tài khoản bị khóa, vui lòng đợi ${formatTime(lockRemainingTime.value)}`)
     return
   }
 
@@ -444,32 +444,32 @@ const handleLogin = async () => {
       password: loginForm.password
     })
 
-    message.success('登录成功')
+    message.success('Đăng nhập thành công')
 
-    // 获取重定向路径
+    // Nhận đường dẫn chuyển hướng
     const redirectPath = sessionStorage.getItem('redirect') || '/'
-    sessionStorage.removeItem('redirect') // 清除重定向信息
+    sessionStorage.removeItem('redirect') // Xóa thông tin chuyển hướng
 
-    // 根据用户角色决定重定向目标
+    // Xác định mục tiêu chuyển hướng dựa trên vai trò của người dùng
     if (redirectPath === '/') {
-      // 统一跳转到聊天页面（管理员与普通用户共享同一聊天界面）
+      // Chuyển đến trang trò chuyện một cách thống nhất（Quản trị viên chia sẻ cùng giao diện trò chuyện với người dùng thông thường）
       try {
         await agentStore.initialize()
         router.push('/agent')
       } catch (error) {
-        console.error('获取智能体信息失败:', error)
+        console.error('Không thể lấy được thông tin đại lý:', error)
         router.push('/agent')
       }
     } else {
-      // 跳转到其他预设的路径
+      // Chuyển đến các đường dẫn đặt trước khác
       router.push(redirectPath)
     }
   } catch (error) {
-    console.error('登录失败:', error)
+    console.error('Đăng nhập không thành công:', error)
 
-    // 检查是否是锁定错误（HTTP 423）
+    // Kiểm tra xem đó có phải là lỗi khóa không（HTTP 423）
     if (error.status === 423) {
-      // 尝试从响应头中获取剩余时间
+      // Cố gắng lấy thời gian còn lại từ tiêu đề phản hồi
       let remainingTime = 0
       if (error.headers && error.headers.get) {
         const lockRemainingHeader = error.headers.get('X-Lock-Remaining')
@@ -478,9 +478,9 @@ const handleLogin = async () => {
         }
       }
 
-      // 如果没有从头中获取到，尝试从错误消息中解析
+      // Nếu nó không được lấy từ đầu，Cố gắng phân tích từ thông báo lỗi
       if (remainingTime === 0) {
-        const lockTimeMatch = error.message.match(/(\d+)\s*秒/)
+        const lockTimeMatch = error.message.match(/(\d+)\s*giây/)
         if (lockTimeMatch) {
           remainingTime = parseInt(lockTimeMatch[1])
         }
@@ -488,19 +488,19 @@ const handleLogin = async () => {
 
       if (remainingTime > 0) {
         startLockCountdown(remainingTime)
-        errorMessage.value = `由于多次登录失败，账户已被锁定 ${formatTime(remainingTime)}`
+        errorMessage.value = `Do đăng nhập thất bại nhiều lần, tài khoản đã bị khóa ${formatTime(remainingTime)}`
       } else {
-        errorMessage.value = error.message || '账户被锁定，请稍后再试'
+        errorMessage.value = error.message || 'Tài khoản bị khóa, vui lòng thử lại sau'
       }
     } else {
-      errorMessage.value = error.message || '登录失败，请检查用户名和密码'
+      errorMessage.value = error.message || 'Đăng nhập thất bại, vui lòng kiểm tra tài khoản và mật khẩu'
     }
   } finally {
     loading.value = false
   }
 }
 
-// 处理 OIDC 登录
+// Quy trình OIDC Đăng nhập
 const handleOIDCLogin = async () => {
   if (!ensureAgreementAccepted()) {
     return
@@ -510,28 +510,28 @@ const handleOIDCLogin = async () => {
     oidcLoading.value = true
     errorMessage.value = ''
 
-    // 获取 OIDC 登录 URL
+    // Nhận OIDC Đăng nhập URL
     const response = await authApi.getOIDCLoginUrl()
     if (response.login_url) {
-      // 保存当前路径，以便登录后返回
+      // Lưu đường dẫn hiện tại，để quay lại sau khi đăng nhập
       const redirectPath =
         sessionStorage.getItem('redirect') || router.currentRoute.value.query.redirect || '/'
       sessionStorage.setItem('oidc_redirect', redirectPath)
 
-      // 跳转到 OIDC Provider
+      // nhảy tới OIDC Provider
       window.location.href = response.login_url
     } else {
-      errorMessage.value = '获取 OIDC 登录地址失败'
+      errorMessage.value = 'Lấy địa chỉ đăng nhập OIDC thất bại'
     }
   } catch (error) {
-    console.error('OIDC 登录失败:', error)
-    errorMessage.value = error.message || 'OIDC 登录失败，请重试'
+    console.error('OIDC Đăng nhập không thành công:', error)
+    errorMessage.value = error.message || 'Đăng nhập OIDC thất bại, vui lòng thử lại'
   } finally {
     oidcLoading.value = false
   }
 }
 
-// 检查 OIDC 配置
+// Kiểm tra OIDC Cấu hình
 const checkOIDCConfig = async () => {
   oidcChecking.value = true
   try {
@@ -542,7 +542,7 @@ const checkOIDCConfig = async () => {
     }
     return config
   } catch (error) {
-    console.error('检查 OIDC 配置失败:', error)
+    console.error('Kiểm tra OIDC Cấu hình không thành công:', error)
     oidcEnabled.value = false
     return null
   } finally {
@@ -550,7 +550,7 @@ const checkOIDCConfig = async () => {
   }
 }
 
-// 处理初始化管理员
+// Xử lý quản trị viên khởi tạo
 const handleInitialize = async () => {
   if (!ensureAgreementAccepted()) {
     return
@@ -561,41 +561,41 @@ const handleInitialize = async () => {
     errorMessage.value = ''
 
     if (adminForm.password !== adminForm.confirmPassword) {
-      errorMessage.value = '两次输入的密码不一致'
+      errorMessage.value = 'Hai mật khẩu đã nhập không khớp'
       return
     }
 
     await userStore.initialize({
       uid: adminForm.uid,
       password: adminForm.password,
-      phone_number: adminForm.phone_number || null // 空字符串转为null
+      phone_number: adminForm.phone_number || null // Chuyển đổi chuỗi trống thànhnull
     })
 
-    message.success('管理员账户创建成功')
+    message.success('Tạo tài khoản quản trị viên thành công')
     router.push('/')
   } catch (error) {
-    console.error('初始化失败:', error)
-    errorMessage.value = error.message || '初始化失败，请重试'
+    console.error('Khởi tạo không thành công:', error)
+    errorMessage.value = error.message || 'Khởi tạo thất bại, vui lòng thử lại'
   } finally {
     loading.value = false
   }
 }
 
-// 检查是否是首次运行
+// Kiểm tra xem đây có phải là lần chạy đầu tiên không
 const checkFirstRunStatus = async () => {
   try {
     loading.value = true
     const isFirst = await userStore.checkFirstRun()
     isFirstRun.value = isFirst
   } catch (error) {
-    console.error('检查首次运行状态失败:', error)
-    errorMessage.value = '系统出错，请稍后重试'
+    console.error('Kiểm tra trạng thái lần chạy đầu tiên không thành công:', error)
+    errorMessage.value = 'Hệ thống có lỗi, vui lòng thử lại sau'
   } finally {
     loading.value = false
   }
 }
 
-// 检查服务器健康状态
+// Kiểm tra tình trạng sức khỏe của máy chủ
 const checkServerHealth = async () => {
   try {
     healthChecking.value = true
@@ -604,51 +604,51 @@ const checkServerHealth = async () => {
       serverStatus.value = 'ok'
     } else {
       serverStatus.value = 'error'
-      serverError.value = response.message || '服务端状态异常'
+      serverError.value = response.message || 'Trạng thái máy chủ bất thường'
     }
   } catch (error) {
-    console.error('检查服务器健康状态失败:', error)
+    console.error('Không thể kiểm tra tình trạng sức khỏe của máy chủ:', error)
     serverStatus.value = 'error'
-    serverError.value = error.message || '无法连接到服务端，请检查网络连接'
+    serverError.value = error.message || 'Không thể kết nối đến máy chủ, vui lòng kiểm tra kết nối mạng'
   } finally {
     healthChecking.value = false
   }
 }
 
-// 组件挂载时
+// Khi thành phần được gắn
 onMounted(async () => {
-  // 如果已登录，按 redirect 参数跳转（不固定跳首页）
+  // Nếu đăng nhập，nhấn redirect Nhảy tham số（Không phải lúc nào cũng nhảy về trang chủ）
   if (userStore.isLoggedIn) {
     router.push(sanitizeRedirect(route.query.redirect))
     return
   }
 
-  // 显示 OIDC 认证失败的错误信息（由后端重定向携带）
+  // hiển thị OIDC Thông báo lỗi xác thực thất bại（Được thực hiện bởi chuyển hướng phụ trợ）
   if (route.query.oidc_error) {
     errorMessage.value = String(route.query.oidc_error)
   }
 
-  // 首先检查服务器健康状态
+  // Đầu tiên hãy kiểm tra tình trạng sức khỏe của máy chủ
   await checkServerHealth()
 
-  // 检查是否是首次运行
+  // Kiểm tra xem đây có phải là lần chạy đầu tiên không
   await checkFirstRunStatus()
 
-  // 如果处于首次运行状态，不需要 OIDC 自动登录
+  // Nếu ở trạng thái chạy đầu tiên，không cần OIDC Đăng nhập tự động
   if (isFirstRun.value) {
     return
   }
 
-  // 检查 OIDC 配置完成后，尝试自动触发 OIDC 登录（跨系统跳转场景）
+  // Kiểm tra OIDC Sau khi cấu hình xong，Cố gắng kích hoạt tự động OIDC Đăng nhập（Kịch bản nhảy xuyên hệ thống）
   const config = await checkOIDCConfig()
   if (config && config.enabled) {
     const autoStarted = await tryAutoStartOIDC(async () => await authApi.getOIDCLoginUrl(), config)
-    // 如果已发起 OIDC 跳转，页面会被重定向，不需要继续
+    // Nếu khởi xướng OIDC Nhảy，Trang sẽ được chuyển hướng，Không cần phải tiếp tục
     if (autoStarted) return
   }
 })
 
-// 组件卸载时清理定时器
+// Hẹn giờ dọn dẹp khi thành phần được gỡ cài đặt
 onUnmounted(() => {
   clearLockCountdown()
 })
@@ -890,7 +890,7 @@ onUnmounted(() => {
     }
   }
 
-  /* 修复：添加骨架屏样式 */
+  /* sửa chữa：Thêm kiểu màn hình khung xương */
   .login-skeleton {
     :deep(.ant-skeleton-button) {
       width: 100% !important;

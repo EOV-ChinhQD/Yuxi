@@ -1,9 +1,9 @@
 <template>
   <a-modal
     :open="open"
-    title="添加附件"
-    ok-text="添加附件"
-    cancel-text="取消"
+    title="Thêm tệp đính kèm"
+    ok-text="Thêm tệp đính kèm"
+    cancel-text="Hủy bỏ"
     :confirm-loading="confirming"
     :ok-button-props="{ disabled: confirmDisabled }"
     @ok="handleConfirm"
@@ -16,8 +16,8 @@
       :disabled="confirming"
       class="attachment-dropzone"
     >
-      <p class="dropzone-title">点击或拖拽文件到此处上传</p>
-      <p class="dropzone-desc">支持任意文件格式 ≤ 5 MB；PDF 和图片可选解析为 Markdown。</p>
+      <p class="dropzone-title">Nhấp hoặc kéo tập tin vào đây để tải lên</p>
+      <p class="dropzone-desc">Hỗ trợ mọi định dạng tập tin ≤ 5 MB；PDF và hình ảnh được phân tích tùy ý là Markdown。</p>
     </a-upload-dragger>
 
     <div v-if="fileItems.length" class="attachment-list">
@@ -93,7 +93,7 @@
                       class="unavailable-toggle"
                       @click="toggleUnavailableParseMethods(item.localId)"
                     >
-                      <span>不可用选项（{{ getUnavailableParseMethods(item).length }}）</span>
+                      <span>Tùy chọn không khả dụng（{{ getUnavailableParseMethods(item).length }}）</span>
                       <ChevronUp v-if="item.unavailableMethodsExpanded" :size="14" />
                       <ChevronDown v-else :size="14" />
                     </button>
@@ -131,7 +131,7 @@
                     :disabled="isParseDisabled(item)"
                     @click="handleStartParse(item.localId)"
                   >
-                    开始解析
+                    Bắt đầu phân tích cú pháp
                   </a-button>
                 </div>
               </template>
@@ -142,7 +142,7 @@
                 :loading="item.status === 'parsing'"
                 :disabled="confirming"
               >
-                可解析
+                có thể phân tích được
               </a-button>
             </a-popover>
           </div>
@@ -173,7 +173,7 @@ const confirming = ref(false)
 let localIdSeed = 0
 
 const methodLabels = {
-  disable: 'PDF 文本提取',
+  disable: 'PDF Trích xuất văn bản',
   rapid_ocr: 'RapidOCR',
   mineru_ocr: 'MinerU OCR',
   mineru_official: 'MinerU Official',
@@ -196,14 +196,14 @@ const ocrHealthStatus = ref(defaultOcrHealthStatus())
 const ocrHealthChecking = ref(false)
 
 const methodStatusLabels = {
-  local: '无需 OCR',
-  healthy: '可用',
-  unavailable: '不可用',
-  unhealthy: '异常',
-  timeout: '超时',
-  error: '异常',
-  checking: '检查中',
-  unknown: '状态未知'
+  local: 'không cần OCR',
+  healthy: 'Có sẵn',
+  unavailable: 'Không có sẵn',
+  unhealthy: 'bất thường',
+  timeout: 'hết thời gian chờ',
+  error: 'bất thường',
+  checking: 'Đang được kiểm tra',
+  unknown: 'Trạng thái không xác định'
 }
 
 const busy = computed(() =>
@@ -224,7 +224,7 @@ watch(
   }
 )
 
-const getErrorMessage = (error, fallback = '操作失败') => {
+const getErrorMessage = (error, fallback = 'Thao tác không thành công') => {
   return error?.response?.data?.detail || error?.message || fallback
 }
 
@@ -260,7 +260,7 @@ const checkOcrHealth = async () => {
       ...(healthData?.services || {})
     }
   } catch (error) {
-    console.error('OCR健康检查失败:', error)
+    console.error('OCRKiểm tra sức khỏe không thành công:', error)
   } finally {
     ocrHealthChecking.value = false
   }
@@ -290,7 +290,7 @@ const uploadFile = async (file) => {
   } catch (error) {
     updateItem(localId, {
       status: 'error',
-      error: getErrorMessage(error, '上传失败')
+      error: getErrorMessage(error, 'Tải lên không thành công')
     })
   }
 }
@@ -307,25 +307,25 @@ const getMethodStatus = (method) => {
   return current?.status || 'unknown'
 }
 
-const getMethodStatusLabel = (method) => methodStatusLabels[getMethodStatus(method)] || '状态未知'
+const getMethodStatusLabel = (method) => methodStatusLabels[getMethodStatus(method)] || 'Trạng thái không xác định'
 
 const getMethodDescription = (method) => {
-  if (method === 'disable') return '使用文件内置文本层，不调用 OCR 服务'
+  if (method === 'disable') return 'Sử dụng lớp văn bản tích hợp trong tệp，Không được gọi OCR dịch vụ'
 
   const messageText = ocrHealthStatus.value?.[method]?.message
   if (messageText) return messageText
 
   const status = getMethodStatus(method)
   const fallbackMap = {
-    healthy: '服务正常',
-    unavailable: '服务不可用',
-    unhealthy: '服务异常',
-    timeout: '服务检查超时',
-    error: '服务异常',
-    checking: '正在检查服务状态',
-    unknown: '服务状态未知'
+    healthy: 'Dịch vụ là bình thường',
+    unavailable: 'Dịch vụ không có sẵn',
+    unhealthy: 'Ngoại lệ dịch vụ',
+    timeout: 'Hết thời gian kiểm tra dịch vụ',
+    error: 'Ngoại lệ dịch vụ',
+    checking: 'Kiểm tra trạng thái dịch vụ',
+    unknown: 'Trạng thái dịch vụ không xác định'
   }
-  return fallbackMap[status] || '服务状态未知'
+  return fallbackMap[status] || 'Trạng thái dịch vụ không xác định'
 }
 
 const isUnavailableParseMethod = (method) =>
@@ -389,12 +389,12 @@ const handleParse = async (item) => {
       truncated: response.truncated,
       parseMethod: response.parse_method
     })
-    message.success('附件解析完成')
+    message.success('Đã hoàn tất phân tích tệp đính kèm')
   } catch (error) {
     updateItem(item.localId, {
       ...clearParsedState,
       status: 'uploaded',
-      parseError: getErrorMessage(error, '解析失败')
+      parseError: getErrorMessage(error, 'Phân tích cú pháp không thành công')
     })
   }
 }
@@ -431,16 +431,16 @@ const handleConfirm = async () => {
   try {
     const threadId = props.threadId || (props.ensureThread ? await props.ensureThread() : '')
     if (!threadId) {
-      message.error('创建对话失败，无法添加附件')
+      message.error('Không tạo được cuộc trò chuyện，Không thể thêm tệp đính kèm')
       return
     }
 
     const response = await threadApi.confirmTmpThreadAttachments(threadId, attachments)
-    message.success('附件已添加')
+    message.success('Tệp đính kèm đã được thêm')
     emit('added', response)
     emit('update:open', false)
   } catch (error) {
-    message.error(getErrorMessage(error, '添加附件失败'))
+    message.error(getErrorMessage(error, 'Không thêm được tệp đính kèm'))
   } finally {
     confirming.value = false
   }
@@ -463,17 +463,17 @@ const getStatusColor = (status) => {
 
 const getStatusLabel = (status) => {
   const labelMap = {
-    uploading: '上传中',
-    uploaded: '已上传',
-    parsing: '解析中',
-    parsed: '已解析',
-    error: '失败'
+    uploading: 'Đang tải lên',
+    uploaded: 'Đã tải lên',
+    parsing: 'Phân tích cú pháp',
+    parsed: 'Đã phân tích cú pháp',
+    error: 'thất bại'
   }
   return labelMap[status] || status
 }
 
 const formatFileSize = (size) => {
-  if (!Number.isFinite(size)) return '未知大小'
+  if (!Number.isFinite(size)) return 'kích thước không xác định'
   if (size < 1024) return `${size} B`
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
   return `${(size / 1024 / 1024).toFixed(1)} MB`

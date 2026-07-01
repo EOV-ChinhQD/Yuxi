@@ -1,7 +1,7 @@
 <template>
   <div class="status-bar">
     <div class="status-bar-content">
-      <!-- 左侧：系统信息 -->
+      <!-- bên trái：Thông tin hệ thống -->
       <div class="status-left">
         <div class="system-info">
           <div class="system-details">
@@ -11,7 +11,7 @@
         </div>
       </div>
 
-      <!-- 右侧：时间和用户信息 -->
+      <!-- bên phải：Thông tin người dùng và thời gian -->
       <div class="status-right">
         <div class="time-info">
           <Clock class="icon" />
@@ -22,37 +22,37 @@
           <span class="user-greeting">{{ greeting }}</span>
         </div>
         <div class="header-actions">
-          <a-tooltip title="系统设置">
+          <a-tooltip title="Cài đặt hệ thống">
             <button
               type="button"
               class="header-action-button"
-              aria-label="系统设置"
+              aria-label="Cài đặt hệ thống"
               @click="openSettings"
             >
               <Settings class="icon" />
             </button>
           </a-tooltip>
-          <a-tooltip :title="themeStore.isDark ? '切换到浅色模式' : '切换到深色模式'">
+          <a-tooltip :title="themeStore.isDark ? 'Chuyển sang chế độ ánh sáng' : 'Chuyển sang chế độ tối'">
             <button
               type="button"
               class="header-action-button"
-              aria-label="切换主题"
+              aria-label="chuyển đổi chủ đề"
               @click="toggleTheme"
             >
               <Sun v-if="themeStore.isDark" class="icon" />
               <Moon v-else class="icon" />
             </button>
           </a-tooltip>
-          <a-tooltip title="任务中心">
+          <a-tooltip title="trung tâm truyền giáo">
             <button
               type="button"
               class="header-action-button task-center-button"
               :class="{ active: taskerStore.isDrawerOpen }"
-              aria-label="任务中心"
+              aria-label="trung tâm truyền giáo"
               @click="openTaskCenter"
             >
               <ClipboardList class="icon" />
-              <span class="task-center-label">任务中心</span>
+              <span class="task-center-label">trung tâm truyền giáo</span>
               <a-badge
                 :count="activeTaskCount"
                 :overflow-count="99"
@@ -77,7 +77,7 @@ import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
 import dayjs from '@/utils/time'
 
-// 使用 stores
+// sử dụng stores
 const infoStore = useInfoStore()
 const userStore = useUserStore()
 const taskerStore = useTaskerStore()
@@ -85,32 +85,32 @@ const themeStore = useThemeStore()
 const { activeCount: activeCountRef } = storeToRefs(taskerStore)
 const { openSettingsModal } = inject('settingsModal', {})
 
-// 响应式数据
+// Dữ liệu đáp ứng
 const currentTime = ref('')
 
-// 计算属性
+// Thuộc tính tính toán
 const branding = computed(() => infoStore.branding)
 
-// 用户名计算属性
+// Thuộc tính tính toán tên người dùng
 const currentUser = computed(() => {
-  return userStore.username || '游客'
+  return userStore.username || 'khách du lịch'
 })
 
-// 问候语计算属性
+// lời chào tài sản được tính toán
 const greeting = computed(() => {
   const hour = dayjs().tz('Asia/Shanghai').hour()
   let greetingText
 
   if (hour >= 5 && hour < 12) {
-    greetingText = '早上好'
+    greetingText = 'chào buổi sáng'
   } else if (hour >= 12 && hour < 14) {
-    greetingText = '中午好'
+    greetingText = 'chào buổi trưa'
   } else if (hour >= 14 && hour < 18) {
-    greetingText = '下午好'
+    greetingText = 'chào buổi chiều'
   } else if (hour >= 18 && hour < 22) {
-    greetingText = '晚上好'
+    greetingText = 'chào buổi tối'
   } else {
-    greetingText = '夜深了'
+    greetingText = 'Đêm khuya rồi'
   }
 
   return `${greetingText}！${currentUser.value}`
@@ -130,24 +130,24 @@ const toggleTheme = () => {
   themeStore.toggleTheme()
 }
 
-// 更新时间
+// Thời gian cập nhật
 const updateTime = () => {
   const now = dayjs().tz('Asia/Shanghai')
-  currentTime.value = now.format('YYYY年MM月DD日 HH:mm:ss')
+  currentTime.value = now.format('YYYYnămMMthángDDngày HH:mm:ss')
 }
 
-// 定时器
+// hẹn giờ
 let timeInterval = null
 
 onMounted(async () => {
   updateTime()
   timeInterval = setInterval(updateTime, 1000)
 
-  // 获取用户信息
+  // Lấy thông tin người dùng
   try {
     await userStore.getCurrentUser()
   } catch (error) {
-    console.error('获取用户信息失败:', error)
+    console.error('Không thể lấy được thông tin người dùng:', error)
   }
 })
 
@@ -283,7 +283,7 @@ onUnmounted(() => {
   color: var(--gray-900, #111827);
 }
 
-// 响应式设计
+// Thiết kế đáp ứng
 @media (max-width: 768px) {
   .status-bar {
     height: 44px;
@@ -326,7 +326,7 @@ onUnmounted(() => {
   }
 
   .current-time {
-    display: none; // 在小屏幕上隐藏时间
+    display: none; // Ẩn thời gian trên màn hình nhỏ
   }
 }
 </style>

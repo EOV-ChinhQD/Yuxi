@@ -94,7 +94,7 @@ def test_extract_query_supports_string_and_common_fields():
 
 
 def test_extract_query_rejects_unrecognized_input():
-    with pytest.raises(AgentEvalError, match="无法从 Langfuse dataset item input 中提取 query"):
+    with pytest.raises(AgentEvalError, match="Không thể truy cập từ Langfuse dataset item input chiết xuất từ ​​ query"):
         extract_query({"text": "hello"})
 
 
@@ -152,7 +152,7 @@ def test_run_langfuse_agent_experiment_uses_remote_api_key(tmp_path):
 def test_run_langfuse_agent_experiment_requires_login(tmp_path):
     store = ConfigStore(tmp_path / "config.toml")
 
-    with pytest.raises(AgentEvalError, match="remote 尚未登录"):
+    with pytest.raises(AgentEvalError, match="remote Chưa đăng nhập"):
         run_langfuse_agent_experiment(
             store,
             None,
@@ -171,7 +171,7 @@ def test_run_langfuse_agent_experiment_rejects_partial_langfuse_results(tmp_path
     langfuse = FakeLangfuse(FakePartialDataset())
     FakeYuxiClient.calls = []
 
-    with pytest.raises(AgentEvalError, match="1/2 个 item 成功写入"):
+    with pytest.raises(AgentEvalError, match="1/2 một item Đã viết thành công"):
         run_langfuse_agent_experiment(
             store,
             None,

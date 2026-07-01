@@ -2,7 +2,7 @@
   <section class="conversation-nav-section" :class="{ collapsed }">
     <div v-if="showHistory && !collapsed" class="history-panel">
       <div class="history-label" @click="listCollapsed = !listCollapsed">
-        <span>最近</span>
+        <span>Gần đây</span>
         <ChevronDown :size="14" class="collapse-icon" :class="{ collapsed: listCollapsed }" />
       </div>
       <div v-show="!listCollapsed" class="conversation-list">
@@ -16,7 +16,7 @@
             @click="$emit('select-chat', chat.id)"
             @click.middle="$emit('delete-chat', chat.id)"
           >
-            <span class="conversation-title">{{ chat.title || '新的对话' }}</span>
+            <span class="conversation-title">{{ chat.title || 'cuộc trò chuyện mới' }}</span>
             <span class="actions-mask"></span>
             <span class="conversation-actions" @click.stop>
               <a-dropdown :trigger="['click']">
@@ -27,21 +27,21 @@
                       :icon="h(chat.is_pinned ? PinOff : Pin, { size: 14 })"
                       @click.stop="$emit('toggle-pin', chat.id)"
                     >
-                      {{ chat.is_pinned ? '取消置顶' : '置顶' }}
+                      {{ chat.is_pinned ? 'Bỏ ghim' : 'ghim lên trên' }}
                     </a-menu-item>
                     <a-menu-item
                       key="rename"
                       :icon="h(SquarePen, { size: 14 })"
                       @click.stop="renameChat(chat.id)"
                     >
-                      重命名
+                      Đổi tên
                     </a-menu-item>
                     <a-menu-item
                       key="delete"
                       :icon="h(Trash2, { size: 14 })"
                       @click.stop="$emit('delete-chat', chat.id)"
                     >
-                      删除
+                      Xóa
                     </a-menu-item>
                   </a-menu>
                 </template>
@@ -55,7 +55,7 @@
             </span>
           </div>
         </template>
-        <div v-else-if="!collapsed" class="empty-list">暂无对话历史</div>
+        <div v-else-if="!collapsed" class="empty-list">Chưa có lịch sử cuộc trò chuyện</div>
         <div v-if="hasMoreChats && !collapsed" class="load-more-wrapper">
           <a-button
             type="text"
@@ -63,7 +63,7 @@
             :loading="isLoadingMore"
             @click="$emit('load-more-chats')"
           >
-            {{ isLoadingMore ? '加载中...' : '加载更多' }}
+            {{ isLoadingMore ? 'Đang tải...' : 'tải thêm' }}
           </a-button>
         </div>
       </div>
@@ -132,7 +132,7 @@ const renameChat = async (chatId) => {
 
   let newTitle = chat.title || ''
   Modal.confirm({
-    title: '重命名对话',
+    title: 'Đổi tên cuộc trò chuyện',
     content: h('div', { style: { marginTop: '12px' } }, [
       h('input', {
         value: newTitle,
@@ -148,11 +148,11 @@ const renameChat = async (chatId) => {
         }
       })
     ]),
-    okText: '确认',
-    cancelText: '取消',
+    okText: 'Xác nhận',
+    cancelText: 'Hủy bỏ',
     onOk: () => {
       if (!newTitle.trim()) {
-        message.warning('标题不能为空')
+        message.warning('Tiêu đề không thể trống')
         return Promise.reject()
       }
       emit('rename-chat', { chatId, title: newTitle })

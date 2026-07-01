@@ -6,7 +6,7 @@
     <div class="detail-top-bar">
       <button class="detail-back-btn" @click="goBack">
         <ArrowLeft :size="16" />
-        <span>返回</span>
+        <span>Trở lại</span>
       </button>
       <div class="detail-title-area">
         <div class="detail-icon">
@@ -26,7 +26,7 @@
             class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
           >
             <Download :size="14" />
-            <span>导出</span>
+            <span>Xuất khẩu</span>
           </button>
           <button
             v-if="isInstalledSkill && canManageCurrentSkill && !isBuiltinInstalledSkill"
@@ -35,7 +35,7 @@
             class="lucide-icon-btn extension-panel-action extension-panel-action-danger"
           >
             <Trash2 :size="14" />
-            <span>删除</span>
+            <span>Xóa</span>
           </button>
         </a-space>
       </div>
@@ -44,25 +44,25 @@
     <div class="detail-content-wrapper">
       <div v-if="currentSkill" class="detail-content-inner">
         <div v-if="isReadOnlySkill" class="readonly-scope-hint readonly-detail-hint">
-          你可以查看并使用此 Skill，但没有管理权限。
+          Bạn có thể xem và sử dụng cái này Skill，nhưng không có quyền quản trị。
         </div>
         <a-tabs v-if="isInstalledSkill" v-model:activeKey="activeTab" class="minimal-tabs">
           <a-tab-pane key="editor">
             <template #tab>
-              <span class="tab-title"><FileText :size="14" />代码管理</span>
+              <span class="tab-title"><FileText :size="14" />Quản lý mã</span>
             </template>
             <div class="workspace">
               <div class="tree-container">
                 <div class="tree-header">
-                  <span class="label">项目结构</span>
+                  <span class="label">Cấu trúc dự án</span>
                   <div class="tree-actions">
-                    <a-tooltip v-if="canEditSkillFiles" title="新建文件"
+                    <a-tooltip v-if="canEditSkillFiles" title="Tạo tập tin mới"
                       ><button @click="openCreateModal(false)"><FilePlus :size="14" /></button
                     ></a-tooltip>
-                    <a-tooltip v-if="canEditSkillFiles" title="新建目录"
+                    <a-tooltip v-if="canEditSkillFiles" title="Tạo thư mục mới"
                       ><button @click="openCreateModal(true)"><FolderPlus :size="14" /></button
                     ></a-tooltip>
-                    <a-tooltip title="刷新"
+                    <a-tooltip title="Làm mới"
                       ><button @click="reloadTree"><RotateCw :size="14" /></button
                     ></a-tooltip>
                   </div>
@@ -80,7 +80,7 @@
                 <div class="editor-main">
                   <a-empty
                     v-if="!selectedPath || selectedIsDir"
-                    description="选择文件以开始编辑"
+                    description="Chọn tập tin để bắt đầu chỉnh sửa"
                     class="mt-40"
                   />
                   <template v-else>
@@ -105,13 +105,13 @@
 
           <a-tab-pane key="settings">
             <template #tab>
-              <span class="tab-title"><Settings :size="14" />生效范围</span>
+              <span class="tab-title"><Settings :size="14" />Phạm vi hiệu quả</span>
             </template>
             <div class="config-view">
               <div class="config-header">
                 <div class="text">
-                  <h3>共享与启用状态</h3>
-                  <p>控制此 Skill 是否可用，以及哪些用户可以选择和运行它。</p>
+                  <h3>Trạng thái chia sẻ và kích hoạt</h3>
+                  <p>kiểm soát việc này Skill Nó có sẵn không，và người dùng nào có thể chọn và chạy nó。</p>
                 </div>
                 <a-button
                   v-if="canManageCurrentSkill"
@@ -121,20 +121,20 @@
                   class="lucide-icon-btn"
                 >
                   <Save :size="14" />
-                  <span>保存设置</span>
+                  <span>Lưu cài đặt</span>
                 </a-button>
               </div>
               <div class="settings-stack">
                 <section class="settings-card">
                   <div class="settings-card-main">
-                    <div class="settings-card-title">启用状态</div>
+                    <div class="settings-card-title">Trạng thái đã bật</div>
                     <div class="settings-card-desc">
-                      禁用后此 Skill 不会出现在可选资源中，也不会参与 Agent 运行时加载。
+                      Sau khi vô hiệu hóa tính năng này Skill Sẽ không xuất hiện trong các tài nguyên tùy chọn，Sẽ không tham gia Agent Tải khi chạy。
                     </div>
                   </div>
                   <div class="settings-card-action">
                     <span class="status-pill" :class="enabledForm ? 'enabled' : 'disabled'">
-                      {{ enabledForm ? '已启用' : '已禁用' }}
+                      {{ enabledForm ? 'Đã bật' : 'Đã tắt' }}
                     </span>
                     <a-switch v-model:checked="enabledForm" :disabled="!canManageCurrentSkill" />
                   </div>
@@ -142,16 +142,16 @@
 
                 <section class="settings-card scope-card">
                   <div class="settings-card-main">
-                    <div class="settings-card-title">生效范围</div>
+                    <div class="settings-card-title">Phạm vi hiệu quả</div>
                     <div class="settings-card-desc">
-                      控制哪些用户可以选择并在运行时使用此 Skill。
+                      Kiểm soát những người dùng nào có thể chọn và sử dụng cái này trong thời gian chạy Skill。
                     </div>
                   </div>
                   <div v-if="isBuiltinInstalledSkill" class="readonly-scope-hint">
-                    内置 Skill 固定为全局生效范围，可通过启用状态控制是否参与运行时。
+                    Tích hợp sẵn Skill Đã sửa lỗi cho phạm vi hiệu quả toàn cầu，Việc có tham gia vào thời gian chạy hay không có thể được kiểm soát bằng cách bật trạng thái。
                   </div>
                   <div v-else-if="isReadOnlySkill" class="readonly-scope-hint">
-                    当前 Skill 对你只读，不能修改生效范围。
+                    hiện tại Skill Chỉ đọc cho bạn，Phạm vi hiệu quả không thể được sửa đổi。
                   </div>
                   <ShareConfigForm
                     v-else
@@ -167,13 +167,13 @@
 
           <a-tab-pane key="dependencies">
             <template #tab>
-              <span class="tab-title"><Layers :size="14" />依赖管理</span>
+              <span class="tab-title"><Layers :size="14" />Quản lý phụ thuộc</span>
             </template>
             <div class="config-view">
               <div class="config-header">
                 <div class="text">
-                  <h3>依赖声明</h3>
-                  <p>配置此 Skill 所需的工具、MCP 及其他 Skill 依赖。</p>
+                  <h3>Tuyên bố phụ thuộc</h3>
+                  <p>cấu hình cái này Skill công cụ cần thiết、MCP và những người khác Skill phụ thuộc vào。</p>
                 </div>
                 <a-button
                   v-if="canEditSkillDependencies"
@@ -183,7 +183,7 @@
                   class="lucide-icon-btn"
                 >
                   <Save :size="14" />
-                  <span>更新依赖</span>
+                  <span>Cập nhật phần phụ thuộc</span>
                 </a-button>
               </div>
               <div class="dependency-groups">
@@ -198,7 +198,7 @@
                       <div class="dependency-title-row">
                         <h4>{{ group.title }}</h4>
                         <span class="dependency-count"
-                          >已选择 {{ getDependencyValues(group).length }} 项</span
+                          >Đã chọn {{ getDependencyValues(group).length }} mục</span
                         >
                       </div>
                       <p>{{ group.description }}</p>
@@ -211,7 +211,7 @@
                     >
                       <a-button size="small" class="dependency-action-btn dependency-select-btn">
                         <Plus :size="13" />
-                        <span>选择依赖</span>
+                        <span>Chọn phần phụ thuộc</span>
                         <ChevronDown :size="12" class="dependency-select-chevron" />
                       </a-button>
                       <template #overlay>
@@ -225,7 +225,7 @@
                             size="small"
                             allow-clear
                             class="selection-search"
-                            :placeholder="`搜索${group.shortTitle}`"
+                            :placeholder="`Tìm kiếm${group.shortTitle}`"
                             @mousedown.stop
                             @click.stop
                           />
@@ -277,13 +277,13 @@
                             </div>
                           </div>
                           <div v-else class="selection-empty">
-                            {{ group.options.length ? '没有匹配的依赖' : '暂无可选依赖' }}
+                            {{ group.options.length ? 'Không có sự phụ thuộc phù hợp' : 'Chưa có phụ thuộc tùy chọn nào' }}
                           </div>
                         </div>
                       </template>
                     </a-dropdown>
                     <a-button v-else size="small" disabled class="dependency-action-btn">
-                      {{ isBuiltinInstalledSkill ? '系统维护' : '只读' }}
+                      {{ isBuiltinInstalledSkill ? 'Bảo trì hệ thống' : 'chỉ đọc' }}
                     </a-button>
                   </div>
 
@@ -299,7 +299,7 @@
                         v-if="canEditSkillDependencies"
                         type="button"
                         class="dependency-chip-remove"
-                        :aria-label="`移除 ${getDependencyOptionLabel(group, value)}`"
+                        :aria-label="`Xóa ${getDependencyOptionLabel(group, value)}`"
                         @click="removeDependency(group, value)"
                       >
                         <X :size="12" />
@@ -314,22 +314,22 @@
         </a-tabs>
       </div>
       <div v-else-if="!loading" class="detail-empty">
-        <a-empty description="未找到 Skill" />
+        <a-empty description="không tìm thấy Skill" />
       </div>
     </div>
 
     <a-modal
       v-model:open="createModalVisible"
-      :title="createForm.isDir ? '新建目录' : '新建文件'"
+      :title="createForm.isDir ? 'Tạo thư mục mới' : 'Tạo tập tin mới'"
       @ok="handleCreateNode"
       :confirm-loading="creatingNode"
       width="400px"
     >
       <a-form layout="vertical" class="pt-12">
-        <a-form-item label="路径 (相对于根目录)" required>
+        <a-form-item label="con đường (Liên quan đến thư mục gốc)" required>
           <a-input v-model:value="createForm.path" placeholder="src/main.py" />
         </a-form-item>
-        <a-form-item v-if="!createForm.isDir" label="内容">
+        <a-form-item v-if="!createForm.isDir" label="nội dung">
           <a-textarea v-model:value="createForm.content" :rows="5" />
         </a-form-item>
       </a-form>
@@ -410,15 +410,15 @@ const canEditSkillDependencies = computed(
 )
 
 const sourceTypeLabel = (sourceType) => {
-  if (sourceType === 'builtin') return '内置'
-  if (sourceType === 'remote') return '远程添加'
-  return '上传'
+  if (sourceType === 'builtin') return 'Tích hợp sẵn'
+  if (sourceType === 'remote') return 'Thêm từ xa'
+  return 'tải lên'
 }
 
 const currentSkillStatusLabel = computed(() => {
   const skill = currentSkill.value
   if (!skill) return ''
-  if (skill.enabled === false) return `${sourceTypeLabel(skill.source_type)} · 已禁用`
+  if (skill.enabled === false) return `${sourceTypeLabel(skill.source_type)} · Đã tắt`
   return sourceTypeLabel(skill.source_type)
 })
 
@@ -448,31 +448,31 @@ const dependencyGroups = computed(() => [
   {
     key: 'tools',
     formKey: 'tool_dependencies',
-    title: '工具依赖',
-    shortTitle: '工具',
-    description: '声明此 Skill 运行时需要调用的工具能力。',
-    dropdownHint: '选择后 Agent 运行时会同时加载这些工具。',
-    emptyText: '未声明工具依赖',
+    title: 'Phụ thuộc công cụ',
+    shortTitle: 'Công cụ',
+    description: 'tuyên bố điều này Skill Các khả năng của công cụ cần được gọi khi chạy。',
+    dropdownHint: 'Sau khi lựa chọn Agent Những công cụ này sẽ được tải khi chạy。',
+    emptyText: 'Phần phụ thuộc của công cụ không được khai báo',
     options: toolDependencyOptions.value
   },
   {
     key: 'mcps',
     formKey: 'mcp_dependencies',
-    title: 'MCP 依赖',
+    title: 'MCP phụ thuộc vào',
     shortTitle: 'MCP',
-    description: '声明此 Skill 依赖的 MCP 服务。',
-    dropdownHint: '选择此 Skill 运行时需要的 MCP 服务。',
-    emptyText: '未声明 MCP 依赖',
+    description: 'tuyên bố điều này Skill phụ thuộc MCP dịch vụ。',
+    dropdownHint: 'chọn cái này Skill Bắt buộc trong thời gian chạy MCP dịch vụ。',
+    emptyText: 'Không khai báo MCP phụ thuộc vào',
     options: mcpDependencyOptions.value
   },
   {
     key: 'skills',
     formKey: 'skill_dependencies',
-    title: 'Skill 依赖',
+    title: 'Skill phụ thuộc vào',
     shortTitle: 'Skill',
-    description: '声明需要一起加载的其他 Skill。',
-    dropdownHint: '依赖 Skill 会随当前 Skill 一起进入运行时可读范围。',
-    emptyText: '未声明 Skill 依赖',
+    description: 'Khai báo các mục khác cần được nạp cùng nhau Skill。',
+    dropdownHint: 'phụ thuộc vào Skill sẽ đi theo hiện tại Skill Nhập phạm vi có thể đọc được trong thời gian chạy cùng nhau。',
+    emptyText: 'Không khai báo Skill phụ thuộc vào',
     options: skillDependencyOptions.value
   }
 ])
@@ -544,7 +544,7 @@ const fetchSkillDetail = async () => {
     }
     await fetchDependencyOptions(currentSkill.value?.slug)
   } catch {
-    message.error('加载失败')
+    message.error('Tải không thành công')
   } finally {
     loading.value = false
   }
@@ -598,7 +598,7 @@ const reloadTree = async () => {
     treeData.value = normalized
     expandedKeys.value = expandAllKeys(normalized)
   } catch {
-    message.error('加载目录树失败')
+    message.error('Không tải được cây thư mục')
   } finally {
     loading.value = false
   }
@@ -637,7 +637,7 @@ const handleTreeSelect = async (keys, info) => {
     const content = result?.data?.content || ''
     fileContent.value = content
   } catch {
-    message.error('文件读取失败')
+    message.error('Đọc tệp không thành công')
   }
 }
 
@@ -651,10 +651,10 @@ const saveCurrentFile = async (content = fileContent.value) => {
       content
     })
     fileContent.value = content
-    message.success('已保存')
+    message.success('đã lưu')
     if (selectedPath.value === 'SKILL.md') await fetchSkillDetail()
   } catch {
-    message.error('保存失败')
+    message.error('Lưu không thành công')
   } finally {
     savingFile.value = false
   }
@@ -663,20 +663,20 @@ const saveCurrentFile = async (content = fileContent.value) => {
 const confirmDeleteSkill = () => {
   const target = currentSkill.value
   if (!target || !canManageCurrentSkill.value || isBuiltinInstalledSkill.value) return
-  const actionText = '删除'
+  const actionText = 'Xóa'
   Modal.confirm({
-    title: `确认${actionText}技能「${target.slug}」？`,
-    content: '删除后无法恢复，所有文件和配置将永久消失。',
-    okText: `确认${actionText}`,
+    title: `Xác nhận${actionText}Kỹ năng「${target.slug}」？`,
+    content: 'Không thể phục hồi sau khi xóa，Tất cả các tập tin và cấu hình sẽ biến mất vĩnh viễn。',
+    okText: `Xác nhận${actionText}`,
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy bỏ',
     onOk: async () => {
       try {
         await skillApi.deleteSkill(target.slug)
-        message.success(`已${actionText}`)
+        message.success(`Đã rồi${actionText}`)
         router.push({ path: '/extensions', query: { tab: 'skills' } })
       } catch {
-        message.error(`${actionText}失败`)
+        message.error(`${actionText}thất bại`)
       }
     }
   })
@@ -694,7 +694,7 @@ const handleExport = async () => {
     link.click()
     URL.revokeObjectURL(url)
   } catch {
-    message.error('导出失败')
+    message.error('Xuất không thành công')
   }
 }
 
@@ -717,9 +717,9 @@ const handleCreateNode = async () => {
     })
     createModalVisible.value = false
     await reloadTree()
-    message.success('创建成功')
+    message.success('Đã tạo thành công')
   } catch {
-    message.error('创建失败')
+    message.error('Tạo không thành công')
   } finally {
     creatingNode.value = false
   }
@@ -730,7 +730,7 @@ const saveShareConfig = async () => {
   if (!isBuiltinInstalledSkill.value) {
     const validation = shareConfigFormRef.value?.validate?.()
     if (validation && !validation.valid) {
-      message.warning(validation.message || '请完善 Skill 生效范围')
+      message.warning(validation.message || 'Hãy cải thiện Skill Phạm vi hiệu quả')
       return
     }
   }
@@ -745,9 +745,9 @@ const saveShareConfig = async () => {
       currentSkill.value = result.data
       syncShareConfigFromSkill(result.data)
     }
-    message.success('设置已保存')
+    message.success('Đã lưu cài đặt')
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || '保存设置失败')
+    message.error(error?.response?.data?.detail || error.message || 'Không lưu được cài đặt')
   } finally {
     savingShareConfig.value = false
   }
@@ -768,9 +768,9 @@ const saveDependencies = async () => {
       syncDependencyFormFromSkill(updated)
     }
     await fetchSkillDetail()
-    message.success('依赖已更新')
+    message.success('Các phần phụ thuộc đã được cập nhật')
   } catch {
-    message.error('更新失败')
+    message.error('Cập nhật không thành công')
   } finally {
     savingDependencies.value = false
   }

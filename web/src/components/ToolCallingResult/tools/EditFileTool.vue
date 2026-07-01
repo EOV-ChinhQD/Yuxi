@@ -38,7 +38,7 @@ const parsedArgs = computed(() => {
 
 const filePath = computed(() => parsedArgs.value.file_path || '')
 
-// 仅显示文件名，悬浮时通过 title 显示完整路径
+// Chỉ hiển thị tên tệp，Vượt qua trong khi lơ lửng title hiển thị đường dẫn đầy đủ
 const fileName = computed(() => {
   const path = filePath.value
   if (!path) return ''

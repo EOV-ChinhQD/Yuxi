@@ -28,7 +28,7 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
-      path: '/auth/oidc/callback', // oidc登录回调页面
+      path: '/auth/oidc/callback', // oidcĐăng nhập trang gọi lại
       name: 'OIDCCallback',
       component: () => import('@/views/OIDCCallbackView.vue'),
       meta: { public: true }
@@ -153,22 +153,22 @@ const router = createRouter({
   ]
 })
 
-// 全局前置守卫
+// Bảo vệ mặt trận toàn cầu
 router.beforeEach(async (to) => {
-  // 检查路由是否需要认证
+  // Kiểm tra xem tuyến đường có yêu cầu xác thực không
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth === true)
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin)
   const requiresSuperAdmin = to.matched.some((record) => record.meta.requiresSuperAdmin)
 
   const userStore = useUserStore()
 
-  // 如果有 token 但用户信息未加载，先获取用户信息
+  // nếu có token Nhưng thông tin người dùng không được tải，Lấy thông tin người dùng trước
   if (userStore.token && !userStore.userId) {
     try {
       await userStore.getCurrentUser()
     } catch (error) {
-      // 如果获取用户信息失败（如 token 过期），清除 token
-      console.error('获取用户信息失败:', error)
+      // Nếu việc thu thập thông tin người dùng không thành công（Chẳng hạn như token Đã hết hạn），Xóa token
+      console.error('Không thể lấy được thông tin người dùng:', error)
       userStore.logout()
     }
   }
@@ -177,30 +177,30 @@ router.beforeEach(async (to) => {
   const isAdmin = userStore.isAdmin
   const isSuperAdmin = userStore.isSuperAdmin
 
-  // 如果路由需要认证但用户未登录
+  // Nếu tuyến đường yêu cầu xác thực nhưng người dùng chưa đăng nhập
   if (requiresAuth && !isLoggedIn) {
-    // 保存尝试访问的路径，登录后跳转
+    // Lưu đường dẫn bạn đang cố truy cập，Nhảy sau khi đăng nhập
     sessionStorage.setItem('redirect', to.fullPath)
     return '/login'
   }
 
-  // 如果路由需要管理员权限但用户不是管理员
+  // Nếu tuyến yêu cầu quyền quản trị viên nhưng người dùng không phải là quản trị viên
   if (requiresAdmin && !isAdmin) {
-    // 如果是普通用户，跳转到聊天页空态
+    // Nếu là người dùng bình thường，Chuyển đến trang trò chuyện trống
     try {
       const agentStore = useAgentStore()
-      // 等待 store 初始化完成
+      // chờ đã store Quá trình khởi tạo đã hoàn tất
       if (!agentStore.isInitialized) {
         await agentStore.initialize()
       }
       return '/agent'
     } catch (error) {
-      console.error('获取智能体信息失败:', error)
+      console.error('Không thể lấy được thông tin đại lý:', error)
       return '/agent'
     }
   }
 
-  // 如果路由需要超级管理员权限但用户不是超级管理员
+  // Nếu tuyến yêu cầu đặc quyền của quản trị viên cấp cao nhưng người dùng không phải là quản trị viên cấp cao
   if (requiresSuperAdmin && !isSuperAdmin) {
     try {
       const agentStore = useAgentStore()
@@ -209,17 +209,17 @@ router.beforeEach(async (to) => {
       }
       return '/agent'
     } catch (error) {
-      console.error('获取智能体信息失败:', error)
+      console.error('Không thể lấy được thông tin đại lý:', error)
       return '/agent'
     }
   }
 
-  // 如果用户已登录但访问登录页，按 redirect 参数跳转
+  // Nếu người dùng đã đăng nhập nhưng truy cập vào trang đăng nhập，nhấn redirect Nhảy tham số
   if (to.path === '/login' && isLoggedIn) {
     return sanitizeRedirect(to.query.redirect)
   }
 
-  // 其他情况正常导航
+  // Điều hướng bình thường trong các trường hợp khác
   return true
 })
 

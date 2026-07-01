@@ -1,21 +1,21 @@
 <template>
   <div class="query-section" :class="{ collapsed: !visible }" :style="style">
     <div class="query-section-layout">
-      <!-- 主内容区域 -->
+      <!-- khu vực nội dung chính -->
       <div class="query-main">
         <div class="query-input-container">
           <div class="search-input-wrapper">
             <a-textarea
               v-model:value="queryText"
-              placeholder="输入查询内容..."
+              placeholder="Nhập nội dung truy vấn..."
               :auto-size="{ minRows: 2, maxRows: 6 }"
               class="search-textarea"
               @press-enter.prevent="onQuery"
             />
             <div class="search-actions">
-              <span class="query-hint">Enter 检索知识库内容</span>
+              <span class="query-hint">Enter Tìm kiếm nội dung cơ sở kiến thức</span>
               <div style="display: flex; gap: 12px; align-items: center">
-                <a-tooltip :title="showRawData ? '切换至格式化显示' : '切换至原始数据'">
+                <a-tooltip :title="showRawData ? 'Chuyển sang hiển thị được định dạng' : 'Chuyển sang dữ liệu thô'">
                   <a-button
                     type="text"
                     shape="circle"
@@ -41,42 +41,42 @@
         </div>
 
         <div class="query-results" v-if="queryResult">
-          <!-- 原始数据显示 -->
+          <!-- Hiển thị dữ liệu thô -->
           <div v-if="showRawData" class="result-raw">
             <pre>{{ JSON.stringify(queryResult, null, 2) }}</pre>
           </div>
 
-          <!-- 格式化显示 -->
+          <!-- Hiển thị được định dạng -->
           <div v-else>
             <div v-if="typeof queryResult === 'string'" class="result-text">
               {{ queryResult }}
             </div>
 
-            <!-- Milvus 返回列表格式 -->
+            <!-- Milvus Định dạng danh sách trả về -->
             <div v-else-if="Array.isArray(queryResult)" class="result-list">
               <div v-if="queryResult.length === 0" class="no-results">
-                <p>未找到相关结果</p>
+                <p>Không tìm thấy kết quả liên quan</p>
               </div>
               <div v-else>
                 <div class="result-summary">
-                  <span>检索到 {{ queryResult.length }} 个相关文档块：</span>
+                  <span>đã lấy lại {{ queryResult.length }} khối tài liệu liên quan：</span>
                   <a-button
                     type="text"
                     size="small"
                     class="clear-results-btn"
                     @click="clearQueryResult"
                   >
-                    清空
+                    Xóa
                   </a-button>
                 </div>
                 <div v-for="(chunk, index) in queryResult" :key="index" class="result-item">
                   <div class="result-header">
                     <span class="result-index">#{{ index + 1 }}</span>
                     <span v-if="chunk.score" class="result-score">
-                      相似度: {{ (chunk.score * 100).toFixed(2) }}%
+                      Sự tương đồng: {{ (chunk.score * 100).toFixed(2) }}%
                     </span>
                     <span v-if="chunk.rerank_score" class="result-rerank-score">
-                      重排序分数: {{ (chunk.rerank_score * 100).toFixed(2) }}%
+                      sắp xếp lại điểm: {{ (chunk.rerank_score * 100).toFixed(2) }}%
                     </span>
                   </div>
 
@@ -86,38 +86,38 @@
 
                   <div class="result-metadata">
                     <span v-if="chunk.metadata?.source" class="metadata-item">
-                      <strong>来源:</strong> {{ chunk.metadata.source }}
+                      <strong>Nguồn:</strong> {{ chunk.metadata.source }}
                     </span>
                     <span v-if="chunk.metadata?.file_id" class="metadata-item">
-                      <strong>文件ID:</strong> {{ chunk.metadata.file_id }}
+                      <strong>tập tinID:</strong> {{ chunk.metadata.file_id }}
                     </span>
                     <span v-if="chunk.metadata?.chunk_index !== undefined" class="metadata-item">
-                      <strong>块索引:</strong> {{ chunk.metadata.chunk_index }}
+                      <strong>chỉ số khối:</strong> {{ chunk.metadata.chunk_index }}
                     </span>
                     <span v-if="chunk.distance !== undefined" class="metadata-item">
-                      <strong>距离:</strong> {{ chunk.distance.toFixed(4) }}
+                      <strong>khoảng cách:</strong> {{ chunk.distance.toFixed(4) }}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- 其他格式（降级处理） -->
+            <!-- các định dạng khác（Xử lý hạ cấp） -->
             <div v-else class="result-unknown">
               <pre>{{ JSON.stringify(queryResult, null, 2) }}</pre>
             </div>
           </div>
-          <!-- 关闭格式化显示的div -->
+          <!-- Tắt hiển thị được định dạngdiv -->
         </div>
 
         <div v-else-if="showQuerySuggestions" class="query-suggestions">
           <div v-if="loadingQuestions || generatingQuestions" class="suggestions-loading">
             <a-spin size="small" />
-            <span>{{ generatingQuestions ? '正在生成示例问题...' : '正在加载示例问题...' }}</span>
+            <span>{{ generatingQuestions ? 'Tạo câu hỏi mẫu...' : 'Đang tải câu hỏi mẫu...' }}</span>
           </div>
 
           <div v-else-if="queryExamples.length > 0" class="suggestions-list">
-            <div class="suggestions-title">示例问题</div>
+            <div class="suggestions-title">Câu hỏi ví dụ</div>
             <button
               v-for="(example, index) in visibleQueryExamples"
               :key="`${index}-${example}`"
@@ -134,14 +134,14 @@
               @click="() => generateSampleQuestions(false)"
             >
               <RefreshCw class="suggestion-icon" />
-              <span class="suggestion-text">重新生成</span>
+              <span class="suggestion-text">tái sinh</span>
             </button>
           </div>
 
           <div v-else class="suggestions-empty">
             <button class="suggestion-row" @click="() => generateSampleQuestions(false)">
               <RefreshCw class="suggestion-icon" />
-              <span class="suggestion-text">生成示例问题</span>
+              <span class="suggestion-text">Tạo câu hỏi mẫu</span>
             </button>
           </div>
         </div>
@@ -172,7 +172,7 @@ defineProps({
   }
 })
 
-// 声明事件
+// khai báo sự kiện
 defineEmits(['toggleVisible'])
 
 const searchLoading = computed(() => store.state.searchLoading)
@@ -180,10 +180,10 @@ const queryResult = ref('')
 const showRawData = ref(false)
 const showQuerySuggestions = computed(() => !searchLoading.value && !queryResult.value)
 
-// 查询测试
+// kiểm tra truy vấn
 const queryText = ref('')
 
-// 示例问题相关
+// Câu hỏi mẫu liên quan
 const queryExamples = ref([])
 const visibleQueryExamples = ref([])
 const loadingQuestions = ref(false)
@@ -201,7 +201,7 @@ const updateQueryExamples = (questions = []) => {
   visibleQueryExamples.value = shuffledQuestions.slice(0, MAX_VISIBLE_EXAMPLES)
 }
 
-// 加载示例问题
+// Tải câu hỏi mẫu
 const loadSampleQuestions = async () => {
   if (!store.database?.kb_id) return
 
@@ -211,31 +211,31 @@ const loadSampleQuestions = async () => {
     if (data.questions && data.questions.length > 0) {
       updateQueryExamples(data.questions)
     } else {
-      // 如果没有问题，清空列表
+      // nếu không có vấn đề gì，Xóa danh sách
       updateQueryExamples()
     }
   } catch (error) {
-    // 404表示还没有生成问题，清空问题列表
+    // 404Cho biết chưa có vấn đề nào được tạo ra，Xóa danh sách câu hỏi
     if (
       error.status === 404 ||
       error?.message?.includes('404') ||
-      error?.message?.includes('还没有生成')
+      error?.message?.includes('Chưa được tạo')
     ) {
       updateQueryExamples()
     } else {
-      console.error('加载示例问题失败:', error)
+      console.error('Không tải được câu hỏi mẫu:', error)
     }
   } finally {
     loadingQuestions.value = false
   }
 }
 
-// 清空问题列表
+// Xóa danh sách câu hỏi
 const clearQuestions = () => {
   updateQueryExamples()
 }
 
-// 生成示例问题
+// Tạo câu hỏi mẫu
 const generateSampleQuestions = async (silent = false) => {
   if (!store.database?.kb_id) return
 
@@ -245,14 +245,14 @@ const generateSampleQuestions = async (silent = false) => {
     if (data.questions && data.questions.length > 0) {
       updateQueryExamples(data.questions)
       if (!silent) {
-        message.success(`成功生成 ${data.questions.length} 个测试问题`)
+        message.success(`Đã tạo thành công ${data.questions.length} câu hỏi kiểm tra`)
       }
     }
   } catch (error) {
-    console.error('生成示例问题失败:', error)
-    // 静默模式下不显示错误消息（自动生成时）
+    console.error('Không tạo được câu hỏi mẫu:', error)
+    // Không hiển thị thông báo lỗi ở chế độ im lặng（Khi được tạo tự động）
     if (!silent) {
-      // 提取详细错误信息
+      // Trích xuất thông tin lỗi chi tiết
       let errorMsg
       if (error.response?.data?.detail) {
         errorMsg = error.response.data.detail
@@ -265,7 +265,7 @@ const generateSampleQuestions = async (silent = false) => {
       } else {
         errorMsg = JSON.stringify(error)
       }
-      message.error('生成失败: ' + errorMsg)
+      message.error('Xây dựng không thành công: ' + errorMsg)
     }
   } finally {
     generatingQuestions.value = false
@@ -281,15 +281,15 @@ const clearQueryResult = () => {
   queryResult.value = ''
 }
 
-// 监听知识库ID变化，切换知识库时重新加载问题
+// Giám sát cơ sở kiến thứcIDthay đổi，Vấn đề tải lại khi chuyển đổi cơ sở kiến thức
 watch(
   () => store.database?.kb_id,
   async (newKbId, oldKbId) => {
-    // 如果知识库ID发生变化
+    // Nếu nền tảng kiến thứcIDthay đổi
     if (newKbId && newKbId !== oldKbId) {
-      // 清空当前问题列表
+      // Xóa danh sách vấn đề hiện tại
       updateQueryExamples()
-      // 重新加载新知识库的问题
+      // Sự cố khi tải lại cơ sở kiến thức mới
       await loadSampleQuestions()
     }
   },
@@ -298,13 +298,13 @@ watch(
 
 const onQuery = async () => {
   if (!queryText.value.trim()) {
-    message.error('请输入查询内容')
+    message.error('Vui lòng nhập nội dung truy vấn')
     return
   }
 
   store.state.searchLoading = true
 
-  // 从store中获取配置参数
+  // từstoreLấy thông số cấu hình trong
   const queryMeta = { ...store.meta }
 
   try {
@@ -319,22 +319,22 @@ const onQuery = async () => {
   }
 }
 
-// 组件挂载时启动示例轮播
+// Bắt đầu băng chuyền mẫu khi thành phần được lắp
 onMounted(async () => {
-  // 加载查询参数
+  // Tải tham số truy vấn
   store.loadQueryParams()
 
-  // 加载示例问题
+  // Tải câu hỏi mẫu
   await loadSampleQuestions()
-  // 不自动生成，只在创建知识库和添加文件时由 DataBaseInfoView 触发生成
+  // Không được tạo tự động，Chỉ được sử dụng khi tạo cơ sở kiến thức và thêm tệp bằng cách DataBaseInfoView tạo kích hoạt
 })
 
-// 检查是否已有问题
+// Kiểm tra xem có bất kỳ vấn đề hiện tại nào không
 const hasQuestions = () => {
   return queryExamples.value.length > 0
 }
 
-// 暴露给父组件的方法和属性
+// Các phương thức và thuộc tính được hiển thị cho thành phần cha
 defineExpose({
   generateSampleQuestions,
   loadSampleQuestions,
@@ -356,7 +356,7 @@ defineExpose({
   overflow: hidden;
 }
 
-// 主内容区域
+// khu vực nội dung chính
 .query-main {
   display: flex;
   flex-direction: column;

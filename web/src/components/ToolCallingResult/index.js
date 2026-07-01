@@ -1,8 +1,8 @@
-// 工具调用结果组件导出
+// Xuất thành phần kết quả cuộc gọi công cụ
 export { default as BaseToolCall } from './BaseToolCall.vue'
 export { default as ToolCallRenderer } from './ToolCallRenderer.vue'
 
-// 专用工具组件导出
+// Xuất khẩu linh kiện dụng cụ chuyên dụng
 export { default as WebSearchTool } from './tools/WebSearchTool.vue'
 export { default as ListKbsTool } from './tools/ListKbsTool.vue'
 export { default as GetMindmapTool } from './tools/GetMindmapTool.vue'

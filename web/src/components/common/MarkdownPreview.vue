@@ -56,9 +56,9 @@ const enhanceCodeBlocks = () => {
     const button = document.createElement('button')
     button.type = 'button'
     button.className = 'markdown-code-copy-btn'
-    button.textContent = '复制'
-    button.setAttribute('aria-label', '复制代码')
-    button.setAttribute('title', '复制代码')
+    button.textContent = 'Sao chép'
+    button.setAttribute('aria-label', 'Sao chép mã')
+    button.setAttribute('title', 'Sao chép mã')
     wrapper.appendChild(button)
   })
 }
@@ -88,7 +88,7 @@ watch(
   { immediate: true }
 )
 
-// === Markdown 内嵌操作按钮事件委托 ===
+// === Markdown Ủy quyền sự kiện nút hành động được nhúng ===
 const handleMarkdownAction = async (e) => {
   const target = e.target instanceof Element ? e.target : e.target?.parentElement
   if (!target) return
@@ -142,29 +142,29 @@ const copyCodeBlock = async (btn) => {
     await writeTextToClipboard(codeText)
     showCopiedFeedback(btn)
   } catch (err) {
-    console.error('复制代码失败:', err)
+    console.error('Không sao chép được mã:', err)
   }
 }
 
-// 复制 SVG 源代码
+// Sao chép SVG mã nguồn
 const copySvgText = async (svgEl, btn) => {
   try {
     await writeTextToClipboard(svgEl.outerHTML)
     showCopiedFeedback(btn)
   } catch (err) {
-    console.error('复制 SVG 失败:', err)
+    console.error('Sao chép SVG thất bại:', err)
   }
 }
 
-// 复制为 PNG 图片
+// Sao chép dưới dạng PNG hình ảnh
 const copySvgAsPng = async (svgEl, btn) => {
   const svgContent = svgEl.outerHTML
   const blob = new Blob([svgContent], { type: 'image/svg+xml' })
   const url = URL.createObjectURL(blob)
 
   try {
-    // 三级递进尺寸策略：
-    // 1) viewBox 固有坐标尺寸（最佳品质，不受 CSS 缩放影响）
+    // Chiến lược định cỡ lũy tiến ba cấp độ：
+    // 1) viewBox kích thước tọa độ nội tại（chất lượng tốt nhất，Không phụ thuộc vào CSS tác động mở rộng quy mô）
     let width, height
     const vb = svgEl.viewBox
     if (vb && vb.baseVal && vb.baseVal.width && vb.baseVal.height) {
@@ -172,14 +172,14 @@ const copySvgAsPng = async (svgEl, btn) => {
       height = vb.baseVal.height
     }
 
-    // 2) 客户端渲染尺寸（SVG 在 DOM 中一定可获取）
+    // 2) Kích thước kết xuất của khách hàng（SVG trong DOM Chắc chắn có sẵn ở）
     if (!width || !height) {
       const rect = svgEl.getBoundingClientRect()
       width = rect.width
       height = rect.height
     }
 
-    // 3) 回退
+    // 3) quay lại
     if (!width || !height) {
       width = 800
       height = 600
@@ -196,8 +196,8 @@ const copySvgAsPng = async (svgEl, btn) => {
     canvas.width = width
     canvas.height = height
     const ctx = canvas.getContext('2d')
-    // 不填充背景色 — Canvas 默认为全透明
-    // 背景色由 SVG 自身决定
+    // Không tô màu nền — Canvas Mặc định là hoàn toàn minh bạch
+    // Màu nền được cho bởi SVG quyền tự quyết
     ctx.drawImage(img, 0, 0, width, height)
 
     const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
@@ -206,25 +206,25 @@ const copySvgAsPng = async (svgEl, btn) => {
       showCopiedFeedback(btn)
     }
   } catch (err) {
-    console.error('复制为 PNG 失败:', err)
-    // fallback: 尝试复制 SVG 源码
+    console.error('Sao chép dưới dạng PNG thất bại:', err)
+    // fallback: cố gắng sao chép SVG Mã nguồn
     try {
       await writeTextToClipboard(svgContent)
-      console.log('PNG 复制失败，已回退复制 SVG 源码')
+      console.log('PNG Sao chép không thành công，Sao chép được cuộn lại SVG Mã nguồn')
     } catch (fallbackErr) {
-      console.error('复制 SVG 源码失败:', fallbackErr)
+      console.error('Sao chép SVG Mã nguồn không thành công:', fallbackErr)
     }
   } finally {
     URL.revokeObjectURL(url)
   }
 }
 
-// 反馈：按钮文字短暂变为「已复制」
+// phản hồi：Văn bản nút thay đổi nhanh chóng thành「Đã sao chép」
 const showCopiedFeedback = (btn) => {
   const originalText = btn.dataset.originalText || btn.textContent
   btn.dataset.originalText = originalText
   btn.classList.add('is-copied')
-  btn.textContent = '已复制'
+  btn.textContent = 'Đã sao chép'
   const existingTimer = copiedTimers.get(btn)
   if (existingTimer) window.clearTimeout(existingTimer)
 

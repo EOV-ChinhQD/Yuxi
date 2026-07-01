@@ -56,7 +56,7 @@ export const useChatThreadsStore = defineStore('chatThreads', () => {
     try {
       const fetchedThreads = await threadApi.getThreads(agentId, PAGE_SIZE, threads.value.length)
       if (fetchedThreads && fetchedThreads.length > 0) {
-        // 后端分页会重复返回置顶项，这里只追加列表中尚不存在的线程。
+        // Phân trang phụ trợ sẽ liên tục quay lại mục trên cùng，Ở đây chỉ nối thêm các chủ đề chưa có trong danh sách。
         const existingIds = new Set(threads.value.map((thread) => thread.id))
         const newThreads = fetchedThreads.filter((thread) => !existingIds.has(thread.id))
         threads.value = [...threads.value, ...newThreads]
@@ -72,7 +72,7 @@ export const useChatThreadsStore = defineStore('chatThreads', () => {
     }
   }
 
-  const createThread = async (agentId, title = '新的对话') => {
+  const createThread = async (agentId, title = 'cuộc trò chuyện mới') => {
     if (!agentId) return null
 
     try {

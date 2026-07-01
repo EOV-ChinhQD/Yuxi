@@ -57,7 +57,7 @@ class Config:
         remote_name = name or self.current
         remote = self.remotes.get(remote_name)
         if remote is None:
-            raise ConfigError(f"remote 不存在: {remote_name}")
+            raise ConfigError(f"remote không tồn tại: {remote_name}")
         return remote
 
     def set_remote(self, name: str, url: str) -> Remote:
@@ -91,7 +91,7 @@ class ConfigStore:
         try:
             data = tomllib.loads(self.path.read_text(encoding="utf-8"))
         except tomllib.TOMLDecodeError as exc:
-            raise ConfigError(f"配置文件 TOML 格式无效: {self.path}") from exc
+            raise ConfigError(f"Tệp cấu hình TOML Định dạng không hợp lệ: {self.path}") from exc
 
         raw_remotes = data.get("remotes") or {}
         remotes: dict[str, Remote] = {}
@@ -109,13 +109,13 @@ class ConfigStore:
 
     def save(self, config: Config) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        # 以 0600 创建文件，避免新文件在 umask 下短暂出现可被他人读取的窗口（凭据明文存放）。
+        # để 0600 Tạo tập tin，Tránh các tập tin mới trong umask Một cửa sổ mà người khác có thể đọc nhanh sẽ xuất hiện bên dưới（Thông tin xác thực được lưu trữ ở dạng văn bản rõ ràng）。
         def _opener(path, flags):
             return os.open(path, flags, stat.S_IRUSR | stat.S_IWUSR)
 
         with open(self.path, "w", encoding="utf-8", opener=_opener) as fp:
             fp.write(_render_toml(config))
-        # 已存在的文件不会被 _opener 重置权限，这里再收敛一次。
+        # Các tập tin hiện có sẽ không được _opener Đặt lại quyền，Hội tụ lại ở đây。
         os.chmod(self.path, stat.S_IRUSR | stat.S_IWUSR)
 
 
@@ -126,15 +126,15 @@ def default_config_path() -> Path:
 def normalize_remote_url(raw_url: str) -> str:
     value = raw_url.strip()
     if not value:
-        raise ConfigError("remote URL 不能为空")
+        raise ConfigError("remote URL không thể trống")
     if "://" not in value:
         value = f"http://{value}"
 
     parts = urlsplit(value)
     if not parts.scheme or not parts.netloc:
-        raise ConfigError(f"remote URL 无效: {raw_url}")
+        raise ConfigError(f"remote URL không hợp lệ: {raw_url}")
     if parts.scheme not in {"http", "https"}:
-        raise ConfigError("remote URL 仅支持 http 或 https")
+        raise ConfigError("remote URL Chỉ hỗ trợ http hoặc https")
 
     path = parts.path.rstrip("/")
     if path == "/api":

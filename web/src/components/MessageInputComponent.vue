@@ -13,7 +13,7 @@
       >
         <template #content>
           <slot name="options-left">
-            <div class="no-options">没有配置 options</div>
+            <div class="no-options">Không có cấu hình options</div>
           </slot>
         </template>
         <a-button type="text" class="expand-btn">
@@ -43,14 +43,14 @@
       @compositionend="handleCompositionEnd"
     ></div>
 
-    <!-- @ 提及选择弹窗 -->
+    <!-- @ Đề cập đến cửa sổ bật lên chọn -->
     <div v-if="mentionPopupVisible" ref="mentionDropdownRef" class="mention-dropdown-wrapper">
       <div class="mention-popup" @mousedown.prevent>
-        <!-- 文件列表 -->
+        <!-- danh sách tập tin -->
         <div v-if="mentionItems.files.length > 0 || showFileSearchPrompt" class="mention-group">
-          <div class="mention-group-title">文件</div>
+          <div class="mention-group-title">tập tin</div>
           <div v-if="showFileSearchPrompt" class="mention-search-placeholder">
-            输入相关内容以搜索文件
+            Nhập nội dung liên quan để tìm kiếm file
           </div>
           <template v-else>
             <div
@@ -94,9 +94,9 @@
           </template>
         </div>
 
-        <!-- 知识库列表 -->
+        <!-- Danh sách cơ sở kiến thức -->
         <div v-if="mentionItems.knowledgeBases.length > 0" class="mention-group">
-          <div class="mention-group-title">知识库</div>
+          <div class="mention-group-title">cơ sở tri thức</div>
           <div
             v-for="(item, index) in mentionItems.knowledgeBases"
             :key="'kb-' + item.value"
@@ -133,7 +133,7 @@
           </div>
         </div>
 
-        <!-- MCP 列表 -->
+        <!-- MCP danh sách -->
         <div v-if="mentionItems.mcps.length > 0" class="mention-group">
           <div class="mention-group-title">MCP</div>
           <div
@@ -168,7 +168,7 @@
           </div>
         </div>
 
-        <!-- Skills 列表 -->
+        <!-- Skills danh sách -->
         <div v-if="mentionItems.skills.length > 0" class="mention-group">
           <div class="mention-group-title">Skills</div>
           <div
@@ -203,7 +203,7 @@
           </div>
         </div>
 
-        <!-- Subagents 列表 -->
+        <!-- Subagents danh sách -->
         <div v-if="mentionItems.subagents.length > 0" class="mention-group">
           <div class="mention-group-title">Subagents</div>
           <div
@@ -242,14 +242,14 @@
           </div>
         </div>
 
-        <!-- 无结果 -->
-        <div v-if="!hasAnyItems" class="mention-empty">暂无可引用的项</div>
+        <!-- Không có kết quả -->
+        <div v-if="!hasAnyItems" class="mention-empty">Hiện tại không có mục nào để trích dẫn</div>
       </div>
     </div>
 
     <div class="send-button-container">
       <slot name="actions-right"></slot>
-      <a-tooltip :title="isLoading ? '停止回答' : ''">
+      <a-tooltip :title="isLoading ? 'Dừng trả lời' : ''">
         <a-button
           @click="handleSendOrStop"
           :disabled="sendButtonDisabled"
@@ -302,7 +302,7 @@ import {
   replaceRawRange
 } from '@/utils/mention_utils'
 
-// 点击外部关闭下拉框
+// Bấm vào bên ngoài để đóng hộp thả xuống
 const mentionDropdownRef = ref(null)
 const closeMentionPopup = (e) => {
   if (!mentionPopupVisible.value) return
@@ -313,7 +313,7 @@ const closeMentionPopup = (e) => {
 
 const inputRef = ref(null)
 const optionsExpanded = ref(false)
-// 用于防抖的定时器
+// Hẹn giờ chống rung
 const debounceTimer = ref(null)
 const props = defineProps({
   modelValue: {
@@ -322,7 +322,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: '输入问题...'
+    default: 'Nhập câu hỏi...'
   },
   isLoading: {
     type: Boolean,
@@ -361,7 +361,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'send', 'keydown'])
 const slots = useSlots()
 
-// @ 提及功能是否启用
+// @ Liệu đề cập có được bật hay không
 const mentionEnabled = computed(() => {
   return !!props.mention
 })
@@ -393,7 +393,7 @@ const formatMentionPath = (path) => {
   if (cleanPath.startsWith('/')) {
     cleanPath = cleanPath.substring(1)
   }
-  // 如果以 / 结尾，说明它是一个目录，我们先去掉末尾的 / 之后再算父目录
+  // Nếu với / kết thúc，Giải thích rằng đó là một thư mục，Hãy loại bỏ cái cuối cùng trước / Sau đó đếm thư mục mẹ
   let isDir = cleanPath.endsWith('/')
   let pathForParent = isDir ? cleanPath.substring(0, cleanPath.length - 1) : cleanPath
 
@@ -406,11 +406,11 @@ const formatMentionPath = (path) => {
 
 const getMentionDescription = (description) => {
   const value = String(description || '').trim()
-  if (!value || value === '暂无描述') return ''
+  if (!value || value === 'Chưa có mô tả') return ''
   return value
 }
 
-// 高性能且安全的关键字切片高亮解析函数 (100% 防御 XSS，避开危险的 v-html)
+// Chức năng phân tích cú pháp đánh dấu lát từ khóa an toàn và hiệu suất cao (100% phòng thủ XSS，tránh nguy hiểm v-html)
 const splitTextByQuery = (text, query) => {
   if (!text) return []
   if (!query) return [{ text, isMatch: false }]
@@ -662,7 +662,7 @@ const replaceCurrentRawSelection = (replacement) => {
   updateRawValue(nextValue, nextOffset)
 }
 
-// 检测是否在 @ 触发位置
+// Kiểm tra xem có @ vị trí kích hoạt
 const checkMentionTrigger = () => {
   if (!inputRef.value || !mentionEnabled.value) return false
 
@@ -688,7 +688,7 @@ const checkMentionTrigger = () => {
   return false
 }
 
-// 更新提及候选项
+// Cập nhật đề cập đến ứng viên
 const updateMentionItems = (query = '') => {
   const normalizedQuery = String(query || '')
   if (!normalizedQuery) {
@@ -726,7 +726,7 @@ const updateMentionItems = (query = '') => {
       )
     })
 
-  // 本地临时文件/附件候选项过滤
+  // tập tin tạm thời cục bộ/Lọc ứng viên đính kèm
   const localFileItems = files.map((f) => {
     const path = f.path || ''
     const fileName = path.split('/').pop() || path
@@ -794,7 +794,7 @@ const updateMentionItems = (query = '') => {
     }
   })
 
-  // 初始化设置 mentionItems 状态（使用前端已有的本地过滤结果，瞬间更新，达到零卡顿）
+  // Cài đặt khởi tạo mentionItems Trạng thái（Sử dụng các kết quả lọc cục bộ hiện có ở giao diện người dùng，Cập nhật ngay lập tức，Đạt được độ trễ bằng không）
   mentionItems.value = {
     files: filteredLocalFiles,
     knowledgeBases: filterItems(knowledgeItems),
@@ -823,7 +823,7 @@ const updateMentionItems = (query = '') => {
           activeAbortController.signal
         )
 
-        // 竞态校验锁，确保是当前最新响应
+        // Khóa kiểm tra cuộc đua，Hãy chắc chắn rằng đó là phản hồi mới nhất
         if (currentId === searchRequestId.value && Array.isArray(responseData)) {
           const remoteFileItems = responseData.map((f) => {
             const path = f.path || ''
@@ -840,7 +840,7 @@ const updateMentionItems = (query = '') => {
             }
           })
 
-          // 合并本地临时文件与后端高匹配度文件（使用 Set 进行去重，防止重复展示）
+          // Hợp nhất các tệp tạm thời cục bộ và các tệp phù hợp cao cấp phía sau（sử dụng Set Thực hiện chống trùng lặp，Ngăn chặn hiển thị trùng lặp）
           const seenValues = new Set(filteredLocalFiles.map((x) => x.value))
           const mergedFiles = [...filteredLocalFiles]
 
@@ -854,7 +854,7 @@ const updateMentionItems = (query = '') => {
           mentionItems.value.files = mergedFiles
         }
       } catch (error) {
-        // 主动取消的请求我们不作为错误抛出
+        // Chúng tôi không gửi các yêu cầu bị hủy chủ động do lỗi.
         if (error.name !== 'AbortError') {
           console.error('Mention search error:', error)
         }
@@ -863,11 +863,11 @@ const updateMentionItems = (query = '') => {
           activeAbortController = null
         }
       }
-    }, 250) // 250ms 经典防抖时间
+    }, 250) // 250ms Thời gian chống rung cổ điển
   }
 }
 
-// 检查项是否被选中
+// Kiểm tra xem mục đã được chọn chưa
 const isItemSelected = (type, index) => {
   if (mentionSelectedIndex.value < 0) return false
 
@@ -889,7 +889,7 @@ const isItemSelected = (type, index) => {
   }
 }
 
-// 是否有任何候选项
+// Có ứng cử viên nào không
 const showFileSearchPrompt = computed(() => {
   return Boolean(props.mention?.files?.length) && !mentionQuery.value
 })
@@ -929,18 +929,18 @@ const insertMention = (item) => {
   updateRawValue(newValue, newCursorPos)
 }
 
-// 滚动到选中项
+// Di chuyển đến lựa chọn
 const scrollToItem = (index) => {
   nextTick(() => {
     const popup = mentionDropdownRef.value?.querySelector('.mention-popup')
     if (!popup) return
 
-    // 查找所有 mention-item 元素
+    // Tìm tất cả mention-item phần tử
     const items = popup.querySelectorAll('.mention-item')
     const selectedItem = items[index]
 
     if (selectedItem) {
-      // 检查元素是否在可视区域内
+      // Kiểm tra xem phần tử có nằm trong vùng hiển thị không
       const popupRect = popup.getBoundingClientRect()
       const itemRect = selectedItem.getBoundingClientRect()
 
@@ -953,7 +953,7 @@ const scrollToItem = (index) => {
   })
 }
 
-// 处理键盘导航
+// Xử lý điều hướng bàn phím
 const handleMentionNavigation = (e) => {
   if (!mentionPopupVisible.value) return
 
@@ -996,14 +996,14 @@ const hasOptionsLeft = computed(() => {
   return Boolean(renderedNodes && renderedNodes.length)
 })
 
-// 图标映射
+// bản đồ biểu tượng
 const iconComponents = {
   SendOutlined: SendOutlined,
   ArrowUpOutlined: ArrowUpOutlined,
   PauseOutlined: PauseOutlined
 }
 
-// 根据传入的图标名动态获取组件
+// Tự động lấy các thành phần dựa trên tên biểu tượng đến
 const getIcon = computed(() => {
   if (props.isLoading) {
     return PauseOutlined
@@ -1011,7 +1011,7 @@ const getIcon = computed(() => {
   return iconComponents[props.sendIcon] || ArrowUpOutlined
 })
 
-// 创建本地引用以进行双向绑定
+// Tạo tham chiếu cục bộ cho liên kết hai chiều
 const inputValue = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
@@ -1038,9 +1038,9 @@ const handleMentionDeletion = (e) => {
   return true
 }
 
-// 处理键盘事件
+// Xử lý sự kiện bàn phím
 const handleKeyPress = (e) => {
-  // @ 提及键盘导航
+  // @ Đề cập đến điều hướng bàn phím
   if (mentionPopupVisible.value) {
     if (['ArrowDown', 'ArrowUp', 'Enter', 'Tab', 'Escape'].includes(e.key)) {
       handleMentionNavigation(e)
@@ -1067,7 +1067,7 @@ const shouldCheckMentionOnKeyUp = (e) => {
   return e.key === 'Backspace' || e.key === 'Delete'
 }
 
-// 检测 @ 触发
+// Phát hiện @ cò súng
 const handleKeyUp = (e) => {
   if (!mentionEnabled.value || isComposing.value || !shouldCheckMentionOnKeyUp(e)) return
   nextTick(() => {
@@ -1075,7 +1075,7 @@ const handleKeyUp = (e) => {
   })
 }
 
-// 处理输入事件
+// Xử lý các sự kiện đầu vào
 const handleInput = () => {
   if (isComposing.value) return
 
@@ -1113,12 +1113,12 @@ const handleCompositionEnd = () => {
   handleInput()
 }
 
-// 处理发送按钮点击
+// Xử lý nhấp vào nút gửi
 const handleSendOrStop = () => {
   emit('send')
 }
 
-// @ 提及功能状态
+// @ Đề cập đến trạng thái chức năng
 const mentionPopupVisible = ref(false)
 const mentionQuery = ref('')
 const mentionItems = ref({ files: [], knowledgeBases: [], mcps: [], skills: [], subagents: [] })
@@ -1138,11 +1138,11 @@ const adjustTextareaHeight = () => {
   textarea.style.height = `${textarea.scrollHeight}px`
 }
 
-// 聚焦输入框
+// Hộp nhập tiêu điểm
 const focusInput = () => {
   if (inputRef.value && !props.disabled) {
     inputRef.value.focus()
-    // 聚焦回来时，如果开启了提及，自动检测当前光标位置是否处于 @提及 范围，是则重新升起弹框
+    // Khi sự tập trung quay trở lại，Nếu đề cập được kích hoạt，Tự động phát hiện xem vị trí con trỏ hiện tại có @đề cập đến phạm vi，Nếu vậy, hộp bật lên sẽ bật lên trở lại.
     if (mentionEnabled.value) {
       nextTick(() => {
         checkMentionTrigger()
@@ -1151,7 +1151,7 @@ const focusInput = () => {
   }
 }
 
-// 处理输入框点击事件，自适应检测光标是否落入 @提及 范围内以唤醒或更新弹窗
+// Xử lý sự kiện bấm vào hộp đầu vào，Phát hiện thích ứng xem con trỏ có rơi vào @đề cập đến trong phạm vi để đánh thức hoặc cập nhật cửa sổ bật lên
 const handleEditorClick = () => {
   if (mentionEnabled.value) {
     nextTick(() => {
@@ -1160,7 +1160,7 @@ const handleEditorClick = () => {
   }
 }
 
-// 监听输入值变化
+// Theo dõi thay đổi giá trị đầu vào
 watch(inputValue, (value) => {
   if (value !== lastSyncedEditorValue) {
     renderEditorContent(value || '')
@@ -1187,7 +1187,7 @@ onMounted(() => {
   })
 })
 
-// 组件卸载时清除定时器和事件监听器
+// Xóa bộ hẹn giờ và trình xử lý sự kiện khi gỡ cài đặt các thành phần
 onBeforeUnmount(() => {
   unmountEditorMentionIcons()
   if (debounceTimer.value) {
@@ -1202,7 +1202,7 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', closeMentionPopup)
 })
 
-// 公开方法供父组件调用
+// Các phương thức công khai để các thành phần cha mẹ gọi
 defineExpose({
   focus: () => inputRef.value?.focus(),
   closeOptions: () => {
@@ -1380,7 +1380,7 @@ defineExpose({
 
   &:active {
     color: var(--main-color);
-    // 移除点击缩小效果
+    // Loại bỏ hiệu ứng nhấp để thu phóng
   }
 
   .anticon {
@@ -1393,7 +1393,7 @@ defineExpose({
   }
 }
 
-// Popover 选项样式
+// Popover phong cách tùy chọn
 .popover-options {
   min-width: 160px;
   max-width: 200px;
@@ -1452,7 +1452,7 @@ defineExpose({
 
   &:active {
     box-shadow: 0 2px 4px var(--shadow-2);
-    // 移除点击动画效果
+    // Xóa hiệu ứng hoạt hình nhấp chuột
   }
 
   &:disabled {
@@ -1470,7 +1470,7 @@ defineExpose({
   }
 }
 
-// @ 提及弹窗样式
+// @ Đề cập đến phong cách bật lên
 .mention-dropdown-wrapper {
   position: absolute;
   bottom: 100%;
@@ -1638,7 +1638,7 @@ defineExpose({
   }
 
   .query-match {
-    color: #fa8c16; /* 明亮温润的金橘色 */
+    color: #fa8c16; /* Màu vàng cam tươi sáng và ấm áp */
     font-weight: 700;
   }
 

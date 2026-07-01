@@ -1,240 +1,240 @@
-# 版本变更记录
+# Lịch sử thay đổi phiên bản
 
-本页用于记录各版本发布说明（新增、修复与破坏性变更）。
+Trang này được sử dụng để ghi lại ghi chú phát hành cho từng phiên bản（Mới、Sửa lỗi và phá vỡ các thay đổi）。
 
-同一版本的多次功能更新时，应以功能为单位进行更新，比如之前添加了 A 功能的更新，在后续的更新中修复了因 A 功能引入的 bug，那么这个修复说明应该和 A 功能描述放在一起，而不是新增一条修复记录，功能更新同理。
+Khi có nhiều bản cập nhật tính năng của cùng một phiên bản，Nên cập nhật ở các đơn vị chức năng，Ví dụ: đã thêm trước đó A Cập nhật tính năng，Đã sửa trong các bản cập nhật tiếp theo A Chức năng được giới thiệu bug，Sau đó, hướng dẫn sửa chữa này sẽ giống như A Các mô tả chức năng được kết hợp với nhau，Thay vì thêm bản ghi sửa chữa mới，Cập nhật chức năng giống nhau。
 
 ## v0.7.1 (current)
 
-### 开发记录
+### Hồ sơ phát triển
 
-- 优化对话消息代码块交互：助手消息中的 Markdown 代码块右上角新增简约复制按钮，支持点击快速复制代码内容并显示短暂“已复制”反馈。
-- 新增历史对话搜索：侧边栏增加“搜索对话”入口，打开命令面板式弹窗，支持默认最近对话、新对话入口、搜索中骨架屏、结果列表、方向键选择与 Enter 跳转；后端新增 `/api/chat/threads/search`，按当前用户 active 对话中的非工具消息 `content` 检索并按对话聚合返回命中片段，同时将侧边栏导航项高度统一调整为 32px。
-- 模型供应商管理前端开放 Anthropic provider type：Provider Type 下拉仅保留 OpenAI Completions API 与 Anthropic Messages API 两种可选项，保存值继续使用后端枚举，并在供应商卡片中展示友好类型名称。
-- 优化任务中心（Tasker）定位为「后台作业实体 + 只读进度面板」。前端修正失效的任务类型标签、状态判断收敛、任务详情补充参数/结果，并把轮询收敛到 store 修复抽屉关闭后角标不更新；后端 `TaskContext` 暴露 `payload` 消除私有穿透，进度更新按增量节流降低写放大，新增终态任务保留上限自动裁剪内存与数据库，`_load_state` 恢复历史任务使任务中心重启后仍可见。
-- 知识库访问能力迁移为内置 Skill：新增 `knowledge-base` Skill，绑定 `list_kbs`、`query_kb`、`find_kb_document`、`open_kb_document`、`get_mindmap` 等知识库工具；内置 Agent 不再默认挂载知识库工具，改为读取并激活 Skill 后按需加载，同时保留 `knowledges` 作为知识库资源范围与权限边界。Agent 配置页在启用知识库但显式未选择 `knowledge-base` Skill 时实时展示提示，保存时不阻断。修复 Skill 依赖工具的可执行性：`create_agent` 中「模型可见工具」与「ToolNode 可执行工具」是两套，仅靠 `awrap_model_call` 动态追加工具只会绑定给模型、不进 ToolNode，导致激活 Skill 后调用 `list_kbs`/`query_kb` 报 `not a valid tool`；现由 `resolve_configured_runtime_tools` 统一把所有可见 Skill 依赖的本地工具随基础工具一起注册进 ToolNode（可执行），`SkillsMiddleware` 运行期再按 Skill 激活状态门控模型可见性（保持按需加载）。新增 `search_file` 工具支持按文件名关键词跨/指定知识库搜索文件，并已加入 `knowledge-base` Skill 的依赖工具；其分页统计基于全量扫描结果计算 `total`/`has_more`，避免按 `limit+offset` 截断导致计数失真。
-- 增强知识库工具结果豁免：`open_kb_document` 工具结果加入 Summary 卸载豁免名单，避免大文档窗口被摘要后丢失上下文。
-- 新增 Yuxi Python CLI 首版底座：新增独立 `packages/yuxi-cli` 包，提供 `remote add/use/list/ping`、`login --browser`、`login --api-key`、`whoami`、`status`、`logout`；配置统一写入 `~/.yuxi/config.toml`，remote URL 只保留实例入口并派生 `/api` 请求路径。后端新增 `/api/auth/cli/sessions` device flow 授权接口与 `cli_auth_sessions` 持久表，浏览器确认后为当前用户创建一次性返回的 API Key；新增公开 `/api/system/discovery` 声明服务端版本、API 前缀、CLI 能力和关键端点，CLI 登录前校验服务端版本至少为 `0.7.1`（`0.7.1.dev*` 按 release tuple 兼容）及对应能力；前端新增 `/auth/cli/authorize` 授权确认页。补充 CLI 本地单测与后端服务/路由单测。
-- 安全与健壮性加固：token 兑换接口改为 `POST /api/auth/cli/sessions/token`，`device_code` 改走请求体，避免凭据出现在访问日志的 URL 路径中；兑换与批准会话时对会话行加 `with_for_update` 行锁，防止并发/重试导致重复签发 API Key；CLI 浏览器登录轮询区分瞬时错误（网络层错误、5xx）与终止错误，瞬时错误继续重试而非中断整个登录；`config.toml` 以 `0600` 原子创建并对名称等写入值做引号/反斜杠转义，避免明文凭据短暂可读及特殊字符破坏配置；API Key 认证在绑定用户失效时改为直接拒绝，不再 fallback 到部门管理员或 superadmin，创建 API Key 时校验部门与关联用户一致，用户软删除会同步禁用其 API Key；Dashboard 管理接口与前端入口改为仅 superadmin 可访问；用户软删除脱敏名改用用户主键生成，避免短哈希碰撞触发唯一索引冲突；前端授权页新增确认提示与对结构化错误 `detail` 的兼容渲染。
-- 收敛 API Key 生成逻辑：移除独立 API Key 生成服务，统一通过 `AuthUtils.generate_api_key()` 生成 CLI 授权与用户管理中的 API Key。
-- 收敛认证模块命名：CLI 浏览器授权路由合并到 `auth_router.py`，授权会话服务迁移到 `auth_service.py`。
-- 为 CLI 知识库上传补齐后端接口边界：discovery 新增 `cli.kb_upload` 能力声明；普通文件上传接口在传入 `kb_id` 时先校验知识库存在且支持文档，校验通过后才读取文件或写 MinIO；新增同步 `POST /api/knowledge/databases/{kb_id}/documents/add`，用于把已上传的 MinIO 文件添加为知识库文档记录但不解析、不入库、不进入 Tasker；新增 `GET /api/knowledge/databases/{kb_id}/documents/exists?filename=...`，用于上传前按文件名或相对路径检查知识库内是否已有同名文件；旧 `/documents` ingest 入口保留兼容，但在 enqueue 前补充空 items、非 MinIO URL 与缺失 content hash 的请求级校验。
-- 新增 `yuxi kb upload` 上传命令：默认仅包含 `.md/.txt/.docx/.html/.htm`，省略 `--kb-id` 时会从 remote 拉取并只展示支持文档上传的知识库，支持非全屏的方向键单选知识库与多选文件类型；支持 `--include-ext/--exclude-ext` 与 `--concurrency` 控制本地并发队列，并发默认 10、上限 300；交互终端上传阶段显示进度条，非交互输出保留文本进度；每个并发单元默认会先按相对路径调用 `/documents/exists` 检查知识库中是否已有文件，存在则直接跳过，传入 `--force-upload-file` 时跳过该预检并完全依赖上传接口的重复文件校验；单文件上传成功后立即调用 `/documents/add` 添加该文件记录，不触发解析/OCR/入库；目录上传通过 `source_paths` 保留相对路径，后端创建文件记录时使用该路径作为展示文件名以保持前端目录层级；上传接口返回“同内容文件已存在”时按已上传过跳过，不再作为错误展示；大批量上传调度改为有界提交，避免数十万文件时一次性创建全部 future 导致资源峰值过高。
-- 发布 `yuxi-cli` 到 PyPI，并新增 GitHub Release 触发的 PyPI Trusted Publishing 工作流；文档新增命令行工具使用说明；CLI 运行访问 remote 的命令前会先输出当前 CLI 版本、remote 名称和 URL。
-- 修复知识库文件入库/解析成功却被统计为失败（#793）：成功的文件元数据会固定携带 `error: None`，而后台任务此前以「结果中是否存在 `error` 键」判定失败，导致成功项也被计入失败数并在全部成功时仍抛出「处理完成，失败 N 个」。改为统一通过 `_is_failed_item` 按「显式 `status == failed` 或非空 `error`」判定，覆盖入库、解析、单独解析/入库三处统计。
-- 优化知识库文件列表状态流转与文件预览边界：`uploaded/parsed/error_parsing/error_indexing` 状态分别展示解析、入库或重试操作；源文件预览与解析后的 Markdown 查看分离，txt/图片/Markdown/HTML/PDF/代码类按源文件类型预览；Office 源文件仅支持 `.docx/.pptx`，点击预览时按需生成并缓存 PDF 预览内容，由同一个预览接口直接返回，不再把解析 Markdown 产物当作源文件预览。
-- 优化大规模知识库文件列表加载：知识库详情接口默认不再返回全量 `files`，新增按 `parent_id/path_prefix/page/page_size/status` 查询的轻量文件列表接口；前端文件管理页改为目录懒加载与服务端分页，后端按 `source_path`/路径型文件名聚合虚拟目录，列表项只保留交互所需字段，顶部统计改用后端聚合结果，避免数十万文件场景下前端全量建树和传输压力。工作区知识库文件浏览统一改用同一套分页懒加载查询，支持真实目录和虚拟目录页码分页，非文档型知识库不再出现在工作区文件源中；文件浏览组件和后端列表接口均不再承载文件名搜索，后续搜索能力由独立后端接口和组件实现；文件列表展示抽出共享 `FileBrowserTable`，知识库详情和工作区共用展示层，并移除原知识库文件列表拖拽移动入口。
-- 优化知识库启动元数据加载：服务启动时不再把全部 `knowledge_files` 记录加载进 `self.files_meta`，文件解析、入库、预览、下载、打开内容等单文件操作改为按 `file_id` 从数据库懒加载；文件状态流转改为通过数据库窄字段更新和状态条件更新完成，移除进程内处理队列修复逻辑，避免 api/worker 多进程下出现虚假的状态修复；文件统计刷新改用数据库聚合，文件大小补全从启动阶段移入显式统计修复任务，并收敛处理参数合并日志，避免大规模文档场景下启动内存和日志压力随文件数线性放大。
-- 调整知识库待处理统计卡行为：文件管理顶部“待解析/待入库”统计卡从状态筛选改为提交对应后台处理任务；新增按待处理状态批量解析/入库接口，任务内按 500 条游标分页读取文件 ID，避免前端一次拉取和提交海量 ID；显式选中文件解析/入库接口增加 1000 个 ID 的单次上限。
-- 修复大规模知识库统计修复失败：`repair_missing_file_stats` 不再对未入库文件查询 chunk 表，未入库文件残留的 chunk/token 统计会归零；chunk repository 的批量 `IN` 查询统一分批执行，避免 asyncpg 单条 SQL 参数超过 32767。
-- 优化思维导图构建接口设计，支持增量构建和更新：新增 GET /mindmap/diff 接口检测文件变更，POST /mindmap/generate 新增 incremental 参数支持增量更新；纯删除场景无需 AI 调用（递归树手术），新增文件时 AI 整合进现有分类结构；思维导图文件加载改为显式 repository 查询，增量 diff 会按已追踪 file_id 补查分页外文件，避免把分页文件列表误当全量文件集；前端导图 Tab 新增"增量更新"按钮和变更数量 badge
-- 优化文档结构与智能体运行说明：项目简介去除对 LangGraph 具体版本的强调；中间件文档按当前内置 Agent 链路重写，补充知识库工具、Skills 激活、附件/文件系统、子智能体 task、Summary 上下文压缩与工具结果卸载机制；知识库文档补充知识导图与示例问题生成机制；Langfuse 集成文档从“智能体开发”移动到“高级配置”分组。
-- 移除知识库普通上传接口遗留的 `allow_jsonl` 参数，上传类型判断统一依赖 `SUPPORTED_FILE_EXTENSIONS`；评估数据集 JSONL 继续通过独立评估接口上传。
-- 修复 Dependabot esbuild 告警：web 与 docs 统一锁定 `esbuild@0.28.1`，docs 同步升级 Vite/Vue 插件 override 并固定 pnpm 版本，避免旧锁文件继续解析到存在漏洞的 esbuild 版本。
-- 修复 CORS 与依赖安全告警：后端 CORS 改为通过 `YUXI_CORS_ORIGINS` 配置允许来源，开发环境默认仅允许本机前端端口，生产环境未配置时不开放跨域，显式使用 `*` 时会关闭 credentials；同步刷新前后端锁文件，将 `aiohttp`、`cryptography`、`langchain`、`langchain-anthropic`、`pypdf`、`python-multipart`、`starlette`、`pyjwt`、`torch`、`torchvision`、`dompurify`、`js-yaml`、`markdown-it`、`vite` 升级到安全版本。
-- 修复添加/编辑 MCP 弹窗中环境变量无法新增的问题：环境变量编辑器存在 rows -> object -> rows 的双向同步回环，`modelValue` 变化时会完全根据已有 key 重建行，导致只填了 key 的行（含刚点击「添加变量」生成的空行）被过滤掉而无法新增；现在仅当传入值与组件自身 emit 的内容不一致时才重建行，避免回声覆盖未填 key 的行。
-- 修复模型与知识库后端导入循环：`yuxi.models` 改为惰性导出模型选择函数，知识库可见范围和知识库工具延迟读取全局 `knowledge_base` 实例，避免单测、热重载或轻量导入知识库包时因模块尚未完成初始化而失败。
-- 修复知识库创建权限持久化一致性：创建知识库时由 Manager 归一化 `share_config/created_by` 后作为受控记录字段随首次知识库元数据插入写入数据库，避免先插入基础记录再二次更新权限字段产生短暂不一致。
-- 修复 HTML 预览 iframe 高度问题：侧边预览模式改为 `height: 100%` 适应父容器，避免底部内容裁切；全屏预览模式移除 `min-height: calc(80vh - 40px)`，避免短内容下方白边；iframe 设为 `display: block` 消除行内基线间隙导致的底部白边；全屏渲染改用独立 `srcdoc`（不注入 `zoom`）按 100% 显示，侧边预览仍保持 0.75 缩放。
-- 对话消息图片支持点击全屏预览：对话中用户上传的图片支持点击放大查看，复用文件预览的全屏蒙层交互（Teleport 蒙层，点击图片/空白处或按 Esc 关闭），不引入额外依赖。
-- 新增 Agent token usage 状态快照，在状态面板中作为普通可折叠分组展示完整 `messages`、当前传给 LLM 的 `messages`、system/tools 构成、输入构成堆叠条和上下文窗口占用估算。
-- 优化 Agent 上下文压缩：Yuxi 的 DeepAgents summary adapter 在生成 summary 与写入 conversation history 时，不再改写 `AIMessage.tool_calls` 或 provider tool metadata，只逐条替换被摘要掉的旧 `ToolMessage.content`；`summary_keep_messages` 保留窗口原样传给模型，不再额外清洗最近消息；完整工具输出写入 `outputs/large_tool_results`，文件名使用工具名与内容 hash 生成，上下文只保留完整路径和最多 `summary_tool_result_token_limit` tokens 的预览，未触发 summary 的常规模型调用不做额外 ToolMessage 清洗；Summary 阈值判断改为使用 Yuxi 自己的近似 token 计算结果，不再根据 provider `usage_metadata.total_tokens` 或 usage scaling 提前触发；首次写入 `conversation_history` 前读取旧文件的 sandbox 404 会按 `file_not_found` 处理，不再产生误导性 warning；`present_artifacts` 会拒绝展示 `large_tool_results` 与 `conversation_history` 等工具调用阶段文件。新增管理员可配置项 `summary_keep_messages`、`summary_prompt`、`summary_tool_result_token_limit` 与 `max_execution_steps`，分别控制摘要后保留消息数、摘要提示词、summary 阶段工具结果预览上限和 LangGraph `recursion_limit`。
-- 收敛普通聊天模型加载链路：`select_model` 保留旧 `.call()` 调用契约，内部改为通过 LangChain chat model adapter 复用 Agent 侧模型加载器，统一 OpenAI-compatible、Anthropic 与 Gemini 等 provider 的运行时适配；移除旧 `OpenAIBase` wrapper，默认重试策略迁移为 LangChain provider 参数。
-- 统一 Redis 客户端管理：新增 `yuxi.storage.redis` 作为 Redis 配置、短生命周期同步客户端、共享异步客户端与 ARQ RedisSettings 的唯一基础设施入口；运行队列、系统配置快照同步、模型缓存和 worker 不再各自散落读取 `REDIS_URL` 或直接创建 Redis 客户端，Redis 连接失败日志统一使用脱敏 URL。
-- 新增系统配置 Redis 快照同步：管理员保存配置时仍以 `saves/config/base.toml` 作为唯一持久化来源，成功写入后将可运行时同步的公开配置字段写入 `yuxi:runtime_config`；API 与 worker 进程在启动时各拉起一个后台同步线程，按 5 秒间隔从快照刷新内存值，读取端按普通属性访问、无需感知，Redis 不可用时继续使用当前内存值。`save_dir` 是启动期内部路径配置，不在管理员配置中展示、不从 `base.toml` 读取、不写入 Redis 快照且不支持通过管理员配置接口修改；sandbox 相关配置仍属于启动期敏感配置，运行中的已初始化组件不承诺完整热更新，修改后仍需重启保证生效；移除已无运行时调用点的 `enable_reranker` 与 `default_agent_id` 配置字段。
-- 优化 FastAPI 请求链路并发能力：Milvus 知识库检索中的同步 embedding、向量/BM25/混合检索调用，以及图谱查询中的同步 Milvus/Neo4j 读操作（含连接建立）统一通过有界 `asyncio.to_thread` 在线程中执行，避免阻塞 API 事件循环；并发上限按事件循环懒加载信号量控制，不改变检索默认行为与参数上限。
-- 改进 OpenAI 兼容提供商流式工具调用兼容（替代 v0.7.0 的按 provider 禁流式处理）：根因是 LangGraph v3 流式累积对 tool_call 字段“后值覆盖”，SiliconFlow、阿里云百炼等在参数续片里把 `name`/`id` 下发为空字符串覆盖首片真实值。改为 `_ToolCallChunkFixChatOpenAI` 把续片空串 `name`/`id` 归一化为 `None`，对所有 OpenAI 兼容 provider 通用生效且保留流式，移除原 `_NON_STREAMING_TOOL_CALL_PROVIDERS` 名单。
-- 新增 Agent 评估运行入口：`POST /api/agent/eval/runs` 会创建正常对话与 AgentRun，复用 worker 执行链路，并以 `agent_evaluation` 标记写入 conversation、AgentRun 与 Langfuse trace；接口阻塞至运行结束后直接返回最终结果（状态、最终 assistant 输出、Langfuse trace id）。`yuxi-cli` 新增 `yuxi agent eval` 命令，用于从 Langfuse 数据集读取输入并回传实验输出
-- 对话消息点赞/点踩反馈接入 Langfuse score：本地 `MessageFeedback` 保存成功后，如助手消息已关联 Langfuse trace，则同步写入 `user-feedback` score，点赞为 `1`、点踩为 `0`，点踩原因写入 comment，便于在 Langfuse 中按用户反馈筛选 trace。
-- 下沉 AgentRun 基础能力：将「读取某个 run 的最终结果」（`get_agent_run_result`/`load_agent_run_result`，含状态、最终 assistant 输出、Langfuse trace id 与错误）与「阻塞至 run 终结再取结果」（`await_agent_run_result`，复用有限事件流、无额外轮询）提升进 `agent_run_service`，供 chat/eval 及未来定时任务统一复用；eval 运行入口改为非流式复用该能力（不再做 SSE 封装），移除其私有结果构建逻辑（结果不变）。
-- 重构 AgentRun 接口底座：`agent_run_service` 拆出内部 `create_agent_run`、`enqueue_agent_run` 与 `request_cancel_agent_run`，保留现有 `/api/agent/runs` 行为并新增 `/api/agent/runs/{run_id}/result` 结果读取接口；`AgentRunRepository` 增加按 `parent_agent_run_id` 查询 child run 的能力，为后续异步 subagent 生命周期控制预留统一入口。
-- 修复子智能体流式事件兼容：Yuxi task middleware 的 DeepAgents 子智能体 transformer 改用专用 `yuxi_subagents` projection，避免与 LangChain `create_agent` 默认注册的 `subagents` projection 冲突导致运行流式消息时报错；子线程路由收集优先读取 Yuxi projection，并保留原 `subagents` fallback。
+- Tối ưu hóa tương tác khối mã tin nhắn đối thoại：trong tin nhắn trợ lý Markdown Một nút sao chép đơn giản được thêm vào ở góc trên bên phải của khối mã，Hỗ trợ click chuột để sao chép nhanh nội dung mã và hiển thị ngắn gọn“Đã sao chép”phản hồi。
+- Đã thêm tìm kiếm cuộc trò chuyện lịch sử：Đã thêm thanh bên“Tìm kiếm cuộc trò chuyện”lối vào，Mở cửa sổ bật lên bảng lệnh，Hỗ trợ các cuộc hội thoại gần đây mặc định、Mục hội thoại mới、Tìm kiếm màn hình bộ xương、Danh sách kết quả、Lựa chọn phím mũi tên và Enter Nhảy；Phần phụ trợ mới `/api/chat/threads/search`，bởi người dùng hiện tại active Tin nhắn không phải công cụ trong cuộc hội thoại `content` Truy xuất và trả lại các đoạn truy cập được tổng hợp bởi cuộc trò chuyện，Đồng thời, chiều cao của các mục điều hướng trong thanh bên được điều chỉnh thống nhất để 32px。
+- Mô hình quản lý nhà cung cấp front-end mở Anthropic provider type：Provider Type Thả xuống chỉ để giữ OpenAI Completions API với Anthropic Messages API Hai lựa chọn，Lưu giá trị để tiếp tục sử dụng enum phụ trợ，và hiển thị tên loại thân thiện trên thẻ nhà cung cấp。
+- Tối ưu hóa trung tâm tác vụ（Tasker）Được định vị là「thực thể công việc nền + Bảng tiến trình chỉ đọc」。Frontend sửa các thẻ loại tác vụ bị hỏng、Hội tụ phán quyết của nhà nước、Thông số bổ sung chi tiết nhiệm vụ/kết quả，và hội tụ việc bỏ phiếu tới store Đã khắc phục sự cố dấu góc không được cập nhật sau khi đóng ngăn kéo；phụ trợ `TaskContext` bị lộ `payload` Loại bỏ sự xâm nhập riêng tư，Cập nhật tiến trình được điều chỉnh tăng dần để giảm khả năng khuếch đại ghi，Đã thêm giới hạn trên duy trì tác vụ cuối cùng để tự động cắt bớt bộ nhớ và cơ sở dữ liệu，`_load_state` Khôi phục các tác vụ lịch sử để vẫn hiển thị trung tâm tác vụ sau khi khởi động lại。
+- Khả năng truy cập cơ sở kiến thức được di chuyển sang tích hợp sẵn Skill：Mới `knowledge-base` Skill，ràng buộc `list_kbs`、`query_kb`、`find_kb_document`、`open_kb_document`、`get_mindmap` công cụ cơ sở tri thức；Tích hợp sẵn Agent Các công cụ cơ sở kiến thức không còn được gắn theo mặc định，Đọc và kích hoạt thay thế Skill Tải theo yêu cầu，Cũng giữ `knowledges` Là phạm vi tài nguyên cơ sở tri thức và ranh giới quyền hạn。Agent Trang cấu hình kích hoạt cơ sở kiến thức nhưng không chọn nó một cách rõ ràng. `knowledge-base` Skill lời nhắc hiển thị thời gian thực，Không chặn khi lưu。sửa chữa Skill Phụ thuộc vào khả năng thực thi của công cụ：`create_agent` trong「Công cụ hiển thị mô hình」với「ToolNode công cụ thực thi」Đó là hai bộ，chỉ dựa vào `awrap_model_call` Các công cụ nối thêm động sẽ chỉ được liên kết với mô hình、Không vào ToolNode，gây kích hoạt Skill gọi sau `list_kbs`/`query_kb` tờ báo `not a valid tool`；Bây giờ bởi `resolve_configured_runtime_tools` Thống nhất tất cả những gì có thể nhìn thấy Skill Các công cụ cục bộ phụ thuộc được đăng ký cùng với các công cụ cơ bản ToolNode（Có thể thực thi），`SkillsMiddleware` Nhấn lại trong khi chạy Skill Kích hoạt khả năng hiển thị mô hình kiểm soát trạng thái（Tiếp tục tải theo yêu cầu）。Mới `search_file` Công cụ hỗ trợ mở rộng theo từ khóa tên file/Chỉ định tệp tìm kiếm cơ sở kiến thức，và đã tham gia `knowledge-base` Skill công cụ phụ thuộc；Số liệu thống kê phân trang của nó được tính toán dựa trên kết quả quét toàn bộ. `total`/`has_more`，tránh nhấn `limit+offset` Việc cắt ngắn làm sai lệch số lượng。
+- Miễn trừ kết quả của công cụ cơ sở kiến thức nâng cao：`open_kb_document` Đã thêm kết quả công cụ Summary Gỡ cài đặt danh sách miễn trừ，Tránh mất ngữ cảnh sau khi tóm tắt các cửa sổ tài liệu lớn。
+- Mới Yuxi Python CLI Cơ sở ấn bản đầu tiên：Thêm độc lập `packages/yuxi-cli` gói，cung cấp `remote add/use/list/ping`、`login --browser`、`login --api-key`、`whoami`、`status`、`logout`；Cấu hình viết thống nhất `~/.yuxi/config.toml`，remote URL Chỉ giữ mục nhập cá thể và lấy nó `/api` Đường dẫn yêu cầu。Phần phụ trợ mới `/api/auth/cli/sessions` device flow Giao diện ủy quyền và `cli_auth_sessions` bảng liên tục，Sau khi trình duyệt xác nhận, nó sẽ tạo ra sự hoàn trả một lần cho người dùng hiện tại. API Key；Thêm công khai `/api/system/discovery` Khai báo phiên bản máy chủ、API tiền tố、CLI Khả năng và điểm cuối chính，CLI Trước khi đăng nhập, hãy xác minh rằng phiên bản máy chủ ít nhất `0.7.1`（`0.7.1.dev*` nhấn release tuple Tương thích）và khả năng tương ứng；Giao diện người dùng mới `/auth/cli/authorize` Trang xác nhận ủy quyền。bổ sung CLI Dịch vụ back-end và thử nghiệm đơn vị cục bộ/Lộ trình kiểm tra đơn。
+- Tăng cường an ninh và mạnh mẽ：token Giao diện đổi quà được thay đổi thành `POST /api/auth/cli/sessions/token`，`device_code` Thay đổi nội dung yêu cầu，Ngăn chặn thông tin xác thực xuất hiện trong nhật ký truy cập URL trong đường dẫn；Khi đổi và phê duyệt phiên, hãy thêm `with_for_update` khóa hàng，Ngăn chặn sự đồng thời/Thử lại kết quả phát hành lặp lại API Key；CLI Thăm dò đăng nhập trình duyệt phân biệt các lỗi tạm thời（lỗi lớp mạng、5xx）với lỗi chấm dứt，Lỗi tạm thời tiếp tục thử lại thay vì làm gián đoạn toàn bộ quá trình đăng nhập；`config.toml` để `0600` Tạo nguyên tử và trích dẫn các giá trị bằng văn bản như tên/thoát dấu gạch chéo ngược，Ngăn chặn thông tin xác thực văn bản rõ ràng có thể đọc được tạm thời và các ký tự đặc biệt làm hỏng cấu hình；API Key Xác thực được thay đổi thành từ chối trực tiếp khi người dùng bị ràng buộc không thành công.，không còn nữa fallback cho người quản lý bộ phận hoặc superadmin，tạo ra API Key Xác minh rằng bộ phận phù hợp với người dùng được liên kết，Việc xóa mềm một người dùng sẽ đồng thời vô hiệu hóa nó API Key；Dashboard Giao diện quản lý và lối vào front-end được thay đổi thành chỉ superadmin có thể truy cập；Thay vào đó, tên đã được giải mẫn cảm với việc xóa phần mềm của người dùng được tạo bằng khóa chính của người dùng，Tránh xung đột băm ngắn gây ra xung đột chỉ mục duy nhất；Đã thêm lời nhắc xác nhận và lỗi cấu trúc vào trang ủy quyền giao diện người dùng `detail` Kết xuất tương thích của。
+- hội tụ API Key Tạo logic：loại bỏ độc lập API Key Xây dựng dịch vụ，Nhất trí thông qua `AuthUtils.generate_api_key()` tạo ra CLI Phân quyền và quản lý người dùng API Key。
+- Đặt tên mô-đun xác thực hội tụ：CLI Định tuyến ủy quyền trình duyệt được sáp nhập vào `auth_router.py`，Dịch vụ phiên ủy quyền đã được di chuyển sang `auth_service.py`。
+- cho CLI Tải lên cơ sở kiến thức hoàn thành ranh giới giao diện phụ trợ：discovery Mới `cli.kb_upload` tuyên bố năng lực；Giao diện tải tập tin thông thường đang đến `kb_id` Đầu tiên hãy xác minh rằng cơ sở kiến thức tồn tại và hỗ trợ tài liệu，Tệp chỉ được đọc hoặc ghi sau khi quá trình xác minh được thông qua. MinIO；Thêm đồng bộ hóa `POST /api/knowledge/databases/{kb_id}/documents/add`，Dùng để tải lên MinIO Tệp được thêm dưới dạng bản ghi tài liệu cơ sở kiến thức nhưng không được phân tích cú pháp、Không được lưu trữ trong kho、Không nhập Tasker；Mới `GET /api/knowledge/databases/{kb_id}/documents/exists?filename=...`，Được sử dụng để kiểm tra xem đã có tệp có cùng tên trong cơ sở kiến ​​thức theo tên tệp hoặc đường dẫn tương đối trước khi tải lên；cũ `/documents` ingest Entry vẫn tương thích，Nhưng ở enqueue thêm trống trước items、Không MinIO URL và mất tích content hash xác minh cấp độ yêu cầu。
+- Mới `yuxi kb upload` Lệnh tải lên：Theo mặc định nó chỉ chứa `.md/.txt/.docx/.html/.htm`，Bỏ qua `--kb-id` sẽ bắt đầu từ remote Kéo và chỉ hiển thị các cơ sở kiến thức hỗ trợ tải lên tài liệu，Hỗ trợ các phím mũi tên không toàn màn hình cho các loại tệp kiến ​​thức chọn một lần và chọn nhiều tệp；hỗ trợ `--include-ext/--exclude-ext` với `--concurrency` Kiểm soát hàng đợi đồng thời cục bộ，Mặc định đồng thời 10、giới hạn trên 300；Thiết bị đầu cuối tương tác hiển thị thanh tiến trình trong giai đoạn tải lên.，Đầu ra không tương tác duy trì tiến trình văn bản；Theo mặc định, mỗi đơn vị đồng thời sẽ được gọi đầu tiên bằng một đường dẫn tương đối. `/documents/exists` Kiểm tra xem tệp đã tồn tại trong cơ sở kiến thức chưa，Nếu nó tồn tại, bỏ qua nó trực tiếp，đến `--force-upload-file` bỏ qua bước kiểm tra trước này và hoàn toàn dựa vào việc kiểm tra tệp trùng lặp của giao diện tải lên；Được gọi ngay sau khi một tệp được tải lên thành công `/documents/add` Thêm bản ghi tập tin này，Không kích hoạt phân tích cú pháp/OCR/Kho；Tải lên thư mục đã được thông qua `source_paths` Giữ đường dẫn tương đối，Phần phụ trợ sử dụng đường dẫn này làm tên tệp hiển thị khi tạo bản ghi tệp để duy trì hệ thống phân cấp thư mục giao diện người dùng.；Giao diện tải lên trở lại“Tệp có cùng nội dung đã tồn tại”Nút thời gian đã được tải lên và bỏ qua，Không còn hiển thị dưới dạng lỗi；Lập lịch tải lên hàng loạt đã thay đổi thành gửi có giới hạn，Tránh tạo hàng trăm nghìn tệp cùng một lúc future Làm cho đỉnh tài nguyên quá cao。
+- xuất bản `yuxi-cli` Đến PyPI，và thêm GitHub Release kích hoạt PyPI Trusted Publishing Quy trình làm việc；Tài liệu bổ sung hướng dẫn sử dụng công cụ dòng lệnh；CLI chạy truy cập remote Lệnh hiện tại sẽ được xuất ra đầu tiên CLI Phiên bản、remote tên và URL。
+- Sửa chữa các tập tin cơ sở kiến thức và nhập chúng vào cơ sở dữ liệu/Việc phân tích cú pháp thành công nhưng được tính là thất bại.（#793）：Siêu dữ liệu tệp thành công sẽ được mang vĩnh viễn `error: None`，Tác vụ nền trước đó đã được「Nó có tồn tại trong kết quả không? `error` chìa khóa」Quyết định không thành công，Làm cho các vật phẩm thành công cũng được tính vào số lần thất bại và vẫn bị ném ra khi tất cả đều thành công.「Xử lý hoàn tất，thất bại N một」。Thay đổi thành thông qua nhất trí `_is_failed_item` nhấn「rõ ràng `status == failed` hoặc không trống `error`」Phán quyết，Lưu trữ bảo hiểm、phân tích cú pháp、Phân tích một mình/Thống kê từ ba nơi trong cơ sở dữ liệu。
+- Tối ưu hóa luồng trạng thái danh sách tệp cơ sở kiến ​​thức và ranh giới xem trước tệp：`uploaded/parsed/error_parsing/error_indexing` Hiển thị và phân tích trạng thái tương ứng、Lưu trữ hoặc thử lại thao tác；Xem trước và phân tích tệp nguồn Markdown xem tách，txt/hình ảnh/Markdown/HTML/PDF/Xem trước các lớp mã theo loại tệp nguồn；Office Chỉ hỗ trợ tập tin nguồn `.docx/.pptx`，Tạo và lưu vào bộ nhớ đệm theo yêu cầu khi nhấp vào xem trước PDF Xem trước nội dung，Trở lại trực tiếp từ cùng một giao diện xem trước，Không còn phân tích cú pháp Markdown Xem trước sản phẩm dưới dạng tệp nguồn。
+- Tối ưu hóa việc tải danh sách tệp cơ sở kiến thức quy mô lớn：Giao diện chi tiết cơ sở kiến thức không còn trả về toàn bộ số tiền theo mặc định `files`，Thêm nút mới `parent_id/path_prefix/page/page_size/status` Giao diện danh sách tệp nhẹ cho truy vấn；Trang quản lý tệp giao diện người dùng được thay đổi thành thư mục tải chậm và phân trang phía máy chủ.，Báo chí phụ trợ `source_path`/Thư mục ảo tổng hợp tên tệp đường dẫn，Các mục danh sách chỉ giữ lại các trường cần thiết cho tương tác，Số liệu thống kê hàng đầu sử dụng kết quả tổng hợp phụ trợ thay thế，Tránh áp lực tạo và truyền tải toàn bộ giao diện người dùng trong các tình huống liên quan đến hàng trăm nghìn tệp。Việc duyệt tệp cơ sở kiến ​​thức trong không gian làm việc được hợp nhất và sử dụng cùng một bộ truy vấn tải từng phần phân trang.，Hỗ trợ phân trang số trang thư mục thực và thư mục ảo，Cơ sở kiến ​​thức không được ghi lại không còn xuất hiện trong nguồn tệp không gian làm việc；Cả thành phần duyệt tệp và giao diện danh sách phụ trợ đều không còn lưu trữ tìm kiếm tên tệp.，Khả năng tìm kiếm tiếp theo được triển khai bởi các thành phần và giao diện phụ trợ độc lập；Chia sẻ trích xuất hiển thị danh sách tập tin `FileBrowserTable`，Chi tiết cơ sở kiến thức và không gian làm việc chia sẻ cùng một lớp trình bày，Và loại bỏ mục nhập di động kéo và thả của danh sách tệp cơ sở kiến ​​thức gốc。
+- Tối ưu hóa tải siêu dữ liệu khởi động cơ sở kiến thức：Khi bắt đầu dịch vụ, tất cả `knowledge_files` bản ghi được tải vào `self.files_meta`，Phân tích tệp、Kho、Xem trước、Tải xuống、Các thao tác tập tin đơn lẻ như mở nội dung được thay đổi thành cách nhấn `file_id` Tải chậm từ cơ sở dữ liệu；Việc chuyển trạng thái tệp được hoàn thành thông qua cập nhật trường hẹp cơ sở dữ liệu và cập nhật tình trạng trạng thái.，Loại bỏ logic sửa chữa hàng đợi xử lý trong quá trình，tránh api/worker Đã sửa lỗi trạng thái sai trong nhiều quy trình；Thay vào đó, làm mới thống kê tệp sử dụng tính năng tổng hợp cơ sở dữ liệu，Hoàn tất kích thước tệp được chuyển từ giai đoạn khởi động sang nhiệm vụ sửa chữa số liệu thống kê rõ ràng，Và nhật ký hợp nhất các tham số xử lý hội tụ，Tránh mở rộng tuyến tính bộ nhớ khởi động và áp lực ghi nhật ký với số lượng tệp trong các kịch bản tài liệu quy mô lớn。
+- Điều chỉnh cơ sở kiến thức đang chờ xử lý thẻ thống kê：Quản lý tập tin hàng đầu“Để được phân tích cú pháp/Để được dự trữ”Thẻ thống kê được thay đổi từ lọc trạng thái sang gửi các tác vụ xử lý nền tương ứng.；Đã thêm phân tích hàng loạt theo trạng thái đang chờ xử lý/Giao diện gửi đến，Nhấn trong nhiệm vụ 500 Con trỏ để đọc tập tin trong trang ID，Tránh việc kéo và gửi lượng lớn dữ liệu cùng một lúc ID；Chọn rõ ràng phân tích tệp/Đã thêm giao diện kho 1000 một ID Giới hạn duy nhất của。
+- Đã sửa lỗi sửa lỗi thống kê cơ sở kiến thức quy mô lớn：`repair_missing_file_stats` Không còn truy vấn nào đối với các tệp không được lưu trữ trong cơ sở dữ liệu chunk bàn，Các tập tin còn lại chưa được lưu trữ trong cơ sở dữ liệu chunk/token Thống kê sẽ được đặt lại về 0；chunk repository kích thước lô `IN` Thực hiện truy vấn theo đợt，tránh asyncpg Độc thân SQL thông số vượt quá 32767。
+- Tối ưu hóa thiết kế giao diện xây dựng bản đồ tư duy，Hỗ trợ các bản dựng và cập nhật gia tăng：Mới GET /mindmap/diff Thay đổi tập tin phát hiện giao diện，POST /mindmap/generate Mới incremental Các thông số hỗ trợ cập nhật gia tăng；Không cần những cảnh bị xóa thuần túy AI gọi（phẫu thuật cây đệ quy），Khi thêm một tập tin mới AI Tích hợp vào cấu trúc phân loại hiện có；Việc tải tệp bản đồ tư duy đã thay đổi thành rõ ràng repository Truy vấn，Tăng diff sẽ bấm theo dõi file_id Kiểm tra các tập tin ngoài trang，Tránh nhầm lẫn danh sách tệp phân trang với tập hợp tệp đầy đủ；Bản đồ mặt trước Tab Mới"cập nhật gia tăng"Số lượng nút và thay đổi badge
+- Tối ưu hóa cấu trúc tài liệu và hướng dẫn vận hành đại lý：Giới thiệu dự án loại bỏ cặp LangGraph Phiên bản nhấn mạnh cụ thể；Tài liệu Middleware hiện được tích hợp sẵn Agent liên kết viết lại，Công cụ cơ sở kiến thức bổ sung、Skills kích hoạt、Phụ kiện/hệ thống tập tin、chất phụ task、Summary Cơ chế nén ngữ cảnh và giảm tải kết quả công cụ；Tài liệu cơ sở tri thức bổ sung bản đồ tri thức và cơ chế tạo câu hỏi mẫu；Langfuse Tài liệu tích hợp từ“Phát triển đại lý”di chuyển đến“Cấu hình nâng cao”Nhóm。
+- Xóa bỏ di sản của giao diện tải lên chung của cơ sở tri thức `allow_jsonl` thông số，Tải lên loại phán đoán phụ thuộc thống nhất `SUPPORTED_FILE_EXTENSIONS`；Tập dữ liệu đánh giá JSONL Tiếp tục upload thông qua giao diện đánh giá độc lập。
+- sửa chữa Dependabot esbuild báo động：web với docs khóa thống nhất `esbuild@0.28.1`，docs Nâng cấp đồng bộ Vite/Vue trình cắm thêm override và cố định pnpm Phiên bản，Ngăn chặn các tệp khóa cũ tiếp tục được phân tích cú pháp thành các tệp dễ bị tấn công esbuild Phiên bản。
+- sửa chữa CORS và cảnh báo bảo mật phụ thuộc：phụ trợ CORS thay vào đó vượt qua `YUXI_CORS_ORIGINS` Định cấu hình các nguồn được phép，Theo mặc định, môi trường phát triển chỉ cho phép các cổng giao diện người dùng gốc，Tên miền chéo không được bật khi môi trường sản xuất không được định cấu hình.，sử dụng rõ ràng `*` sẽ đóng cửa khi credentials；Làm mới đồng bộ các tập tin khóa front-end và back-end，sẽ `aiohttp`、`cryptography`、`langchain`、`langchain-anthropic`、`pypdf`、`python-multipart`、`starlette`、`pyjwt`、`torch`、`torchvision`、`dompurify`、`js-yaml`、`markdown-it`、`vite` Nâng cấp lên phiên bản an toàn。
+- sửa thêm/Chỉnh sửa MCP Sự cố không thể thêm biến môi trường trong cửa sổ bật lên：Trình chỉnh sửa biến môi trường tồn tại rows -> object -> rows Vòng lặp đồng bộ hai chiều，`modelValue` Khi thay đổi sẽ hoàn toàn dựa trên những gì đã có key Xây dựng lại hàng，Kết quả là tôi chỉ điền vào key hàng（Chỉ cần nhấp vào「Thêm biến」Đã tạo dòng trống）Đã lọc ra và không thể thêm vào；Bây giờ chỉ khi giá trị được truyền vào khớp với chính thành phần đó emit Hàng sẽ chỉ được xây dựng lại khi nội dung không nhất quán.，Tránh ghi đè tiếng vang không được lấp đầy key hàng。
+- Sửa vòng lặp nhập phụ trợ mô hình và cơ sở kiến thức：`yuxi.models` Thay đổi sang chức năng xuất mô hình một cách lười biếng，Phạm vi hiển thị cơ sở kiến ​​thức và công cụ cơ sở kiến ​​thức bị trì hoãn việc đọc toàn cầu `knowledge_base` Ví dụ，Tránh thử nghiệm đơn lẻ、Tải lại nóng hoặc nhập nhẹ gói cơ sở kiến ​​thức không thành công do mô-đun chưa hoàn tất quá trình khởi tạo.。
+- Sửa lỗi tính nhất quán của quyền tạo cơ sở kiến thức：Cơ sở tri thức được tạo ra bởi Manager bình thường hóa `share_config/created_by` Sau đó, nó được ghi vào cơ sở dữ liệu dưới dạng trường bản ghi được kiểm soát với phần chèn siêu dữ liệu cơ sở kiến ​​thức đầu tiên.，Tránh sự không nhất quán tạm thời do chèn bản ghi cơ bản trước rồi cập nhật trường quyền lần thứ hai.。
+- sửa chữa HTML Xem trước iframe vấn đề chiều cao：Thay đổi chế độ xem trước bên thành `height: 100%` Thích ứng với vùng chứa chính，Tránh cắt xén nội dung phía dưới；Đã xóa chế độ xem trước toàn màn hình `min-height: calc(80vh - 40px)`，Tránh lề trắng bên dưới nội dung ngắn；iframe đặt thành `display: block` Loại bỏ các cạnh màu trắng phía dưới gây ra bởi các khoảng trống đường cơ sở nội tuyến；Hiển thị toàn màn hình đã thay đổi thành độc lập `srcdoc`（Không tiêm `zoom`）nhấn 100% hiển thị，Xem trước bên vẫn còn 0.75 Thu phóng。
+- Hình ảnh tin nhắn hội thoại hỗ trợ xem trước toàn màn hình chỉ bằng một cú nhấp chuột：Có thể nhấp vào hình ảnh do người dùng tải lên trong cuộc trò chuyện để phóng to.，Tương tác mặt nạ toàn màn hình để xem trước tệp đa kênh（Teleport lớp mặt nạ，bấm vào hình ảnh/khoảng trống hoặc nhấn Esc đóng），Không có phụ thuộc bổ sung nào được giới thiệu。
+- Mới Agent token usage ảnh chụp nhanh trạng thái，Được hiển thị đầy đủ dưới dạng nhóm có thể thu gọn thông thường trong bảng trạng thái `messages`、hiện được chuyển đến LLM của `messages`、system/tools cấu thành、Đầu vào tạo thành các thanh xếp chồng lên nhau và ước tính tỷ lệ chiếm dụng cửa sổ theo ngữ cảnh。
+- Tối ưu hóa Agent Nén ngữ cảnh：Yuxi của DeepAgents summary adapter Đang tạo summary và viết conversation history thời gian，Không viết lại nữa `AIMessage.tool_calls` hoặc provider tool metadata，Chỉ thay thế những cái cũ đã được tiêu hóa từng cái một `ToolMessage.content`；`summary_keep_messages` Để nguyên cửa sổ và chuyển nó cho mô hình，Không cần dọn dẹp thêm các tin nhắn gần đây；Viết đầu ra công cụ đầy đủ `outputs/large_tool_results`，Tên file sử dụng tên công cụ và nội dung hash tạo ra，Bối cảnh chỉ giữ lại đường dẫn đầy đủ và tối đa `summary_tool_result_token_limit` tokens xem trước，Không được kích hoạt summary Các cuộc gọi mô hình thông thường không làm gì thêm ToolMessage Sạch sẽ；Summary Ngưỡng phán đoán được thay đổi để sử dụng Yuxi xấp xỉ riêng token Kết quả tính toán，không còn dựa vào provider `usage_metadata.total_tokens` hoặc usage scaling kích hoạt sớm；viết đầu tiên `conversation_history` Đọc file cũ trước sandbox 404 Sẽ nhấn `file_not_found` Quy trình，không còn gây nhầm lẫn nữa warning；`present_artifacts` sẽ từ chối hiển thị `large_tool_results` với `conversation_history` Đang chờ tập tin giai đoạn cuộc gọi công cụ。Đã thêm các mục có thể định cấu hình của quản trị viên `summary_keep_messages`、`summary_prompt`、`summary_tool_result_token_limit` với `max_execution_steps`，Kiểm soát riêng số lượng tin nhắn được giữ lại sau khi tiêu hóa、lời nhắc tóm tắt、summary Giới hạn xem trước kết quả của công cụ Stage và LangGraph `recursion_limit`。
+- Liên kết tải mô hình trò chuyện thông thường hội tụ：`select_model` giữ già `.call()` hợp đồng cuộc gọi，thay đổi nội bộ để vượt qua LangChain chat model adapter Tái sử dụng Agent Trình tải mô hình bên，thống nhất OpenAI-compatible、Anthropic với Gemini Đợi đã provider Thích ứng thời gian chạy của；Xóa cái cũ `OpenAIBase` wrapper，Chính sách thử lại mặc định được di chuyển sang LangChain provider thông số。
+- thống nhất Redis Quản lý khách hàng：Mới `yuxi.storage.redis` như Redis Cấu hình、Máy khách đồng bộ hóa vòng đời ngắn、Ứng dụng khách không đồng bộ được chia sẻ với ARQ RedisSettings Lối vào cơ sở hạ tầng duy nhất；chạy hàng đợi、Đồng bộ hóa ảnh chụp nhanh cấu hình hệ thống、bộ nhớ đệm mô hình và worker Không còn đọc riêng `REDIS_URL` hoặc tạo trực tiếp Redis khách hàng，Redis Sử dụng giải mẫn cảm cho nhật ký lỗi kết nối URL。
+- Thêm cấu hình hệ thống mới Redis Đồng bộ hóa ảnh chụp nhanh：Quản trị viên vẫn lưu cấu hình dưới dạng `saves/config/base.toml` là nguồn duy nhất của sự kiên trì，Sau khi ghi thành công, các trường cấu hình công khai có thể được đồng bộ hóa trong thời gian chạy sẽ được ghi. `yuxi:runtime_config`；API với worker Mỗi quá trình bắt đầu một luồng đồng bộ hóa nền khi nó bắt đầu.，nhấn 5 khoảng thời gian giây để làm mới giá trị bộ nhớ từ ảnh chụp nhanh，Bên đọc truy cập theo thuộc tính thông thường.、Không cần nhận thức，Redis Tiếp tục sử dụng giá trị bộ nhớ hiện tại khi không có sẵn。`save_dir` Là cấu hình đường dẫn nội bộ trong quá trình khởi động，Không hiển thị trong cấu hình quản trị viên、không vâng lời `base.toml` đọc、Đừng viết Redis Ảnh chụp nhanh và không hỗ trợ sửa đổi thông qua giao diện cấu hình quản trị viên；sandbox Các cấu hình liên quan vẫn là những cấu hình nhạy cảm trong quá trình khởi động，Chạy các thành phần khởi tạo không cam kết cập nhật đầy đủ nóng，Sau khi sửa đổi, bạn vẫn cần khởi động lại để đảm bảo nó có hiệu lực.；Xóa các cuộc gọi không còn điểm gọi thời gian chạy `enable_reranker` với `default_agent_id` Các trường cấu hình。
+- Tối ưu hóa FastAPI Yêu cầu khả năng đồng thời liên kết：Milvus Đồng bộ hóa trong truy xuất cơ sở tri thức embedding、vectơ/BM25/Cuộc gọi tìm kiếm hỗn hợp，và đồng bộ hóa trong các truy vấn đồ thị Milvus/Neo4j Đọc hoạt động（Chứa thiết lập kết nối）thống nhất bởi giới hạn `asyncio.to_thread` Thực hiện trong chủ đề，tránh chặn API vòng lặp sự kiện；Giới hạn trên đồng thời được kiểm soát bởi semaphore lười tải vòng lặp sự kiện，Không thay đổi hành vi tìm kiếm mặc định và giới hạn trên của tham số。
+- Cải thiện OpenAI Nhà cung cấp tương thích Công cụ phát trực tuyến cuộc gọi Tương thích（thay thế v0.7.0 báo chí provider không xử lý dòng chảy）：Nguyên nhân sâu xa là LangGraph v3 cặp tích lũy phát trực tuyến tool_call trường“bảo hiểm giá trị bài viết”，SiliconFlow、Alibaba Cloud Bailian đang chờ đợi trong phần tiếp theo về tham số `name`/`id` Gửi một chuỗi trống để ghi đè giá trị thực của phần đầu tiên.。Thay đổi thành `_ToolCallChunkFixChatOpenAI` Để lại chuỗi trống phần tiếp theo `name`/`id` bình thường hóa thành `None`，cho tất cả OpenAI Tương thích provider Có hiệu lực trên toàn cầu và duy trì phát trực tuyến，Xóa bản gốc `_NON_STREAMING_TOOL_CALL_PROVIDERS` danh sách。
+- Mới Agent Mục nhập chạy đánh giá：`POST /api/agent/eval/runs` sẽ tạo ra một cuộc trò chuyện bình thường với AgentRun，Tái sử dụng worker Liên kết thực thi，Và với `agent_evaluation` đánh dấu viết conversation、AgentRun với Langfuse trace；Giao diện chặn cho đến khi kết thúc quá trình chạy và trả về trực tiếp kết quả cuối cùng.（Trạng thái、cuối cùng assistant đầu ra、Langfuse trace id）。`yuxi-cli` Mới `yuxi agent eval` lệnh，để sử dụng từ Langfuse Bộ dữ liệu đọc đầu vào và trả về đầu ra thử nghiệm
+- Thích tin nhắn trò chuyện/Nhấp để truy cập phản hồi Langfuse score：địa phương `MessageFeedback` Sau khi lưu thành công，Nếu tin nhắn trợ lý được liên kết Langfuse trace，Sau đó viết đồng bộ `user-feedback` score，Thích như `1`、Bấm vào để không thích `0`，Bấm để viết lý do từ chối comment，Thuận tiện cho Langfuse Lọc theo phản hồi của người dùng trace。
+- bồn rửa AgentRun Khả năng cơ bản：sẽ「đọc một run Kết quả cuối cùng」（`get_agent_run_result`/`load_agent_run_result`，Chứa trạng thái、cuối cùng assistant đầu ra、Langfuse trace id có lỗi）với「bị chặn run Hoàn thiện và nhận kết quả」（`await_agent_run_result`，Tái sử dụng các luồng sự kiện hữu hạn、Không bỏ phiếu bổ sung）cải thiện `agent_run_service`，cung cấp chat/eval và các nhiệm vụ được lên kế hoạch trong tương lai để tái sử dụng thống nhất.；eval Mục đang chạy được thay đổi thành không phát trực tuyến để sử dụng lại khả năng này.（không còn nữa SSE đóng gói），Xóa logic xây dựng kết quả riêng tư của nó（Kết quả vẫn không thay đổi）。
+- Tái cấu trúc AgentRun Cơ sở giao diện：`agent_run_service` Lấy ra bên trong `create_agent_run`、`enqueue_agent_run` với `request_cancel_agent_run`，giữ hiện tại `/api/agent/runs` hành vi và thêm `/api/agent/runs/{run_id}/result` Giao diện đọc kết quả；`AgentRunRepository` Nút thêm `parent_agent_run_id` Truy vấn child run khả năng，không đồng bộ cho lần tiếp theo subagent Kiểm soát vòng đời dành riêng lối vào thống nhất。
+- Đã sửa lỗi tương thích sự kiện phát trực tuyến của tác nhân phụ：Yuxi task middleware của DeepAgents chất phụ transformer Thay vào đó hãy sử dụng chuyên dụng `yuxi_subagents` projection，tránh với LangChain `create_agent` Được đăng ký theo mặc định `subagents` projection Xung đột gây ra lỗi khi chạy tin nhắn streaming；Bộ sưu tập định tuyến luồng phụ đọc đầu tiên Yuxi projection，và giữ lại bản gốc `subagents` fallback。
 
 ## v0.7.0 (2026-06-13)
 
-### 破坏性变更
+### phá vỡ những thay đổi
 
-- Provider 与模型配置收敛：移除旧版 v1 模型配置与 Ollama 支持，运行时模型统一使用 `provider_id:model_id` 与独立 provider 模块；自定义 provider 实现逻辑从文件移动到数据库，并从 config 文件迁移到 provider 模块。
-- 智能体运行时语义收敛：用户可见的 `AgentConfig` 收敛为数据库持久化的一级 `Agent`，内置 Python Agent 改为智能体后端；聊天、运行任务、恢复审批和文件预览均从线程绑定的 Agent 解析运行时上下文，前端只提交 `agent_id`。
-- 知识库能力边界收敛：移除 Upload 与 LightRAG 知识库/图谱能力，知识库类型收敛为 Milvus 与只读连接器；知识库 API 统一使用 `/databases/{kb_id}/xxx` 形式，并整合 mindmap / eval 等子接口。
-- Agent 资源默认选择与权限过滤：未显式配置工具、知识库、MCP、Skills、子智能体时默认启用当前用户可访问/可用的全部资源，显式选择后按允许列表过滤；Agent 创建前统一完成最终资源权限过滤、知识库 `kb_id` 可见范围派生和 Skill prompt/readable 依赖闭包派生。
-- Skill 安装与权限模型收敛：Skill 元数据使用 `source_type/share_config/enabled` 表达来源、生效范围与启用状态；内置 Skill 启动或同步时自动写入数据库并默认全局启用，上传和远程添加统一改为解析草稿后确认安装，不保留旧直接安装兼容路径。
-- 历史兼容层精简：移除 sandbox provisioner `local` 后端别名、ask_user_question 单问题旧协议、JWT 历史默认密钥特殊判断、内置 Skill `SKILLS.md` 文件名回退、运行事件数字 seq 兼容和前端旧字段回退。
-- 用户身份命名收敛：原业务登录标识统一改为 `uid`，Agent/LangGraph runtime、conversation、agent_run、sandbox 路径和前端用户态均使用字符串 `uid`；`user_id` 仅保留给外部响应中的数值 `users.id` 或真实外键场景。
+- Provider Hội tụ với cấu hình mô hình：Xóa phiên bản cũ v1 Cấu hình mô hình và Ollama hỗ trợ，Sử dụng thống nhất các mô hình thời gian chạy `provider_id:model_id` và sự độc lập provider mô-đun；Tùy chỉnh provider Thực hiện chuyển động logic từ tệp sang cơ sở dữ liệu，và từ config Các tập tin được di chuyển đến provider mô-đun。
+- Hội tụ ngữ nghĩa thời gian chạy tác nhân：Hiển thị cho người dùng `AgentConfig` Hội tụ đến cấp độ đầu tiên của sự kiên trì cơ sở dữ liệu `Agent`，Tích hợp sẵn Python Agent Thay đổi phụ trợ đại lý；trò chuyện、Chạy nhiệm vụ、Phê duyệt khôi phục và xem trước tệp bị ràng buộc từ các chủ đề Agent Phân tích bối cảnh thời gian chạy，Giao diện người dùng chỉ gửi `agent_id`。
+- Hội tụ ranh giới năng lực cơ sở tri thức：Xóa Upload với LightRAG cơ sở tri thức/Khả năng lập bản đồ，Kiểu cơ sở tri thức hội tụ về Milvus với đầu nối chỉ đọc；cơ sở tri thức API Sử dụng thống nhất `/databases/{kb_id}/xxx` hình thức，và tích hợp mindmap / eval Chờ giao diện phụ。
+- Agent Lựa chọn mặc định tài nguyên và lọc quyền：Công cụ không được cấu hình rõ ràng、cơ sở tri thức、MCP、Skills、Khi một tác nhân con được bật, người dùng hiện tại có thể truy cập nó theo mặc định./Tất cả các tài nguyên có sẵn，Lọc theo danh sách cho phép sau khi lựa chọn rõ ràng；Agent Hoàn thành quá trình lọc quyền tài nguyên cuối cùng trước khi tạo.、cơ sở tri thức `kb_id` Phạm vi nhìn thấy được bắt nguồn và Skill prompt/readable đạo hàm đóng phụ thuộc。
+- Skill Hội tụ mô hình cài đặt và quyền：Skill Sử dụng siêu dữ liệu `source_type/share_config/enabled` nguồn biểu hiện、Phạm vi hiệu quả và trạng thái kích hoạt；Tích hợp sẵn Skill Tự động ghi vào cơ sở dữ liệu khi khởi động hoặc đồng bộ hóa và được bật trên toàn cầu theo mặc định，Việc tải lên và bổ sung từ xa được hợp nhất thành phân tích cú pháp bản nháp và xác nhận cài đặt.，Đường dẫn tương thích cài đặt trực tiếp cũ không được giữ nguyên。
+- Tinh giản lớp tương thích lịch sử：Xóa sandbox provisioner `local` bí danh phụ trợ、ask_user_question Thỏa thuận cũ về một vấn đề duy nhất、JWT Phán quyết đặc biệt về khóa mặc định lịch sử、Tích hợp sẵn Skill `SKILLS.md` Dự phòng tên tệp、Số sự kiện đang chạy seq Khả năng tương thích và dự phòng trường cũ ở mặt trước。
+- Hội tụ đặt tên nhận dạng người dùng：ID đăng nhập doanh nghiệp ban đầu được thay đổi thành `uid`，Agent/LangGraph runtime、conversation、agent_run、sandbox Cả đường dẫn và chế độ người dùng giao diện người dùng đều sử dụng chuỗi `uid`；`user_id` Chỉ dành riêng cho các giá trị trong phản hồi bên ngoài `users.id` Hoặc kịch bản khóa ngoại thực sự。
 
-### 开发记录
+### Hồ sơ phát triển
 
-- 发布版本号更新至 `0.7.0`，同步 package、Docker 镜像标签与快速开始分支引用。
-- 新增内置「深度研究」多智能体：编排器 Agent（`deep-research`，ChatbotAgent 后端）负责澄清、拆解、并行调度子智能体与综合成稿，配套两个子智能体 `research-explorer`（围绕单个子问题多轮检索网页/知识库并返回带引用发现）和 `fact-verifier`（对抗式核验关键论断、标注冲突与置信度）；完整研究方法论沉淀为新增内置 Skill `deep-research`（依赖 `tavily_search`），编排器运行时读取并据此调度。三者随 `lifespan` 启动通过 `AgentRepository.ensure_deep_research_agents` 幂等落库（已存在不覆盖管理员修改）。
-- 新增内置 `general-purpose` 通用任务子智能体：使用 `SubAgentBackend` 与空运行配置，作为 `task` 工具的通用委派目标，由启动初始化自动写入数据库。
-- 收敛 MCP 创建与编辑入口：前端移除整段配置文本入口和模式切换器，仅保留表单字段提交；后端 MCP 创建/更新请求拒绝额外配置字段，避免绕过表单约束。
-- 调整内置 MCP 默认项：移除 `sequentialthinking` 的系统内置同步，启动同步时清理历史系统内置记录，保留用户手动创建的同名 MCP。
-- 图片生成能力迁移为 Skill：Qwen-Image 从内置 Python 生成工具迁移到内置 Skill `image-gen`，模型调用与图片下载在 Agent 沙盒中完成，生成结果保存到 outputs 并通过 `present_artifacts` 展示，为多图片生成模型接入复用同一产物展示链路。
-- 优化前端头像加载兜底：用户与智能体头像优先展示已配置图片，加载失败后回退到基于 ID 的 DiceBear 默认头像；离线或默认头像不可达时显示名称前两个字和稳定背景色。
-- 降低知识库路由与工具模块复杂度：示例问题生成迁移到知识库 utils，文件上传统一 100 MB 限制，URL 预处理入库路径与旧 `content_type=url` 行为收敛，并修复 uid、导出 MIME 与异常透传等路由问题。
-- 重构智能体配置语义：用户可见的 `AgentConfig` 收敛为数据库持久化的一级 `Agent`，内置 Python Agent 改为智能体后端；新增 `/api/agent` 管理与运行接口，聊天、运行任务、恢复审批和文件预览均从线程绑定的 Agent 解析运行时上下文，前端只提交 `agent_id`，并在模型配置页新增“智能体”管理页签。
-- 删除 Upload 与 LightRAG 图谱/知识库能力：知识库类型收敛为 Milvus 与 Dify，只保留 Milvus 知识库内图谱构建/展示/检索，移除独立 `/graph` 页面和默认上传图谱工具。
-- 收敛只读知识源连接器：新增 `ReadOnlyConnectors` 基类，Dify 改为声明自身创建参数与校验规则，新增 Notion Data Source 只读知识库并支持 Search/Find/Open；知识库类型接口返回创建参数 schema，前端新建表单按类型动态渲染非 Milvus 配置并统一保存到 `additional_params`。
-- 新增知识库 Chunk 持久化：Milvus 知识库索引/更新流程会将 chunks 双写到 PostgreSQL `knowledge_chunks` 表与 Milvus，文件内容查看优先查询 PostgreSQL，并为位置信息、图谱实体关联、标签和抽取结果预留结构化字段；chunk 入库改为分批 embedding 与分批写入，避免大文件一次性写入触发 gRPC 消息大小限制；入库成功后将单文件 chunk 数与 token 数写入文件元数据，并将知识库级总 chunk 与总 token 汇总保存到 metadata，前端文件管理页展示该统计并支持一键修复历史文件缺失的统计值。
-- 完善 Milvus 知识库图谱构建：修复 Chunk 图谱写入返回值、Neo4j 同步写入阻塞事件循环、重复构建任务竞态、图谱查询提前终止、Neo4j 连接复用、LLM 抽取超时重试和前端错误详情展示等问题；图谱构建会将 entity/triple 本体与 chunk 引用写入 PostgreSQL，并为唯一 entity/triple 建立 Milvus 语义索引，单文件删除时同步清理图谱引用和孤儿向量。
-- 优化图谱抽取器配置：未配置时在图谱中心展示配置入口，抽取方案收敛为 LLM，前端仅保留“更多拓展中”占位；LLM 抽取器使用固定 Prompt + 自定义 Schema，并支持模型参数与并发队列数；已配置后允许修改参数并提示重置重抽风险。修复上传并入库新文件时旧内存 metadata 覆盖数据库图谱配置的问题。
-- 新增 Milvus 图谱检索链路：Query 可召回图谱实体和三元组，结合 Chunk 命中实体构造 seed entity，读取 Neo4j 2-hop 子图后用 igraph 执行 PPR，最终以 Chunk 为产物并通过 RRF 与原 Chunk 召回融合；检索配置改为 dataclass 元数据生成，支持 `depend_on` 控制重排序和图检索参数展示。
-- 收紧用户管理部门隔离：普通管理员创建用户时固定归属本部门，用户列表、访问选项、详情、更新和删除接口均限制在本部门范围内。
-- 修复用户管理列表超过 100 人时被默认分页截断的问题：前端按 `skip/limit` 分批加载用户，并在用户卡片列表中补充分页渲染。
-- 调整 Agent 资源默认选择与运行时上下文：未显式配置工具、知识库、MCP、Skills、子智能体时默认启用当前用户可访问/可用的全部资源，显式选择后按允许列表过滤；Agent 创建前统一完成最终资源权限过滤、知识库 `kb_id` 可见范围派生和 Skill prompt/readable 依赖闭包派生，聊天运行时与文件系统预览复用同一结果。
-- 重构 Skills 权限与安装流程：Skill 增加 `source_type/share_config/enabled`，内置 Skill 作为启动同步入库的全局资源，不再保留前端安装/更新状态，支持启停但不允许删除；上传和远程添加统一为解析草稿后确认生效范围，安装 slug 优先读取 `SKILL.md` 的 `slug` 字段并保留 `name` 展示名，压缩包名称不参与 slug 校验；管理端支持编辑生效范围与启停；Agent 运行时按当前用户可访问 Skills 派生 prompt/readable 依赖闭包并限制挂载/激活，Skills prompt 改为模型请求级注入以避免污染 runtime context；主智能体恢复 `install_skill` 工具，允许当前用户安装私有 Skill 并激活当前会话，子智能体配置和运行态均禁用该工具。
-- 精简历史兼容层：移除 sandbox provisioner `local` 后端别名、ask_user_question 单问题旧协议、JWT 历史默认密钥特殊判断、内置 Skill `SKILLS.md` 文件名回退、运行事件数字 seq 兼容和前端若干旧字段回退。
-- 重构知识库共享权限：`share_config` 改为全局共享、部门共享、指定人可访问三档，部门共享必须包含当前用户部门，指定人可访问必须包含当前用户，并补充权限过滤测试。
-- 移除知识库沙盒文件系统映射：不再通过 `/home/gem/kbs` 暴露知识库文件树，Agent 继续使用 `query_kb` 与 `open_kb_document` 访问知识库内容。
-- 修复 MinerU 文档解析配置说明：文档处理指南原先指引启动 `openai-server`（30000 端口，仅提供 `/v1/chat/completions`），与解析器实际调用的 `/file_parse` 接口不匹配导致 `mineru_ocr` 不可用；更正为使用项目内置的 `mineru-api` 服务（30001 端口），并补充镜像构建与显存调优说明。
-- 规范 Agent 知识库 Search/Find/Open 工具协议：`resource_id` 统一表示知识库 `kb_id`，Search 返回结构化 `resource_id/file_id/chunk` 结果，新增 `find_kb_document` 在已知文件内做关键词或正则定位，Open 默认窗口扩大到 1800 行。
-- 收敛知识库分块配置：分块预设仅表达策略选择，通用分块参数统一通过 `chunk_parser_config` 传递；移除 `chunk_size`、`chunk_overlap`、`qa_separator` 等旧 root 字段兼容。
-- 收敛知识库文件解析参数：文件级 `processing_params` 统一保存 `ocr_engine` 与 `ocr_engine_config`，解析阶段直接使用该结构并保留分块参数快照。
-- 修复知识库文件大小显示为 0 的问题：文件上传时 `file_sizes` 参数未正确传播或历史数据缺失导致 DB 中 `file_size` 为 `None`；新增 `MinIOClient.stat_file/astat_file` 获取文件大小方法，`add_file_record` 在 `size` 缺失时从 MinIO 回补，`_load_metadata` 加载元数据后自动为缺少 `size` 的文件从 MinIO 补全并持久化。
-- 优化评估基准自动生成：生成任务支持配置队列并发数，默认 10，范围 1-20。
-- 完善模型供应商类型：普通聊天模型运行时新增 Anthropic provider type 适配，并清理不再支持的旧 provider type 入口。
-- 重梳理知识库评估存储：评估数据集、题目、评估运行和逐题结果统一入库，JSONL 仅作为导入/导出格式；后端和前端 API 统一使用 dataset/run 语义；评估运行支持用户命名，历史记录按名称展示，综合评分只聚合检索指标。
-- 扩展知识库上传来源：添加“从工作区上传”模式，后端将当前用户工作区文件预处理上传到 MinIO，前端沿用现有 `addDocuments` 入库链路提交 MinIO URL、内容哈希和文件大小。
-- 重构知识库详情页布局：`DatabaseInfo` 改为顶部详情 header + 左侧功能 tab 侧边栏 + 右侧内容区，Milvus 默认进入文件管理，并将检索测试、知识图谱、知识导图、检索配置、RAG 评估和评估基准统一纳入侧边栏导航；只读连接器保留检索测试与检索配置。
-- 整合知识导图接口：移除独立 mindmap router 与前端 API 模块，思维导图生成、查询和文件列表接口统一收敛到知识库 API 下。
-- 收敛独立模型配置模块运行时：运行时 chat / embedding / rerank 均统一从 provider 模块与模型缓存读取 `provider_id:model_id`；旧版静态模型配置、v1 slash spec、旧模型列表接口和 Ollama 适配已移除；内置 provider 模板补充 XiaomiMiMo、XiaomiMiMo Token Plan CN 与 Kimi Code（`kimi-for-coding`）。
-- 调整智能体模型配置默认值：`BaseContext.model` 默认保持为空，运行时按“请求模型 > 智能体配置模型 > 系统默认模型”解析；子智能体未配置模型时继承主智能体当前运行模型，避免把系统默认模型固化进每个智能体配置。
-- 调整智能体配置归属与字段权限：`AgentConfig` 从部门共享改为按 `uid` 隔离，所有登录用户可管理自己的配置；`BaseContext` 支持字段级 `auth` 元数据，后端按用户角色过滤可见与可保存的配置项。
-- 新增用户级沙盒环境变量：增加 `agent_envs` 表与 `/api/user/agent-env` 接口，设置面板支持当前用户维护 Agent 沙盒环境变量；创建新沙盒时与全局 `sandbox.env` 合并注入，用户变量优先。
-- 收敛用户身份命名：原业务登录标识统一改为 `uid`，Agent/LangGraph runtime、conversation、agent_run、sandbox 路径和前端用户态均使用字符串 `uid`；`user_id` 仅保留给外部响应中的数值 `users.id` 或真实外键场景。
-- 工作区知识库分类显示：知识库侧边栏按创建者分组为“我的知识库”和“共享知识库”，自己创建的知识库显示在“我的知识库”下，非自己创建的显示在“共享知识库”下；`knowledge_bases` 表新增 `created_by` 字段记录创建者 uid。
-- 工作区文件上传支持多选：`/workspace/upload` 与 Viewer 工作区上传统一使用 `files` 多文件字段，一次最多上传 50 个文件，批量上传失败时清理本次已写入文件。
-- 聊天附件新增 MinIO tmp 临时上传、可选 PDF/图片解析、确认后加入线程附件的流程；前端改为弹窗内上传、解析与确认。
-- 修复智能体对话上传透明 PNG 后图片失真的问题：多模态图片处理在导出 RGB 前会先按白底合成 alpha 通道，避免透明像素中的隐藏颜色被直接转为可见像素；交付物预览优先按文件头识别 MIME，避免 `.jpg` 文件名包裹 PNG 内容时前端按错误格式加载；Agent run 输入消息会持久化为 `multimodal_image`，刷新历史后仍能显示用户上传图片。
-- 优化智能体对话页细节：状态面板隐藏空 section，待办名称限制为 20 个中文汉字以内，模型选择器展示供应商名称，并收紧附件状态标签与文件编辑浮动操作样式；
-- 标准化 Agent run/SSE 执行链路：run 创建时持久化输入消息并提交后入队，worker 统一写入 Redis Stream envelope，SSE 输出 `event/data/id`、心跳注释、`Last-Event-ID` 回放和终止 `end` 事件；前端强制使用 run API 并支持 ask_user_question 中断后以 resume run 恢复；事件 envelope 构造收敛到统一 helper，前端优先使用 envelope 一级 `thread_id` 路由。
-- Agent run SSE 新增 `verbose=false` 精简模式：默认仍返回完整事件载荷；精简模式仅在 SSE 输出前重建最小 payload，跳过 `metadata` 和空 `yuxi.agent_state`，将同一 data 内的 `request_id` 外提为单个字段，移除 chunk 中重复的 `meta`、`metadata`、`thread_id`、`response`、空 `namespace` 和图片 base64 等调试字段，保留消息增量、工具调用、工具结果、非空 Agent state、终止状态和 SSE 游标，前端订阅默认使用精简模式。
-- 修复 SiliconFlow MiniMax 与阿里云百炼工具调用流式兼容：二者的 OpenAI 兼容流经 LangGraph v3 event stream 累积工具调用时会丢失关键字段（MiniMax 在参数增量 chunk 返回空 `function.name`，百炼丢失 `tool_call.id`），空值被写入 checkpoint 后会导致工具执行失败或工具结果无法按 `tool_call_id` 关联、工具状态永远停留在“进行中”；这两类提供商默认对工具调用禁用流式模型响应（正文回答仍流式），保留 LangGraph v3 运行事件并拿到完整 tool_call。该缺陷属 LangChain v3 流式协议上游问题（参见 langchain#37420、langchainjs#10937、langgraphjs#2496），截至 langchain-core 1.4.4 仍未修复，待上游修复后可移除对应提供商的禁流式处理。
-- 收敛后端模块边界：文档解析从 `plugins.parser` 移动到 `knowledge.parser`，内容审查从 `plugins.guard` 移动到 `services.guard`。
-- 收敛文件服务边界：文件预览判断抽为独立服务，Viewer 文件系统的 workspace 分支复用用户 workspace 服务，线程运行时上下文解析从泛化 `filesystem_service` 拆出为 agent runtime helper。
-- 升级 DeepAgents 到 0.6.7 并适配新版文件系统协议：SubAgentMiddleware 改为显式 subagent spec，Skills prompt 补齐新版占位符；sandbox/skills backend 复用新版 `ReadResult`、`GlobResult`、`GrepResult` 等协议类型，文件权限在 backend 层明确区分 skills、uploads、outputs 与 workspace，保留最小 `CustomCompositeBackend` 以避免非 route glob 误扫其他 route；Agent 上下文压缩改为复用 DeepAgents SummarizationMiddleware，历史摘要与大工具结果统一 offload 到 outputs。
-- 优化聊天输入 @ 文件提及：未创建 Thread 时可搜索用户 workspace，创建 Thread 后按当前对话文件优先、workspace 兜底的来源顺序搜索，并拆分 workspace/thread 缓存避免假 thread 与跨用户缓存污染；输入框与用户消息支持将 raw mention 渲染为带类型图标的引用单元，文件仅显示文件名且保留原始沙盒路径文本。
-- 重构子智能体为 Agent-backed 形态：移除旧 `subagents` 表与 `/api/system/subagents` 管理链路，子智能体改为 `agents.is_subagent=true` 且使用 `SubAgentBackend`，创建/编辑统一走 Agent 管理入口；内置后端收敛为 `ChatbotAgent` 与 `SubAgentBackend`，Context 分为 `BaseContext`、`ChatBotContext` 与 `SubAgentContext`；主 Agent 通过 Yuxi task middleware 启动真实子 Agent graph，子智能体不再嵌套调用子智能体。沙盒挂载同步拆分为 child checkpoint thread、父对话 uploads/outputs、用户级 workspace 与子 Agent skills scope；主线程状态记录 `subagent_runs` 并在前端 task 工具中展示子智能体名称、执行状态、child thread 和产物，task 工具结果会暴露 child thread ID 且支持传回 `thread_id` 继续既有子智能体线程；子智能体执行复用 `agent_runs(run_type=subagent)` 记录父 run、child thread 与状态，child thread state 查询以 `agent_runs` 关系为准，不再解析 thread ID 反推父线程；真实流式 E2E 覆盖子智能体输出文件可由父线程文件/Viewer API 读取。流式链路参考 DeepAgents event streaming，后端将 LangGraph v3 raw event 归一化为 Yuxi semantic stream event，按父/子线程归属隔离 run SSE chunk，并支持通过 child thread state 拉取子智能体中间过程。
-- 修正评估综合得分计算：`overall_score` 改为有答案准确率时取各题准确率平均，否则取各题 `recall@10` 平均，不再把 recall/f1/各 k 检索指标混合平均；历史已存运行不回填。
-- 清理无效鉴权中间件：移除启动时未实际校验令牌的 `AuthMiddleware` 和公开路径残留判断，后端认证边界明确收敛到路由依赖；`/api/auth/me` 改为强制登录并补充未登录访问返回 401 的集成测试。
+- Số phiên bản phát hành được cập nhật thành `0.7.0`，đồng bộ hóa package、Docker Thẻ phản chiếu và tham chiếu nhánh bắt đầu nhanh。
+- Đã thêm tích hợp sẵn「nghiên cứu chuyên sâu」đa tác nhân：Người soạn nhạc Agent（`deep-research`，ChatbotAgent phụ trợ）Chịu trách nhiệm làm rõ、tháo dỡ、Tác nhân phụ lập kế hoạch song song và soạn thảo tổng hợp，Được trang bị hai đại lý phụ `research-explorer`（Nhiều vòng truy xuất web xung quanh một vấn đề phụ/Cơ sở kiến thức và trả về khám phá kèm theo trích dẫn）và `fact-verifier`（Xác minh đối lập của các khẳng định quan trọng、Xung đột chú thích và độ tin cậy）；Phương pháp nghiên cứu hoàn chỉnh được kết tủa như một phương pháp tích hợp mới Skill `deep-research`（phụ thuộc vào `tavily_search`），Thời gian chạy của dàn nhạc đọc và lên lịch tương ứng。Ba người đi theo `lifespan` Bắt đầu qua `AgentRepository.ensure_deep_research_agents` thư viện bình thường（Đã tồn tại và không ghi đè các sửa đổi của quản trị viên）。
+- Đã thêm tích hợp sẵn `general-purpose` Đại lý phụ nhiệm vụ chung：sử dụng `SubAgentBackend` với cấu hình chạy khô，như `task` Mục tiêu ủy quyền chung cho các công cụ，Tự động ghi vào cơ sở dữ liệu bằng cách khởi tạo khởi động。
+- hội tụ MCP Tạo và chỉnh sửa cổng thông tin：Xóa toàn bộ mục nhập văn bản cấu hình và trình chuyển đổi chế độ khỏi giao diện người dùng，Chỉ giữ lại các trường biểu mẫu được gửi；phụ trợ MCP tạo ra/Yêu cầu cập nhật từ chối các trường cấu hình bổ sung，Tránh bỏ qua các ràng buộc về biểu mẫu。
+- Điều chỉnh tích hợp MCP Mục mặc định：Xóa `sequentialthinking` Đồng bộ hóa tích hợp của hệ thống，Xóa các bản ghi lịch sử hệ thống tích hợp khi bắt đầu đồng bộ hóa，Giữ nguyên tên do người dùng tạo thủ công MCP。
+- Khả năng tạo hình ảnh được di chuyển sang Skill：Qwen-Image từ tích hợp sẵn Python Di chuyển các công cụ xây dựng sang công cụ tích hợp Skill `image-gen`，Gọi mẫu và tải hình ảnh đều có tại Agent Thực hiện trong hộp cát，Kết quả tạo ra được lưu vào outputs và vượt qua `present_artifacts` hiển thị，Sử dụng lại cùng một liên kết hiển thị sản phẩm để truy cập vào mô hình tạo nhiều hình ảnh。
+- Tối ưu hóa việc tải hình đại diện phía trước：Hình đại diện của người dùng và tác nhân hiển thị hình ảnh được định cấu hình trước tiên，Sau khi tải không thành công, hãy quay lại ID của DiceBear Hình đại diện mặc định；Khi ngoại tuyến hoặc hình đại diện mặc định không thể truy cập được, hai ký tự đầu tiên của tên và màu nền ổn định sẽ được hiển thị.。
+- Giảm độ phức tạp của các mô-đun công cụ và định tuyến cơ sở tri thức：Tạo câu hỏi mẫu và di chuyển sang cơ sở kiến thức utils，Tải lên tập tin hợp nhất 100 MB giới hạn，URL Xử lý sơ bộ đường dẫn kho và cũ `content_type=url` hội tụ hành vi，và sửa chữa uid、Xuất khẩu MIME Các vấn đề định tuyến như truyền tải trong suốt bất thường。
+- Tái cấu trúc ngữ nghĩa cấu hình tác nhân：Hiển thị cho người dùng `AgentConfig` Hội tụ đến cấp độ đầu tiên của sự kiên trì cơ sở dữ liệu `Agent`，Tích hợp sẵn Python Agent Thay đổi phụ trợ đại lý；Mới `/api/agent` Giao diện quản lý và vận hành，trò chuyện、Chạy nhiệm vụ、Phê duyệt khôi phục và xem trước tệp bị ràng buộc từ các chủ đề Agent Phân tích bối cảnh thời gian chạy，Giao diện người dùng chỉ gửi `agent_id`，Và thêm nó vào trang cấu hình mô hình“đại lý”Quản lý tab。
+- Xóa Upload với LightRAG tập bản đồ/khả năng cơ sở tri thức：Kiểu cơ sở tri thức hội tụ về Milvus với Dify，chỉ giữ Milvus Xây dựng đồ thị trong cơ sở tri thức/hiển thị/Tìm kiếm，loại bỏ độc lập `/graph` Trang và công cụ bản đồ tải lên mặc định。
+- Hội tụ trình kết nối nguồn kiến thức chỉ đọc：Mới `ReadOnlyConnectors` lớp cơ sở，Dify Thay vào đó, hãy khai báo các tham số tạo và quy tắc xác minh của riêng bạn.，Mới Notion Data Source Cơ sở kiến thức chỉ đọc và hỗ trợ Search/Find/Open；Giao diện loại cơ sở kiến thức trả về các tham số tạo schema，Biểu mẫu mới ở giao diện người dùng tự động hiển thị không Milvus Cấu hình và lưu chúng thống nhất vào `additional_params`。
+- Thêm nền tảng kiến thức mới Chunk kiên trì：Milvus Chỉ số cơ sở tri thức/Quá trình cập nhật sẽ chunks Viết đôi vào PostgreSQL `knowledge_chunks` bàn và Milvus，Truy vấn ưu tiên xem nội dung tệp PostgreSQL，và để biết thông tin vị trí、Liên kết thực thể đồ thị、Các trường có cấu trúc được dành riêng cho thẻ và kết quả trích xuất；chunk Kho thay đổi thành lô embedding bằng cách viết hàng loạt，Tránh kích hoạt ghi một lần cho các tệp lớn gRPC Giới hạn kích thước tin nhắn；Sau khi lưu trữ thành công, tập tin duy nhất sẽ được chunk Số và token Viết siêu dữ liệu tập tin，và tóm tắt mức độ cơ sở kiến thức chunk với tổng số token Đã lưu tóm tắt vào metadata，Trang quản lý tệp giao diện người dùng hiển thị số liệu thống kê này và hỗ trợ sửa chữa các giá trị thống kê bị thiếu trong tệp lịch sử chỉ bằng một cú nhấp chuột.。
+- hoàn hảo Milvus Xây dựng đồ thị cơ sở tri thức：sửa chữa Chunk Giá trị trả về ghi phổ、Neo4j Vòng lặp sự kiện chặn ghi đồng bộ、Điều kiện chạy đua nhiệm vụ xây dựng trùng lặp、Truy vấn đồ thị bị chấm dứt sớm、Neo4j Tái sử dụng kết nối、LLM Thử lại thời gian chờ trích xuất và hiển thị chi tiết lỗi giao diện người dùng và các vấn đề khác；Việc xây dựng đồ thị sẽ entity/triple Bản thể học và chunk Viết tài liệu tham khảo PostgreSQL，và là người duy nhất entity/triple Tạo Milvus Lập chỉ mục ngữ nghĩa，Dọn dẹp đồng bộ các tham chiếu biểu đồ và vectơ mồ côi khi xóa một tệp。
+- Tối ưu hóa cấu hình trích xuất bản đồ：Khi không được cấu hình, mục cấu hình sẽ được hiển thị ở giữa biểu đồ.，Kế hoạch khai thác hội tụ đến LLM，Phần đầu xe chỉ giữ lại“Phát triển hơn”Trình giữ chỗ；LLM Đã sửa lỗi sử dụng trình trích xuất Prompt + Tùy chỉnh Schema，Và hỗ trợ các tham số mô hình và số lượng hàng đợi đồng thời；Sau khi cấu hình, các tham số được phép sửa đổi và nguy cơ vẽ lại được đặt lại.。Đã khắc phục sự cố bộ nhớ cũ khi tải lên và hợp nhất các tệp mới vào thư viện metadata Sự cố ghi đè cấu hình bản đồ cơ sở dữ liệu。
+- Mới Milvus Liên kết tìm kiếm bản đồ：Query Nhớ lại các thực thể và bộ ba đồ thị，kết hợp Chunk nhấn cấu trúc thực thể seed entity，đọc Neo4j 2-hop hình ảnh phụ để sử dụng sau igraph thi hành PPR，Cuối cùng với Chunk cho sản phẩm và vượt qua RRF Yohara Chunk thu hồi sự hợp nhất；Cấu hình truy xuất đã thay đổi thành dataclass Tạo siêu dữ liệu，hỗ trợ `depend_on` Kiểm soát việc sắp xếp lại thứ tự và hiển thị tham số truy xuất biểu đồ。
+- Thắt chặt cách ly bộ phận quản lý người dùng：Khi quản trị viên thông thường tạo người dùng, họ sẽ được phân công vào bộ phận riêng của họ.，Danh sách người dùng、Tùy chọn truy cập、Chi tiết、Việc cập nhật và xóa giao diện được giới hạn ở bộ phận này.。
+- Sửa lỗi vượt quá danh sách quản lý người dùng 100 Vấn đề thời gian của con người bị cắt ngắn bởi phân trang mặc định：Bấm trước `skip/limit` Tải người dùng theo đợt，Và thêm hiển thị phân trang trong danh sách thẻ người dùng。
+- điều chỉnh Agent Bối cảnh thời gian chạy và lựa chọn mặc định tài nguyên：Công cụ không được cấu hình rõ ràng、cơ sở tri thức、MCP、Skills、Khi một tác nhân con được bật, người dùng hiện tại có thể truy cập nó theo mặc định./Tất cả các tài nguyên có sẵn，Lọc theo danh sách cho phép sau khi lựa chọn rõ ràng；Agent Hoàn thành quá trình lọc quyền tài nguyên cuối cùng trước khi tạo.、cơ sở tri thức `kb_id` Phạm vi nhìn thấy được bắt nguồn và Skill prompt/readable đạo hàm đóng phụ thuộc，Thời gian chạy trò chuyện sử dụng lại kết quả tương tự với bản xem trước hệ thống tệp。
+- Tái cấu trúc Skills Quyền và quá trình cài đặt：Skill tăng lên `source_type/share_config/enabled`，Tích hợp sẵn Skill Là tài nguyên toàn cầu để bắt đầu đồng bộ hóa vào cơ sở dữ liệu，Cài đặt Frontend không còn được giữ lại/cập nhật trạng thái，Hỗ trợ bắt đầu và dừng nhưng không cho phép xóa；Việc tải lên và bổ sung từ xa được thống nhất để phân tích bản nháp và xác nhận phạm vi hiệu quả.，Cài đặt slug Đọc đầu tiên `SKILL.md` của `slug` trường và giữ lại `name` tên hiển thị，Tên gói nén không tham gia slug Xác minh；Thiết bị đầu cuối quản lý hỗ trợ chỉnh sửa phạm vi hiệu quả và bắt đầu và dừng.；Agent Người dùng hiện tại có thể truy cập khi chạy Skills bắt nguồn từ prompt/readable Phụ thuộc vào việc đóng cửa và gắn kết giới hạn/kích hoạt，Skills prompt Thay đổi mô hình chèn mức yêu cầu để tránh ô nhiễm runtime context；Phục hồi đại lý chính `install_skill` Công cụ，Cho phép người dùng hiện tại cài đặt riêng tư Skill và kích hoạt phiên hiện tại，Công cụ này bị vô hiệu hóa ở cả cấu hình tác nhân phụ và trạng thái đang chạy.。
+- Lớp tương thích lịch sử được sắp xếp hợp lý：Xóa sandbox provisioner `local` bí danh phụ trợ、ask_user_question Thỏa thuận cũ về một vấn đề duy nhất、JWT Phán quyết đặc biệt về khóa mặc định lịch sử、Tích hợp sẵn Skill `SKILLS.md` Dự phòng tên tệp、Số sự kiện đang chạy seq Khả năng tương thích và khôi phục một số trường cũ ở mặt trước。
+- Tái cấu trúc quyền chia sẻ cơ sở kiến thức：`share_config` Thay đổi sang chia sẻ toàn cầu、Chia sẻ khoa、Những người được chỉ định có thể truy cập ba tệp，Chia sẻ của bộ phận phải chứa bộ phận người dùng hiện tại，Những người được chỉ định có thể truy cập phải bao gồm người dùng hiện tại，Và thêm kiểm tra lọc quyền。
+- Xóa ánh xạ hệ thống tệp hộp cát kho lưu trữ：không còn được thông qua `/home/gem/kbs` Hiển thị cây tập tin cơ sở kiến thức，Agent tiếp tục sử dụng `query_kb` với `open_kb_document` Truy cập nội dung cơ sở kiến thức。
+- sửa chữa MinerU Hướng dẫn cấu hình phân tích tài liệu：Hướng dẫn xử lý tài liệu đã ra mắt Hướng dẫn ban đầu `openai-server`（30000 hải cảng，Chỉ có sẵn `/v1/chat/completions`），với trình phân tích cú pháp thực sự được gọi `/file_parse` Nguyên nhân giao diện không khớp `mineru_ocr` Không có sẵn；Đã sửa để sử dụng dự án tích hợp `mineru-api` dịch vụ（30001 hải cảng），Và thêm hướng dẫn về xây dựng hình ảnh và điều chỉnh bộ nhớ.。
+- quy phạm Agent cơ sở tri thức Search/Find/Open giao thức công cụ：`resource_id` Biểu diễn thống nhất của cơ sở tri thức `kb_id`，Search Cấu trúc trả về `resource_id/file_id/chunk` kết quả，Mới `find_kb_document` Thực hiện từ khóa hoặc định vị thường xuyên trong các tệp đã biết，Open Cửa sổ mặc định mở rộng đến 1800 được rồi。
+- Cấu hình khối cơ sở tri thức hội tụ：Mặc định phân chia chỉ thể hiện các lựa chọn chiến lược，Các tham số chặn chung được truyền thống nhất `chunk_parser_config` vượt qua；Xóa `chunk_size`、`chunk_overlap`、`qa_separator` Chờ người cũ root Tương thích trường。
+- Các tham số phân tích tệp cơ sở kiến thức hội tụ：cấp độ tập tin `processing_params` Lưu ở một nơi `ocr_engine` với `ocr_engine_config`，Giai đoạn phân tích cú pháp sử dụng trực tiếp cấu trúc này và giữ lại ảnh chụp nhanh tham số chunked。
+- Đã sửa lỗi kích thước tệp cơ sở kiến thức hiển thị dưới dạng 0 câu hỏi：Khi tải tập tin lên `file_sizes` Các thông số không được truyền tải chính xác hoặc dữ liệu lịch sử bị thiếu. DB trong `file_size` cho `None`；Mới `MinIOClient.stat_file/astat_file` Nhận phương pháp kích thước tập tin，`add_file_record` trong `size` thiếu từ MinIO che，`_load_metadata` Sau khi tải siêu dữ liệu, nó sẽ tự động bị thiếu. `size` tập tin từ MinIO Hoàn thành và duy trì。
+- Điểm chuẩn đánh giá tối ưu hóa được tạo tự động：Tạo tác vụ hỗ trợ cấu hình số lượng hàng đợi đồng thời，Mặc định 10，phạm vi 1-20。
+- Cải thiện các loại nhà cung cấp mô hình：Đã thêm khi mô hình trò chuyện bình thường đang chạy Anthropic provider type thích nghi，và dọn dẹp những cái cũ không còn được hỗ trợ provider type lối vào。
+- Tổ chức lại kho lưu trữ đánh giá cơ sở tri thức：Tập dữ liệu đánh giá、tiêu đề、Quá trình đánh giá và kết quả từng câu hỏi được lưu trữ trong cơ sở dữ liệu thống nhất，JSONL chỉ là nhập khẩu/Định dạng xuất；phụ trợ và giao diện người dùng API Sử dụng thống nhất dataset/run Ngữ nghĩa；Chạy đánh giá hỗ trợ đặt tên người dùng，Lịch sử hiển thị theo tên，Điểm toàn diện chỉ tổng hợp các chỉ số tìm kiếm。
+- Nguồn tải lên cơ sở kiến thức mở rộng：thêm“Tải lên từ không gian làm việc”chế độ，Phần phụ trợ xử lý trước và tải tệp không gian làm việc của người dùng hiện tại lên MinIO，Giao diện người dùng sử dụng hiện có `addDocuments` Gửi liên kết trong nước MinIO URL、Băm nội dung và kích thước tệp。
+- Xây dựng lại bố cục trang chi tiết cơ sở tri thức：`DatabaseInfo` Thay đổi chi tiết trên cùng header + chức năng trái tab thanh bên + Khu vực nội dung bên phải，Milvus Nhập quản lý tập tin theo mặc định，và sẽ lấy bài kiểm tra、Sơ đồ tri thức、Bản đồ kiến thức、Truy xuất cấu hình、RAG Đánh giá và điểm chuẩn đánh giá được thống nhất vào điều hướng thanh bên；Trình kết nối chỉ đọc duy trì các kiểm tra truy xuất và cấu hình truy xuất。
+- Giao diện bản đồ kiến thức tích hợp：loại bỏ độc lập mindmap router với giao diện người dùng API mô-đun，Tạo bản đồ tư duy、Giao diện truy vấn và danh sách tệp được thống nhất vào cơ sở kiến ​​thức API xuống。
+- Thời gian chạy mô-đun cấu hình mô hình độc lập hội tụ：thời gian chạy chat / embedding / rerank Tất cả thống nhất từ provider Đọc bộ đệm mô-đun và mô hình `provider_id:model_id`；Cấu hình mô hình tĩnh kế thừa、v1 slash spec、giao diện danh sách mô hình cũ và Ollama Đã xóa bản chuyển thể；Tích hợp sẵn provider Bổ sung mẫu XiaomiMiMo、XiaomiMiMo Token Plan CN với Kimi Code（`kimi-for-coding`）。
+- Điều chỉnh mặc định cấu hình mô hình tổng đài viên：`BaseContext.model` Để trống theo mặc định，Nhấn trong khi chạy“yêu cầu mô hình > Mô hình cấu hình đại lý > Mô hình mặc định của hệ thống”phân tích cú pháp；Khi tác nhân phụ không đặt cấu hình mô hình, nó sẽ kế thừa mô hình đang chạy của tác nhân chính.，Tránh củng cố mô hình mặc định của hệ thống vào từng cấu hình tác nhân。
+- Điều chỉnh quyền sở hữu cấu hình đại lý và quyền trường：`AgentConfig` Thay đổi từ chia sẻ bộ phận sang chia sẻ bởi `uid` cách ly，Tất cả người dùng đã đăng nhập có thể quản lý cấu hình của riêng họ；`BaseContext` Cấp trường hỗ trợ `auth` Siêu dữ liệu，Phần phụ trợ lọc các mục cấu hình hiển thị và có thể lưu được dựa trên vai trò của người dùng.。
+- Đã thêm các biến môi trường hộp cát cấp người dùng：tăng lên `agent_envs` bàn và `/api/user/agent-env` giao diện，Bảng cài đặt hỗ trợ bảo trì người dùng hiện tại Agent Biến môi trường hộp cát；Khi tạo một hộp cát mới với toàn cầu `sandbox.env` tiêm hợp nhất，Biến người dùng được ưu tiên。
+- Đặt tên nhận dạng người dùng hội tụ：ID đăng nhập doanh nghiệp ban đầu được thay đổi thành `uid`，Agent/LangGraph runtime、conversation、agent_run、sandbox Cả đường dẫn và chế độ người dùng giao diện người dùng đều sử dụng chuỗi `uid`；`user_id` Chỉ dành riêng cho các giá trị trong phản hồi bên ngoài `users.id` Hoặc kịch bản khóa ngoại thực sự。
+- Hiển thị phân loại cơ sở kiến thức không gian làm việc：Thanh bên cơ sở kiến thức được người sáng tạo nhóm thành“Cơ sở kiến thức của tôi”và“cơ sở tri thức được chia sẻ”，Cơ sở kiến thức bạn đã tạo được hiển thị trong“Cơ sở kiến thức của tôi”xuống，Những thứ không phải do bạn tạo ra sẽ được hiển thị trong“cơ sở tri thức được chia sẻ”xuống；`knowledge_bases` Bảng mới `created_by` Người tạo bản ghi hiện trường uid。
+- Tải lên tệp không gian làm việc hỗ trợ nhiều lựa chọn：`/workspace/upload` với Viewer Tải lên không gian làm việc được sử dụng thống nhất `files` Nhiều trường tệp，Tải lên nhiều nhất cùng một lúc 50 tập tin，Làm sạch các tập tin đã được ghi lần này khi tải lên hàng loạt không thành công。
+- Đã thêm tệp đính kèm trò chuyện MinIO tmp tải lên tạm thời、Tùy chọn PDF/Phân tích hình ảnh、Quá trình thêm tệp đính kèm chủ đề sau khi xác nhận；Giao diện người dùng được thay đổi để tải lên trong cửa sổ bật lên、Phân tích và xác nhận。
+- Đã khắc phục sự cố minh bạch khi tải lên đối thoại của tổng đài viên PNG Vấn đề biến dạng hình ảnh sau：Xử lý ảnh đa phương thức trong xuất khẩu RGB Đầu tiên mình sẽ tổng hợp nó với nền trắng alpha kênh，Tránh các màu ẩn trong pixel trong suốt được chuyển đổi trực tiếp thành pixel hiển thị；Bản xem trước có thể phân phối ưu tiên nhận dạng theo tiêu đề tệp MIME，tránh `.jpg` gói tên tập tin PNG Giao diện người dùng tải nội dung sai định dạng；Agent run Thông báo đầu vào sẽ được duy trì như `multimodal_image`，Hình ảnh do người dùng tải lên vẫn có thể hiển thị sau khi làm mới lịch sử。
+- Tối ưu hóa chi tiết trang đối thoại tổng đài viên：bảng trạng thái ẩn trống section，Tên việc cần làm được giới hạn ở 20 Trong ký tự Trung Quốc，Bộ chọn mô hình hiển thị tên nhà cung cấp，Và thắt chặt nhãn trạng thái đính kèm và chỉnh sửa tập tin kiểu hoạt động nổi；
+- Tiêu chuẩn hóa Agent run/SSE Liên kết thực thi：run Duy trì thông báo đầu vào khi tạo và xếp nó vào hàng đợi sau khi gửi，worker Viết thống nhất Redis Stream envelope，SSE đầu ra `event/data/id`、chú thích nhịp tim、`Last-Event-ID` Phát lại và chấm dứt `end` sự kiện；Sử dụng bắt buộc ở mặt trước run API và hỗ trợ ask_user_question sau khi bị gián đoạn với resume run khôi phục；sự kiện envelope Xây dựng hội tụ sự thống nhất helper，Ưu tiên mặt trước envelope Cấp 1 `thread_id` định tuyến。
+- Agent run SSE Mới `verbose=false` Chế độ thu gọn：Theo mặc định, tải trọng sự kiện hoàn chỉnh vẫn được trả về；Chế độ thu gọn chỉ khả dụng ở SSE Tái thiết tối thiểu trước khi xuất payload，bỏ qua `metadata` và trống rỗng `yuxi.agent_state`，sẽ giống nhau data bên trong `request_id` Trích xuất dưới dạng một trường duy nhất，Xóa chunk lặp đi lặp lại trong `meta`、`metadata`、`thread_id`、`response`、trống rỗng `namespace` và hình ảnh base64 Đợi các trường gỡ lỗi，Giữ tin nhắn delta、Cuộc gọi công cụ、Kết quả công cụ、Không trống Agent state、trạng thái thiết bị đầu cuối và SSE Con trỏ，Đăng ký giao diện người dùng sử dụng chế độ rút gọn theo mặc định。
+- sửa chữa SiliconFlow MiniMax Tương thích với công cụ Alibaba Cloud Bailian để gọi trực tuyến：cả hai OpenAI Tương thích với dòng chảy qua LangGraph v3 event stream Các trường chính bị mất khi công cụ tích lũy được gọi（MiniMax tăng tham số chunk Trả lại sản phẩm trống `function.name`，Hàng trăm nhà máy lọc dầu bị mất `tool_call.id`），Giá trị NULL được ghi checkpoint sẽ khiến việc thực thi dao không thành công hoặc không thể nhấn được kết quả dao `tool_call_id` hiệp hội、Trạng thái công cụ luôn ở mức“Đang tiến hành”；Theo mặc định, cả hai loại nhà cung cấp đều vô hiệu hóa phản hồi mô hình phát trực tuyến cho các cuộc gọi công cụ（Câu trả lời bằng văn bản vẫn đang phát trực tuyến），Dự trữ LangGraph v3 Chạy sự kiện và nhận được đầy đủ tool_call。Khiếm khuyết này là LangChain v3 Các vấn đề về giao thức truyền phát ngược dòng（Xem langchain#37420、langchainjs#10937、langgraphjs#2496），Kể từ langchain-core 1.4.4 Vẫn chưa sửa，Việc xử lý lệnh cấm lưu lượng của nhà cung cấp tương ứng có thể được gỡ bỏ sau khi sửa chữa ngược dòng.。
+- Ranh giới mô-đun phụ trợ hội tụ：Phân tích tài liệu từ `plugins.parser` di chuyển đến `knowledge.parser`，Đánh giá nội dung từ `plugins.guard` di chuyển đến `services.guard`。
+- Ranh giới dịch vụ tập tin hội tụ：Xem trước và đánh giá tập tin là các dịch vụ độc lập，Viewer hệ thống tập tin workspace Người dùng sử dụng lại chi nhánh workspace dịch vụ，Phân tích cú pháp bối cảnh thời gian chạy luồng khái quát từ `filesystem_service` bị phá hủy như agent runtime helper。
+- Nâng cấp DeepAgents Đến 0.6.7 Và thích ứng với phiên bản mới của giao thức hệ thống tập tin：SubAgentMiddleware Thay đổi thành rõ ràng subagent spec，Skills prompt Hoàn thành phần giữ chỗ phiên bản mới；sandbox/skills backend Tái sử dụng phiên bản mới `ReadResult`、`GlobResult`、`GrepResult` Các loại giao thức khác，Quyền tập tin là backend sự phân biệt rõ ràng giữa các lớp skills、uploads、outputs với workspace，giữ mức tối thiểu `CustomCompositeBackend` để tránh không route glob Quét nhầm cái khác route；Agent Nén ngữ cảnh đã thay đổi thành ghép kênh DeepAgents SummarizationMiddleware，Thống nhất các tóm tắt lịch sử và kết quả công cụ lớn offload Đến outputs。
+- Tối ưu hóa đầu vào trò chuyện @ Đề cập đến tập tin：Chưa được tạo Thread Người dùng có thể được tìm kiếm khi workspace，tạo ra Thread Sau đó nhấn vào file hội thoại hiện tại để ưu tiên.、workspace Tìm kiếm trình tự nguồn，và chia tay workspace/thread bộ đệm tránh sai thread Ô nhiễm bộ đệm với người dùng chéo；Hộp nhập liệu và hỗ trợ tin nhắn người dùng sẽ được raw mention Được hiển thị dưới dạng ô tham chiếu với biểu tượng loại，Tệp chỉ hiển thị tên tệp và giữ lại văn bản đường dẫn hộp cát gốc。
+- Xây dựng lại đại lý phụ như Agent-backed hình thức：Xóa cái cũ `subagents` bàn và `/api/system/subagents` liên kết quản lý，Tác nhân phụ được đổi thành `agents.is_subagent=true` và sử dụng `SubAgentBackend`，tạo ra/Biên tập viên đi cùng nhau Agent Lối vào quản lý；Phần phụ trợ tích hợp hội tụ đến `ChatbotAgent` với `SubAgentBackend`，Context chia thành `BaseContext`、`ChatBotContext` với `SubAgentContext`；Chúa ơi Agent Vượt qua Yuxi task middleware bắt đầu phụ thực sự Agent graph，Các đại lý phụ không còn gọi các đại lý phụ nữa。Đồng bộ hóa gắn hộp cát được chia thành child checkpoint thread、cuộc trò chuyện của phụ huynh uploads/outputs、cấp độ người dùng workspace Yoko Agent skills scope；Bản ghi trạng thái chủ đề chính `subagent_runs` và ở mặt trước task Hiển thị tên tác nhân phụ trong công cụ、Trạng thái thực thi、child thread và sản phẩm，task Kết quả công cụ sẽ được hiển thị child thread ID và hỗ trợ quay trở lại `thread_id` Tiếp tục chuỗi tác nhân con hiện có；Tái sử dụng thực thi tác nhân phụ `agent_runs(run_type=subagent)` ghi lại cha mẹ run、child thread với trạng thái，child thread state Truy vấn với `agent_runs` Mối quan hệ sẽ chiếm ưu thế，Không còn phân tích cú pháp thread ID Đẩy lùi chủ đề gốc；phát trực tuyến thực sự E2E Việc ghi đè các tệp đầu ra của tác nhân con có thể được thực hiện bằng các tệp luồng gốc/Viewer API đọc。Tham chiếu liên kết phát trực tuyến DeepAgents event streaming，Phần phụ trợ sẽ LangGraph v3 raw event bình thường hóa thành Yuxi semantic stream event，nhấn cha mẹ/Cách ly quyền sở hữu chủ đề con run SSE chunk，và hỗ trợ vượt qua child thread state Kéo quá trình trung gian của đại lý phụ。
+- Tính toán điểm toàn diện đánh giá sửa đổi：`overall_score` Khi có câu trả lời chính xác, hãy tính trung bình độ chính xác của từng câu hỏi.，Nếu không, hãy lấy từng câu hỏi `recall@10` trung bình，không còn nữa recall/f1/mỗi k Chỉ số truy xuất trung bình hỗn hợp；Các lượt chạy đã lưu trước đây không được chèn lấp。
+- Dọn dẹp phần mềm trung gian xác thực không hợp lệ：Xóa mã thông báo chưa thực sự được xác minh khi khởi động `AuthMiddleware` và phán xét còn lại của con đường công cộng，Ranh giới xác thực phụ trợ hội tụ rõ ràng đến các phụ thuộc định tuyến；`/api/auth/me` Thay đổi để bắt buộc đăng nhập và bổ sung quyền truy cập không đăng nhập 401 Kiểm tra tích hợp。
 
 ## v0.6.2 (2026-05-22)
 
-### 新增
+### Mới
 
-- 新增个人工作区预览与管理：提供独立于对话 thread 的用户级 workspace API，并增加“工作区”页面，用于浏览、预览、编辑、上传、下载、删除个人 workspace 文件；默认创建 `agents/AGENTS.md`，并在 Agent 执行时将其内容追加到系统提示词。
-- 新增独立模型配置模块：增加 `model_providers` 表、独立管理接口和“模型配置”页面，支持 provider 基础信息、远端候选模型、enabled models 配置和手动添加模型能力。
-- 新增远程 Skill 批量安装能力：后端新增 `install_remote_skills_batch()` 与 `POST /remote/install-batch`，前端补充批处理安装 API 和 UI 逻辑。
+- Đã thêm bản xem trước và quản lý không gian làm việc cá nhân：Cung cấp sự độc lập đối thoại thread cấp độ người dùng workspace API，và tăng“không gian làm việc”Trang，để duyệt、Xem trước、Chỉnh sửa、tải lên、Tải xuống、Xóa người workspace tập tin；Được tạo theo mặc định `agents/AGENTS.md`，Và trong Agent Khi được thực thi, hãy thêm nội dung của nó vào từ nhắc hệ thống。
+- Đã thêm mô-đun cấu hình mô hình độc lập：tăng lên `model_providers` bàn、Giao diện quản lý độc lập và“Cấu hình mô hình”Trang，hỗ trợ provider Thông tin cơ bản、mô hình ứng viên từ xa、enabled models Định cấu hình và thêm các khả năng của mô hình theo cách thủ công。
+- Thêm điều khiển từ xa Skill Khả năng cài đặt hàng loạt：Phần phụ trợ mới `install_remote_skills_batch()` với `POST /remote/install-batch`，Cài đặt hàng loạt bổ sung mặt trước API và UI logic。
 
-### 优化
+### Tối ưu hóa
 
-- 下放扩展管理权限：普通管理员现在可进入扩展管理并完整管理 Tools、MCP、SubAgent、Skills；同步放开 Skill 管理接口权限并补充权限测试。
-- 调整 Agent 知识库默认选择：未显式配置知识库时默认启用当前用户可访问的全部知识库，显式保存空列表仍表示不启用知识库。
-- 优化评估基准自动生成：仅支持 commonrag/Milvus 知识库，默认参考 chunks 数量改为 1；多 chunk 场景复用知识库向量检索选择相似 chunks，不再对全量 chunks 重新计算 embedding。
-- 优化 Agent 输入框文件 mention：用户级 workspace 文件候选改为从独立 workspace API 递归加载，不再依赖 active thread；插入时仍转换为 `/home/gem/user-data/workspace/` 沙盒虚拟路径。
-- 调整知识库思维导图后端结构：将思维导图路由文件重命名为知识库语义更明确的 router，并把文件列表整理、提示词构建、AI JSON 解析等纯逻辑下沉到知识库 utils。
-- 收敛知识库评估后端结构：将评估指标、单题评估、答案生成提示词和自动基准生成算法下沉到 `knowledge/eval`，`EvaluationService` 保留任务、文件和持久化编排职责。
-- 扩展管理界面交互逻辑重构：MCP / Subagents / Skills 从“左侧边栏 + 右侧详情面板”调整为“卡片式网格布局 + 路由跳转二级页面”，工具标签页改为卡片网格布局 + 弹窗详情。
-- 统一卡片样式：`ExtensionCard` 新增 `tags` prop 并复用于知识库列表页，知识库列表改用 `ExtensionCard` + `ExtensionCardGrid` 替代原有自定义卡片。
-- 调整应用主导航：`AppLayout` 升级为默认展开的侧边栏，保留折叠态图标导航，并统一导航项、任务中心、GitHub、用户信息的图标与文字对齐。
-- 合并智能体对话导航：移除 `AgentChatComponent` 内部聊天侧边栏，将新建对话入口和对话历史移动到 `AppLayout` 主侧边栏，并通过共享线程 store 统一管理。
-- 统一前端 Markdown 预览渲染：新增共享 `MarkdownPreview` 组件与 `markdown_preview` 渲染工具，替换 Agent 消息、文件预览、知识库 chunk、任务工具结果、聊天导出等场景中的旧预览实现。
+- Phân cấp quyền quản lý mở rộng：Quản trị viên thông thường hiện có thể tham gia quản lý mở rộng và quản lý hoàn toàn Tools、MCP、SubAgent、Skills；Phát hành đồng thời Skill Quản lý quyền giao diện và kiểm tra quyền bổ sung。
+- điều chỉnh Agent Lựa chọn mặc định cơ sở kiến thức：Khi cơ sở kiến ​​thức không được cấu hình rõ ràng, tất cả cơ sở kiến ​​thức mà người dùng hiện tại có thể truy cập đều được bật theo mặc định.，Lưu rõ ràng danh sách trống vẫn có nghĩa là cơ sở kiến thức không được kích hoạt。
+- Điểm chuẩn đánh giá tối ưu hóa được tạo tự động：Chỉ hỗ trợ commonrag/Milvus cơ sở tri thức，Tham chiếu mặc định chunks Số lượng được thay đổi thành 1；nhiều chunk Cảnh tái sử dụng cơ sở tri thức truy xuất vector tương tự lựa chọn chunks，Không còn đủ số tiền nữa chunks Tính toán lại embedding。
+- Tối ưu hóa Agent Tập tin hộp đầu vào mention：cấp độ người dùng workspace Tệp ứng cử viên đã thay đổi từ độc lập workspace API Tải đệ quy，Không còn phụ thuộc vào active thread；Vẫn chuyển đổi thành `/home/gem/user-data/workspace/` Đường dẫn ảo hộp cát。
+- Điều chỉnh cấu trúc back-end của sơ đồ tư duy cơ sở tri thức：Đổi tên tệp định tuyến bản đồ tư duy thành một cái gì đó rõ ràng hơn về mặt ngữ nghĩa cho cơ sở kiến ​​thức router，và sắp xếp danh sách tập tin、xây dựng từ gợi ý、AI JSON Logic thuần túy như phân tích chìm vào cơ sở tri thức utils。
+- Cấu trúc phụ trợ đánh giá cơ sở tri thức hội tụ：sẽ đánh giá các chỉ số、Đánh giá câu hỏi đơn、Trả lời các từ nhắc nhở và thuật toán tạo điểm chuẩn tự động chìm xuống `knowledge/eval`，`EvaluationService` Nhiệm vụ dành riêng、Trách nhiệm điều phối tập tin và kiên trì。
+- Tái thiết logic tương tác giao diện quản lý mở rộng：MCP / Subagents / Skills từ“thanh bên trái + Bảng chi tiết bên phải”Điều chỉnh để“bố trí lưới thẻ + Lộ trình chuyển tới trang phụ”，Tab công cụ đã thay đổi thành bố cục lưới thẻ + Chi tiết bật lên。
+- Thống nhất phong cách thẻ：`ExtensionCard` Mới `tags` prop Và được sử dụng lại trong trang danh sách cơ sở tri thức，Danh sách cơ sở kiến thức thay thế `ExtensionCard` + `ExtensionCardGrid` Thay thế thẻ tùy chỉnh ban đầu。
+- Điều chỉnh điều hướng ứng dụng chính：`AppLayout` Nâng cấp lên thanh bên mở rộng mặc định，Giữ điều hướng biểu tượng thu gọn，và thống nhất các mục điều hướng、trung tâm truyền giáo、GitHub、Biểu tượng thông tin người dùng được căn chỉnh với văn bản。
+- Kết hợp điều hướng đối thoại của tổng đài viên：Xóa `AgentChatComponent` Thanh bên trò chuyện nội bộ，Di chuyển mục nhập cuộc trò chuyện mới và lịch sử cuộc trò chuyện sang `AppLayout` thanh bên chính，và thông qua chủ đề được chia sẻ store Quản lý thống nhất。
+- Giao diện người dùng hợp nhất Markdown Xem trước kết xuất：Thêm chia sẻ mới `MarkdownPreview` Thành phần và `markdown_preview` công cụ kết xuất，thay thế Agent tin tức、Xem trước tệp、cơ sở tri thức chunk、Kết quả của công cụ tác vụ、Triển khai bản xem trước cũ trong các trường hợp như xuất trò chuyện。
 
-### 修复
+### sửa chữa
 
-- 修复聊天中普通用户 `@` 提及出不来技能和 MCP 列表的问题：放宽技能列表与 MCP 服务器列表读取接口至已登录用户，并对普通用户请求的 MCP 列表进行敏感连接参数脱敏。
-- 修复知识库文档入库状态回退：当已解析文件缺失 `markdown_file` 解析产物时，索引流程会将文件状态恢复为未解析，便于重新解析。
-- 修复附件上传后未立即刷新 mention 候选的问题。
-- 加固 JWT 鉴权安全：移除历史默认密钥回退，初始化脚本支持生成并持久化 `JWT_SECRET_KEY` 与 `YUXI_INSTANCE_ID`，签发和验证令牌时校验 `iss/aud`，并拒绝已删除或登录锁定用户继续使用旧令牌访问系统。
-- 修复模型配置路由请求模型未接收 `embedding_base_url` / `rerank_base_url` 导致前端已填写仍被后端校验拦截的问题。
-- 修复知识库文档处理任务状态不一致问题：文件解析失败时任务中心正确显示"失败"而非"已完成"。
+- Sửa lỗi người dùng bình thường trong trò chuyện `@` Hãy nêu những kỹ năng và MCP Danh sách câu hỏi：Thư giãn danh sách kỹ năng với MCP Giao diện đọc danh sách máy chủ cho người dùng đã đăng nhập，và yêu cầu từ người dùng thông thường MCP Danh sách để giải mẫn cảm các tham số kết nối nhạy cảm。
+- Sửa lỗi hồi quy trạng thái nhập tài liệu cơ sở kiến thức：Khi thiếu tệp được phân tích cú pháp `markdown_file` Khi phân tích sản phẩm，Quá trình lập chỉ mục sẽ hoàn nguyên trạng thái tệp về Chưa được giải quyết，Dễ dàng phân tích lại。
+- Đã sửa lỗi tệp đính kèm không được làm mới ngay sau khi tải lên mention câu hỏi của ứng viên。
+- gia cố JWT Bảo mật xác thực：Xóa dự phòng khóa mặc định lịch sử，Tập lệnh khởi tạo hỗ trợ việc tạo và duy trì `JWT_SECRET_KEY` với `YUXI_INSTANCE_ID`，Xác minh khi phát hành và xác thực mã thông báo `iss/aud`，và từ chối người dùng đã bị xóa hoặc bị khóa đăng nhập tiếp tục truy cập vào hệ thống bằng mã thông báo cũ。
+- Đã sửa lỗi không nhận được mô hình yêu cầu định tuyến cấu hình mô hình `embedding_base_url` / `rerank_base_url` Sự cố khiến giao diện người dùng được điền nhưng vẫn bị chặn bởi quá trình xác minh phía sau.。
+- Khắc phục sự cố trạng thái không nhất quán của các tác vụ xử lý tài liệu cơ sở tri thức：Trung tâm tác vụ hiển thị chính xác khi phân tích tệp không thành công"thất bại"thay vì"Đã hoàn thành"。
 
 ## v0.6.1 (2026-04-24)
 
-### 新增
+### Mới
 
-- 合并知识库导航入口：左侧导航仅保留"知识库"，文档知识库与图知识库在页面 header 中通过同一组轻量切换入口切换
-- 抽象页面轻量切换 header：知识库与扩展管理页直接共用 `ViewSwitchHeader`，收敛文档知识库、知识图谱、Tools、MCP、Subagents、Skills 等入口的信息层级
-- 调整任务中心交互：入口移动到 GitHub 按钮下方，并将右侧抽屉展示改为居中弹窗
-- 将 `yuxi` 从 uv workspace 成员调整为 `backend/package` 下可独立构建的本地 Python 包，backend 通过 path dependency 以已安装包形式发现依赖
-- 新增 Skills 远程安装能力：Skills 管理页支持填写 `owner/repo` 或 GitHub URL，后端通过隔离的临时 `HOME` 调用 `npx skills add` 下载指定 skill
-- 调整部门删除语义：删除部门时不再要求用户数为 0，而是将部门下用户迁移到默认部门
-- 扩展 viewer 工作区文件操作：`/home/gem/user-data/workspace` 支持从文件系统面板新建文件夹和上传文件
-- 为历史线程补充前端本地配置变更提示：当已有历史消息的对话中切换 Agent、切换配置或编辑配置项时，插入非持久化的信息提示
-- 调整 Worker run 模式下的消息首屏反馈：前端发送消息时先乐观渲染用户消息，再将前端生成的 `request_id` 透传给 `/api/chat/runs` 与服务端 `init` 对账
-- 调整聊天首页的智能体切换入口：当智能体数量 `>= 4` 或内容区宽度小于 `380px` 时自动收敛为"当前智能体 + 下拉按钮"形式
-- 调整智能体对话中的工具调用展示：连续工具调用默认折叠为"调用了 N 个工具"的轻量摘要
-- 调整输入框配置入口与侧边栏头尾交互：输入区配置按钮改为轻量 dropdown 触发器
+- Hợp nhất cổng thông tin điều hướng cơ sở kiến thức：Chỉ còn lại điều hướng bên trái"cơ sở tri thức"，Cơ sở kiến thức tài liệu và cơ sở kiến thức đồ thị trên trang header Chuyển qua cùng một nhóm cổng chuyển mạch nhẹ
+- Chuyển đổi nhẹ trang trừu tượng header：Cơ sở kiến thức và chia sẻ trang quản lý mở rộng trực tiếp `ViewSwitchHeader`，Cơ sở kiến thức tài liệu hội tụ、Sơ đồ tri thức、Tools、MCP、Subagents、Skills Mức thông tin chờ nhập
+- Tinh chỉnh tương tác của Mission Center：Lối vào di chuyển đến GitHub nút bên dưới，Và thay đổi màn hình ngăn kéo bên phải thành cửa sổ bật lên ở giữa
+- sẽ `yuxi` từ uv workspace Các thành viên được điều chỉnh `backend/package` Một bản dựng cục bộ có thể được xây dựng độc lập Python gói，backend Vượt qua path dependency Khám phá các phần phụ thuộc như các gói đã cài đặt
+- Mới Skills Khả năng cài đặt từ xa：Skills Trang quản lý hỗ trợ điền thông tin `owner/repo` hoặc GitHub URL，Phần phụ trợ đi qua phần tạm thời bị cô lập `HOME` gọi `npx skills add` Tải xuống được chỉ định skill
+- Điều chỉnh ngữ nghĩa xóa bộ phận：Khi xóa một khoa, số lượng người dùng không còn cần thiết nữa. 0，Thay vào đó, người dùng trong bộ phận sẽ được di chuyển sang bộ phận mặc định.
+- Mở rộng viewer Thao tác với tệp không gian làm việc：`/home/gem/user-data/workspace` Hỗ trợ tạo thư mục mới và tải tệp lên từ bảng hệ thống tệp
+- Bổ sung lời nhắc thay đổi cấu hình cục bộ ở giao diện người dùng cho các chuỗi lịch sử：Chuyển đổi giữa các cuộc hội thoại đã có tin nhắn lịch sử Agent、Khi chuyển đổi cấu hình hoặc chỉnh sửa các mục cấu hình，Chèn mẹo thông tin không liên tục
+- điều chỉnh Worker run Tin nhắn phản hồi màn hình đầu tiên ở chế độ：Khi giao diện người dùng gửi tin nhắn, trước tiên nó sẽ hiển thị tin nhắn của người dùng một cách lạc quan，Sau đó tạo giao diện người dùng `request_id` đi qua `/api/chat/runs` với máy chủ `init` Hòa giải
+- Điều chỉnh lối vào chuyển đổi tổng đài viên trên trang chủ trò chuyện：Khi số lượng đại lý `>= 4` Hoặc chiều rộng vùng nội dung nhỏ hơn `380px` tự động hội tụ đến"đại lý hiện tại + nút thả xuống"hình thức
+- Điều chỉnh hiển thị lệnh gọi công cụ trong đoạn hội thoại của tổng đài viên：Các lệnh gọi công cụ liên tục được thu gọn theo mặc định thành"được gọi là N công cụ"tóm tắt nhẹ nhàng
+- Điều chỉnh lối vào cấu hình hộp đầu vào và tương tác đầu và đuôi thanh bên：Các nút cấu hình vùng nhập liệu được thay đổi sang trọng lượng nhẹ dropdown cò súng
 
-### 修复
+### sửa chữa
 
-- 修复沙盒 `workspace` 隔离粒度：宿主机目录从共享 `saves/threads/shared/workspace` 收敛为用户级 `saves/threads/shared/<user_id>/workspace`
-- 收紧文件系统安全边界：viewer/chat 下载与删除路径统一基于解析后的真实路径做允许目录校验，阻止通过软链接逃逸工作区/线程目录
-- 修复 OIDC 原始用户名绑定中的占位用户解析：解析目标用户 ID 时改为从右侧拆分，避免 `sub` 中包含冒号时把已绑定账号误判成冲突账号
-- 修复 DOCX 解析中的图片回插顺序：Docling 导出的多个 `<!-- image -->` 占位符现在按文档图片顺序替换
-- 修复前端依赖安全告警：通过 `pnpm.overrides` 将传递依赖 `flatted` 锁定到 `3.4.2`、`lodash-es` 锁定到 `4.18.1`
-- 修复对话摘要中间件的工具结果卸载链路：摘要触发时改为将大体积 `ToolMessage` 写入当前 agent 可见的 sandbox outputs 路径
-- 修复 agents 页对话侧边栏在 `keep-alive` 路由切换后的误关闭问题
-- 调整 Milvus 混合检索实现：集合 schema 增加 BM25 稀疏向量字段、BM25 函数和中文 analyzer 配置
-- 重构 MCP 运行时配置加载模型：移除 `MCP_SERVERS` 作为运行正确性前提的设计，改为每次直接从数据库读取最新 MCP 配置
-- 为知识库检索工具补充 `metadata.filepath` 注入：在 `query_kb` 统一出口基于会话可见知识库构建 `file_id -> /home/gem/kbs/...` 映射并回填 Milvus 检索结果
-- 移除知识库沙盒文件系统映射：Agent 不再通过 `/home/gem/kbs` 遍历知识库文件，继续通过 `query_kb` 和 `open_kb_document` 检索与打开文档。
+- Sửa chữa hộp cát `workspace` Độ chi tiết cách ly：Thư mục máy chủ được chia sẻ từ `saves/threads/shared/workspace` Hội tụ ở cấp độ người dùng `saves/threads/shared/<user_id>/workspace`
+- Thắt chặt ranh giới bảo mật hệ thống tập tin：viewer/chat Đường dẫn tải xuống và xóa được thống nhất dựa trên đường dẫn thực được phân tích cú pháp để cho phép xác minh thư mục.，Ngăn chặn việc thoát khỏi không gian làm việc thông qua các liên kết mềm/thư mục chủ đề
+- sửa chữa OIDC Độ phân giải người dùng giữ chỗ trong ràng buộc tên người dùng ban đầu：Phân tích người dùng mục tiêu ID tách từ bên phải，tránh `sub` Khi chứa dấu hai chấm, tài khoản bị ràng buộc sẽ bị đánh giá sai là tài khoản xung đột
+- sửa chữa DOCX Thứ tự chèn ảnh trong quá trình phân tích cú pháp：Docling Xuất nhiều `<!-- image -->` Trình giữ chỗ hiện được thay thế theo thứ tự ảnh tài liệu
+- Khắc phục cảnh báo bảo mật phụ thuộc front-end：Vượt qua `pnpm.overrides` sẽ phụ thuộc tạm thời vào `flatted` bị khóa để `3.4.2`、`lodash-es` bị khóa để `4.18.1`
+- Sửa kết quả công cụ gỡ cài đặt liên kết cho phần mềm trung gian tóm tắt hội thoại：Tiêu hóa kích hoạt thay vì khối lượng lớn `ToolMessage` viết hiện tại agent có thể nhìn thấy sandbox outputs con đường
+- sửa chữa agents Thanh bên cuộc trò chuyện trên trang trong `keep-alive` Sự cố vô tình tắt máy sau khi chuyển đổi định tuyến
+- điều chỉnh Milvus Triển khai tìm kiếm kết hợp：bộ sưu tập schema tăng lên BM25 trường vector thưa thớt、BM25 Chức năng và tiếng Trung analyzer Cấu hình
+- Tái cấu trúc MCP Mô hình tải cấu hình thời gian chạy：Xóa `MCP_SERVERS` Thiết kế là điều kiện tiên quyết để vận hành đúng đắn，Thay vào đó, hãy đọc dữ liệu mới nhất trực tiếp từ cơ sở dữ liệu mỗi lần MCP Cấu hình
+- Bổ sung công cụ tìm kiếm cơ sở kiến thức `metadata.filepath` tiêm：trong `query_kb` Lối ra thống nhất được xây dựng dựa trên nền tảng kiến thức hiển thị phiên `file_id -> /home/gem/kbs/...` bản đồ và lấp đầy Milvus Kết quả tìm kiếm
+- Xóa ánh xạ hệ thống tệp hộp cát kho lưu trữ：Agent không còn được thông qua `/home/gem/kbs` Duyệt qua các tập tin cơ sở kiến thức，tiếp tục đi qua `query_kb` và `open_kb_document` Truy xuất và mở tài liệu。
 
 ## v0.6.0 (2026-04-01)
 
 
-### 新增
-- 重构后端代码 src -> backend/package/yuxi
-- 重构文档解析，统一文档解析体验，并新增 Parser 类
-- 新增 LITE 模式启动，启动时不加载知识库、知识图谱相关模块，可以使用 make up-lite 快捷启动
-- 新增沙盒环境，详见后续文档更新，统一沙盒虚拟路径前缀默认值为 `/home/gem/user-data`
-- 新增基于沙盒的文件系统，前端工作台可以查看文件系统，支持预览（文本、图片、PDF、HTML）、下载文件
-- 新增 `present_artifacts` 内置工具：Agent 可将 `/home/gem/user-data/outputs/` 下的结果文件显式写入 LangGraph state 的 `artifacts` 字段，前端支持在输入框顶部以默认折叠的堆叠卡片展示本轮交付物文件，并保持可下载、可预览能力
-- 交付物卡片新增“保存到工作区”能力：支持将单个交付物复制到共享目录 `workspace/saved_artifacts/`，并复用现有文件树/预览/mention 体系立即可见
-- 新增基于沙盒的知识库只读映射，按“用户可访问知识库 ∩ 当前 Agent 已启用知识库”暴露原始文件与解析后的 Markdown
-- 重构附件系统，直接集成在了沙盒文件系统中，附件上传后直接落盘到沙盒挂载目录
-- 优化前端流式消息体验：新增通用 `useStreamSmoother` 调度层，统一平滑 Agent runs SSE、普通聊天流与审批恢复流中的 `loading` chunk
-- 优化项目文档说明，并添加贡献指南
-- 重构前端 Agent 路由结构，体验更加顺畅，切换更加自然（类 chatgpt 体验）
-- 新增 API Key 认证功能，支持外部系统通过 API Key 调用系统服务
-- 新增 subagents 的支持，支持在 web 中添加 subagents，以及两个内置的子智能体
-- 新增内置Skills reporter，并移除内置 Agent reporter，数据库报表将由 Skills 完成
-- 新增内置 Skills `deep-reporter`，用于指导生成科研报告、行业调研和其他深度分析类长报告
-- 重构内置 Skills/MCP/Subagents 安装/添加/移除机制：内置 skill 支持按需安装、基于 `version + content_hash` 的更新提示与覆盖确认，不再使用服务器级开关切换
-- 新增知识库 PDF、图片的预览功能
-- 重构后端测试目录结构：按 `unit / integration / e2e` 分层迁移现有测试，拆分全局 `conftest.py`，统一测试入口为 `uv run --group test pytest`，并新增独立测试规范文档 `docs/develop-guides/testing-guidelines.md`
-- 新增工具元数据 `config_guide` 字段：后端工具列表接口现在可返回“给人看的配置说明”，前端工具详情页会展示该说明，用于提示工具使用前需要配置的环境变量或入口；首批为 MySQL 工具和 `Qwen-Image` 补充了配置指引
-- 补充 Langfuse 集成方案文档：明确采用“云端优先、先 tracing 后 feedback”的接入路径，并约定 Yuxi 的 `user/thread` 到 Langfuse `user_id/session_id` 的映射关系
-- 新增面向用户的 Langfuse 集成文档：在“高级配置”分组中说明 Langfuse 的定位、能力、配置方式与查看路径，并与当前 `LANGFUSE_BASE_URL` 配置保持一致
+### Mới
+- Tái cấu trúc mã phụ trợ src -> backend/package/yuxi
+- Phân tích tài liệu tái cấu trúc，Trải nghiệm phân tích tài liệu hợp nhất，và thêm Parser lớp học
+- Mới LITE chế độ bắt đầu，Cơ sở kiến thức không được tải khi khởi động、Các mô-đun liên quan đến biểu đồ tri thức，Có thể được sử dụng make up-lite Bắt đầu nhanh
+- Thêm môi trường hộp cát mới，Vui lòng xem các cập nhật tài liệu tiếp theo để biết chi tiết.，Giá trị mặc định của tiền tố đường dẫn ảo hộp cát hợp nhất là `/home/gem/user-data`
+- Đã thêm hệ thống tệp dựa trên hộp cát，Bàn làm việc phía trước có thể xem hệ thống tập tin，Hỗ trợ xem trước（văn bản、hình ảnh、PDF、HTML）、Tải tập tin xuống
+- Mới `present_artifacts` Công cụ tích hợp：Agent có thể `/home/gem/user-data/outputs/` Tệp kết quả dưới LangGraph state của `artifacts` trường，Giao diện người dùng hỗ trợ hiển thị các tệp có thể phân phối của vòng này trong các thẻ xếp chồng lên nhau được thu gọn theo mặc định ở đầu hộp nhập liệu.，và vẫn có thể tải xuống、Khả năng xem trước
+- Đã thêm thẻ có thể giao được“Lưu vào không gian làm việc”khả năng：Hỗ trợ sao chép các sản phẩm riêng lẻ vào thư mục dùng chung `workspace/saved_artifacts/`，và tái sử dụng cây tập tin hiện có/Xem trước/mention Hệ thống có thể nhìn thấy ngay lập tức
+- Đã thêm ánh xạ chỉ đọc cơ sở kiến thức dựa trên hộp cát，nhấn“Cơ sở kiến thức người dùng có thể truy cập ∩ hiện tại Agent Đã bật cơ sở kiến thức”Hiển thị tệp gốc và phân tích cú pháp Markdown
+- Tái cấu trúc hệ thống đính kèm，Tích hợp trực tiếp vào hệ thống tệp sandbox，Sau khi tệp đính kèm được tải lên, nó sẽ được thả trực tiếp vào thư mục gắn hộp cát.
+- Tối ưu hóa trải nghiệm nhắn tin trực tuyến ở mặt trước：Thêm chung `useStreamSmoother` Lớp lập kế hoạch，làm mịn đồng đều Agent runs SSE、Trong luồng trò chuyện thông thường và luồng khôi phục phê duyệt `loading` chunk
+- Tối ưu hóa tài liệu dự án，và thêm hướng dẫn đóng góp
+- Tái cấu trúc giao diện người dùng Agent cấu trúc định tuyến，Trải nghiệm mượt mà hơn，Chuyển đổi tự nhiên hơn（lớp học chatgpt kinh nghiệm）
+- Mới API Key Chức năng xác thực，Hỗ trợ các hệ thống bên ngoài thông qua API Key Dịch vụ hệ thống cuộc gọi
+- Mới subagents hỗ trợ，Được hỗ trợ trong web Thêm vào subagents，và hai tác nhân phụ tích hợp
+- Đã thêm tích hợp sẵnSkills reporter，và loại bỏ tích hợp Agent reporter，Báo cáo cơ sở dữ liệu sẽ được tạo bởi Skills Hoàn thành
+- Đã thêm tích hợp sẵn Skills `deep-reporter`，Được sử dụng để hướng dẫn tạo báo cáo nghiên cứu khoa học、Nghiên cứu ngành và các báo cáo phân tích chuyên sâu khác
+- Tích hợp sẵn công cụ tái cấu trúc Skills/MCP/Subagents Cài đặt/thêm/cơ chế loại bỏ：Tích hợp sẵn skill Hỗ trợ cài đặt theo yêu cầu、Dựa trên `version + content_hash` Cập nhật lời nhắc và xác nhận phạm vi bảo hiểm，Không còn chuyển đổi cấp máy chủ
+- Thêm nền tảng kiến thức mới PDF、Chức năng xem trước hình ảnh
+- Tái cấu trúc cấu trúc thư mục kiểm tra phụ trợ：nhấn `unit / integration / e2e` Di chuyển các thử nghiệm hiện có trong các lớp，Chia bức tranh lớn `conftest.py`，Lối vào kiểm tra thống nhất là `uv run --group test pytest`，Và thêm các tài liệu đặc tả thử nghiệm độc lập `docs/develop-guides/testing-guidelines.md`
+- Thêm siêu dữ liệu công cụ `config_guide` trường：Giao diện danh sách công cụ phụ trợ hiện có thể quay lại“Hướng dẫn cấu hình để mọi người đọc”，Mô tả này sẽ được hiển thị trên trang chi tiết công cụ giao diện người dùng，Được sử dụng để nhắc các biến môi trường hoặc mục nhập cần được định cấu hình trước khi sử dụng công cụ.；Lô đầu tiên là MySQL công cụ và `Qwen-Image` Đã thêm hướng dẫn cấu hình
+- bổ sung Langfuse Tài liệu giải pháp tích hợp：được thông qua rõ ràng“Đám mây đầu tiên、đầu tiên tracing sau feedback”đường dẫn truy cập，và đồng ý Yuxi của `user/thread` Đến Langfuse `user_id/session_id` mối quan hệ ánh xạ
+- Thêm hướng tới người dùng Langfuse Tài liệu tích hợp：trong“Cấu hình nâng cao”Mô tả trong nhóm Langfuse định vị、khả năng、Phương pháp cấu hình và đường dẫn xem，và với hiện tại `LANGFUSE_BASE_URL` Cấu hình vẫn nhất quán
 
-<!-- 添加到这里 -->
+<!-- thêm vào đây -->
 
-### 修复
+### sửa chữa
 
-- 调整聊天首页的智能体切换入口：在无历史对话时，智能体数量 `<= 3` 且 `chat-main` 宽度不小于 `380px` 时继续使用横向 segmented；当智能体数量 `>= 4` 或内容区宽度小于 `380px` 时自动收敛为“当前智能体 + 下拉按钮”形式，避免多智能体或窄屏场景下入口被截断
-- 发布前一致性修复：统一 0.6.0 版本号（backend/package/web）、更新 dev/prod 镜像标签语义（`0.6.0.dev` / `0.6.0`），并为 `/api/system/health` 补充 `version` 字段，提升部署可观测性与发版追溯能力
-- 收敛“状态工作台”自动弹出规则：前端不再因为共享 `workspace` 或文件系统天然存在内容而默认展开，改为仅在 `/home/gem/user-data/uploads` 或 `/home/gem/user-data/outputs` 下检测到实际文件时自动弹出；手动打开、关闭、刷新和伸缩交互保持不变
-- 调整智能体 todo 展示语义：待办状态不再作为 `capabilities` 前端开关，而是直接根据运行态 `agent_state.todos` 渲染；同时将 todo 入口从 Agent Panel 移到输入框内的轻量浮层，并让右侧“状态工作台”收敛为文件系统视图，输入框按钮文案同步由“状态”调整为“文件”
-- 优化 Agent 输入框 mention 行为：在保留附件 mention 的同时，将共享 `workspace` 文件纳入候选范围；并将 `@` 空查询时的候选列表改为空，仅在继续输入后再执行筛选，避免工作区文件过多时直接铺满下拉面板
-- 为前端工作台文件树补齐文件删除能力：`/api/viewer/filesystem/file` 新增删除接口，`AgentPanel` 文件节点新增删除按钮与确认交互，删除后会同步刷新树与预览状态
-- 扩展 Agent Panel 状态工作台删除能力：继续复用 `DELETE /api/viewer/filesystem/file`，在保持接口不变的前提下支持删除文件夹；空目录与非空目录现在都会递归删除，`workspace` 下目录也可直接清理，前端目录节点同步新增删除入口与对应确认文案
-- 调整前端工作台文件预览交互：恢复默认侧边/弹窗预览，并新增显式“全屏预览”入口；全屏模式下由预览内容直接覆盖整页，仅保留右上角悬浮关闭按钮；同时修复 HTML 文件首次在弹窗中预览偶现白屏的问题，改为在内容更新后强制重建 `iframe`
-- 统一 Agent Panel 文件预览与消息区交付物预览组件：两处改为复用同一套 `AgentFilePreview` 预览实现，并为交付物预览补齐与工作台一致的“全屏预览”入口
-- 修复交付物卡片展开后的长列表展示：当单轮交付物文件超过面板可见高度时，卡片内容区改为显示纵向滚动条，避免超过约 10 项后底部文件与操作按钮被裁切
-- 兼容旧版已安装的内置 `reporter` 技能记录：`update_builtin_skill` 现在会识别由 `system` 或 `builtin-system` 管理的历史记录，避免更新时误报“技能 `reporter` 不是内置 skill”
-- 调整沙盒 user-data 目录隔离策略：`workspace` 改为共享目录 `saves/threads/shared/workspace`，`uploads/outputs` 继续保持 thread 级隔离；同时更新 thread artifact 权限校验、viewer 文件系统列举逻辑，以及对应的 router/E2E 测试
-- 重构聊天接口请求模型：流式与非流式聊天统一使用 `query + agent_config_id` 请求体，并移除路径中的 `agent_id`；同时修复非流式接口实际误走流式执行链路的问题，改为调用 `invoke_messages` 一次性执行，并补充对应测试
-- 修复对话线程与 Agent 配置错位的问题：发送消息时将当前 `agent_config_id` 绑定到 thread 的 `extra_metadata`，线程列表接口返回该绑定值，前端切换历史 thread 时会自动恢复对应配置
-- 为沙盒与 viewer 文件系统补齐知识库只读映射：新增 `/home/gem/kbs` 命名空间，按“用户可访问知识库 ∩ 当前 Agent 已启用知识库”暴露原始文件与解析后的 Markdown，并补充对应后端与 viewer 路由测试
-- 优化 viewer 文件系统目录树加载：根目录与 `/home/gem/user-data` 改为直接读取本地线程挂载目录，不再为只读树视图触发 sandbox 冷启动，并补充对应后端测试
-- 修复 `/home/gem/user-data` 根目录文件不可见的问题：根目录现在会同时展示 thread 目录下的真实文件和 `workspace` 入口，不再只保留固定命名空间目录
-- 修复前端工具图标与渲染匹配不准确的问题：工具管理列表与工具调用结果统一改为基于工具 `id` 的精确映射，避免模糊匹配导致的误渲染，未命中的工具不再显示默认扳手图标
-- 修复 GitHub Pages 文档部署工作流失败：移除 `actions/setup-node@v4` 对不存在 `docs/package-lock.json` 的缓存依赖，并将 `docs` 目录安装命令从 `npm ci` 调整为 `npm install`，避免因未提交锁文件导致 CI 在依赖缓存和安装阶段直接失败
-- 修正沙盒 provisioner backend 命名与配置说明：统一对外使用 `docker` / `kubernetes`，保留 `local` 作为兼容别名；同步清理 compose 中未生效的 provisioner 环境变量、补齐 K8s 相关变量注释，并更新沙盒架构文档中的默认模式与 backend 描述
-- 修复智能体配置列表接口在“无配置自动创建默认配置”路径下的参数缺失：补齐 `get_or_create_default` 的 `agent_id` 入参，避免 `/api/chat/agent/{agent_id}/configs` 返回 500
-- 修复 LightRAG 同库写入并发导致的入库失败：为 `index_file` / `update_content` 增加按知识库维度的串行锁，并补齐 `documents` 接口 `auto_index` 阶段对最新解析状态的回写与回归测试，避免长时间入库任务进行中再次选择同库文件时直接并发写入报错
+- Điều chỉnh lối vào chuyển đổi tổng đài viên trên trang chủ trò chuyện：Khi không có đối thoại lịch sử，Số lượng đại lý `<= 3` Và `chat-main` Chiều rộng không nhỏ hơn `380px` Tiếp tục sử dụng hướng ngang khi segmented；Khi số lượng đại lý `>= 4` Hoặc chiều rộng vùng nội dung nhỏ hơn `380px` tự động hội tụ đến“đại lý hiện tại + nút thả xuống”hình thức，Tránh cắt bớt lối vào trong các tình huống có nhiều tác nhân hoặc màn hình hẹp
+- Sửa lỗi nhất quán trước khi phát hành：thống nhất 0.6.0 số phiên bản（backend/package/web）、cập nhật dev/prod Ngữ nghĩa thẻ phản chiếu（`0.6.0.dev` / `0.6.0`），Và đối với `/api/system/health` bổ sung `version` trường，Cải thiện khả năng quan sát triển khai và phát hành khả năng truy xuất nguồn gốc
+- hội tụ“bàn làm việc trạng thái”Quy tắc bật lên tự động：Giao diện người dùng không còn được chia sẻ `workspace` Hoặc nội dung tồn tại tự nhiên trong hệ thống file và được mở rộng theo mặc định.，Thay đổi thành chỉ trong `/home/gem/user-data/uploads` hoặc `/home/gem/user-data/outputs` Tự động bật lên khi phát hiện tập tin thực tế；Mở thủ công、đóng、Tương tác làm mới và mở rộng quy mô không thay đổi
+- Điều chỉnh đại lý todo hiển thị ngữ nghĩa：Trạng thái việc cần làm không còn là `capabilities` công tắc phía trước，Thay vào đó, nó dựa trực tiếp vào trạng thái đang chạy `agent_state.todos` kết xuất；Đồng thời, todo Lối vào từ Agent Panel Đã chuyển sang lớp nổi nhẹ trong hộp nhập liệu，và để bên phải“bàn làm việc trạng thái”Hội tụ để xem hệ thống tập tin，Bản sao nút hộp đầu vào được đồng bộ hóa bởi“Trạng thái”Điều chỉnh để“tập tin”
+- Tối ưu hóa Agent Hộp nhập liệu mention hành vi：Giữ tệp đính kèm mention cùng lúc，sẽ chia sẻ `workspace` Các tài liệu có trong phạm vi ứng cử viên；và sẽ `@` Danh sách ứng cử viên cho các truy vấn trống được thay đổi thành trống，Chỉ lọc sau khi gõ thêm，Tránh điền trực tiếp vào bảng thả xuống khi có quá nhiều tệp trong không gian làm việc
+- Hoàn thiện khả năng xóa tệp cho cây tệp bàn làm việc phía trước：`/api/viewer/filesystem/file` Đã thêm giao diện xóa，`AgentPanel` Nút tệp thêm nút xóa và tương tác xác nhận，Sau khi xóa, cây và trạng thái xem trước sẽ được làm mới đồng thời.
+- Mở rộng Agent Panel Khả năng xóa bàn làm việc trạng thái：Tiếp tục tái sử dụng `DELETE /api/viewer/filesystem/file`，Hỗ trợ xóa thư mục mà vẫn giữ nguyên giao diện；Các thư mục trống và không trống hiện bị xóa đệ quy，`workspace` Bạn cũng có thể làm sạch thư mục trực tiếp，Nút thư mục giao diện người dùng đồng bộ hóa mục xóa mới và bản sao xác nhận tương ứng
+- Điều chỉnh tương tác xem trước tệp bàn làm việc phía trước：Khôi phục các mặt mặc định/Xem trước cửa sổ bật lên，và thêm rõ ràng“Xem trước toàn màn hình”lối vào；Ở chế độ toàn màn hình, nội dung xem trước trực tiếp bao phủ toàn bộ trang，Chỉ giữ nút đóng nổi ở góc trên bên phải；Sửa chữa đồng thời HTML Vấn đề thỉnh thoảng xuất hiện màn hình trắng khi xem trước tệp lần đầu tiên trong cửa sổ bật lên，Thay vào đó, buộc phải xây dựng lại sau khi cập nhật nội dung `iframe`
+- thống nhất Agent Panel Các thành phần xem trước có thể gửi xem trước tệp và khu vực tin nhắn：Đã thay đổi để sử dụng lại cùng một bộ ở cả hai nơi `AgentFilePreview` Xem trước triển khai，Và hoàn thành bản xem trước phân phối phù hợp với bàn làm việc“Xem trước toàn màn hình”lối vào
+- Đã sửa lỗi hiển thị danh sách dài sau khi thẻ có thể phân phối được mở rộng：Khi một tệp có thể phân phối một vòng vượt quá chiều cao hiển thị của bảng điều khiển，Vùng nội dung thẻ được thay đổi hiển thị thanh cuộn dọc，Tránh vượt quá khoảng. 10 Các tập tin và nút thao tác ở cuối mục bị cắt
+- Tương thích với các cài đặt sẵn cũ hơn `reporter` Kỷ lục kỹ năng：`update_builtin_skill` bây giờ sẽ nhận ra `system` hoặc `builtin-system` Lịch sử được quản lý，Tránh dương tính giả trong quá trình cập nhật“Kỹ năng `reporter` Không tích hợp sẵn skill”
+- Hộp cát điều chỉnh user-data Chính sách cách ly thư mục：`workspace` Thay đổi thư mục chia sẻ `saves/threads/shared/workspace`，`uploads/outputs` giữ nó lên thread cách ly cấp độ；Cập nhật đồng thời thread artifact Xác minh quyền、viewer Logic liệt kê hệ thống tập tin，và tương ứng router/E2E kiểm tra
+- Cấu trúc lại mô hình yêu cầu giao diện trò chuyện：Trò chuyện trực tuyến và không phát trực tuyến được sử dụng thống nhất `query + agent_config_id` Nội dung yêu cầu，và loại bỏ `agent_id`；Đồng thời, vấn đề giao diện không phát trực tuyến thực sự lấy nhầm liên kết thực thi phát trực tuyến đã được khắc phục.，Thay vào đó hãy gọi `invoke_messages` Thực hiện một lần，và bổ sung các bài kiểm tra tương ứng
+- Sửa chuỗi cuộc trò chuyện với Agent Vấn đề sai lệch cấu hình：Khi gửi tin nhắn, hiện tại `agent_config_id` ràng buộc với thread của `extra_metadata`，Giao diện danh sách luồng trả về giá trị liên kết，Lịch sử chuyển đổi giao diện người dùng thread Cấu hình tương ứng sẽ được tự động khôi phục khi
+- cho hộp cát với viewer Hệ thống tập tin hoàn thành ánh xạ chỉ đọc cơ sở kiến thức：Mới `/home/gem/kbs` không gian tên，nhấn“Cơ sở kiến thức người dùng có thể truy cập ∩ hiện tại Agent Đã bật cơ sở kiến thức”Hiển thị tệp gốc và phân tích cú pháp Markdown，Và bổ sung phần phụ trợ tương ứng và viewer Kiểm tra lộ trình
+- Tối ưu hóa viewer Tải cây thư mục hệ thống tập tin：thư mục gốc và `/home/gem/user-data` Thay đổi để đọc trực tiếp thư mục gắn kết luồng cục bộ，không còn được kích hoạt cho chế độ xem dạng cây chỉ đọc sandbox khởi đầu nguội，Và bổ sung các thử nghiệm back-end tương ứng
+- sửa chữa `/home/gem/user-data` Vấn đề về tập tin thư mục gốc vô hình：Thư mục gốc bây giờ cũng được hiển thị thread các tập tin thực sự trong thư mục và `workspace` lối vào，Không còn chỉ giữ các thư mục không gian tên cố định
+- Đã khắc phục sự cố khớp không chính xác giữa biểu tượng công cụ giao diện người dùng và kết xuất：Danh sách quản lý dao và kết quả gọi dao được thống nhất và thay đổi dựa trên dao. `id` lập bản đồ chính xác của，Tránh hiển thị sai do khớp mờ，Thiếu công cụ không còn hiển thị biểu tượng cờ lê mặc định
+- sửa chữa GitHub Pages Quy trình triển khai tài liệu không thành công：Xóa `actions/setup-node@v4` đến không tồn tại `docs/package-lock.json` phụ thuộc bộ đệm，và sẽ `docs` Lệnh cài đặt thư mục từ `npm ci` Điều chỉnh để `npm install`，Tránh sự cố gây ra bởi các tập tin khóa không được cam kết CI Lỗi trực tiếp trong giai đoạn cài đặt và bộ nhớ đệm phụ thuộc
+- sửa hộp cát provisioner backend Hướng dẫn đặt tên và cấu hình：Sử dụng bên ngoài thống nhất `docker` / `kubernetes`，Dự trữ `local` như một bí danh tương thích；Làm sạch đồng bộ compose chưa hiệu quả provisioner biến môi trường、hoàn thành K8s Nhận xét biến liên quan，và cập nhật chế độ mặc định trong tài liệu kiến trúc hộp cát với backend Mô tả
+- Đã sửa lỗi giao diện danh sách cấu hình tác nhân trong“Tự động tạo cấu hình mặc định không cần cấu hình”Các tham số trong đường dẫn bị thiếu：hoàn thành `get_or_create_default` của `agent_id` Thêm nhân sâm，tránh `/api/chat/agent/{agent_id}/configs` Trở lại 500
+- sửa chữa LightRAG Lỗi nhập cơ sở dữ liệu do ghi đồng thời vào cùng một cơ sở dữ liệu：cho `index_file` / `update_content` Thêm khóa nối tiếp theo kích thước cơ sở kiến thức，và hoàn thành `documents` giao diện `auto_index` Kiểm tra hồi quy và viết lại theo giai đoạn về trạng thái phân tích cú pháp mới nhất，Tránh xảy ra lỗi ghi đồng thời trực tiếp khi chọn lại các tệp trong cùng một thư viện trong quá trình lưu kho dài hạn.
 
-<!-- 添加到这里 -->
+<!-- thêm vào đây -->
 
 
 ---
@@ -242,91 +242,91 @@
 
 ## v0.5
 
-### 新增
+### Mới
 
-- 优化 OCR 体验并新增对 Deepseek OCR 的支持
-- 优化 RAG 检索，支持根据文件 pattern 来检索（Agentic Mode）
-- 重构智能体对于“工具变更/模型变更”的处理逻辑，无需导入更复杂的中间件
-- 重构知识库的 Agentic 配置逻辑，与 Tools 解耦
-- 将工具与知识库解耦，在 context 中就完成解耦，虽然最终都是在 Agent 中的 get_tools 中获取
-- 优化chunk逻辑，移除 QA 分割，集成到普通分块中，并优化可视化逻辑
-- 重构知识库处理逻辑，分为 上传—解析—入库 三个阶段
-- 重构 MCP 相关配置，使用数据库来控制 [#469](https://github.com/xerrors/Yuxi/pull/469)
-- 使用 docling 解析 office 文件（docx/xlsx/pptx）
-- 优化后端的依赖，减少镜像体积 [#428](https://github.com/xerrors/Yuxi/issues/428)
-- 优化 liaghtrag 的知识库调用结果，提供 content/graph/both 多个选项
-- 优化数据库查询工具，可通过设计环境变量添加描述，让模型更好的调用
-- 优化任务组件，改用 postgresql 存储，并新增删除任务的接口
-- 支持更多类型的文档源的导入功能（支持后端配置的白名单的 URL 导入）
+- Tối ưu hóa OCR Trải nghiệm và thêm các cặp mới Deepseek OCR hỗ trợ
+- Tối ưu hóa RAG Tìm kiếm，Hỗ trợ theo tài liệu pattern tìm kiếm（Agentic Mode）
+- Xây dựng lại đại lý cho“Thay đổi công cụ/Thay đổi mô hình”logic xử lý，Không cần nhập phần mềm trung gian phức tạp hơn
+- Xây dựng lại nền tảng kiến thức Agentic Logic cấu hình，với Tools tách rời
+- Tách các công cụ khỏi cơ sở kiến thức，trong context Việc tách rời được hoàn thành trong，Mặc dù cuối cùng nó là Agent trong get_tools Vào trong
+- Tối ưu hóachunklogic，Xóa QA chia đôi，Tích hợp vào chunking thông thường，và tối ưu hóa logic trực quan
+- Xây dựng lại logic xử lý cơ sở tri thức，chia thành tải lên—phân tích cú pháp—Kho ba giai đoạn
+- Tái cấu trúc MCP Cấu hình liên quan，Sử dụng cơ sở dữ liệu để kiểm soát [#469](https://github.com/xerrors/Yuxi/pull/469)
+- sử dụng docling phân tích cú pháp office tập tin（docx/xlsx/pptx）
+- Tối ưu hóa phụ thuộc phụ trợ，Giảm kích thước hình ảnh [#428](https://github.com/xerrors/Yuxi/issues/428)
+- Tối ưu hóa liaghtrag Kết quả cuộc gọi cơ sở kiến thức，cung cấp content/graph/both Nhiều lựa chọn
+- Tối ưu hóa các công cụ truy vấn cơ sở dữ liệu，Mô tả có thể được thêm thông qua các biến môi trường thiết kế，Hãy để mô hình được gọi tốt hơn
+- Tối ưu hóa các thành phần nhiệm vụ，Sử dụng thay thế postgresql lưu trữ，Và thêm giao diện mới xóa nhiệm vụ
+- Hỗ trợ nhập thêm nhiều loại nguồn tài liệu（Hỗ trợ danh sách trắng cấu hình phụ trợ URL nhập khẩu）
 
-### 修复
+### sửa chữa
 
-- 修复文件上传弹窗中 OCR 下拉选项展开时不会自动检查服务状态的问题
-- 修复知识图谱上传的向量配置错误，并新增模型选择以及 batch size 选择
-- 修复部分场景下获取工具列表报错 [#470](https://github.com/xerrors/Yuxi/pull/470)
-- 修改方法备注信息 [#478](https://github.com/xerrors/Yuxi/pull/478)
-- 修复多次 human-in-the-loop 的渲染解析问题 [#453](https://github.com/xerrors/Yuxi/issues/453) [#475](https://github.com/xerrors/Yuxi/pull/475)
-- 修复沙盒后端接入回归：补齐 composite backend 的 `sandbox_backend` 参数、限制 `/api/sandbox/prepare` 仅允许访问当前用户线程、确保 `release()` 之后的 `destroy()` 会真正停止热池容器，并恢复 docker-compose 的完整模式默认值
-- 重构沙盒为 deer-flow 风格的 AIO provider：切换为 thread-local sandbox、统一 `/home/gem/user-data/{workspace,uploads,outputs}` 固定路径、移除公开 `/api/sandbox/*` 生命周期接口，并补充 lite 模式下的 provider 生命周期、filesystem API 与 sandbox 复用/隔离 E2E 验证
-- 调整聊天附件存储链路：线程附件改为直接落盘到 `saves/threads/<thread_id>/user-data/uploads`，解析成功后额外生成 `uploads/attachments/*.md`，不再依赖 MinIO 或显式上传到 sandbox
-- 修复知识库文件列表包体异常膨胀：上传阶段不再把批次级 `content_hashes` 写入每个文件的 `processing_params`，并从数据库详情列表接口中移除该字段，改为按需读取单文件详情
+- Sửa cửa sổ bật lên tải tập tin lên OCR Sự cố khiến trạng thái dịch vụ không được tự động kiểm tra khi tùy chọn thả xuống được mở rộng
+- Đã sửa lỗi cấu hình vectơ khi tải lên biểu đồ tri thức，Và thêm lựa chọn mô hình mới và batch size chọn
+- Đã sửa lỗi lấy danh sách công cụ trong một số trường hợp [#470](https://github.com/xerrors/Yuxi/pull/470)
+- Thông tin nhận xét phương pháp sửa đổi [#478](https://github.com/xerrors/Yuxi/pull/478)
+- Đã sửa chữa nhiều lần human-in-the-loop Hiển thị các vấn đề phân tích cú pháp [#453](https://github.com/xerrors/Yuxi/issues/453) [#475](https://github.com/xerrors/Yuxi/pull/475)
+- Đã sửa lỗi hồi quy truy cập phụ trợ hộp cát：hoàn thành composite backend của `sandbox_backend` thông số、giới hạn `/api/sandbox/prepare` Chỉ cho phép truy cập vào chuỗi người dùng hiện tại、đảm bảo `release()` sau `destroy()` thực sự sẽ dừng bể chứa nước nóng，và khôi phục docker-compose Chế độ đầy đủ mặc định cho
+- Cấu trúc lại hộp cát để deer-flow phong cách AIO provider：chuyển sang thread-local sandbox、thống nhất `/home/gem/user-data/{workspace,uploads,outputs}` đường dẫn cố định、Xóa công khai `/api/sandbox/*` giao diện vòng đời，và thêm lite chế độ provider vòng đời、filesystem API với sandbox Tái sử dụng/cách ly E2E Xác minh
+- Điều chỉnh liên kết lưu trữ tệp đính kèm trò chuyện：Các tệp đính kèm chủ đề được thay đổi để được đặt trực tiếp trên `saves/threads/<thread_id>/user-data/uploads`，Bổ sung được tạo sau khi phân tích cú pháp thành công `uploads/attachments/*.md`，Không còn phụ thuộc vào MinIO hoặc tải lên một cách rõ ràng sandbox
+- Đã khắc phục sự mở rộng bất thường của nội dung gói danh sách tệp cơ sở kiến thức：Cấp độ lô không còn được đưa vào giai đoạn tải lên `content_hashes` được ghi vào mỗi tập tin `processing_params`，và xóa trường khỏi giao diện danh sách chi tiết cơ sở dữ liệu，Thay vào đó, hãy đọc chi tiết từng tệp theo yêu cầu
 
 ## v0.4
 
-### 新增
-- 新增对于上传附件的智能体中间件，详见[文档](https://xerrors.github.io/Yuxi/advanced/agents-config.html#%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%AD%E9%97%B4%E4%BB%B6)
-- 新增多模态模型支持（当前仅支持图片），详见[文档](https://xerrors.github.io/Yuxi/advanced/agents-config.html#%E5%A4%9A%E6%A8%A1%E6%80%81%E5%9B%BE%E7%89%87%E6%94%AF%E6%8C%81)
-- 新建 DeepAgents 智能体（深度分析智能体），支持 todo，files 等渲染，支持文件的下载。
-- 新增基于知识库文件生成思维导图功能（[#335](https://github.com/xerrors/Yuxi/pull/335#issuecomment-3530976425)）
-- 新增基于知识库文件生成示例问题功能（[#335](https://github.com/xerrors/Yuxi/pull/335#issuecomment-3530976425)）
-- 新增知识库支持文件夹/压缩包上传的功能（[#335](https://github.com/xerrors/Yuxi/pull/335#issuecomment-3530976425)）
-- 新增自定义模型支持、新增 dashscope rerank/embeddings 模型的支持
-- 新增文档解析的图片支持，已支持 MinerU Officical、Docs、Markdown Zip格式
-- 新增暗色模式支持并调整整体 UI（[#343](https://github.com/xerrors/Yuxi/pull/343)）
-- 新增知识库评估功能，支持导入评估基准或者自动构建评估基准（目前仅支持Milvus类型知识库）详见[文档](https://xerrors.github.io/Yuxi/intro/evaluation.html)
-- 新增同名文件处理逻辑：遇到同名文件则在上传区域提示，是否删除旧文件
-- 新增生产环境部署脚本，固定 python 依赖版本，提升部署稳定性
-- 优化图谱可视化方式，统一图谱数据结构，统一使用基于 G6 的可视化方式，同时支持上传带属性的图谱文件，详见[文档](https://xerrors.github.io/Yuxi/intro/knowledge-base.html#_1-%E4%BB%A5%E4%B8%89%E5%85%83%E7%BB%84%E5%BD%A2%E5%BC%8F%E5%AF%BC%E5%85%A5)
-- 优化 DBManager / ConversationManager，支持异步操作
-- 优化 知识库详情页面，更加简洁清晰，增强文件下载功能
+### Mới
+- Đã thêm phần mềm trung gian đại lý để tải lên tệp đính kèm，Xem chi tiết[Tài liệu](https://xerrors.github.io/Yuxi/advanced/agents-config.html#%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E4%B8%AD%E9%97%B4%E4%BB%B6)
+- Hỗ trợ mô hình đa phương thức mới（Hiện tại chỉ hỗ trợ hình ảnh），Xem chi tiết[Tài liệu](https://xerrors.github.io/Yuxi/advanced/agents-config.html#%E5%A4%9A%E6%A8%A1%E6%80%81%E5%9B%BE%E7%89%87%E6%94%AF%E6%8C%81)
+- Mới DeepAgents đại lý（Phân tích sâu về các đại lý），hỗ trợ todo，files Đang chờ kết xuất，Hỗ trợ tải tập tin。
+- Đã thêm chức năng tạo bản đồ tư duy dựa trên các tệp cơ sở kiến thức（[#335](https://github.com/xerrors/Yuxi/pull/335#issuecomment-3530976425)）
+- Đã thêm chức năng tạo câu hỏi mẫu dựa trên các tệp cơ sở kiến ​​thức（[#335](https://github.com/xerrors/Yuxi/pull/335#issuecomment-3530976425)）
+- Đã thêm thư mục hỗ trợ cơ sở kiến thức/Chức năng tải lên gói nén（[#335](https://github.com/xerrors/Yuxi/pull/335#issuecomment-3530976425)）
+- Đã thêm hỗ trợ mô hình tùy chỉnh、Mới dashscope rerank/embeddings Hỗ trợ mô hình
+- Đã thêm hỗ trợ hình ảnh để phân tích tài liệu，Đã được hỗ trợ MinerU Officical、Docs、Markdown Zipđịnh dạng
+- Đã thêm hỗ trợ chế độ tối và điều chỉnh tổng thể UI（[#343](https://github.com/xerrors/Yuxi/pull/343)）
+- Đã thêm chức năng đánh giá cơ sở kiến thức，Hỗ trợ nhập điểm chuẩn đánh giá hoặc tự động xây dựng điểm chuẩn đánh giá（Hiện tại chỉ hỗ trợMilvusNhập cơ sở kiến thức）Xem chi tiết[Tài liệu](https://xerrors.github.io/Yuxi/intro/evaluation.html)
+- Đã thêm logic xử lý tệp có cùng tên：Nếu bạn gặp một tệp có cùng tên, bạn sẽ được nhắc trong khu vực tải lên.，Có nên xóa file cũ không
+- Đã thêm tập lệnh triển khai môi trường sản xuất，Đã sửa python Phiên bản phụ thuộc，Cải thiện sự ổn định triển khai
+- Tối ưu hóa phương pháp hiển thị bản đồ，Cấu trúc dữ liệu đồ thị hợp nhất，sử dụng thống nhất dựa trên G6 cách hình dung，Nó cũng hỗ trợ tải lên các tập tin bản đồ với các thuộc tính.，Xem chi tiết[Tài liệu](https://xerrors.github.io/Yuxi/intro/knowledge-base.html#_1-%E4%BB%A5%E4%B8%89%E5%85%83%E7%BB%84%E5%BD%A2%E5%BC%8F%E5%AF%BC%E5%85%A5)
+- Tối ưu hóa DBManager / ConversationManager，Hỗ trợ các hoạt động không đồng bộ
+- Tối ưu hóa Trang chi tiết cơ sở kiến thức，Ngắn gọn và rõ ràng hơn，Chức năng tải tập tin nâng cao
 
-### 修复
-- 修复 GitHub Actions 的 Ruff CI 在仓库根目录执行 `uv sync` 导致找不到 `backend/pyproject.toml` 的问题，同时统一检查路径为 `backend/package`
-- 修复重排序模型实际未生效的问题
-- 修复消息中断后消息消失的问题，并改善异常效果
-- 修复当前版本如果调用结果为空的时候，工具调用状态会一直处于调用状态，尽管调用是成功的
-- 修复检索配置实际未生效的问题
-- 修复 sandbox 文件系统 `ls` 在异常输出下触发 `KeyError: 'path'` 的问题，并将工具调用异常降级为错误消息，避免直接中断聊天 stream
-- 修复智能体状态面板中文件树仍依赖 `agent_state.files` 的问题，改为通过真实 `/api/filesystem/*` 接口按层懒加载后端可见文件系统，并让输入框下方状态按钮常态化打开工作区视图
-- 为工作台新增 viewer-oriented filesystem service 与 `/api/viewer/filesystem/*` 接口，解耦 agent backend 语义，支持真实目录浏览、原始文件读取与下载
-- 重写沙盒技术文档，明确 thread-local sandbox、viewer-oriented filesystem service、`/mnt` 命名空间、skills 可见性与当前实现边界，替换过时的 `/api/sandbox/*` 与 user-level 设计描述
-- 收紧沙盒遗留代码：修复未注册 `sandbox_router` 中残留的 user/thread 参数错位，改进宿主机挂载路径映射逻辑，并为 remote sandbox provisioner 增加基础 URL 校验与销毁失败日志
-- 修复 builtin skill 内容哈希计算对单文件使用 `read_bytes()` 的无上限内存读取问题，改为分块计算并补充回归测试
+### sửa chữa
+- sửa chữa GitHub Actions của Ruff CI Thực thi tại thư mục gốc của kho `uv sync` Nguyên nhân không tìm thấy `backend/pyproject.toml` câu hỏi，Đồng thời, có lộ trình kiểm tra thống nhất `backend/package`
+- Đã khắc phục sự cố trong đó các mô hình sắp xếp lại không thực sự có hiệu lực
+- Đã khắc phục sự cố tin nhắn biến mất sau khi tin nhắn bị gián đoạn，và cải thiện các tác dụng bất thường
+- Sửa phiên bản hiện tại nếu kết quả cuộc gọi trống，Trạng thái gọi công cụ sẽ luôn ở trạng thái gọi.，Mặc dù cuộc gọi đã thành công
+- Khắc phục sự cố cấu hình truy xuất không thực sự có hiệu lực
+- sửa chữa sandbox hệ thống tập tin `ls` Kích hoạt trên đầu ra ngoại lệ `KeyError: 'path'` câu hỏi，và hạ cấp các ngoại lệ cuộc gọi công cụ thành thông báo lỗi，Tránh làm gián đoạn cuộc trò chuyện trực tiếp stream
+- Đã khắc phục sự cố cây tệp trong bảng trạng thái tác nhân vẫn phụ thuộc vào `agent_state.files` câu hỏi，thay vào đó hãy chuyển đúng `/api/filesystem/*` Giao diện tải hệ thống tệp hiển thị phía sau một cách lười biếng theo từng lớp.，Và để nút trạng thái bên dưới hộp nhập liệu bình thường hóa để mở chế độ xem không gian làm việc
+- Thêm vào bàn làm việc viewer-oriented filesystem service với `/api/viewer/filesystem/*` giao diện，tách rời agent backend Ngữ nghĩa，Hỗ trợ duyệt thư mục thực、Đọc và tải xuống tập tin thô
+- Viết lại tài liệu kỹ thuật sandbox，rõ ràng thread-local sandbox、viewer-oriented filesystem service、`/mnt` không gian tên、skills Tầm nhìn và ranh giới thực hiện hiện tại，thay thế lỗi thời `/api/sandbox/*` với user-level Mô tả thiết kế
+- Thắt chặt mã kế thừa hộp cát：Sửa chưa đăng ký `sandbox_router` còn lại trong user/thread Sai lệch tham số，Cải thiện logic ánh xạ đường dẫn gắn máy chủ，Và đối với remote sandbox provisioner tăng cơ sở URL Nhật ký lỗi xác minh và hủy
+- sửa chữa builtin skill Tính toán băm nội dung được thực hiện trên một tệp bằng cách sử dụng `read_bytes()` Vấn đề đọc bộ nhớ chưa được khai thác，Thay đổi tính toán khối và bổ sung kiểm tra hồi quy
 
-### 破坏性更新
+### cập nhật đột phá
 
-- 移除 Chroma 的支持，当前版本标记为移除
-- 移除模型配置预设的 TogetherAI
+- Xóa Chroma hỗ trợ，Phiên bản hiện tại được đánh dấu để xóa
+- Xóa mặc định cấu hình mô hình TogetherAI
 
 
 ## v0.3
 ### Added
-- 添加测试脚本，覆盖最常见的功能（已覆盖API）
-- 新建 tasker 模块，用来管理所有的后台任务，UI 上使用侧边栏管理。Tasker 中获取历史任务的时候，仅获取 top100 个 task。
-- 优化对文档信息的检索展示（检索结果页、详情页）
-- 优化全局配置的管理模型，优化配置管理
-- 支持 MinerU 2.5 的解析方法 <Badge type="info" text="0.3.5" />
-- 修改现有的智能体Demo，并尽量将默认助手的特性兼容到 LangGraph 的 [`create_agent`](https://docs.langchain.com/oss/python/langchain/agents) 中
-- 基于 create_agent 创建 SQL Viewer 智能体 <Badge type="info" text="0.3.5" />
-- 优化 MCP 逻辑，支持 common + special 创建方式 <Badge type="info" text="0.3.5" />
-- LightRAG 知识库应该可以支持修改 LLM
+- Thêm tập lệnh thử nghiệm，Bao gồm các tính năng phổ biến nhất（che phủAPI）
+- Mới tasker mô-đun，Được sử dụng để quản lý tất cả các tác vụ nền，UI Sử dụng tính năng quản lý thanh bên trên。Tasker Khi nhận nhiệm vụ lịch sử，Chỉ nhận top100 một task。
+- Tối ưu hóa việc truy xuất và hiển thị thông tin tài liệu（Trang kết quả tìm kiếm、Trang chi tiết）
+- Tối ưu hóa mô hình quản lý cấu hình toàn cầu，Tối ưu hóa quản lý cấu hình
+- hỗ trợ MinerU 2.5 phương pháp phân tích cú pháp <Badge type="info" text="0.3.5" />
+- Sửa đổi một đại lý hiện cóDemo，Và cố gắng làm cho các tính năng của trợ lý mặc định tương thích với LangGraph của [`create_agent`](https://docs.langchain.com/oss/python/langchain/agents) trong
+- Dựa trên create_agent tạo ra SQL Viewer đại lý <Badge type="info" text="0.3.5" />
+- Tối ưu hóa MCP logic，hỗ trợ common + special Cách tạo <Badge type="info" text="0.3.5" />
+- LightRAG Cơ sở tri thức phải có khả năng hỗ trợ các sửa đổi LLM
 
 ### Fixed
-- 修复本地知识库的 metadata 和 向量数据库中不一致的情况。
-- v1 版本的 LangGraph 的工具渲染有问题
-- upload 接口会阻塞主进程
-- LightRAG 知识库查看不了解析后的文本，偶然出现，未复现
-- 智能体的加载状态有问题：（1）智能体加载没有动画；（2）切换对话和加载中，使用同一个loading状态。
-- 前端工具调用渲染出现问题
-- 当前 ReAct 智能体有消息顺序错乱的 bug，且不会默认调用工具
-- 修复文件管理：（1）文件选择的时候会跨数据库；（2）文件校验会算上失败的文件；
+- Sửa chữa cơ sở tri thức địa phương metadata và Sự không nhất quán trong cơ sở dữ liệu vector。
+- v1 phiên bản LangGraph Có vấn đề với việc hiển thị công cụ
+- upload Giao diện chặn tiến trình chính
+- LightRAG Chế độ xem cơ sở kiến thức không hiểu văn bản được phân tích cú pháp，tình cờ xuất hiện，Không xuất hiện lại
+- Có vấn đề với trạng thái tải của tác nhân：（1）Tải đại lý không có hình ảnh động；（2）Chuyển đổi giữa các cuộc hội thoại và tải，sử dụng tương tựloadingTrạng thái。
+- Có vấn đề khi công cụ giao diện người dùng gọi kết xuất
+- hiện tại ReAct Đại lý có tin nhắn không đúng thứ tự bug，Và công cụ sẽ không được gọi theo mặc định
+- Sửa chữa quản lý tập tin：（1）Lựa chọn tập tin sẽ vượt qua cơ sở dữ liệu；（2）Xác minh tệp sẽ tính các tệp bị lỗi；

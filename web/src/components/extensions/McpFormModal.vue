@@ -1,7 +1,7 @@
 <template>
   <a-modal
     v-model:open="visible"
-    :title="editMode ? '编辑 MCP' : '添加 MCP'"
+    :title="editMode ? 'Chỉnh sửa MCP' : 'thêm MCP'"
     @ok="handleFormSubmit"
     :confirmLoading="formLoading"
     @cancel="visible = false"
@@ -10,22 +10,22 @@
     class="server-modal"
   >
     <a-form layout="vertical" class="extension-form">
-      <a-form-item label="MCP 标识" required class="form-item">
+      <a-form-item label="MCP biểu tượng" required class="form-item">
         <a-input
           v-model:value="form.slug"
-          placeholder="请输入 MCP 稳定标识，如 my-mcp"
+          placeholder="Vui lòng nhập MCP nhận dạng ổn định，Chẳng hạn như my-mcp"
           :disabled="editMode"
         />
       </a-form-item>
-      <a-form-item label="MCP 名称" required class="form-item">
-        <a-input v-model:value="form.name" placeholder="请输入 MCP 展示名称" />
+      <a-form-item label="MCP Tên" required class="form-item">
+        <a-input v-model:value="form.name" placeholder="Vui lòng nhập MCP tên hiển thị" />
       </a-form-item>
-      <a-form-item label="描述" class="form-item">
-        <a-input v-model:value="form.description" placeholder="请输入 MCP 描述" />
+      <a-form-item label="Mô tả" class="form-item">
+        <a-input v-model:value="form.description" placeholder="Vui lòng nhập MCP Mô tả" />
       </a-form-item>
       <a-row :gutter="16">
         <a-col :span="12">
-          <a-form-item label="传输类型" required class="form-item">
+          <a-form-item label="Kiểu truyền động" required class="form-item">
             <a-select v-model:value="form.transport">
               <a-select-option value="streamable_http">streamable_http</a-select-option>
               <a-select-option value="sse">sse</a-select-option>
@@ -34,8 +34,8 @@
           </a-form-item>
         </a-col>
         <a-col :span="12">
-          <a-form-item label="图标" class="form-item">
-            <a-input v-model:value="form.icon" placeholder="输入 emoji，如 🧠" :maxlength="2" />
+          <a-form-item label="biểu tượng" class="form-item">
+            <a-input v-model:value="form.icon" placeholder="đầu vào emoji，Chẳng hạn như 🧠" :maxlength="2" />
           </a-form-item>
         </a-col>
       </a-row>
@@ -43,16 +43,16 @@
         <a-form-item label="MCP URL" required class="form-item">
           <a-input v-model:value="form.url" placeholder="https://example.com/mcp" />
         </a-form-item>
-        <a-form-item label="HTTP 请求头" class="form-item">
+        <a-form-item label="HTTP Tiêu đề yêu cầu" class="form-item">
           <a-textarea
             v-model:value="form.headersText"
-            placeholder='JSON 格式，如：{"Authorization": "Bearer xxx"}'
+            placeholder='JSON định dạng，Chẳng hạn như：{"Authorization": "Bearer xxx"}'
             :rows="3"
           />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item label="HTTP 超时（秒）" class="form-item">
+            <a-form-item label="HTTP hết thời gian chờ（giây）" class="form-item">
               <a-input-number
                 v-model:value="form.timeout"
                 :min="1"
@@ -62,7 +62,7 @@
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="SSE 读取超时（秒）" class="form-item">
+            <a-form-item label="SSE Đọc thời gian chờ（giây）" class="form-item">
               <a-input-number
                 v-model:value="form.sse_read_timeout"
                 :min="1"
@@ -74,26 +74,26 @@
         </a-row>
       </template>
       <template v-if="isStdioTransport">
-        <a-form-item label="命令" required class="form-item">
-          <a-input v-model:value="form.command" placeholder="例如：npx 或 /path/to/server" />
+        <a-form-item label="lệnh" required class="form-item">
+          <a-input v-model:value="form.command" placeholder="Ví dụ：npx hoặc /path/to/server" />
         </a-form-item>
-        <a-form-item label="参数" class="form-item">
+        <a-form-item label="thông số" class="form-item">
           <a-select
             v-model:value="form.args"
             mode="tags"
-            placeholder="输入参数后回车添加，如：-m"
+            placeholder="Nhập các thông số rồi nhấn Enter để thêm，Chẳng hạn như：-m"
             style="width: 100%"
           />
         </a-form-item>
-        <a-form-item label="环境变量" class="form-item">
+        <a-form-item label="biến môi trường" class="form-item">
           <McpEnvEditor v-model="form.env" />
         </a-form-item>
       </template>
-      <a-form-item label="标签" class="form-item">
+      <a-form-item label="nhãn" class="form-item">
         <a-select
           v-model:value="form.tags"
           mode="tags"
-          placeholder="输入标签后回车添加"
+          placeholder="Nhập tag rồi nhấn Enter để thêm"
           style="width: 100%"
         />
       </a-form-item>
@@ -193,7 +193,7 @@ const handleFormSubmit = async () => {
       try {
         headers = JSON.parse(form.headersText)
       } catch {
-        message.error('请求头 JSON 格式错误')
+        message.error('Tiêu đề yêu cầu JSON Lỗi định dạng')
         return
       }
     }
@@ -213,26 +213,26 @@ const handleFormSubmit = async () => {
       icon: form.icon || null
     }
     if (!data.slug?.trim()) {
-      message.error('MCP 标识不能为空')
+      message.error('MCP ID không thể trống')
       return
     }
     if (!data.name?.trim()) {
-      message.error('MCP 名称不能为空')
+      message.error('MCP Tên không thể trống')
       return
     }
     if (!data.transport) {
-      message.error('请选择传输类型')
+      message.error('Vui lòng chọn loại chuyển khoản')
       return
     }
     if (['sse', 'streamable_http'].includes(data.transport)) {
       if (!data.url?.trim()) {
-        message.error('HTTP 类型必须填写 MCP URL')
+        message.error('HTTP Loại là bắt buộc MCP URL')
         return
       }
     }
     if (data.transport === 'stdio') {
       if (!data.command?.trim()) {
-        message.error('StdIO 类型必须填写命令')
+        message.error('StdIO Loại phải được điền vào lệnh')
         return
       }
     }
@@ -241,24 +241,24 @@ const handleFormSubmit = async () => {
       const { slug, ...updateData } = data
       const result = await mcpApi.updateMcpServer(props.editData?.slug || slug, updateData)
       if (result.success) {
-        message.success('MCP 更新成功')
+        message.success('MCP Cập nhật thành công')
       } else {
-        message.error(result.message || '更新失败')
+        message.error(result.message || 'Cập nhật không thành công')
         return
       }
     } else {
       const result = await mcpApi.createMcpServer(data)
       if (result.success) {
-        message.success('MCP 创建成功')
+        message.success('MCP Đã tạo thành công')
       } else {
-        message.error(result.message || '创建失败')
+        message.error(result.message || 'Tạo không thành công')
         return
       }
     }
     visible.value = false
     emit('submitted')
   } catch (err) {
-    message.error(err.message || '操作失败')
+    message.error(err.message || 'Thao tác không thành công')
   } finally {
     formLoading.value = false
   }

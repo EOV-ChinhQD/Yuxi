@@ -54,8 +54,8 @@ const groupedAgents = computed(() => {
   const agents = filteredAgents.value.filter((agent) => !agent.is_subagent)
   const subagents = filteredAgents.value.filter((agent) => agent.is_subagent)
   return [
-    { key: 'agents', title: '智能体', agents },
-    { key: 'subagents', title: '子智能体', agents: subagents }
+    { key: 'agents', title: 'đại lý', agents },
+    { key: 'subagents', title: 'chất phụ', agents: subagents }
   ].filter((group) => group.agents.length > 0)
 })
 
@@ -69,7 +69,7 @@ const agentStats = computed(() => ({
 const canManageAgent = (agent) => !!agent?.can_manage
 const getAgentDefaultIconSrc = (agent) => (agent.id ? generatePixelAvatar(agent.id) : '')
 const getAgentTags = (agent) => [
-  ...(!agent?.can_manage ? [{ name: '只读', color: 'default' }] : []),
+  ...(!agent?.can_manage ? [{ name: 'chỉ đọc', color: 'default' }] : []),
   ...(agent?.backend_id ? [{ name: agent.backend_id, color: 'blue' }] : [])
 ]
 
@@ -82,7 +82,7 @@ const loadAgentBackends = async () => {
       value: backend.backend_id
     }))
   } catch (error) {
-    message.error(error.message || '加载智能体后端失败')
+    message.error(error.message || 'Không thể tải phần phụ trợ tác nhân')
   }
 }
 
@@ -92,7 +92,7 @@ const loadAgents = async () => {
     const response = await agentApi.getAgents({ includeSubagents: true })
     managedAgents.value = (response.agents || []).map(normalizeAgent)
   } catch (error) {
-    message.error(error.message || '加载智能体失败')
+    message.error(error.message || 'Không thể tải đại lý')
   } finally {
     agentLoading.value = false
   }
@@ -113,22 +113,22 @@ const refreshAgentLists = async () => {
 
 const deleteAgent = async (agent) => {
   if (isBuiltinAgent(agent)) {
-    message.warning('内置智能体不能删除')
+    message.warning('Không thể xóa tác nhân tích hợp')
     return
   }
   Modal.confirm({
-    title: `删除 ${agent.name}`,
-    content: '删除后不可恢复，已绑定该智能体的历史对话仍保留原始绑定信息。',
-    okText: '删除',
+    title: `Xóa ${agent.name}`,
+    content: 'Không thể phục hồi sau khi xóa，Các cuộc hội thoại lịch sử đã ràng buộc đại lý vẫn giữ nguyên thông tin ràng buộc ban đầu。',
+    okText: 'Xóa',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy bỏ',
     async onOk() {
       try {
         await agentApi.deleteAgent(agent.id)
         await refreshAgentLists()
-        message.success('智能体已删除')
+        message.success('Đại lý đã bị xóa')
       } catch (error) {
-        message.error(error.message || '删除智能体失败')
+        message.error(error.message || 'Không thể xóa đại lý')
       }
     }
   })
@@ -147,11 +147,11 @@ defineExpose({
 
 <template>
   <div class="agent-manage-panel">
-    <PageShoulder v-model:search="searchQuery" search-placeholder="搜索智能体...">
+    <PageShoulder v-model:search="searchQuery" search-placeholder="Đại lý tìm kiếm...">
       <template #actions>
         <a-button type="primary" class="lucide-icon-btn" @click="openCreateAgentModal">
           <Plus :size="14" />
-          新增智能体
+          Thêm đại lý mới
         </a-button>
         <a-button class="lucide-icon-btn" @click="loadAgents" :loading="agentLoading">
           <RefreshCw :size="14" :class="{ spinning: agentLoading }" />
@@ -160,7 +160,7 @@ defineExpose({
     </PageShoulder>
 
     <div v-if="groupedAgents.length === 0" class="agent-empty-state">
-      <a-empty :image="false" :description="searchQuery ? '没有匹配的智能体' : '暂无智能体'" />
+      <a-empty :image="false" :description="searchQuery ? 'Không có đại lý phù hợp' : 'Chưa có đại lý'" />
     </div>
 
     <template v-else>
@@ -174,7 +174,7 @@ defineExpose({
             :key="agent.id"
             :title="agent.name"
             :subtitle="agent.slug || agent.id"
-            :description="agent.description || '暂无描述'"
+            :description="agent.description || 'Chưa có mô tả'"
             :default-icon="Bot"
             :tags="getAgentTags(agent)"
             class="config-card agent-card"
@@ -190,7 +190,7 @@ defineExpose({
                 kind="agent"
                 :size="40"
                 shape="rounded"
-                :alt="`${agent.name || '智能体'}图标`"
+                :alt="`${agent.name || 'đại lý'}biểu tượng`"
               />
             </template>
 
@@ -201,7 +201,7 @@ defineExpose({
                     <a-menu-item key="edit" @click.stop="openEditAgentModal(agent)">
                       <span class="agent-card-menu-item">
                         <SquarePen :size="14" />
-                        编辑智能体
+                        Chỉnh sửa đại lý
                       </span>
                     </a-menu-item>
                     <a-menu-item
@@ -214,7 +214,7 @@ defineExpose({
                         :class="{ danger: !isBuiltinAgent(agent) }"
                       >
                         <Trash2 :size="14" />
-                        删除智能体
+                        Xóa đại lý
                       </span>
                     </a-menu-item>
                   </a-menu>
@@ -223,7 +223,7 @@ defineExpose({
                   type="text"
                   size="small"
                   class="agent-card-menu-trigger"
-                  aria-label="智能体操作"
+                  aria-label="Hoạt động đại lý"
                   @click.stop
                 >
                   <MoreVertical :size="16" />

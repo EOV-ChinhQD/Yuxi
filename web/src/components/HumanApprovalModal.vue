@@ -24,7 +24,7 @@
           </div>
 
           <div v-if="activeQuestion.operation" class="approval-operation">
-            <span class="label">操作：</span>
+            <span class="label">hoạt động：</span>
             <span class="operation-text">{{ activeQuestion.operation }}</span>
           </div>
 
@@ -66,7 +66,7 @@
                 v-model.trim="otherTexts[activeQuestion.questionId]"
                 type="text"
                 :disabled="isProcessing"
-                placeholder="其他：请输入自定义内容"
+                placeholder="Khác：Vui lòng nhập nội dung tùy chỉnh"
               />
             </div>
           </div>
@@ -74,7 +74,7 @@
       </div>
 
       <div class="approval-actions">
-        <button class="btn btn-reject" @click="handleCancel" :disabled="isProcessing">取消</button>
+        <button class="btn btn-reject" @click="handleCancel" :disabled="isProcessing">Hủy bỏ</button>
         <button
           class="btn btn-approve"
           @click="handlePrimaryAction"
@@ -86,7 +86,7 @@
 
       <div v-if="isProcessing" class="approval-processing">
         <span class="processing-spinner"></span>
-        处理中...
+        Đang xử lý...
       </div>
     </div>
   </transition>
@@ -114,7 +114,7 @@ const otherTexts = ref({})
 
 const normalizedQuestions = computed(() => {
   const questions = normalizeQuestions(props.questions)
-  // 添加 otherOptionValue 字段
+  // thêm otherOptionValue trường
   return questions.map((q) => {
     const otherOption = q.options.find((opt) => isOtherOption(opt))
     return {
@@ -265,7 +265,7 @@ const isCurrentQuestionAnswered = computed(() => {
   return isQuestionAnswered(activeQuestion.value)
 })
 
-const primaryButtonText = computed(() => (isLastQuestion.value ? '提交' : '下一项'))
+const primaryButtonText = computed(() => (isLastQuestion.value ? 'Gửi' : 'Mục tiếp theo'))
 
 const isPrimaryButtonDisabled = computed(() => {
   if (isProcessing.value) return true

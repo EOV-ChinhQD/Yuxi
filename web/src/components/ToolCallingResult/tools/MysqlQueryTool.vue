@@ -2,7 +2,7 @@
   <BaseToolCall :tool-call="toolCall">
     <template #header-success>
       <span class="sep-header">
-        <span class="note">执行SQL查询：</span>
+        <span class="note">thi hànhSQLTruy vấn：</span>
         <span class="description">{{
           truncateSql(extractSql(toolCall.args || toolCall.function?.arguments))
         }}</span>
@@ -36,7 +36,7 @@ defineProps({
 const formatResult = (content) => {
   if (!content) return ''
 
-  // 如果是字符串，尝试解析为 JSON 后再转为格式化字符串
+  // nếu nó là một chuỗi，Cố gắng phân tích như JSON và sau đó chuyển đổi thành một chuỗi được định dạng
   if (typeof content === 'string') {
     try {
       const parsed = JSON.parse(content)
@@ -46,7 +46,7 @@ const formatResult = (content) => {
     }
   }
 
-  // 如果是对象，直接格式化
+  // nếu nó là một vật thể，định dạng trực tiếp
   if (typeof content === 'object') {
     return JSON.stringify(content, null, 2)
   }
@@ -57,7 +57,7 @@ const formatResult = (content) => {
 const extractSql = (args) => {
   if (!args) return ''
 
-  // 解析 args（可能是字符串或对象）
+  // phân tích cú pháp args（Có thể là một chuỗi hoặc đối tượng）
   let parsedArgs = args
   if (typeof args === 'string') {
     try {
@@ -67,14 +67,14 @@ const extractSql = (args) => {
     }
   }
 
-  // 提取 sql 字段
+  // Trích xuất sql trường
   const sql = parsedArgs?.sql || parsedArgs?.query
   return sql || JSON.stringify(parsedArgs, null, 2)
 }
 
 const truncateSql = (sql, maxLength = 50) => {
   if (!sql) return ''
-  // 移除换行符和多余空格
+  // Xóa dòng mới và khoảng trắng thừa
   const singleLine = sql.replace(/\s+/g, ' ').trim()
   if (singleLine.length <= maxLength) return singleLine
   return singleLine.slice(0, maxLength) + '...'

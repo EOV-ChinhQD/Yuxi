@@ -1,83 +1,83 @@
-# 知识库评估指南
+# Hướng dẫn đánh giá cơ sở kiến thức
 
-知识库评估是 RAG 系统开发中的重要环节。通过量化评估，我们可以了解检索和生成的质量，发现问题并持续优化。
+Đánh giá cơ sở tri thức là RAG Liên kết quan trọng trong phát triển hệ thống。thông qua đánh giá định lượng，Chúng ta có thể hiểu chất lượng của việc truy xuất và tạo，Tìm vấn đề và tiếp tục tối ưu hóa。
 
-## 为什么需要评估
+## Tại sao cần đánh giá
 
-在构建知识库系统时，你可能会遇到这些问题：
+Khi xây dựng hệ thống cơ sở tri thức，Bạn có thể gặp phải những vấn đề này：
 
-- 检索结果不准确，用户找不到想要的内容
-- 生成答案与文档不符，存在幻觉
-- 调整了分块策略或模型，效果是变好还是变差了？
+- Kết quả tìm kiếm không chính xác，Người dùng không thể tìm thấy những gì họ muốn
+- Câu trả lời được tạo không khớp với tài liệu，ảo giác hiện sinh
+- Chiến lược hoặc mô hình chunking được tinh chỉnh，Hiệu quả ngày càng tốt hơn hay tệ hơn?？
 
-评估功能就是为了回答这些问题。它通过预设的测试问题和标准答案，量化系统的表现，帮助你做出数据驱动的优化决策。
+Chức năng đánh giá được thiết kế để trả lời những câu hỏi này。Nó đi qua các câu hỏi kiểm tra cài sẵn và câu trả lời tiêu chuẩn，Định lượng hiệu suất hệ thống，Giúp bạn đưa ra quyết định tối ưu hóa dựa trên dữ liệu。
 
-## 评估指标解读
+## Giải thích các chỉ số đánh giá
 
-系统提供以下核心指标：
+Hệ thống cung cấp các chỉ số cốt lõi sau：
 
-| 指标 | 含义 | 参考值 |
+| chỉ báo | ý nghĩa | Giá trị tham khảo |
 |------|------|--------|
-| Recall@1 | 第一个检索结果包含正确文档的比例 | > 0.6 为佳 |
-| Recall@5 | 前5个检索结果包含正确文档的比例 | > 0.8 为佳 |
-| F1@K | 精确率和召回率的调和平均 | 用于横向对比 |
-| 答案准确性 | 生成答案与标准答案的一致性 | 越高越好 |
+| Recall@1 | Tỷ lệ kết quả tìm kiếm đầu tiên chứa tài liệu chính xác | > 0.6 tốt hơn |
+| Recall@5 | trước đây5Tỷ lệ kết quả tìm kiếm có chứa tài liệu chính xác | > 0.8 tốt hơn |
+| F1@K | Trung bình hài hòa của độ chính xác và thu hồi | để so sánh theo chiều ngang |
+| Trả lời chính xác | Tính nhất quán giữa câu trả lời được tạo và câu trả lời tiêu chuẩn | Càng cao càng tốt |
 
-## 创建评估基准
+## Tạo cơ sở đánh giá
 
-### 手动准备数据
+### Chuẩn bị dữ liệu theo cách thủ công
 
-准备 JSONL 格式的评估文件，每行一个样本：
+chuẩn bị JSONL Hình thức hồ sơ đánh giá，Một mẫu trên mỗi dòng：
 
 ```json
-{"query": "什么是人工智能？", "gold_chunk_ids": ["chunk_001"], "gold_answer": "人工智能是..."}
-{"query": "机器学习有哪些类型？", "gold_chunk_ids": ["chunk_005"], "gold_answer": "主要包括监督学习..."}
+{"query": "trí tuệ nhân tạo là gì？", "gold_chunk_ids": ["chunk_001"], "gold_answer": "trí tuệ nhân tạo là..."}
+{"query": "Các loại học máy là gì?？", "gold_chunk_ids": ["chunk_005"], "gold_answer": "Chủ yếu bao gồm học tập có giám sát..."}
 ```
 
-字段说明：
-- `query`：测试问题，必需
-- `gold_chunk_ids`：期望被检索到的文档块 ID，可选
-- `gold_answer`：标准答案，用于评估生成质量，可选
+Mô tả trường：
+- `query`：câu hỏi kiểm tra，bắt buộc
+- `gold_chunk_ids`：Khối tài liệu dự kiến sẽ được lấy ID，Tùy chọn
+- `gold_answer`：Câu trả lời chuẩn，Dùng để đánh giá chất lượng xây dựng，Tùy chọn
 
-JSONL 只是导入和导出的交换格式。导入后，系统会把评估数据集、题目、评估运行和逐题结果保存到数据库中，不依赖本地 JSONL 文件作为内部存储。
+JSONL Chỉ là một định dạng trao đổi để nhập và xuất。Sau khi nhập，Hệ thống sẽ đánh giá tập dữ liệu、tiêu đề、Quá trình đánh giá và kết quả từng câu hỏi được lưu vào cơ sở dữ liệu，Không phụ thuộc vào địa phương JSONL Tệp dưới dạng bộ nhớ trong。
 
-::: tip 推荐工具
-可以使用 [EasyDataset](https://github.com/ConardLi/easy-dataset) 从文档批量生成问答对。注意导出时将字段名改为 `query` 和 `gold_answer`。
+::: tip Công cụ được đề xuất
+Có thể được sử dụng [EasyDataset](https://github.com/ConardLi/easy-dataset) Tạo hàng loạt cặp câu hỏi và câu trả lời từ tài liệu。Lưu ý khi xuất hãy đổi tên trường thành `query` và `gold_answer`。
 :::
 
-### 自动生成
+### Được tạo tự động
 
-系统也支持自动生成评估数据：随机采样知识库中的文档块，用嵌入模型查找相似内容，最后用大模型生成问答对。
+Hệ thống còn hỗ trợ tạo dữ liệu đánh giá tự động：Lấy mẫu ngẫu nhiên các khối tài liệu từ cơ sở kiến thức，Tìm nội dung tương tự bằng cách sử dụng mô hình nhúng，Cuối cùng, một mô hình lớn được sử dụng để tạo ra các cặp câu hỏi và câu trả lời。
 
-推荐参数：
-- 问题数量：10-50 个
-- 相似文档数：2-5 个
-- 构建并发数：默认 10，最大 20；模型服务限流较严格时可调低
+Thông số được đề xuất：
+- Số lượng câu hỏi：10-50 một
+- Số lượng tài liệu tương tự：2-5 một
+- Số lượng bản dựng đồng thời：Mặc định 10，tối đa 20；Nếu giới hạn hiện tại của dịch vụ mô hình chặt chẽ hơn, nó có thể được hạ xuống.
 
-## 运行评估
+## Chạy đánh giá
 
-在知识库详情页左侧边栏，「评估基准」Tab 用于管理评估数据集，「RAG 评估」Tab 用于运行评估并查看结果。在「RAG 评估」中填写评估名称、选择评估数据集后配置：
+Ở thanh bên trái của trang chi tiết cơ sở kiến thức，「Đường cơ sở đánh giá」Tab Được sử dụng để quản lý bộ dữ liệu đánh giá，「RAG Đánh giá」Tab Dùng để chạy đánh giá và xem kết quả。trong「RAG Đánh giá」Điền tên đánh giá、Cấu hình sau khi chọn tập dữ liệu đánh giá：
 
-1. **答案生成模型**（可选）：基于检索到的文档块生成答案
-2. **评判模型**（可选）：评估生成答案与标准答案的一致性
+1. **mô hình tạo câu trả lời**（Tùy chọn）：Tạo câu trả lời dựa trên các đoạn tài liệu được truy xuất
+2. **Mô hình phán đoán**（Tùy chọn）：Đánh giá tính nhất quán của câu trả lời được tạo ra với câu trả lời chuẩn
 
-点击「开始评估」，系统在后台执行，完成后会显示各项指标结果。
+nhấp chuột「Bắt đầu đánh giá」，Hệ thống thực thi ở chế độ nền，Sau khi hoàn thành, kết quả của từng chỉ số sẽ được hiển thị.。
 
-## 评估结果分析
+## Phân tích kết quả đánh giá
 
-拿到评估结果后，可以从以下几个角度分析：
+Sau khi nhận được kết quả đánh giá，Có thể phân tích theo các khía cạnh sau：
 
-- **Recall@1 低**：说明最相关的内容没有被首先检索到，可能需要调整嵌入模型或分块策略
-- **Recall@5 低**：说明相关文档没有被检索到，可能需要增加检索数量或优化查询
-- **答案准确性低**：说明生成质量有问题，可能需要调整提示词或更换模型
+- **Recall@1 thấp**：Cho biết nội dung phù hợp nhất không được truy xuất trước tiên，Các mô hình nhúng hoặc chiến lược phân đoạn có thể cần được điều chỉnh
+- **Recall@5 thấp**：Các tài liệu liên quan đến mô tả không được truy xuất，Có thể cần phải tăng số lượng tìm kiếm hoặc tối ưu hóa truy vấn
+- **Độ chính xác của câu trả lời thấp**：Chỉ ra rằng có vấn đề với chất lượng thế hệ，Có thể cần phải điều chỉnh lời nhắc hoặc thay đổi mô hình
 
-## 使用场景
+## kịch bản sử dụng
 
-- **上线前验证**：知识库建设完成后，评估效果是否满足要求
-- **配置对比**：调整分块策略、嵌入模型后，对比评估结果
-- **定期监控**：定期评估，及时发现质量下降
-- **参数调优**：通过多次评估找到最优参数组合
+- **Xác minh trước khi lên mạng**：Sau khi việc xây dựng cơ sở tri thức được hoàn thành，Đánh giá xem hiệu quả có đáp ứng yêu cầu hay không
+- **So sánh cấu hình**：Điều chỉnh chiến lược chunking、Sau khi nhúng mô hình，So sánh kết quả đánh giá
+- **Giám sát thường xuyên**：Đánh giá thường xuyên，Phát hiện kịp thời sự suy giảm chất lượng
+- **Điều chỉnh tham số**：Tìm tổ hợp tham số tối ưu thông qua nhiều đánh giá
 
 ---
 
-评估是一个持续的过程。建议在初始建设时就建立评估基准，后续每次重大变更都进行评估，形成数据驱动的优化闭环。
+Đánh giá là một quá trình liên tục。Khuyến nghị nên thiết lập đường cơ sở đánh giá trong quá trình xây dựng ban đầu，Mỗi thay đổi lớn tiếp theo sẽ được đánh giá，Hình thành một vòng khép kín tối ưu hóa dựa trên dữ liệu。

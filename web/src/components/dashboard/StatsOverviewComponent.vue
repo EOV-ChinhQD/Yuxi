@@ -7,7 +7,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ basicStats?.total_conversations || 0 }}</div>
-          <div class="stat-label">累计会话</div>
+          <div class="stat-label">Phiên tích lũy</div>
           <div class="stat-trend" v-if="basicStats?.conversation_trend">
             <TrendingUp v-if="basicStats.conversation_trend > 0" class="trend-icon up" />
             <TrendingDown v-else-if="basicStats.conversation_trend < 0" class="trend-icon down" />
@@ -22,7 +22,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ basicStats?.active_conversations || 0 }}</div>
-          <div class="stat-label">活跃对话</div>
+          <div class="stat-label">cuộc trò chuyện tích cực</div>
         </div>
       </div>
 
@@ -32,7 +32,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ basicStats?.total_messages || 0 }}</div>
-          <div class="stat-label">总消息数</div>
+          <div class="stat-label">Tổng số tin nhắn</div>
         </div>
       </div>
 
@@ -42,7 +42,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ basicStats?.total_users || 0 }}</div>
-          <div class="stat-label">用户数</div>
+          <div class="stat-label">Số lượng người dùng</div>
         </div>
       </div>
 
@@ -52,7 +52,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ basicStats?.feedback_stats?.total_feedbacks || 0 }}</div>
-          <div class="stat-label">总反馈数</div>
+          <div class="stat-label">Tổng số phản hồi</div>
         </div>
       </div>
 
@@ -62,7 +62,7 @@
         </div>
         <div class="stat-content">
           <div class="stat-value">{{ basicStats?.feedback_stats?.satisfaction_rate || 0 }}%</div>
-          <div class="stat-label">满意度</div>
+          <div class="stat-label">Sự hài lòng</div>
         </div>
       </div>
     </div>
@@ -107,10 +107,10 @@ const getSatisfactionClass = () => {
 </script>
 
 <style lang="less" scoped>
-// 使用 dashboard.css 中定义的样式，这里只需要导入
+// sử dụng dashboard.css phong cách được xác định trong，Ở đây bạn chỉ cần nhập
 @import '@/assets/css/dashboard.css';
 
-/* Stats Overview Component - 统计概览组件样式 */
+/* Stats Overview Component - Kiểu thành phần tổng quan về thống kê */
 .stats-overview-container {
   margin-top: 8px;
 
@@ -265,7 +265,7 @@ const getSatisfactionClass = () => {
   }
 }
 
-/* Stats Overview 响应式设计 */
+/* Stats Overview Thiết kế đáp ứng */
 @media (max-width: 1200px) {
   .stats-overview-container {
     .stats-grid {

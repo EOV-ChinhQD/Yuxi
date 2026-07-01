@@ -50,7 +50,7 @@ def extract_query(item_input: Any) -> str:
             value = item_input.get(key)
             if isinstance(value, str) and value.strip():
                 return value
-    raise AgentEvalError(f"无法从 Langfuse dataset item input 中提取 query: {item_input!r}")
+    raise AgentEvalError(f"Không thể truy cập từ Langfuse dataset item input chiết xuất từ ​​ query: {item_input!r}")
 
 
 def run_langfuse_agent_experiment(
@@ -65,12 +65,12 @@ def run_langfuse_agent_experiment(
     config = store.load()
     remote = config.get_remote(remote_name)
     if not remote.api_key:
-        raise AgentEvalError(f"remote 尚未登录: {remote.name}。请先运行 yuxi login。")
+        raise AgentEvalError(f"remote Chưa đăng nhập: {remote.name}。Hãy chạy trước yuxi login。")
 
     if options.max_concurrency < 1:
-        raise AgentEvalError("--max-concurrency 必须大于等于 1")
+        raise AgentEvalError("--max-concurrency Phải lớn hơn hoặc bằng 1")
     if options.timeout_seconds <= 0:
-        raise AgentEvalError("--timeout-seconds 必须大于 0")
+        raise AgentEvalError("--timeout-seconds phải lớn hơn 0")
 
     experiment_name = options.experiment_name or f"yuxi-agent-eval-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}"
     langfuse_client = langfuse_factory()
@@ -103,7 +103,7 @@ def run_langfuse_agent_experiment(
     processed_count = len(result.item_results)
     total_count = len(dataset.items)
     if processed_count != total_count:
-        raise AgentEvalError(f"Langfuse experiment 部分失败: {processed_count}/{total_count} 个 item 成功写入")
+        raise AgentEvalError(f"Langfuse experiment hỏng một phần: {processed_count}/{total_count} một item Đã viết thành công")
 
 
 def _run_agent_eval_item(

@@ -1,7 +1,7 @@
 <template>
   <div class="agent-view">
     <div class="agent-view-body">
-      <!-- 中间内容区域 -->
+      <!-- khu vực nội dung giữa -->
       <div class="content">
         <AgentChatComponent
           ref="chatComponentRef"
@@ -49,10 +49,10 @@
                       kind="agent"
                       :size="24"
                       shape="rounded"
-                      :alt="`${agent.label}图标`"
+                      :alt="`${agent.label}biểu tượng`"
                     />
                     <span class="config-dropdown-item-label">{{ agent.label }}</span>
-                    <span v-if="agent.isBuiltin" class="config-dropdown-item-badge">内置</span>
+                    <span v-if="agent.isBuiltin" class="config-dropdown-item-badge">Tích hợp sẵn</span>
                     <Check
                       v-if="agent.value === selectedAgentId"
                       :size="14"
@@ -61,7 +61,7 @@
                   </button>
 
                   <div v-if="hasActiveThread" class="config-dropdown-hint">
-                    当前对话已绑定智能体，新对话可切换。
+                    Cuộc trò chuyện hiện tại có một nhân viên được liên kết với nó，Cuộc trò chuyện mới có thể được chuyển đổi。
                   </div>
 
                   <div class="config-dropdown-divider"></div>
@@ -72,7 +72,7 @@
                     @click="openAgentManagement"
                   >
                     <Settings2 :size="15" class="config-dropdown-item-icon" />
-                    <span class="config-dropdown-item-label">管理智能体</span>
+                    <span class="config-dropdown-item-label">Đại lý quản lý</span>
                   </button>
                 </div>
               </template>
@@ -104,7 +104,7 @@ import FallbackAvatar from '@/components/common/FallbackAvatar.vue'
 
 import { storeToRefs } from 'pinia'
 
-// 组件引用
+// tham chiếu thành phần
 const chatComponentRef = ref(null)
 const agentEditModalRef = ref(null)
 
@@ -113,7 +113,7 @@ const agentStore = useAgentStore()
 const route = useRoute()
 const router = useRouter()
 
-// 从 agentStore 中获取响应式状态
+// từ agentStore Nhận trạng thái phản hồi trong
 const { agents, selectedAgentId, isLoadingConfig } = storeToRefs(agentStore)
 
 const syncingRouteThread = ref(false)
@@ -188,8 +188,8 @@ const currentAgentOption = computed(() =>
 )
 
 const currentAgentLabel = computed(() => {
-  if (isLoadingConfig.value) return '加载中...'
-  return currentAgentOption.value?.label || '智能体'
+  if (isLoadingConfig.value) return 'Đang tải...'
+  return currentAgentOption.value?.label || 'đại lý'
 })
 
 const agentDropdownOpen = ref(false)
@@ -209,15 +209,15 @@ const loadAgentBackends = async () => {
 const handleAgentSwitch = async (agentId, hasActiveThread) => {
   if (!agentId || agentId === selectedAgentId.value) return
   if (hasActiveThread) {
-    message.info('当前对话已绑定智能体，请新建对话后切换')
+    message.info('Cuộc trò chuyện hiện tại có một nhân viên được liên kết với nó，Vui lòng tạo một cuộc trò chuyện mới và chuyển đổi')
     return
   }
   try {
     await agentStore.selectAgent(agentId)
     agentDropdownOpen.value = false
   } catch (error) {
-    console.error('切换智能体出错:', error)
-    message.error('切换智能体失败')
+    console.error('Lỗi chuyển đổi đại lý:', error)
+    message.error('Không thể chuyển đổi đại lý')
   }
 }
 
@@ -231,14 +231,14 @@ const handleAgentSaved = async () => {
 const openAgentManagement = async () => {
   agentDropdownOpen.value = false
   if (!selectedAgentId.value) {
-    message.warning('请先选择智能体')
+    message.warning('Vui lòng chọn đại lý trước')
     return
   }
   try {
     await loadAgentBackends()
     await agentEditModalRef.value?.openEdit(selectedAgentId.value)
   } catch (error) {
-    message.error(error.message || '打开智能体配置失败')
+    message.error(error.message || 'Không thể mở cấu hình đại lý')
   }
 }
 </script>
@@ -300,7 +300,7 @@ const openAgentManagement = async () => {
   color: currentColor;
 }
 
-// 响应式优化
+// Tối ưu hóa đáp ứng
 @media (max-width: 520px) {
   .config-dropdown-trigger {
     max-width: calc(100vw - 112px);

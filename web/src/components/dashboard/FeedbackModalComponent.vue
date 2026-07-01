@@ -1,6 +1,6 @@
 <template>
-  <!-- 反馈列表模态框 -->
-  <a-modal v-model:open="modalVisible" title="用户反馈详情" width="1200px" :footer="null">
+  <!-- Hộp phương thức danh sách phản hồi -->
+  <a-modal v-model:open="modalVisible" title="Chi tiết phản hồi của người dùng" width="1200px" :footer="null">
     <a-space style="margin-bottom: 16px">
       <a-segmented
         v-model:value="feedbackFilter"
@@ -9,14 +9,14 @@
       />
     </a-space>
 
-    <!-- 卡片列表 -->
+    <!-- danh sách thẻ -->
     <div v-if="loadingFeedbacks" class="loading-container">
       <a-spin size="large" />
     </div>
 
     <div v-else class="feedback-cards-container">
       <div v-for="feedback in feedbacks" :key="feedback.id" class="feedback-card">
-        <!-- 卡片头部：用户信息和反馈类型 -->
+        <!-- tiêu đề thẻ：Thông tin người dùng và các loại phản hồi -->
         <div class="card-header">
           <div class="user-info">
             <FallbackAvatar
@@ -31,7 +31,7 @@
               class="user-avatar"
             />
             <div class="user-details">
-              <div class="username">{{ feedback.username || '未知用户' }}</div>
+              <div class="username">{{ feedback.username || 'người dùng không xác định' }}</div>
             </div>
           </div>
           <a-tag
@@ -43,13 +43,13 @@
               <LikeOutlined v-if="feedback.rating === 'like'" />
               <DislikeOutlined v-else />
             </template>
-            {{ feedback.rating === 'like' ? '点赞' : '点踩' }}
+            {{ feedback.rating === 'like' ? 'thích' : 'Bấm vào để không thích' }}
           </a-tag>
         </div>
 
-        <!-- 卡片内容：对话信息、消息内容和反馈原因 -->
+        <!-- Nội dung thẻ：Thông tin hội thoại、Nội dung tin nhắn và lý do phản hồi -->
         <div class="card-content">
-          <!-- 对话标题 -->
+          <!-- Tiêu đề cuộc trò chuyện -->
           <div class="conversation-section" v-if="feedback.conversation_title">
             <div class="conversation-info">
               <div class="info-item">
@@ -57,7 +57,7 @@
                   class="conversation-title"
                   :class="{ collapsed: !expandedStates.get(`${feedback.id}-conversation`) }"
                 >
-                  标题：{{ feedback.conversation_title }}
+                  Tiêu đề：{{ feedback.conversation_title }}
                 </span>
                 <a-button
                   v-if="shouldShowConversationExpandButton(feedback.conversation_title)"
@@ -66,17 +66,17 @@
                   @click="toggleConversationExpand(feedback.id)"
                   class="expand-button-inline"
                 >
-                  {{ expandedStates.get(`${feedback.id}-conversation`) ? '收起' : '展开' }}
+                  {{ expandedStates.get(`${feedback.id}-conversation`) ? 'đóng' : 'Mở rộng' }}
                 </a-button>
               </div>
               <div class="info-item" v-if="!props.agentId">
-                <span class="label">智能体:</span>
+                <span class="label">đại lý:</span>
                 <span class="value">{{ feedback.agent_id }}</span>
               </div>
             </div>
           </div>
 
-          <!-- 消息内容 -->
+          <!-- Nội dung tin nhắn -->
           <div class="message-section">
             <div
               class="message-content"
@@ -91,17 +91,17 @@
               @click="toggleExpand(feedback.id)"
               class="expand-button"
             >
-              {{ expandedStates.get(`${feedback.id}-message`) ? '收起' : '展开全部' }}
+              {{ expandedStates.get(`${feedback.id}-message`) ? 'đóng' : 'Mở rộng tất cả' }}
             </a-button>
           </div>
 
-          <!-- 反馈原因 -->
+          <!-- Lý do phản hồi -->
           <div v-if="feedback.reason" class="reason-section">
             <div class="reason-content">{{ feedback.reason }}</div>
           </div>
         </div>
 
-        <!-- 卡片底部：时间信息 -->
+        <!-- đáy thẻ：thông tin thời gian -->
         <div class="card-footer">
           <div class="time-info">
             <ClockCircleOutlined />
@@ -110,9 +110,9 @@
         </div>
       </div>
 
-      <!-- 空状态 -->
+      <!-- Trạng thái trống -->
       <div v-if="feedbacks.length === 0" class="empty-state">
-        <a-empty description="暂无反馈数据" />
+        <a-empty description="Chưa có dữ liệu phản hồi" />
       </div>
     </div>
   </a-modal>
@@ -127,12 +127,12 @@ import { formatFullDateTime } from '@/utils/time'
 import { generatePixelAvatar } from '@/utils/pixelAvatar'
 import FallbackAvatar from '@/components/common/FallbackAvatar.vue'
 
-// 常量配置
+// cấu hình không đổi
 const CONFIG = {
-  MESSAGE_MAX_LINES: 8, // 消息最大显示行数
-  CONVERSATION_MAX_LINES: 2, // 对话标题最大显示行数
-  CONVERSATION_MAX_CHARS: 60, // 对话标题字符数阈值
-  AVG_CHARS_PER_LINE: 30 // 每行平均字符数（中英文混合）
+  MESSAGE_MAX_LINES: 8, // Số dòng tin nhắn tối đa được hiển thị
+  CONVERSATION_MAX_LINES: 2, // Số dòng tối đa được hiển thị cho tiêu đề cuộc hội thoại
+  CONVERSATION_MAX_CHARS: 60, // Ngưỡng ký tự tiêu đề cuộc hội thoại
+  AVG_CHARS_PER_LINE: 30 // Số ký tự trung bình trên mỗi dòng（Hỗn hợp tiếng Trung và tiếng Anh）
 }
 
 // Props
@@ -143,63 +143,63 @@ const props = defineProps({
   }
 })
 
-// 模态框状态
+// Trạng thái phương thức
 const modalVisible = ref(false)
 
-// 反馈相关数据
+// Dữ liệu liên quan đến phản hồi
 const feedbacks = ref([])
 const loadingFeedbacks = ref(false)
 const feedbackFilter = ref('all')
 const feedbackOptions = [
-  { label: '全部', value: 'all' },
-  { label: '点赞', value: 'like' },
-  { label: '点踩', value: 'dislike' }
+  { label: 'Tất cả', value: 'all' },
+  { label: 'thích', value: 'like' },
+  { label: 'Bấm vào để không thích', value: 'dislike' }
 ]
 
-// 展开状态映射（使用 Map 避免直接修改对象）
+// Mở rộng bản đồ tiểu bang（sử dụng Map Tránh sửa đổi trực tiếp các đối tượng）
 const expandedStates = ref(new Map())
 
-// 显示模态框
+// Hiển thị hộp phương thức
 const show = () => {
   modalVisible.value = true
   loadFeedbacks()
 }
 
-// 暴露方法给父组件
+// Hiển thị các phương thức cho thành phần cha mẹ
 defineExpose({ show })
 
-// 计算文本行数的辅助函数（估算）
+// Hàm trợ giúp đếm dòng văn bản（Ước tính）
 const estimateLines = (text) => {
   if (!text) return 0
   return Math.ceil(text.length / CONFIG.AVG_CHARS_PER_LINE)
 }
 
-// 判断是否显示展开按钮
+// Xác định xem có hiển thị nút mở rộng hay không
 const shouldShowExpandButton = (content) => {
   return estimateLines(content) > CONFIG.MESSAGE_MAX_LINES
 }
 
-// 判断对话标题是否需要展开按钮
+// Xác định xem tiêu đề cuộc trò chuyện có cần nút mở rộng hay không
 const shouldShowConversationExpandButton = (title) => {
   if (!title) return false
   return title.length > CONFIG.CONVERSATION_MAX_CHARS
 }
 
-// 切换展开/收起状态
+// Chuyển đổi để mở rộng/Trạng thái thu gọn
 const toggleExpand = (feedbackId) => {
   const key = `${feedbackId}-message`
   const currentState = expandedStates.value.get(key) ?? false
   expandedStates.value.set(key, !currentState)
 }
 
-// 切换对话标题展开/收起状态
+// Chuyển đổi tiêu đề cuộc trò chuyện để mở rộng/Trạng thái thu gọn
 const toggleConversationExpand = (feedbackId) => {
   const key = `${feedbackId}-conversation`
   const currentState = expandedStates.value.get(key) ?? false
   expandedStates.value.set(key, !currentState)
 }
 
-// 加载反馈列表
+// Tải danh sách phản hồi
 const loadFeedbacks = async () => {
   loadingFeedbacks.value = true
   try {
@@ -210,11 +210,11 @@ const loadFeedbacks = async () => {
 
     const response = await dashboardApi.getFeedbacks(params)
     feedbacks.value = response
-    // 重置展开状态
+    // Đặt lại trạng thái mở rộng
     expandedStates.value.clear()
   } catch (error) {
-    console.error('加载反馈列表失败:', error)
-    message.error('加载反馈列表失败，请稍后重试')
+    console.error('Không tải được danh sách phản hồi:', error)
+    message.error('Không tải được danh sách phản hồi，Vui lòng thử lại sau')
     feedbacks.value = []
   } finally {
     loadingFeedbacks.value = false
@@ -224,10 +224,10 @@ const loadFeedbacks = async () => {
 const getFeedbackDefaultAvatarSrc = (feedback) =>
   feedback.uid ? generatePixelAvatar(feedback.uid) : ''
 
-// 格式化完整日期
+// Định dạng ngày hoàn thành
 const formatFullDate = (dateString) => formatFullDateTime(dateString)
 
-// 监听 agentId 变化，重新加载数据
+// màn hình agentId thay đổi，Tải lại dữ liệu
 watch(
   () => props.agentId,
   () => {
@@ -239,7 +239,7 @@ watch(
 </script>
 
 <style scoped lang="less">
-// 加载状态
+// Trạng thái tải
 .loading-container {
   display: flex;
   justify-content: center;
@@ -247,7 +247,7 @@ watch(
   padding: 40px 0;
 }
 
-// 卡片容器 - 自适应多列布局
+// hộp đựng thẻ - Bố cục nhiều cột thích ứng
 .feedback-cards-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -256,7 +256,7 @@ watch(
   overflow-y: auto;
   padding-right: 8px;
 
-  // 滚动条样式
+  // Kiểu thanh cuộn
   &::-webkit-scrollbar {
     width: 6px;
   }
@@ -276,7 +276,7 @@ watch(
   }
 }
 
-// 反馈卡片 - 紧凑设计
+// thẻ phản hồi - Thiết kế nhỏ gọn
 .feedback-card {
   background: var(--gray-0);
   border: 1px solid var(--gray-100);
@@ -291,7 +291,7 @@ watch(
   }
 }
 
-// 卡片头部 - 紧凑
+// tiêu đề thẻ - Nhỏ gọn
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -326,7 +326,7 @@ watch(
   font-size: 11px;
 }
 
-// 卡片内容 - 紧凑
+// Nội dung thẻ - Nhỏ gọn
 .card-content {
   padding: 16px;
   flex: 1;
@@ -397,7 +397,7 @@ watch(
     word-break: break-all;
   }
 
-  // 对话标题样式（独立显示）
+  // Kiểu tiêu đề cuộc trò chuyện（hiển thị độc lập）
   .conversation-title {
     display: block;
     color: var(--gray-700);
@@ -417,7 +417,7 @@ watch(
     }
   }
 
-  // 包含对话标题的 info-item 改为垂直布局
+  // Chứa tiêu đề cuộc trò chuyện info-item Thay đổi bố cục dọc
   &:has(.conversation-title) {
     flex-direction: column;
     align-items: flex-start;
@@ -448,7 +448,7 @@ watch(
   word-break: break-word;
 }
 
-// 卡片底部 - 紧凑
+// đáy thẻ - Nhỏ gọn
 .card-footer {
   padding: 8px 16px;
   border-top: 1px solid var(--gray-100);
@@ -464,7 +464,7 @@ watch(
   color: var(--gray-500);
 }
 
-// 空状态
+// Trạng thái trống
 .empty-state {
   grid-column: 1 / -1;
   display: flex;
@@ -473,7 +473,7 @@ watch(
   padding: 60px 0;
 }
 
-// 响应式设计
+// Thiết kế đáp ứng
 @media (max-width: 768px) {
   .feedback-cards-container {
     grid-template-columns: 1fr;

@@ -12,11 +12,11 @@
     :bodyStyle="{ padding: 0 }"
   >
     <div class="settings-container">
-      <button class="settings-close-btn lucide-icon-btn" @click="handleClose" aria-label="关闭设置">
+      <button class="settings-close-btn lucide-icon-btn" @click="handleClose" aria-label="Đóng cài đặt">
         <X :size="16" />
       </button>
 
-      <!-- 侧边栏 (Desktop) -->
+      <!-- thanh bên (Desktop) -->
       <div class="settings-sider">
         <div class="settings-sider-nav">
           <div
@@ -26,7 +26,7 @@
             v-if="userStore.isLoggedIn"
           >
             <CircleUser class="icon" :size="18" />
-            <span>账户设置</span>
+            <span>Cài đặt tài khoản</span>
           </div>
           <div
             class="sider-item"
@@ -35,7 +35,7 @@
             v-if="userStore.isAdmin"
           >
             <Settings class="icon" :size="18" />
-            <span>基本设置</span>
+            <span>Cài đặt cơ bản</span>
           </div>
           <div
             class="sider-item"
@@ -44,7 +44,7 @@
             v-if="userStore.isAdmin"
           >
             <User class="icon" :size="18" />
-            <span>用户管理</span>
+            <span>Quản lý người dùng</span>
           </div>
           <div
             class="sider-item"
@@ -53,7 +53,7 @@
             v-if="userStore.isSuperAdmin"
           >
             <Users class="icon" :size="18" />
-            <span>部门管理</span>
+            <span>Quản lý bộ phận</span>
           </div>
           <div
             class="sider-item"
@@ -62,7 +62,7 @@
             v-if="userStore.isLoggedIn"
           >
             <SquareTerminal class="icon" :size="18" />
-            <span>环境变量</span>
+            <span>biến môi trường</span>
           </div>
         </div>
 
@@ -70,19 +70,19 @@
           <div class="star-card-header">
             <div class="star-card-badge">
               <Star :size="12" />
-              <span>支持项目</span>
+              <span>Dự án hỗ trợ</span>
             </div>
             <button
               class="star-card-close lucide-icon-btn"
               @click="dismissStarCard"
-              aria-label="关闭 Star 提示"
+              aria-label="đóng Star Mẹo"
             >
               <X :size="14" />
             </button>
           </div>
-          <p class="star-card-title">给 Yuxi 点个 Star</p>
+          <p class="star-card-title">cho Yuxi nhấp chuột Star</p>
           <p class="star-card-description">
-            如果这个项目帮到了你，欢迎去 GitHub 点亮一个 Star，让更多人看到它。
+            Nếu dự án này giúp bạn，chào mừng đến GitHub ánh sáng một Star，hãy để nhiều người xem nó hơn。
           </p>
           <a
             class="star-card-link"
@@ -100,7 +100,7 @@
         </div>
       </div>
 
-      <!-- 顶部导航 (Mobile) -->
+      <!-- điều hướng hàng đầu (Mobile) -->
       <div class="settings-mobile-nav">
         <div
           class="nav-item"
@@ -108,7 +108,7 @@
           @click="activeTab = 'account'"
           v-if="userStore.isLoggedIn"
         >
-          账户设置
+          Cài đặt tài khoản
         </div>
         <div
           class="nav-item"
@@ -116,7 +116,7 @@
           @click="activeTab = 'agentEnv'"
           v-if="userStore.isLoggedIn"
         >
-          沙盒环境变量
+          Biến môi trường hộp cát
         </div>
         <div
           class="nav-item"
@@ -124,7 +124,7 @@
           @click="activeTab = 'base'"
           v-if="userStore.isAdmin"
         >
-          基本设置
+          Cài đặt cơ bản
         </div>
         <div
           class="nav-item"
@@ -132,7 +132,7 @@
           @click="activeTab = 'user'"
           v-if="userStore.isAdmin"
         >
-          用户管理
+          Quản lý người dùng
         </div>
         <div
           class="nav-item"
@@ -140,11 +140,11 @@
           @click="activeTab = 'department'"
           v-if="userStore.isSuperAdmin"
         >
-          部门管理
+          Quản lý bộ phận
         </div>
       </div>
 
-      <!-- 内容区域 -->
+      <!-- khu vực nội dung -->
       <div class="settings-content-wrapper">
         <div class="settings-content">
           <div v-show="activeTab === 'account'" v-if="userStore.isLoggedIn">

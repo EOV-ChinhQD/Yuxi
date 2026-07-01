@@ -1,60 +1,60 @@
-# 参与贡献
+# Tham gia và đóng góp
 
-感谢你对 Yuxi 的兴趣。我们欢迎 Issue、文档改进、Bug 修复、测试补充以及新功能贡献。
+cảm ơn bạn vì Yuxi lãi suất。chúng tôi hoan nghênh Issue、Cải tiến tài liệu、Bug sửa chữa、Thử nghiệm bổ sung và đóng góp tính năng mới。
 
-如果你只是想快速了解仓库入口信息，可以先看根目录的 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
+Nếu bạn chỉ muốn biết nhanh thông tin ra vào kho，Bạn có thể nhìn vào thư mục gốc trước [CONTRIBUTING.md](../../CONTRIBUTING.md)。
 
 <a href="https://github.com/xerrors/Yuxi/contributors">
-    <img src="https://contributors.nn.ci/api?repo=xerrors/Yuxi" alt="贡献者名单">
+    <img src="https://contributors.nn.ci/api?repo=xerrors/Yuxi" alt="Danh sách cộng tác viên">
 </a>
 
-## 开始之前
+## trước khi bắt đầu
 
-提交前建议先完成以下检查：
+Nên hoàn thành các bước kiểm tra sau trước khi gửi：
 
-- 搜索已有 [Issues](https://github.com/xerrors/Yuxi/issues)
-- 对较大的功能改动，先发 Issue 讨论设计和边界
-- 保持一次 PR 只解决一个明确问题，避免把无关重构混在一起
+- Tìm kiếm rồi [Issues](https://github.com/xerrors/Yuxi/issues)
+- Những thay đổi chức năng chính，Bắt đầu Issue Thảo luận về thiết kế và ranh giới
+- giữ một lần PR Chỉ giải quyết một vấn đề rõ ràng，Tránh trộn lẫn các phép tái cấu trúc không liên quan với nhau
 
-## 开发原则
+## Nguyên tắc phát triển
 
-本项目默认遵循以下开发原则：
+Dự án này tuân theo các nguyên tắc phát triển sau theo mặc định：
 
-- 避免过度设计，只做当前需求直接需要的改动
-- 不额外添加“顺手优化”、兼容层或未来需求抽象
-- 尽量复用现有实现，保持代码简单、聚焦、可维护
-- 只在系统边界做必要校验，不为不可能发生的内部场景增加复杂度
+- Tránh thiết kế quá mức，Chỉ thực hiện những thay đổi cần thiết trực tiếp cho nhu cầu hiện tại
+- Không có bổ sung bổ sung“Tối ưu hóa dễ dàng”、Lớp tương thích hoặc trừu tượng hóa các yêu cầu trong tương lai
+- Sử dụng lại các triển khai hiện có càng nhiều càng tốt，Giữ mã của bạn đơn giản、tiêu điểm、Có thể bảo trì
+- Chỉ thực hiện xác minh cần thiết ở ranh giới hệ thống，Đừng thêm sự phức tạp vào các tình huống nội bộ không thể thực hiện được
 
-## 开发环境
+## môi trường phát triển
 
-Yuxi 基于 Docker Compose 管理开发环境。开发、调试、测试都应尽量在运行中的容器中完成。
+Yuxi Dựa trên Docker Compose Quản lý môi trường phát triển。phát triển、Gỡ lỗi、Việc kiểm tra nên được thực hiện trong vùng chứa đang chạy bất cứ khi nào có thể。
 
-### 启动项目
+### Bắt đầu một dự án
 
 ```bash
 docker compose up -d
 ```
 
-### 常用检查命令
+### Các lệnh kiểm tra thường dùng
 
 ```bash
 docker ps
 docker logs api-dev --tail 100
 ```
 
-`api-dev` 和 `web-dev` 默认支持热重载。通常情况下，本地修改代码后不需要重启容器。
+`api-dev` và `web-dev` Tải lại nóng được hỗ trợ theo mặc định。Thông thường，Không cần phải khởi động lại vùng chứa sau khi sửa đổi mã cục bộ。
 
-如需进一步了解服务定义，可查看 [docker-compose.yml](../../docker-compose.yml)。
+Để tìm hiểu thêm về định nghĩa dịch vụ，Có sẵn để xem [docker-compose.yml](../../docker-compose.yml)。
 
-## 贡献流程
+## Quy trình đóng góp
 
-### 1. Fork 仓库
+### 1. Fork nhà kho
 
-在 GitHub 上 Fork 本仓库到你的个人账户。
+trong GitHub trên Fork Kho này đi vào tài khoản cá nhân của bạn。
 
-### 2. 创建分支
+### 2. Tạo một chi nhánh
 
-请使用语义明确的分支名，例如：
+Vui lòng sử dụng tên chi nhánh rõ ràng về mặt ngữ nghĩa，Ví dụ：
 
 ```bash
 git checkout -b feature/amazing-feature
@@ -62,118 +62,118 @@ git checkout -b fix/chat-stream-interrupt
 git checkout -b docs/update-contributing-guide
 ```
 
-### 3. 开发与验证
+### 3. Phát triển và xác minh
 
-按项目规范完成代码、测试与文档更新。开发完成后，至少完成：
+Hoàn thành mã theo thông số kỹ thuật của dự án、Kiểm tra và cập nhật tài liệu。Sau khi phát triển xong，Ít nhất là hoàn thành：
 
-- 检查
-- 测试
+- Kiểm tra
+- kiểm tra
 - Lint
-- 必要的端到端验证
+- Xác minh đầu cuối cần thiết
 
-如果现有测试脚本不足以覆盖你的改动，应补充对应测试，测试脚本优先放在 `backend/test`。
+Nếu tập lệnh kiểm thử hiện tại không đủ để đáp ứng những thay đổi của bạn，Các xét nghiệm tương ứng cần được bổ sung，Kịch bản thử nghiệm được ưu tiên `backend/test`。
 
-### 4. 提交代码
+### 4. Gửi mã
 
 ```bash
 git commit -m "feat: add knowledge graph import flow"
 ```
 
-### 5. 推送并发起 Pull Request
+### 5. Đẩy và bắt đầu Pull Request
 
 ```bash
 git push origin feature/amazing-feature
 ```
 
-创建 PR 时，请写清楚：
+tạo ra PR thời gian，Hãy viết rõ ràng：
 
-- 修改内容
-- 修改原因
-- 影响范围
-- 验证方式
+- Sửa đổi nội dung
+- Lý do sửa đổi
+- Phạm vi ảnh hưởng
+- Phương pháp xác minh
 
-如果涉及 UI 改动，建议附上截图或录屏。
+nếu nó liên quan đến UI Thay đổi，Nên đính kèm ảnh chụp màn hình hoặc bản ghi màn hình。
 
-## 前端贡献规范
+## Thông số kỹ thuật đóng góp cho giao diện người dùng
 
-前端目录位于 `web/`，提交前请遵循以下约束：
+Thư mục frontend nằm ở `web/`，Vui lòng tuân thủ các ràng buộc sau trước khi gửi：
 
-- 包管理器使用 `pnpm`
-- 所有 API 接口定义统一放在 `web/src/apis`
-- Icon 优先使用 `lucide-vue-next`
-- 样式使用 `less`
-- 非特殊情况必须优先复用 [web/src/assets/css/base.css](../../web/src/assets/css/base.css) 中的颜色变量
+- Cách sử dụng trình quản lý gói `pnpm`
+- tất cả API Định nghĩa giao diện được thống nhất trong `web/src/apis`
+- Icon ưu tiên sử dụng `lucide-vue-next`
+- Cách sử dụng kiểu `less`
+- Việc tái sử dụng phải được ưu tiên trừ khi có trường hợp đặc biệt [web/src/assets/css/base.css](../../web/src/assets/css/base.css) biến màu trong
 
-界面设计和样式约束可参考 [design.md](./design.md)。
+Các ràng buộc về thiết kế giao diện và phong cách có thể được tham khảo [design.md](./design.md)。
 
-## 后端贡献规范
+## Thông số đóng góp phụ trợ
 
-后端目录位于 `backend/`，提交时请注意：
+Thư mục phụ trợ được đặt tại `backend/`，Xin lưu ý khi gửi：
 
-- Python 风格尽量保持 pythonic
-- 优先使用较新的语法，兼容目标为 Python 3.12+
-- 优先在容器内运行调试和测试命令
+- Python Giữ phong cách nhiều nhất có thể pythonic
+- Thích cú pháp mới hơn，Mục tiêu tương thích là Python 3.12+
+- Ưu tiên chạy các lệnh gỡ lỗi và kiểm tra trong vùng chứa
 
-示例：
+Ví dụ：
 
 ```bash
 docker compose exec api uv run python test/your_script.py
 ```
 
-测试脚本建议放在 `backend/test` 下。
+Khuyến nghị nên đặt tập lệnh thử nghiệm vào `backend/test` xuống。
 
-## 质量检查
+## Kiểm tra chất lượng
 
-提交前请至少完成以下检查：
+Vui lòng hoàn thành ít nhất các bước kiểm tra sau trước khi gửi：
 
-### 格式化与静态检查
+### Định dạng và kiểm tra tĩnh
 
 ```bash
 make format
 make lint
 ```
 
-如果测试依赖管理员账户，可从项目根目录的 `.env` 中读取相关配置。
+Nếu bài kiểm tra dựa vào tài khoản quản trị viên，Có sẵn từ thư mục gốc của dự án `.env` Đọc cấu hình liên quan trong。
 
-## 文档维护要求
+## Yêu cầu bảo trì tài liệu
 
-代码改动后，请同步检查是否需要更新文档。
+Sau khi thay đổi mã，Vui lòng kiểm tra xem tài liệu có cần được cập nhật đồng thời không。
 
-- 通用开发文档位于 `docs/`
-- 文档导航定义在 `docs/.vitepress/config.mts`
-- 未完成规划、未来里程碑或已知问题更新 [roadmap.md](./roadmap.md)；已完成的用户可见变更或发布说明更新 [changelog.md](./changelog.md)
-- 若确需新增仅开发者可见的说明文档，放在 `docs/vibe/`
+- Tài liệu phát triển chung được đặt tại `docs/`
+- Điều hướng tài liệu được xác định trong `docs/.vitepress/config.mts`
+- Quy hoạch dang dở、Cập nhật về các mốc quan trọng trong tương lai hoặc các vấn đề đã biết [roadmap.md](./roadmap.md)；Đã hoàn thành các thay đổi mà người dùng có thể nhìn thấy hoặc cập nhật ghi chú phát hành [changelog.md](./changelog.md)
+- Nếu bạn thực sự cần thêm tài liệu mà chỉ nhà phát triển mới hiển thị，mặc vào `docs/vibe/`
 
-## 提交信息规范
+## Gửi thông số kỹ thuật
 
-推荐使用清晰、可检索的提交前缀：
+Nên sử dụng rõ ràng、Tiền tố cam kết có thể tìm kiếm：
 
 ```text
-feat: 添加新功能
-fix: 修复 bug
-docs: 更新文档
-refactor: 代码重构
-test: 添加测试
-chore: 构建过程或辅助工具的变动
+feat: Thêm tính năng mới
+fix: sửa chữa bug
+docs: Cập nhật tài liệu
+refactor: tái cấu trúc mã
+test: Thêm bài kiểm tra
+chore: Những thay đổi trong quá trình xây dựng hoặc các công cụ phụ trợ
 ```
 
-## 智能体
+## đại lý
 
-如果是 Agent 提交的 PR（如 Claude Code、Codex 等），请在 PR 标题最后添加 🤖 标志。
+nếu có Agent đã gửi PR（Chẳng hạn như Claude Code、Codex Đợi đã），làm ơn PR Tiêu đề được thêm lần cuối 🤖 biểu tượng。
 
-并在 PR 正文中添加
+Và trong PR Thêm vào văn bản
 
 ```
 <details>
-<summary>贡献说明</summary>
+<summary>Tuyên bố đóng góp</summary>
 
-本 PR 由 [Agent Name] 自动生成，且没有人工干预。
+Ben PR bởi [Agent Name] Được tạo tự động，không có sự can thiệp của con người。
 </details>
 ```
 
-## 反馈渠道
+## kênh phản hồi
 
-- Bug 反馈：<https://github.com/xerrors/Yuxi/issues>
-- 功能讨论：<https://github.com/xerrors/Yuxi/discussions>
+- Bug phản hồi：<https://github.com/xerrors/Yuxi/issues>
+- Thảo luận chức năng：<https://github.com/xerrors/Yuxi/discussions>
 
-感谢每一位贡献者的投入。
+Cảm ơn mọi người đóng góp cho ý kiến ​​đóng góp của họ。

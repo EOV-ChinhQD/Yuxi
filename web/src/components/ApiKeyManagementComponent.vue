@@ -1,30 +1,30 @@
 <template>
   <div class="apikey-management">
-    <!-- 头部区域 -->
+    <!-- vùng đầu -->
     <div class="header-section">
       <div class="header-content">
-        <div class="section-title">API Key 管理</div>
+        <div class="section-title">API Key quản lý</div>
         <p class="section-description">
-          用于外部系统调用 Agent 对话接口。密钥仅显示一次，请妥善保管。
+          cho các cuộc gọi hệ thống bên ngoài Agent giao diện đàm thoại。Khóa chỉ được hiển thị một lần，Hãy giữ nó đúng cách。
         </p>
       </div>
       <div class="header-actions">
         <a-button
           @click="handleRefresh"
           :loading="refreshing"
-          title="刷新"
+          title="Làm mới"
           class="refresh-btn lucide-icon-btn"
         >
           <template #icon><RefreshCw :size="16" :class="{ spin: refreshing }" /></template>
         </a-button>
         <a-button type="primary" @click="showCreateModal" class="add-btn lucide-icon-btn">
           <Plus :size="14" />
-          创建 API Key
+          tạo ra API Key
         </a-button>
       </div>
     </div>
 
-    <!-- 主内容区域 -->
+    <!-- khu vực nội dung chính -->
     <div class="content-section">
       <a-spin :spinning="loading">
         <div v-if="error" class="error-message">
@@ -33,7 +33,7 @@
 
         <div class="cards-container">
           <div v-if="apiKeys.length === 0" class="empty-state">
-            <a-empty description="暂无 API Key，点击上方按钮创建一个" />
+            <a-empty description="Chưa có API Key，Nhấp vào nút ở trên để tạo một cái" />
           </div>
           <div v-else class="apikey-cards-grid">
             <div v-for="key in apiKeys" :key="key.id" class="apikey-card">
@@ -49,22 +49,22 @@
 
               <div class="card-content">
                 <div class="info-item">
-                  <span class="info-label">过期时间:</span>
-                  <span class="info-value">{{ key.expires_at || '永不过期' }}</span>
+                  <span class="info-label">Thời gian hết hạn:</span>
+                  <span class="info-value">{{ key.expires_at || 'không bao giờ hết hạn' }}</span>
                 </div>
                 <div class="info-item">
-                  <span class="info-label">最后使用:</span>
+                  <span class="info-label">sử dụng lần cuối:</span>
                   <span class="info-value">{{ formatTime(key.last_used_at) }}</span>
                 </div>
               </div>
 
               <div class="card-footer">
                 <div class="footer-left">
-                  <span class="switch-label">{{ key.is_enabled ? '已启用' : '已禁用' }}</span>
+                  <span class="switch-label">{{ key.is_enabled ? 'Đã bật' : 'Đã tắt' }}</span>
                   <a-switch :checked="key.is_enabled" size="small" @change="toggleEnabled(key)" />
                 </div>
                 <div class="footer-actions">
-                  <a-tooltip title="重新生成（获取完整密钥）">
+                  <a-tooltip title="tái sinh（Nhận chìa khóa đầy đủ）">
                     <a-button
                       type="text"
                       size="small"
@@ -72,19 +72,19 @@
                       class="action-btn lucide-icon-btn"
                     >
                       <RefreshCw :size="14" />
-                      <span>重新生成</span>
+                      <span>tái sinh</span>
                     </a-button>
                   </a-tooltip>
                   <a-popconfirm
-                    title="确定要删除此 API Key 吗？此操作不可恢复。"
+                    title="Bạn có chắc chắn muốn xóa cái này không API Key ?？Hoạt động này là không thể đảo ngược。"
                     @confirm="deleteKey(key)"
-                    ok-text="确定"
-                    cancel-text="取消"
+                    ok-text="được rồi"
+                    cancel-text="Hủy bỏ"
                   >
-                    <a-tooltip title="删除">
+                    <a-tooltip title="Xóa">
                       <a-button type="text" size="small" danger class="action-btn lucide-icon-btn">
                         <Trash2 :size="14" />
-                        <span>删除</span>
+                        <span>Xóa</span>
                       </a-button>
                     </a-tooltip>
                   </a-popconfirm>
@@ -96,34 +96,34 @@
       </a-spin>
     </div>
 
-    <!-- 创建 Modal -->
+    <!-- tạo ra Modal -->
     <a-modal
       v-model:open="createModalVisible"
-      title="创建 API Key"
+      title="tạo ra API Key"
       @ok="handleCreate"
       :confirmLoading="createLoading"
-      ok-text="创建"
-      cancel-text="取消"
+      ok-text="tạo ra"
+      cancel-text="Hủy bỏ"
     >
       <a-form layout="vertical" :model="createForm">
-        <a-form-item label="名称" required>
-          <a-input v-model:value="createForm.name" placeholder="如：生产环境API" />
+        <a-form-item label="Tên" required>
+          <a-input v-model:value="createForm.name" placeholder="Chẳng hạn như：môi trường sản xuấtAPI" />
         </a-form-item>
-        <a-form-item label="过期时间">
+        <a-form-item label="Thời gian hết hạn">
           <a-date-picker
             v-model:value="createForm.expires_at"
             show-time
-            placeholder="留空表示永不过期"
+            placeholder="Để trống để không bao giờ hết hạn"
             style="width: 100%"
           />
         </a-form-item>
       </a-form>
     </a-modal>
 
-    <!-- 密钥显示 Modal (创建后一次性显示) -->
+    <!-- Hiển thị phím Modal (Hiển thị một lần sau khi tạo) -->
     <a-modal
       v-model:open="secretModalVisible"
-      title="API Key 已创建"
+      title="API Key Đã tạo"
       :closable="true"
       @cancel="secretModalVisible = false"
       :footer="null"
@@ -132,7 +132,7 @@
       <div class="secret-display">
         <a-alert
           type="warning"
-          message="请立即复制密钥，关闭后将无法再次查看完整密钥"
+          message="Hãy sao chép chìa khóa ngay bây giờ，Sau khi đóng, bạn sẽ không thể xem lại toàn bộ key nữa"
           show-icon
           class="secret-alert"
         />
@@ -140,7 +140,7 @@
           <code class="secret-value">{{ createdSecret }}</code>
           <a-button type="primary" @click="copySecret" class="copy-btn lucide-icon-btn">
             <Copy :size="14" />
-            复制
+            Sao chép
           </a-button>
         </div>
       </div>
@@ -189,22 +189,22 @@ const loadApiKeys = async () => {
     const res = await apikeyApi.list()
     apiKeys.value = res.api_keys || []
   } catch (e) {
-    error.value = e.message || '加载失败'
+    error.value = e.message || 'Tải không thành công'
   } finally {
     loading.value = false
   }
 }
 
-// 刷新 API Key 列表
+// Làm mới API Key danh sách
 const handleRefresh = async () => {
   if (refreshing.value) return
   refreshing.value = true
   try {
     await loadApiKeys()
-    message.success('刷新成功')
+    message.success('Làm mới thành công')
   } catch (e) {
-    console.error('刷新失败:', e)
-    message.error('刷新失败')
+    console.error('Làm mới không thành công:', e)
+    message.error('Làm mới không thành công')
   } finally {
     refreshing.value = false
   }
@@ -218,7 +218,7 @@ const showCreateModal = () => {
 
 const handleCreate = async () => {
   if (!createForm.name.trim()) {
-    message.error('请输入名称')
+    message.error('Vui lòng nhập tên')
     return
   }
 
@@ -235,7 +235,7 @@ const handleCreate = async () => {
     secretModalVisible.value = true
     await loadApiKeys()
   } catch (e) {
-    message.error(e.message || '创建失败')
+    message.error(e.message || 'Tạo không thành công')
   } finally {
     createLoading.value = false
   }
@@ -244,9 +244,9 @@ const handleCreate = async () => {
 const copySecret = async () => {
   try {
     await navigator.clipboard.writeText(createdSecret.value)
-    message.success('已复制到剪贴板')
+    message.success('Đã sao chép vào bảng nhớ tạm')
   } catch {
-    message.error('复制失败')
+    message.error('Sao chép không thành công')
   }
 }
 
@@ -257,27 +257,27 @@ const regenerateKey = async (key) => {
     secretModalVisible.value = true
     await loadApiKeys()
   } catch (e) {
-    message.error(e.message || '重新生成失败')
+    message.error(e.message || 'Tái tạo không thành công')
   }
 }
 
 const toggleEnabled = async (key) => {
   try {
     await apikeyApi.update(key.id, { is_enabled: !key.is_enabled })
-    message.success(key.is_enabled ? '已禁用' : '已启用')
+    message.success(key.is_enabled ? 'Đã tắt' : 'Đã bật')
     await loadApiKeys()
   } catch (e) {
-    message.error(e.message || '操作失败')
+    message.error(e.message || 'Thao tác không thành công')
   }
 }
 
 const deleteKey = async (key) => {
   try {
     await apikeyApi.delete(key.id)
-    message.success('删除成功')
+    message.success('Xóa thành công')
     await loadApiKeys()
   } catch (e) {
-    message.error(e.message || '删除失败')
+    message.error(e.message || 'Xóa không thành công')
   }
 }
 

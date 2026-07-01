@@ -10,12 +10,12 @@ const run = () => {
     assert.ok(!result.includes('```svg'), 'Should NOT contain raw fence marker')
     assert.ok(result.includes('before'), 'Should preserve content before block')
     assert.ok(result.includes('after'), 'Should preserve content after block')
-    // 按钮存在
+    // nút tồn tại
     assert.ok(result.includes('svg-actions'), 'Should contain svg-actions wrapper')
     assert.ok(result.includes('svg-copy-btn'), 'Should contain copy button')
     assert.ok(result.includes('svg-png-btn'), 'Should contain PNG button')
-    assert.ok(result.includes('复制 SVG'), 'Should contain copy text')
-    assert.ok(result.includes('复制为 PNG'), 'Should contain PNG text')
+    assert.ok(result.includes('Sao chép SVG'), 'Should contain copy text')
+    assert.ok(result.includes('Sao chép dưới dạng PNG'), 'Should contain PNG text')
     console.log('T1 Basic backtick fence: PASS')
   }
 
@@ -153,9 +153,9 @@ const run = () => {
     assert.ok(result.includes('svg-copy-btn'), 'Should contain copy button')
     assert.ok(result.includes('svg-png-btn'), 'Should contain PNG button')
     assert.ok(result.includes('type="button"'), 'Buttons should have type="button"')
-    assert.ok(result.includes('复制 SVG'), 'Copy button should have Chinese label')
-    assert.ok(result.includes('复制为 PNG'), 'PNG button should have Chinese label')
-    // 按钮在 svg 之前（渲染层在上方）
+    assert.ok(result.includes('Sao chép SVG'), 'Copy button should have Chinese label')
+    assert.ok(result.includes('Sao chép dưới dạng PNG'), 'PNG button should have Chinese label')
+    // nút vào svg trước đây（Kết xuất lớp trên cùng）
     const actionsIdx = result.indexOf('svg-actions')
     const svgIdx = result.indexOf('<svg ')
     assert.ok(actionsIdx < svgIdx, 'Buttons wrapper should appear before SVG element')

@@ -20,8 +20,8 @@
           v-if="canEdit && editMode !== 'edit'"
           class="modal-action-btn"
           @click="editMode = 'edit'"
-          title="编辑"
-          aria-label="编辑"
+          title="Chỉnh sửa"
+          aria-label="Chỉnh sửa"
         >
           <FilePen :size="18" />
         </button>
@@ -31,7 +31,7 @@
             class="preview-mode-btn"
             :class="{ active: htmlPreviewMode === 'render' }"
             @click="htmlPreviewMode = 'render'"
-            title="预览"
+            title="Xem trước"
           >
             <Globe :size="16" />
           </button>
@@ -39,7 +39,7 @@
             class="preview-mode-btn"
             :class="{ active: htmlPreviewMode === 'source' }"
             @click="htmlPreviewMode = 'source'"
-            title="源码"
+            title="Mã nguồn"
           >
             <Code2 :size="16" />
           </button>
@@ -48,7 +48,7 @@
           v-if="showDownload && file"
           class="modal-action-btn"
           @click="$emit('download', file)"
-          title="下载"
+          title="Tải xuống"
         >
           <Download :size="18" />
         </button>
@@ -56,7 +56,7 @@
           v-if="showFullscreen && file"
           class="modal-action-btn"
           @click="openFullscreenPreview"
-          title="全屏预览"
+          title="Xem trước toàn màn hình"
         >
           <Maximize :size="18" />
         </button>
@@ -80,7 +80,7 @@
         class="preview-mode-btn"
         :class="{ active: htmlPreviewMode === 'render' }"
         @click="htmlPreviewMode = 'render'"
-        title="预览"
+        title="Xem trước"
       >
         <Globe :size="16" />
       </button>
@@ -88,21 +88,21 @@
         class="preview-mode-btn"
         :class="{ active: htmlPreviewMode === 'source' }"
         @click="htmlPreviewMode = 'source'"
-        title="源码"
+        title="Mã nguồn"
       >
         <Code2 :size="16" />
       </button>
     </div>
 
     <div v-if="canEdit && editMode === 'edit'" class="edit-floating-actions">
-      <span v-if="draftChanged" class="edit-status-badge">未保存</span>
+      <span v-if="draftChanged" class="edit-status-badge">chưa được lưu</span>
       <button
         v-if="draftChanged"
         class="edit-floating-btn edit-floating-btn-primary"
         :disabled="saving"
         @click="requestSave"
-        :title="saving ? '保存中' : '保存'"
-        :aria-label="saving ? '保存中' : '保存'"
+        :title="saving ? 'Đang lưu' : 'lưu lại'"
+        :aria-label="saving ? 'Đang lưu' : 'lưu lại'"
       >
         <Save :size="14" />
       </button>
@@ -111,8 +111,8 @@
         :class="{ 'edit-floating-btn-danger': draftChanged }"
         :disabled="saving"
         @click="cancelEdit"
-        title="取消"
-        aria-label="取消"
+        title="Hủy bỏ"
+        aria-label="Hủy bỏ"
       >
         <X :size="14" />
       </button>
@@ -159,7 +159,7 @@
       </template>
       <template v-else-if="file?.supported === false">
         <div class="unsupported-preview">
-          {{ file?.message || '当前文件暂不支持预览，请下载后查看' }}
+          {{ file?.message || 'Tệp hiện tại không hỗ trợ xem trước，Hãy tải về và xem' }}
         </div>
       </template>
       <template v-else>
@@ -185,7 +185,7 @@
               class="preview-mode-btn"
               :class="{ active: htmlPreviewMode === 'render' }"
               @click="htmlPreviewMode = 'render'"
-              title="预览"
+              title="Xem trước"
             >
               <Globe :size="16" />
             </button>
@@ -193,7 +193,7 @@
               class="preview-mode-btn"
               :class="{ active: htmlPreviewMode === 'source' }"
               @click="htmlPreviewMode = 'source'"
-              title="源码"
+              title="Mã nguồn"
             >
               <Code2 :size="16" />
             </button>
@@ -202,14 +202,14 @@
             v-if="showDownload && file"
             class="modal-action-btn fullscreen-action-btn"
             @click="$emit('download', file)"
-            title="下载"
+            title="Tải xuống"
           >
             <Download :size="18" />
           </button>
           <button
             class="modal-action-btn fullscreen-action-btn"
             @click="closeFullscreenPreview"
-            title="关闭"
+            title="đóng"
           >
             <X :size="18" />
           </button>
@@ -242,7 +242,7 @@
             </template>
             <template v-else-if="file?.supported === false">
               <div class="unsupported-preview fullscreen-unsupported-preview">
-                {{ file?.message || '当前文件暂不支持预览，请下载后查看' }}
+                {{ file?.message || 'Tệp hiện tại không hỗ trợ xem trước，Hãy tải về và xem' }}
               </div>
             </template>
             <template v-else>
@@ -365,7 +365,7 @@ const emit = defineEmits(['close', 'download', 'save'])
 
 const themeStore = useThemeStore()
 const closeTitle = computed(() =>
-  props.closeVariant === 'collapse-right' ? '收起预览面板' : '关闭预览'
+  props.closeVariant === 'collapse-right' ? 'Thu gọn bảng xem trước' : 'Đóng bản xem trước'
 )
 const closeIconComponent = computed(() =>
   props.closeVariant === 'collapse-right' ? PanelRightClose : X
@@ -423,7 +423,7 @@ const highlightedCodeContent = computed(() => {
     }
     return hljs.highlightAuto(content).value
   } catch (error) {
-    console.warn('代码高亮失败:', error)
+    console.warn('Đánh dấu mã không thành công:', error)
     return escapeHtml(content)
   }
 })
@@ -838,13 +838,13 @@ onUnmounted(() => {
 }
 
 .html-preview {
-  display: block; // 消除 iframe 行内基线间隙导致的底部白边
+  display: block; // loại bỏ iframe Đường viền màu trắng phía dưới gây ra bởi khoảng cách đường cơ sở nội tuyến
   width: 100%;
-  height: 100%; // 适应父容器高度，而非固定 100vh
-  min-height: 0; // 移除固定最小高度，避免短内容白边
+  height: 100%; // Thích ứng với chiều cao vùng chứa cha mẹ，thay vì cố định 100vh
+  min-height: 0; // Xóa chiều cao tối thiểu cố định，Tránh nội dung ngắn có lề trắng
   border: none;
   border-radius: 0px;
-  background: var(--gray-0); // 跟随主题：亮色为白、暗色为近黑，避免暗色 HTML 底部露出白边
+  background: var(--gray-0); // theo dõi chủ đề：Màu sắc tươi sáng là màu trắng、Màu tối gần như đen，tránh màu tối HTML Viền trắng lộ ra ở phía dưới
 }
 
 .unsupported-preview {
@@ -911,8 +911,8 @@ onUnmounted(() => {
 }
 
 .fullscreen-embed-preview {
-  height: 100vh; // 全屏时填满视口
-  min-height: 100vh; // 确保全屏时不塌陷
+  height: 100vh; // Lấp đầy khung nhìn khi ở chế độ toàn màn hình
+  min-height: 100vh; // Đảm bảo nó không bị sập khi ở chế độ toàn màn hình
   border-radius: 0px;
 }
 

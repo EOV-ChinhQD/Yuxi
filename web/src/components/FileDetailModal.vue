@@ -10,24 +10,24 @@
   >
     <template #title>
       <div class="modal-title-wrapper">
-        <!-- 左侧：文件名和图标 -->
+        <!-- bên trái：Tên tập tin và biểu tượng -->
         <div class="file-title">
           <FileTypeIcon :name="file?.filename" :size="18" />
-          <span class="file-name">{{ file?.filename || '文件详情' }}</span>
+          <span class="file-name">{{ file?.filename || 'Chi tiết tài liệu' }}</span>
         </div>
 
         <div class="header-controls">
-          <!-- 字符数/片段数显示在 segment 左边 -->
+          <!-- Số ký tự/Số lượng clip được hiển thị trong segment trái -->
           <span v-if="viewInfoText" class="view-info">{{ viewInfoText }}</span>
 
-          <!-- 视图模式切换 -->
+          <!-- Chuyển đổi chế độ xem -->
           <div class="view-controls" v-if="file && viewModeOptions.length > 1">
             <a-segmented v-model:value="viewMode" :options="viewModeOptions" />
           </div>
 
-          <!-- 下载按钮下拉菜单 -->
+          <!-- Menu thả xuống nút tải xuống -->
           <a-dropdown trigger="click" v-if="file">
-            <a-button type="default" class="download-btn" title="下载" aria-label="下载">
+            <a-button type="default" class="download-btn" title="Tải xuống" aria-label="Tải xuống">
               <Download :size="16" />
               <ChevronDown :size="14" />
             </a-button>
@@ -35,17 +35,17 @@
               <a-menu @click="handleDownloadMenuClick">
                 <a-menu-item key="original" :disabled="!file.file_id">
                   <template #icon><Download :size="16" /></template>
-                  下载原文
+                  Tải văn bản gốc
                 </a-menu-item>
                 <a-menu-item key="markdown" :disabled="contentState.loading || !mergedContent">
                   <template #icon><FileText :size="16" /></template>
-                  下载 Markdown
+                  Tải xuống Markdown
                 </a-menu-item>
               </a-menu>
             </template>
           </a-dropdown>
 
-          <!-- 自定义关闭按钮 -->
+          <!-- Nút đóng tùy chỉnh -->
           <button class="custom-close-btn" @click="visible = false">
             <X :size="16" />
           </button>
@@ -53,7 +53,7 @@
       </div>
     </template>
     <div v-if="basicLoading" class="loading-container">
-      <a-spin tip="正在加载文档内容..." />
+      <a-spin tip="Đang tải nội dung tài liệu..." />
     </div>
     <div v-else-if="detailError" class="empty-content">
       <p>{{ detailError }}</p>
@@ -61,7 +61,7 @@
     <div v-else-if="file && hasAvailableView" class="file-detail-content">
       <div v-if="viewMode === 'source'" class="content-panel source-panel">
         <div v-if="sourcePreview.loading" class="loading-container">
-          <a-spin tip="正在加载源文件预览..." />
+          <a-spin tip="Đang tải bản xem trước tệp nguồn..." />
         </div>
         <AgentFilePreview
           v-else
@@ -77,10 +77,10 @@
         />
       </div>
 
-      <!-- Markdown 模式 -->
+      <!-- Markdown chế độ -->
       <div v-else-if="viewMode === 'markdown'" class="content-panel flat-md-preview">
         <div v-if="contentState.loading" class="loading-container">
-          <a-spin tip="正在加载解析内容..." />
+          <a-spin tip="Đang tải nội dung được phân tích cú pháp..." />
         </div>
         <MarkdownPreview
           v-else-if="mergedContent"
@@ -88,14 +88,14 @@
           class="markdown-content"
         />
         <div v-else class="empty-content">
-          <p>{{ contentState.error || '暂无文件内容' }}</p>
+          <p>{{ contentState.error || 'Chưa có nội dung tập tin' }}</p>
         </div>
       </div>
 
-      <!-- Chunks 模式：使用 Grid 布局 -->
+      <!-- Chunks chế độ：sử dụng Grid Bố cục -->
       <div v-else-if="viewMode === 'chunks'" class="chunks-panel">
         <div v-if="contentState.loading" class="loading-container">
-          <a-spin tip="正在加载分块内容..." />
+          <a-spin tip="Đang tải nội dung bị phân đoạn..." />
         </div>
         <div v-else class="chunk-grid">
           <div v-for="chunk in mappedChunks" :key="chunk.id" class="chunk-card">
@@ -108,13 +108,13 @@
           </div>
         </div>
         <div v-if="!contentState.loading && mappedChunks.length === 0" class="empty-content">
-          <p>{{ contentState.error || '暂无分块信息' }}</p>
+          <p>{{ contentState.error || 'Chưa có thông tin phân chia' }}</p>
         </div>
       </div>
     </div>
 
     <div v-else-if="file" class="empty-content">
-      <p>暂无文件内容</p>
+      <p>Chưa có nội dung tập tin</p>
     </div>
   </a-modal>
 </template>
@@ -247,7 +247,7 @@ const ensureApiSuccess = (data, fallbackMessage) => {
   }
 }
 
-// 视图模式
+// chế độ xem
 const viewMode = ref('markdown')
 const hasContent = computed(
   () =>
@@ -298,7 +298,7 @@ const makeViewModeOption = (label, value, icon) => ({
 
 const viewModeOptions = computed(() => {
   const optionMap = {
-    source: makeViewModeOption('源文件', 'source', FileSearch),
+    source: makeViewModeOption('tập tin nguồn', 'source', FileSearch),
     markdown: makeViewModeOption('Markdown', 'markdown', FileText),
     chunks: makeViewModeOption('Chunks', 'chunks', Rows3)
   }
@@ -322,11 +322,11 @@ const loadBasicInfo = async () => {
   try {
     const data = await documentApi.getDocumentBasicInfo(kbId, fileId)
     if (requestId !== basicRequestSeq) return
-    ensureApiSuccess(data, '加载文件信息失败')
+    ensureApiSuccess(data, 'Không thể tải thông tin tập tin')
 
     const nextFile = normalizeFileMeta(data?.meta || data)
     if (nextFile.is_folder) {
-      detailError.value = '文件夹不支持详情预览'
+      detailError.value = 'Thư mục không hỗ trợ xem trước chi tiết'
       return
     }
 
@@ -334,8 +334,8 @@ const loadBasicInfo = async () => {
     viewMode.value = getDefaultDetailView(nextFile)
   } catch (error) {
     if (requestId !== basicRequestSeq) return
-    console.error('加载文件基本信息失败:', error)
-    detailError.value = error.message || '加载文件信息失败'
+    console.error('Không thể tải thông tin tệp cơ bản:', error)
+    detailError.value = error.message || 'Không thể tải thông tin tập tin'
     message.error(detailError.value)
   } finally {
     if (requestId === basicRequestSeq) {
@@ -358,7 +358,7 @@ const loadParsedContent = async () => {
   try {
     const data = await documentApi.getDocumentContent(props.kbId, props.fileId)
     if (requestId !== contentRequestSeq) return
-    ensureApiSuccess(data, '加载解析内容失败')
+    ensureApiSuccess(data, 'Không tải được nội dung được phân tích cú pháp')
     contentState.value = {
       loading: false,
       loaded: true,
@@ -368,8 +368,8 @@ const loadParsedContent = async () => {
     }
   } catch (error) {
     if (requestId !== contentRequestSeq) return
-    console.error('加载解析内容失败:', error)
-    const errorMessage = error.message || '加载解析内容失败'
+    console.error('Không tải được nội dung được phân tích cú pháp:', error)
+    const errorMessage = error.message || 'Không tải được nội dung được phân tích cú pháp'
     contentState.value = {
       loading: false,
       loaded: false,
@@ -432,7 +432,7 @@ watch(
   { immediate: true }
 )
 
-// 统计信息
+// Thống kê
 const mergeResult = computed(() => mergeChunks(contentState.value.lines || []))
 const mappedChunks = computed(() => mergeResult.value.chunks)
 const mergedContent = computed(() => contentState.value.content || mergeResult.value.content || '')
@@ -443,21 +443,21 @@ const chunkCount = computed(
 const viewInfoText = computed(() => {
   if (viewMode.value === 'chunks') {
     if (contentState.value.loading) return ''
-    return `${chunkCount.value} 个片段`
+    return `${chunkCount.value} mảnh vỡ`
   }
   if (viewMode.value === 'source') {
     if (sourcePreview.value.loading) return ''
-    if (sourceContentLength.value > 0) return `${formatTextLength(sourceContentLength.value)} 字符`
-    if (sourcePreview.value.url) return '源文件预览'
+    if (sourceContentLength.value > 0) return `${formatTextLength(sourceContentLength.value)} nhân vật`
+    if (sourcePreview.value.url) return 'Xem trước tập tin nguồn'
     return ''
   }
   if (contentState.value.loading) return ''
-  return `${formatTextLength(charCount.value)} 字符`
+  return `${formatTextLength(charCount.value)} nhân vật`
 })
 
-// 格式化文本长度
+// Định dạng độ dài văn bản
 function formatTextLength(length) {
-  if (!length && length !== 0) return '0 字符'
+  if (!length && length !== 0) return '0 nhân vật'
 
   if (length < 1000) {
     return `${length}`
@@ -496,8 +496,8 @@ const loadSourcePreview = async () => {
     sourcePreview.value.content = preview.content || ''
   } catch (error) {
     if (requestId !== sourceRequestSeq) return
-    console.error('加载源文件预览失败:', error)
-    sourcePreview.value.message = error.message || '加载源文件预览失败'
+    console.error('Không thể tải bản xem trước tệp nguồn:', error)
+    sourcePreview.value.message = error.message || 'Không thể tải bản xem trước tệp nguồn'
     sourcePreview.value.supported = false
     message.error(sourcePreview.value.message)
   } finally {
@@ -507,7 +507,7 @@ const loadSourcePreview = async () => {
   }
 }
 
-// 下载菜单点击处理
+// Xử lý nhấp chuột vào menu tải xuống
 const handleDownloadMenuClick = ({ key }) => {
   if (key === 'original') {
     handleDownloadOriginal()
@@ -516,10 +516,10 @@ const handleDownloadMenuClick = ({ key }) => {
   }
 }
 
-// 下载原文
+// Tải văn bản gốc
 const handleDownloadOriginal = async () => {
   if (!file.value || !props.kbId || !props.fileId) {
-    message.error('文件信息不完整')
+    message.error('Thông tin tập tin không đầy đủ')
     return
   }
 
@@ -527,11 +527,11 @@ const handleDownloadOriginal = async () => {
   try {
     const response = await documentApi.downloadDocument(props.kbId, props.fileId)
 
-    // 获取文件名
+    // Lấy tên tập tin
     const contentDisposition = response.headers.get('content-disposition')
     let filename = file.value.filename
     if (contentDisposition) {
-      // 首先尝试匹配RFC 2231格式 filename*=UTF-8''...
+      // Đầu tiên hãy thử để phù hợpRFC 2231định dạng filename*=UTF-8''...
       const rfc2231Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/)
       if (rfc2231Match) {
         try {
@@ -540,11 +540,11 @@ const handleDownloadOriginal = async () => {
           console.warn('Failed to decode RFC2231 filename:', rfc2231Match[1], error)
         }
       } else {
-        // 回退到标准格式 filename="..."
+        // dự phòng về định dạng chuẩn filename="..."
         const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1].replace(/['"]/g, '')
-          // 解码URL编码的文件名
+          // Giải mãURLtên tệp được mã hóa
           try {
             filename = decodeURIComponent(filename)
           } catch (error) {
@@ -554,7 +554,7 @@ const handleDownloadOriginal = async () => {
       }
     }
 
-    // 创建blob并下载
+    // tạo rablobvà tải về
     const blob = await response.blob()
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -565,30 +565,30 @@ const handleDownloadOriginal = async () => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    message.success('下载成功')
+    message.success('Tải xuống thành công')
   } catch (error) {
-    console.error('下载文件时出错:', error)
-    message.error(error.message || '下载文件失败')
+    console.error('Lỗi tải tập tin xuống:', error)
+    message.error(error.message || 'Tải xuống tệp không thành công')
   } finally {
     downloadingOriginal.value = false
   }
 }
 
-// 下载 Markdown
+// Tải xuống Markdown
 const handleDownloadMarkdown = () => {
   const content = mergedContent.value
 
   if (!content) {
-    message.error('没有可下载的 Markdown 内容')
+    message.error('Không có sẵn để tải xuống Markdown nội dung')
     return
   }
 
   downloadingMarkdown.value = true
   try {
-    // 生成文件名（如果原文件没有 .md 扩展名，则添加）
+    // Tạo tên tập tin（Nếu file gốc không có .md phần mở rộng，sau đó thêm）
     let filename = file.value.filename || 'document.md'
     if (!filename.toLowerCase().endsWith('.md')) {
-      // 移除原扩展名，添加 .md
+      // Xóa tiện ích mở rộng ban đầu，thêm .md
       const lastDotIndex = filename.lastIndexOf('.')
       if (lastDotIndex > 0) {
         filename = filename.substring(0, lastDotIndex) + '.md'
@@ -597,7 +597,7 @@ const handleDownloadMarkdown = () => {
       }
     }
 
-    // 创建 blob 并下载
+    // tạo ra blob và tải về
     const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -608,10 +608,10 @@ const handleDownloadMarkdown = () => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    message.success('下载成功')
+    message.success('Tải xuống thành công')
   } catch (error) {
-    console.error('下载 Markdown 时出错:', error)
-    message.error(error.message || '下载 Markdown 失败')
+    console.error('Tải xuống Markdown lỗi:', error)
+    message.error(error.message || 'Tải xuống Markdown thất bại')
   } finally {
     downloadingMarkdown.value = false
   }
@@ -676,7 +676,7 @@ onBeforeUnmount(resetLocalState)
   width: 100%;
 }
 
-/* Chunks 面板样式 */
+/* Chunks Kiểu bảng điều khiển */
 .chunk-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -742,7 +742,7 @@ onBeforeUnmount(resetLocalState)
   min-width: 0;
 }
 
-/* 文件标题样式 */
+/* Kiểu tiêu đề tập tin */
 .file-title {
   display: flex;
   align-items: center;
@@ -781,7 +781,7 @@ onBeforeUnmount(resetLocalState)
   min-width: 0;
 }
 
-/* 下载按钮样式 */
+/* Kiểu nút tải xuống */
 .download-btn {
   display: inline-flex;
   align-items: center;
@@ -800,7 +800,7 @@ onBeforeUnmount(resetLocalState)
   }
 }
 
-/* 自定义关闭按钮 */
+/* Nút đóng tùy chỉnh */
 .custom-close-btn {
   display: flex;
   align-items: center;
@@ -821,7 +821,7 @@ onBeforeUnmount(resetLocalState)
   }
 }
 
-/* 视图切换控件 */
+/* Xem điều khiển chuyển mạch */
 .view-controls {
   display: flex;
   align-items: center;
@@ -861,7 +861,7 @@ onBeforeUnmount(resetLocalState)
   white-space: nowrap;
 }
 
-/* 下拉菜单样式 */
+/* Kiểu menu thả xuống */
 .ant-dropdown-menu {
   border-radius: 8px;
   padding: 4px;

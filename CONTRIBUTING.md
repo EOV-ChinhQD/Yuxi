@@ -1,18 +1,18 @@
 # Contributing to Yuxi
 
-感谢你关注 Yuxi。欢迎提交 Issue、改进文档、修复 Bug 或贡献新功能。
+cảm ơn bạn đã quan tâm Yuxi。Các bài nộp đều được chào đón Issue、Cải thiện tài liệu、sửa chữa Bug hoặc đóng góp những tính năng mới。
 
-更完整的开发文档可参考 [docs/develop-guides/contributing.md](docs/develop-guides/contributing.md)。
+Để có tài liệu phát triển đầy đủ hơn, vui lòng tham khảo [docs/develop-guides/contributing.md](docs/develop-guides/contributing.md)。
 
-## 开始之前
+## trước khi bắt đầu
 
-- 提交前请先搜索现有 [Issues](https://github.com/xerrors/Yuxi/issues)
-- 对于较大的功能改动，建议先开 Issue 讨论方案
-- 保持改动聚焦，避免在一次 PR 中混入无关重构
+- Vui lòng tìm kiếm những cái hiện có trước khi gửi [Issues](https://github.com/xerrors/Yuxi/issues)
+- Đối với những thay đổi chức năng lớn hơn，Nên mở trước Issue Kế hoạch thảo luận
+- Giữ các thay đổi tập trung，tránh một lần PR Kết hợp tái cấu trúc không liên quan
 
-## 开发方式
+## Phương pháp phát triển
 
-本项目通过 Docker Compose 进行开发，推荐直接在容器环境中调试。
+Dự án này đã thông qua Docker Compose phát triển，Nên gỡ lỗi trực tiếp trong môi trường container。
 
 ```bash
 docker compose up -d
@@ -20,17 +20,17 @@ docker ps
 docker logs api-dev --tail 100
 ```
 
-项目中的 `api-dev` 和 `web-dev` 默认支持热重载，本地修改代码后通常无需重启容器。
+trong dự án `api-dev` và `web-dev` Tải lại nóng được hỗ trợ theo mặc định，Thường không cần phải khởi động lại vùng chứa sau khi sửa đổi mã cục bộ。
 
-## 提交流程
+## Quá trình nộp hồ sơ
 
-1. Fork 仓库并创建分支
-2. 在对应目录完成开发与测试
-3. 提交清晰的 Commit Message
-4. 发起 Pull Request，并说明修改内容、原因和验证方式
-5. PR 模板 [PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) 中的检查项需要在提交前完成
+1. Fork Kho lưu trữ và tạo chi nhánh
+2. Hoàn thành phát triển và thử nghiệm trong thư mục tương ứng
+3. Gửi rõ ràng Commit Message
+4. khởi xướng Pull Request，và giải thích nội dung sửa đổi、Lý do và phương pháp xác minh
+5. PR mẫu [PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) Các mục kiểm tra cần phải được hoàn thành trước khi gửi
 
-示例：
+Ví dụ：
 
 ```bash
 git checkout -b feature/your-change
@@ -38,20 +38,20 @@ git commit -m "feat: add knowledge graph import flow"
 git push origin feature/your-change
 ```
 
-## 代码要求
+## Yêu cầu về mã
 
-### 通用
+### phổ quát
 
-- 保持实现简单直接，避免过度设计
-- 只修改当前任务所需内容，不顺手做额外重构
-- 更新相关文档
-- 如有必要，同步更新 [docs/develop-guides/changelog.md](docs/develop-guides/changelog.md)
-- 设计部分请参考 [docs/develop-guides/design.md](docs/develop-guides/design.md)
+- Giữ việc triển khai đơn giản và dễ hiểu，Tránh thiết kế quá mức
+- Chỉ sửa đổi những gì cần thiết cho nhiệm vụ hiện tại，Thực hiện tái cấu trúc thêm không hề dễ dàng
+- Cập nhật tài liệu liên quan
+- nếu cần thiết，Cập nhật đồng bộ [docs/develop-guides/changelog.md](docs/develop-guides/changelog.md)
+- Vui lòng tham khảo phần thiết kế [docs/develop-guides/design.md](docs/develop-guides/design.md)
 
-### 后端
+### phụ trợ
 
-- 使用 Python 3.12+ 风格
-- 提交前运行：
+- sử dụng Python 3.12+ phong cách
+- Chạy trước khi gửi：
 
 ```bash
 make format
@@ -59,26 +59,26 @@ make lint
 docker compose exec api uv run pytest
 ```
 
-- 测试脚本建议放在 `backend/test`
+- Khuyến nghị nên đặt tập lệnh thử nghiệm vào `backend/test`
 
-### 前端
+### giao diện người dùng
 
-- 使用 `pnpm`
-- API 接口统一放在 `web/src/apis`
-- 优先使用 `lucide-vue-next` 图标
-- 样式使用 `less`
-- 非特殊情况优先复用 [web/src/assets/css/base.css](web/src/assets/css/base.css) 中的颜色变量
+- sử dụng `pnpm`
+- API Các giao diện được thống nhất trong `web/src/apis`
+- ưu tiên sử dụng `lucide-vue-next` biểu tượng
+- Cách sử dụng kiểu `less`
+- Ưu tiên tái sử dụng trừ trường hợp đặc biệt [web/src/assets/css/base.css](web/src/assets/css/base.css) biến màu trong
 
-## Pull Request 建议
+## Pull Request Đề xuất
 
-- 标题清晰，能说明变更目标
-- 描述中包含改动内容、影响范围和验证结果
-- 如果涉及 UI，请附截图或录屏
-- 如果涉及接口或行为变化，请补充文档
+- Xóa tiêu đề，Có thể giải thích mục tiêu của sự thay đổi
+- Mô tả có chứa những thay đổi、Phạm vi tác động và kết quả xác minh
+- nếu nó liên quan đến UI，Vui lòng đính kèm ảnh chụp màn hình hoặc bản ghi màn hình
+- Nếu nó liên quan đến thay đổi giao diện hoặc hành vi，Vui lòng thêm tài liệu
 
-## 提交信息建议
+## Gửi thông tin gợi ý
 
-推荐使用以下前缀：
+Nên sử dụng các tiền tố sau：
 
 - `feat`
 - `fix`
@@ -87,8 +87,8 @@ docker compose exec api uv run pytest
 - `test`
 - `chore`
 
-## 问题反馈
+## Phản hồi vấn đề
 
-- Bug 反馈/功能讨论：<https://github.com/xerrors/Yuxi/issues>
+- Bug phản hồi/Thảo luận chức năng：<https://github.com/xerrors/Yuxi/issues>
 
-感谢你的贡献 ❤️。
+cảm ơn vì sự đóng góp của bạn ❤️。

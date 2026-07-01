@@ -6,7 +6,7 @@
     <div class="detail-top-bar">
       <button class="detail-back-btn" @click="goBack">
         <ArrowLeft :size="16" />
-        <span>返回</span>
+        <span>Trở lại</span>
       </button>
       <div class="detail-title-area">
         <span class="detail-icon">{{ server?.icon || '🔌' }}</span>
@@ -24,7 +24,7 @@
             class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
           >
             <Zap :size="14" v-if="!testLoading" />
-            <span>测试</span>
+            <span>kiểm tra</span>
           </button>
           <button
             type="button"
@@ -33,7 +33,7 @@
             class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
           >
             <Pencil :size="14" />
-            <span>编辑</span>
+            <span>Chỉnh sửa</span>
           </button>
           <button
             type="button"
@@ -60,34 +60,34 @@
           <a-tabs v-model:activeKey="detailTab" class="detail-tabs">
             <a-tab-pane key="general">
               <template #tab>
-                <span class="tab-title"><Settings2 :size="14" />信息</span>
+                <span class="tab-title"><Settings2 :size="14" />thông tin</span>
               </template>
               <div class="tab-content">
                 <div v-if="isEditing" class="edit-panel">
                   <div class="edit-panel-header">
                     <div>
-                      <h3>编辑 MCP</h3>
-                      <p>修改后保存会立即更新当前 MCP 配置。</p>
+                      <h3>Chỉnh sửa MCP</h3>
+                      <p>Sau khi sửa đổi, lưu sẽ ngay lập tức cập nhật hiện tại MCP Cấu hình。</p>
                     </div>
                   </div>
 
                   <a-form layout="vertical" class="extension-form inline-edit-form">
                     <section class="form-section">
                       <div class="form-section-title">
-                        <span>基础信息</span>
-                        <small>定义 MCP 的名称、描述与展示方式。</small>
+                        <span>Thông tin cơ bản</span>
+                        <small>độ nét MCP tên、Mô tả và trình bày。</small>
                       </div>
                       <div class="form-grid form-grid-three">
-                        <a-form-item label="MCP 标识" required class="form-item">
+                        <a-form-item label="MCP biểu tượng" required class="form-item">
                           <a-input v-model:value="editForm.slug" disabled />
                         </a-form-item>
-                        <a-form-item label="MCP 名称" required class="form-item">
+                        <a-form-item label="MCP Tên" required class="form-item">
                           <a-input
                             v-model:value="editForm.name"
-                            placeholder="请输入 MCP 展示名称"
+                            placeholder="Vui lòng nhập MCP tên hiển thị"
                           />
                         </a-form-item>
-                        <a-form-item label="传输类型" required class="form-item">
+                        <a-form-item label="Kiểu truyền động" required class="form-item">
                           <a-select v-model:value="editForm.transport">
                             <a-select-option value="streamable_http"
                               >streamable_http</a-select-option
@@ -96,18 +96,18 @@
                             <a-select-option value="stdio">stdio</a-select-option>
                           </a-select>
                         </a-form-item>
-                        <a-form-item label="图标" class="form-item">
+                        <a-form-item label="biểu tượng" class="form-item">
                           <a-input
                             v-model:value="editForm.icon"
-                            placeholder="输入 emoji，如 🧠"
+                            placeholder="đầu vào emoji，Chẳng hạn như 🧠"
                             :maxlength="2"
                           />
                         </a-form-item>
                       </div>
-                      <a-form-item label="描述" class="form-item form-item-full">
+                      <a-form-item label="Mô tả" class="form-item form-item-full">
                         <a-textarea
                           v-model:value="editForm.description"
-                          placeholder="请输入 MCP 描述"
+                          placeholder="Vui lòng nhập MCP Mô tả"
                           :rows="2"
                         />
                       </a-form-item>
@@ -115,8 +115,8 @@
 
                     <section class="form-section">
                       <div class="form-section-title">
-                        <span>连接配置</span>
-                        <small>配置当前传输方式需要的连接参数。</small>
+                        <span>Cấu hình kết nối</span>
+                        <small>Định cấu hình các tham số kết nối cần thiết cho phương thức truyền hiện tại。</small>
                       </div>
                       <template
                         v-if="
@@ -130,7 +130,7 @@
                           />
                         </a-form-item>
                         <div class="form-grid">
-                          <a-form-item label="HTTP 超时（秒）" class="form-item">
+                          <a-form-item label="HTTP hết thời gian chờ（giây）" class="form-item">
                             <a-input-number
                               v-model:value="editForm.timeout"
                               :min="1"
@@ -138,7 +138,7 @@
                               style="width: 100%"
                             />
                           </a-form-item>
-                          <a-form-item label="SSE 读取超时（秒）" class="form-item">
+                          <a-form-item label="SSE Đọc thời gian chờ（giây）" class="form-item">
                             <a-input-number
                               v-model:value="editForm.sse_read_timeout"
                               :min="1"
@@ -149,18 +149,18 @@
                         </div>
                       </template>
                       <template v-if="isStdioTransport">
-                        <a-form-item label="命令" required class="form-item form-item-full">
+                        <a-form-item label="lệnh" required class="form-item form-item-full">
                           <a-input
                             v-model:value="editForm.command"
-                            placeholder="例如：npx 或 /path/to/server"
+                            placeholder="Ví dụ：npx hoặc /path/to/server"
                           />
                         </a-form-item>
                       </template>
-                      <a-form-item label="标签" class="form-item form-item-full">
+                      <a-form-item label="nhãn" class="form-item form-item-full">
                         <a-select
                           v-model:value="editForm.tags"
                           mode="tags"
-                          placeholder="输入标签后回车添加"
+                          placeholder="Nhập tag rồi nhấn Enter để thêm"
                           style="width: 100%"
                         />
                       </a-form-item>
@@ -168,36 +168,36 @@
 
                     <section class="form-section">
                       <div class="form-section-title">
-                        <span>高级配置</span>
-                        <small>请求头、启动参数和环境变量会直接影响 MCP 运行。</small>
+                        <span>Cấu hình nâng cao</span>
+                        <small>Tiêu đề yêu cầu、Các thông số khởi động và biến môi trường sẽ ảnh hưởng trực tiếp MCP chạy。</small>
                       </div>
                       <template
                         v-if="
                           editForm.transport === 'streamable_http' || editForm.transport === 'sse'
                         "
                       >
-                        <a-form-item label="HTTP 请求头" class="form-item form-item-full">
+                        <a-form-item label="HTTP Tiêu đề yêu cầu" class="form-item form-item-full">
                           <a-textarea
                             v-model:value="editForm.headersText"
-                            placeholder='JSON 格式，如：{"Authorization": "Bearer xxx"}'
+                            placeholder='JSON định dạng，Chẳng hạn như：{"Authorization": "Bearer xxx"}'
                             :rows="4"
                             class="config-textarea"
                           />
                           <div class="form-helper">
-                            请输入合法 JSON 对象，留空表示不发送额外请求头。
+                            Vui lòng nhập hợp pháp JSON vật thể，Để trống để không gửi tiêu đề yêu cầu bổ sung。
                           </div>
                         </a-form-item>
                       </template>
                       <template v-if="isStdioTransport">
-                        <a-form-item label="参数" class="form-item form-item-full">
+                        <a-form-item label="thông số" class="form-item form-item-full">
                           <a-select
                             v-model:value="editForm.args"
                             mode="tags"
-                            placeholder="输入参数后回车添加，如：-m"
+                            placeholder="Nhập các thông số rồi nhấn Enter để thêm，Chẳng hạn như：-m"
                             style="width: 100%"
                           />
                         </a-form-item>
-                        <a-form-item label="环境变量" class="form-item form-item-full">
+                        <a-form-item label="biến môi trường" class="form-item form-item-full">
                           <div class="env-editor-shell">
                             <McpEnvEditor v-model="editForm.env" />
                           </div>
@@ -209,7 +209,7 @@
                   <div class="edit-panel-actions">
                     <a-button @click="cancelEdit" :disabled="editLoading" class="lucide-icon-btn">
                       <template #icon><X :size="14" /></template>
-                      取消
+                      Hủy bỏ
                     </a-button>
                     <a-button
                       type="primary"
@@ -218,18 +218,18 @@
                       class="lucide-icon-btn"
                     >
                       <template #icon><Save :size="14" /></template>
-                      保存
+                      lưu lại
                     </a-button>
                   </div>
                 </div>
 
                 <div v-else class="info-grid">
                   <div class="info-item" v-if="server.description">
-                    <label>描述</label>
+                    <label>Mô tả</label>
                     <span>{{ server.description }}</span>
                   </div>
                   <div class="info-item">
-                    <label>传输类型</label>
+                    <label>Kiểu truyền động</label>
                     <span>
                       <a-tag :color="getTransportColor(server.transport)">{{
                         server.transport
@@ -240,7 +240,7 @@
                     class="info-item"
                     v-if="Array.isArray(server.tags) && server.tags.length > 0"
                   >
-                    <label>标签</label>
+                    <label>nhãn</label>
                     <span>
                       <a-tag v-for="tag in server.tags" :key="tag">{{ tag }}</a-tag>
                     </span>
@@ -256,25 +256,25 @@
                       class="info-item"
                       v-if="server.headers && Object.keys(server.headers).length > 0"
                     >
-                      <label>请求头</label>
+                      <label>Tiêu đề yêu cầu</label>
                       <pre class="code-pre">{{ JSON.stringify(server.headers, null, 2) }}</pre>
                     </div>
                     <div class="info-item" v-if="server.timeout">
-                      <label>HTTP 超时</label>
-                      <span>{{ server.timeout }} 秒</span>
+                      <label>HTTP hết thời gian chờ</label>
+                      <span>{{ server.timeout }} giây</span>
                     </div>
                     <div class="info-item" v-if="server.sse_read_timeout">
-                      <label>SSE 读取超时</label>
-                      <span>{{ server.sse_read_timeout }} 秒</span>
+                      <label>SSE Đọc thời gian chờ</label>
+                      <span>{{ server.sse_read_timeout }} giây</span>
                     </div>
                   </template>
                   <template v-if="server.transport === 'stdio'">
                     <div class="info-item" v-if="server.command">
-                      <label>命令</label>
+                      <label>lệnh</label>
                       <span class="code-inline">{{ server.command }}</span>
                     </div>
                     <div class="info-item" v-if="server.args && server.args.length > 0">
-                      <label>参数</label>
+                      <label>thông số</label>
                       <span>
                         <a-tag v-for="(arg, index) in server.args" :key="index" size="small">{{
                           arg
@@ -282,20 +282,20 @@
                       </span>
                     </div>
                     <div class="info-item" v-if="server.env && Object.keys(server.env).length > 0">
-                      <label>环境变量</label>
+                      <label>biến môi trường</label>
                       <pre class="code-pre">{{ JSON.stringify(server.env, null, 2) }}</pre>
                     </div>
                   </template>
                   <div class="info-item">
-                    <label>创建时间</label>
+                    <label>thời gian sáng tạo</label>
                     <span>{{ formatTime(server.created_at) }}</span>
                   </div>
                   <div class="info-item">
-                    <label>更新时间</label>
+                    <label>Thời gian cập nhật</label>
                     <span>{{ formatTime(server.updated_at) }}</span>
                   </div>
                   <div class="info-item">
-                    <label>创建人</label>
+                    <label>Người sáng tạo</label>
                     <span>{{ server.created_by }}</span>
                   </div>
                 </div>
@@ -304,24 +304,24 @@
 
             <a-tab-pane key="tools">
               <template #tab>
-                <span class="tab-title"><Wrench :size="14" />工具 ({{ tools.length }})</span>
+                <span class="tab-title"><Wrench :size="14" />Công cụ ({{ tools.length }})</span>
               </template>
               <div class="tab-content tools-tab">
                 <div class="tools-toolbar">
                   <a-input-search
                     v-model:value="toolSearchText"
-                    placeholder="搜索工具..."
+                    placeholder="Công cụ tìm kiếm..."
                     style="width: 200px"
                     allowClear
                   />
                   <a-button @click="fetchTools" :loading="toolsLoading" class="lucide-icon-btn">
                     <RotateCw :size="14" />
-                    <span>刷新</span>
+                    <span>Làm mới</span>
                   </a-button>
                 </div>
                 <a-spin :spinning="toolsLoading">
                   <div v-if="filteredTools.length === 0" class="empty-tools">
-                    <a-empty :description="toolsError || '暂无工具'" />
+                    <a-empty :description="toolsError || 'Chưa có công cụ nào'" />
                   </div>
                   <div v-else class="tools-list">
                     <div
@@ -344,7 +344,7 @@
                             :loading="toggleToolLoading === tool.name"
                             size="small"
                           />
-                          <a-tooltip title="复制工具名称">
+                          <a-tooltip title="Sao chép tên công cụ">
                             <a-button
                               type="text"
                               size="small"
@@ -363,7 +363,7 @@
                         v-if="tool.parameters && Object.keys(tool.parameters).length > 0"
                         ghost
                       >
-                        <a-collapse-panel key="params" header="参数">
+                        <a-collapse-panel key="params" header="thông số">
                           <div class="params-list">
                             <div
                               v-for="(param, paramName) in tool.parameters"
@@ -375,7 +375,7 @@
                                 <span
                                   class="param-required"
                                   v-if="tool.required?.includes(paramName)"
-                                  >必填</span
+                                  >Bắt buộc</span
                                 >
                                 <span class="param-type">{{ param.type || 'any' }}</span>
                               </div>
@@ -394,7 +394,7 @@
           </a-tabs>
         </div>
         <div v-else-if="!loading" class="detail-empty">
-          <a-empty description="未找到 MCP 服务器" />
+          <a-empty description="không tìm thấy MCP máy chủ" />
         </div>
       </a-spin>
     </div>
@@ -458,8 +458,8 @@ const editForm = reactive({
 })
 
 const actionLabel = computed(() => {
-  if (server.value?.enabled === false) return '添加'
-  return server.value?.created_by === 'system' ? '移除' : '删除'
+  if (server.value?.enabled === false) return 'thêm'
+  return server.value?.created_by === 'system' ? 'Xóa' : 'Xóa'
 })
 
 const filteredTools = computed(() => {
@@ -526,7 +526,7 @@ const buildEditPayload = () => {
     try {
       headers = JSON.parse(editForm.headersText)
     } catch {
-      message.error('请求头 JSON 格式错误')
+      message.error('Tiêu đề yêu cầu JSON Lỗi định dạng')
       return null
     }
   }
@@ -549,19 +549,19 @@ const buildEditPayload = () => {
 
 const validateEditPayload = (data) => {
   if (!data.name?.trim()) {
-    message.error('MCP 名称不能为空')
+    message.error('MCP Tên không thể trống')
     return false
   }
   if (!data.transport) {
-    message.error('请选择传输类型')
+    message.error('Vui lòng chọn loại chuyển khoản')
     return false
   }
   if (['sse', 'streamable_http'].includes(data.transport) && !data.url?.trim()) {
-    message.error('HTTP 类型必须填写 MCP URL')
+    message.error('HTTP Loại là bắt buộc MCP URL')
     return false
   }
   if (data.transport === 'stdio' && !data.command?.trim()) {
-    message.error('StdIO 类型必须填写命令')
+    message.error('StdIO Loại phải được điền vào lệnh')
     return false
   }
   return true
@@ -576,14 +576,14 @@ const handleSaveEdit = async () => {
     editLoading.value = true
     const result = await mcpApi.updateMcpServer(server.value.slug, data)
     if (result.success) {
-      message.success('MCP 更新成功')
+      message.success('MCP Cập nhật thành công')
       isEditing.value = false
       await fetchServer()
     } else {
-      message.error(result.message || '更新失败')
+      message.error(result.message || 'Cập nhật không thành công')
     }
   } catch (err) {
-    message.error(err.message || '更新失败')
+    message.error(err.message || 'Cập nhật không thành công')
   } finally {
     editLoading.value = false
   }
@@ -596,16 +596,16 @@ const fetchServer = async () => {
     if (result.success) {
       if (result.data?.enabled === false) {
         server.value = null
-        message.info('请先添加 MCP 后再查看详情')
+        message.info('Vui lòng thêm trước MCP Kiểm tra chi tiết sau')
         router.replace({ path: '/extensions', query: { tab: 'mcp' } })
         return
       }
       server.value = result.data
     } else {
-      message.error(result.message || '获取 MCP 详情失败')
+      message.error(result.message || 'Nhận MCP Chi tiết không thành công')
     }
   } catch (err) {
-    message.error(err.message || '获取 MCP 详情失败')
+    message.error(err.message || 'Nhận MCP Chi tiết không thành công')
   } finally {
     loading.value = false
   }
@@ -620,11 +620,11 @@ const fetchTools = async () => {
     if (result.success) {
       tools.value = result.data || []
     } else {
-      toolsError.value = result.message || '获取工具列表失败'
+      toolsError.value = result.message || 'Không lấy được danh sách công cụ'
       tools.value = []
     }
   } catch (err) {
-    toolsError.value = err.message || '获取工具列表失败'
+    toolsError.value = err.message || 'Không lấy được danh sách công cụ'
     tools.value = []
   } finally {
     toolsLoading.value = false
@@ -641,10 +641,10 @@ const handleToggleTool = async (tool) => {
       const targetTool = tools.value.find((t) => t.name === tool.name)
       if (targetTool) targetTool.enabled = result.enabled
     } else {
-      message.error(result.message || '操作失败')
+      message.error(result.message || 'Thao tác không thành công')
     }
   } catch (err) {
-    message.error(err.message || '操作失败')
+    message.error(err.message || 'Thao tác không thành công')
   } finally {
     toggleToolLoading.value = null
   }
@@ -653,9 +653,9 @@ const handleToggleTool = async (tool) => {
 const copyToolName = async (toolName) => {
   try {
     await navigator.clipboard.writeText(toolName)
-    message.success('已复制到剪贴板')
+    message.success('Đã sao chép vào bảng nhớ tạm')
   } catch {
-    message.error('复制失败')
+    message.error('Sao chép không thành công')
   }
 }
 
@@ -667,10 +667,10 @@ const handleTestServer = async () => {
     if (result.success) {
       message.success(result.message)
     } else {
-      message.warning(result.message || '连接失败')
+      message.warning(result.message || 'Kết nối không thành công')
     }
   } catch (err) {
-    message.error(err.message || '测试失败')
+    message.error(err.message || 'thử nghiệm thất bại')
   } finally {
     testLoading.value = null
   }
@@ -693,34 +693,34 @@ const handleSetServerEnabled = async (srv, enabled) => {
   try {
     const result = await mcpApi.updateMcpServerStatus(srv.slug, enabled)
     if (result.success) {
-      message.success(result.message || `MCP 已${enabled ? '添加' : '移除'}`)
+      message.success(result.message || `MCP Đã rồi${enabled ? 'thêm' : 'Xóa'}`)
       await fetchServer()
     } else {
-      message.error(result.message || '操作失败')
+      message.error(result.message || 'Thao tác không thành công')
     }
   } catch (err) {
-    message.error(err.message || '操作失败')
+    message.error(err.message || 'Thao tác không thành công')
   }
 }
 
 const confirmDeleteServer = (srv) => {
   Modal.confirm({
-    title: '确认删除 MCP',
-    content: `确定要删除 MCP "${srv.name}" 吗？此操作不可撤销。`,
-    okText: '删除',
+    title: 'Xác nhận xóa MCP',
+    content: `Xác nhận xóa MCP "${srv.name}" ?？Hành động này không thể thay đổi được。`,
+    okText: 'Xóa',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy bỏ',
     async onOk() {
       try {
         const result = await mcpApi.deleteMcpServer(srv.slug)
         if (result.success) {
-          message.success('MCP 删除成功')
+          message.success('MCP Xóa thành công')
           router.push({ path: '/extensions', query: { tab: 'mcp' } })
         } else {
-          message.error(result.message || '删除失败')
+          message.error(result.message || 'Xóa không thành công')
         }
       } catch (err) {
-        message.error(err.message || '删除失败')
+        message.error(err.message || 'Xóa không thành công')
       }
     }
   })
@@ -860,7 +860,7 @@ onMounted(() => {
   }
 }
 
-/* 工具列表样式 */
+/* Kiểu danh sách công cụ */
 .tools-tab {
   .tools-toolbar {
     display: flex;

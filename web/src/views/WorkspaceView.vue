@@ -1,9 +1,9 @@
 <template>
   <div class="workspace-view layout-container">
-    <PageHeader title="工作区" :loading="loadingTree || loadingPreview" :show-border="true">
+    <PageHeader title="Không gian làm việc" :loading="loadingTree || loadingPreview" :show-border="true">
       <template #actions>
         <a-button :disabled="activeSourceKey !== 'personal'" @click="openCreateDirectoryModal">
-          新建文件夹
+          Thư mục mới
         </a-button>
         <a-button
           type="primary"
@@ -11,7 +11,7 @@
           :disabled="activeSourceKey !== 'personal'"
           @click="openUploadFilePicker"
         >
-          上传文件
+          Tải lên tệp
         </a-button>
       </template>
     </PageHeader>
@@ -29,7 +29,7 @@
         <button
           type="button"
           class="sidebar-collapse-action"
-          aria-label="收起工作区侧边栏"
+          aria-label="Thu gọn thanh bên không gian làm việc"
           @click="sidebarCollapsed = true"
         >
           <ChevronLeft :size="16" />
@@ -49,7 +49,7 @@
         v-else
         type="button"
         class="sidebar-expand-action"
-        aria-label="展开工作区侧边栏"
+        aria-label="Mở rộng thanh bên không gian làm việc"
         @click="sidebarCollapsed = false"
       >
         <ChevronRight :size="16" />
@@ -71,7 +71,7 @@
             :selection-mode="selectionMode"
             :loading="loadingTree"
             :readonly="isKnowledgeSource"
-            :root-label="selectedDatabase?.name || '工作区'"
+            :root-label="selectedDatabase?.name || 'Không gian làm việc'"
             :breadcrumb-items="isKnowledgeSource ? knowledgeBreadcrumbItems : null"
             :pagination="isKnowledgeSource ? knowledgePagination : null"
             @select-entry="handleSelectEntry"
@@ -87,7 +87,7 @@
             v-if="showInlinePreview"
             class="workspace-preview-resizer"
             role="separator"
-            aria-label="调整预览宽度"
+            aria-label="Điều chỉnh chiều rộng bản xem trước"
             tabindex="0"
             @pointerdown="startPreviewResize"
           ></div>
@@ -105,23 +105,23 @@
 
         <div v-else class="workspace-placeholder">
           <LibraryBig :size="32" />
-          <h2>知识库</h2>
-          <p>请选择一个可访问知识库以浏览文件。</p>
+          <h2>Cơ sở kiến thức</h2>
+          <p>Vui lòng chọn một cơ sở kiến thức có thể truy cập để duyệt tệp.</p>
         </div>
       </main>
     </div>
 
     <a-modal
       v-model:open="createDirectoryModalVisible"
-      title="新建文件夹"
-      okText="创建"
-      cancelText="取消"
+      title="Thư mục mới"
+      okText="Tạo"
+      cancelText="Hủy"
       :confirm-loading="creatingDirectory"
       @ok="createDirectory"
     >
       <a-input
         v-model:value="newDirectoryName"
-        placeholder="请输入文件夹名称"
+        placeholder="Vui lòng nhập tên thư mục"
         :disabled="creatingDirectory"
         @keyup.enter="createDirectory"
       />
@@ -260,8 +260,8 @@ const normalizePreviewFile = async (entry, response) => {
 }
 
 const KNOWLEDGE_PREVIEW_LOAD_MESSAGES = {
-  log: '加载知识库文件预览失败:',
-  resolveUserMessage: () => '加载知识库文件预览失败'
+  log: 'Tải bản xem trước tệp cơ sở kiến thức thất bại:',
+  resolveUserMessage: () => 'Tải bản xem trước tệp cơ sở kiến thức thất bại'
 }
 
 const buildPreviewLoadingFile = (entry, baseFile = entry) => ({
@@ -279,7 +279,7 @@ const buildPreviewErrorFile = (entry, error) => ({
   content: `Error loading file: ${error?.message || 'unknown error'}`,
   supported: false,
   previewType: 'unsupported',
-  message: error?.message || '文件预览失败',
+  message: error?.message || 'Xem trước tệp thất bại',
   previewUrl: ''
 })
 
@@ -338,7 +338,7 @@ const loadWorkspacePreview = async (entry) => {
     const file = await normalizePreviewFile(entry, response)
     applyPreviewFile(requestId, entry, file)
   } catch (error) {
-    showPreviewError(requestId, entry, error, '加载文件预览失败:', '加载文件预览失败')
+    showPreviewError(requestId, entry, error, 'Tải bản xem trước tệp thất bại:', 'Tải bản xem trước tệp thất bại')
   } finally {
     finishPreviewRequest(requestId)
   }
@@ -390,8 +390,8 @@ const loadWorkspaceEntries = async (path = '/') => {
       selectionMode.value = false
     }
   } catch (error) {
-    console.warn('加载工作区目录失败:', error)
-    message.error('加载工作区目录失败')
+    console.warn('Không tải được thư mục không gian làm việc:', error)
+    message.error('Tải danh mục không gian làm việc thất bại')
   } finally {
     loadingTree.value = false
   }
@@ -420,7 +420,7 @@ const loadKnowledgeEntries = async (
     entries.value = response.entries || []
     knowledgeBreadcrumbItems.value = breadcrumbs || [
       {
-        name: database.name || '知识库',
+        name: database.name || 'Cơ sở kiến thức',
         path: '/',
         parentId: null,
         pathPrefix: '',
@@ -441,9 +441,9 @@ const loadKnowledgeEntries = async (
       selectionMode.value = false
     }
   } catch (error) {
-    console.warn('加载知识库目录失败:', error)
+    console.warn('Không tải được thư mục cơ sở kiến thức:', error)
     entries.value = []
-    message.error(error?.message || '加载知识库目录失败')
+    message.error(error?.message || 'Tải danh mục cơ sở kiến thức thất bại')
   } finally {
     loadingTree.value = false
   }
@@ -457,7 +457,7 @@ const loadDatabases = async () => {
       return database?.supports_documents !== false
     })
   } catch (error) {
-    console.warn('加载可访问知识库失败:', error)
+    console.warn('Không thể tải cơ sở kiến thức có thể truy cập được:', error)
     databases.value = []
   } finally {
     loadingDatabases.value = false
@@ -586,7 +586,7 @@ const closePreview = () => {
 
 const handleSavePreviewFile = async (content) => {
   if (selectedEntry.value?.source === 'knowledge') {
-    message.warning('知识库文件为只读，无法保存')
+    message.warning('Tệp cơ sở kiến thức là chỉ đọc, không thể lưu')
     return
   }
   if (!selectedEntry.value?.path || savingPreviewFile.value) return
@@ -602,10 +602,10 @@ const handleSavePreviewFile = async (content) => {
       content
     }
     await loadWorkspaceEntries(currentPath.value)
-    message.success('文件保存成功')
+    message.success('Lưu tệp thành công')
   } catch (error) {
-    console.warn('保存工作区文件失败:', error)
-    message.error(error?.message || '文件保存失败')
+    console.warn('Không lưu được tệp không gian làm việc:', error)
+    message.error(error?.message || 'Lưu tệp thất bại')
   } finally {
     savingPreviewFile.value = false
   }
@@ -621,7 +621,7 @@ const createDirectory = async () => {
   if (creatingDirectory.value) return
   const directoryName = newDirectoryName.value.trim()
   if (!directoryName) {
-    message.warning('请输入文件夹名')
+    message.warning('Vui lòng nhập tên thư mục')
     return
   }
 
@@ -631,10 +631,10 @@ const createDirectory = async () => {
     await loadWorkspaceEntries(currentPath.value)
     createDirectoryModalVisible.value = false
     newDirectoryName.value = ''
-    message.success('文件夹创建成功')
+    message.success('Tạo thư mục thành công')
   } catch (error) {
-    console.warn('创建文件夹失败:', error)
-    message.error(error?.message || '创建文件夹失败')
+    console.warn('Không tạo được thư mục:', error)
+    message.error(error?.message || 'Tạo thư mục thất bại')
   } finally {
     creatingDirectory.value = false
   }
@@ -652,7 +652,7 @@ const handleUploadInputChange = async (event) => {
   const files = Array.from(event.target?.files || [])
   if (!files.length || uploadingFile.value) return
   if (files.length > MAX_WORKSPACE_UPLOAD_FILES) {
-    message.warning(`一次最多上传 ${MAX_WORKSPACE_UPLOAD_FILES} 个文件`)
+    message.warning(`Tải lên tối đa ${MAX_WORKSPACE_UPLOAD_FILES} tệp mỗi lần`)
     event.target.value = ''
     return
   }
@@ -661,10 +661,10 @@ const handleUploadInputChange = async (event) => {
   try {
     await uploadWorkspaceFiles(currentPath.value, files)
     await loadWorkspaceEntries(currentPath.value)
-    message.success(`${files.length} 个文件上传成功`)
+    message.success(`Tải lên thành công ${files.length} tệp`)
   } catch (error) {
-    console.warn('上传文件失败:', error)
-    message.error(error?.message || '上传文件失败')
+    console.warn('Tải tệp lên không thành công:', error)
+    message.error(error?.message || 'Tải lên tệp thất bại')
   } finally {
     uploadingFile.value = false
     event.target.value = ''
@@ -689,17 +689,17 @@ const confirmDeleteEntries = (targetEntries) => {
   const firstEntry = validEntries[0]
   Modal.confirm({
     title: isBatch
-      ? `确认删除选中的 ${validEntries.length} 项？`
+      ? `Xác nhận xóa ${validEntries.length} mục đã chọn?`
       : firstEntry.is_dir
-        ? `确认删除文件夹「${firstEntry.name}」？`
-        : `确认删除文件「${firstEntry.name}」？`,
+        ? `Xác nhận xóa thư mục「${firstEntry.name}」?`
+        : `Xác nhận xóa tệp「${firstEntry.name}」?`,
     content:
       isBatch || firstEntry.is_dir
-        ? '将删除文件夹及其所有内容，删除后不可恢复。'
-        : '删除后不可恢复。',
-    okText: '删除',
+        ? 'Thư mục và toàn bộ nội dung bên trong sẽ bị xóa và không thể khôi phục.'
+        : 'Không thể khôi phục sau khi xóa.',
+    okText: 'Xóa',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy',
     onOk: () => deleteEntries(validEntries)
   })
 }
@@ -717,10 +717,10 @@ const deleteEntries = async (targetEntries) => {
     }
     clearWorkspaceSelection()
     await loadWorkspaceEntries(currentPath.value)
-    message.success(paths.length > 1 ? '选中项删除成功' : '删除成功')
+    message.success(paths.length > 1 ? 'Xóa các mục đã chọn thành công' : 'Xóa thành công')
   } catch (error) {
-    console.warn('删除工作区文件失败:', error)
-    message.error(error?.message || '删除失败')
+    console.warn('Không xóa được tệp không gian làm việc:', error)
+    message.error(error?.message || 'Xóa thất bại')
     await loadWorkspaceEntries(currentPath.value)
   } finally {
     deletingPaths.value = []
@@ -735,7 +735,7 @@ const parseDownloadFilename = (contentDisposition) => {
     try {
       return decodeURIComponent(utf8Match[1])
     } catch (error) {
-      console.warn('解析 UTF-8 文件名失败:', error)
+      console.warn('phân tích cú pháp UTF-8 Tên tệp không thành công:', error)
     }
   }
 
@@ -768,8 +768,8 @@ const downloadEntry = async (entry) => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
   } catch (error) {
-    console.warn('下载文件失败:', error)
-    message.error(error?.message || '下载文件失败')
+    console.warn('Tải xuống tệp không thành công:', error)
+    message.error(error?.message || 'Tải xuống tệp không thành công')
   }
 }
 

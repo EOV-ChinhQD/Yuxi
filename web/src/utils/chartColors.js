@@ -1,7 +1,7 @@
 /**
  * Chart Color Palette Utility
- * 统一的图表调色盘工具函数
- * 从 CSS 变量中动态获取颜色，确保与主题保持一致
+ * Chức năng công cụ bảng biểu đồ thống nhất
+ * từ CSS Tự động lấy màu từ biến，Đảm bảo phù hợp với chủ đề
  */
 
 let colorPalette = []
@@ -9,7 +9,7 @@ let isInitialized = false
 
 /**
  * Build color palette from CSS variables in base.css
- * 从 base.css 中的 CSS 变量构建调色盘
+ * từ base.css trong CSS Bảng màu xây dựng có thể thay đổi
  */
 const buildColorPalette = () => {
   try {
@@ -75,7 +75,7 @@ const buildColorPalette = () => {
 
 /**
  * Get color by index from the palette
- * 根据索引从调色盘中获取颜色
+ * Nhận màu từ bảng màu dựa trên chỉ mục
  * @param {number} index - Color index
  * @returns {string} Color value
  */
@@ -88,7 +88,7 @@ export const getColorByIndex = (index) => {
 
 /**
  * Get the entire color palette
- * 获取完整的调色盘
+ * Nhận bảng màu đầy đủ
  * @returns {Array<string>} Color palette array
  */
 export const getColorPalette = () => {
@@ -100,7 +100,7 @@ export const getColorPalette = () => {
 
 /**
  * Truncate legend text for better display
- * 截断图例文本以便更好地显示
+ * Cắt bớt văn bản chú thích để hiển thị tốt hơn
  * @param {string} name - Legend name
  * @param {number} maxLength - Maximum length (default: 20)
  * @returns {string} Truncated name
@@ -112,7 +112,7 @@ export const truncateLegend = (name, maxLength = 20) => {
 
 /**
  * Initialize the color palette (call this when DOM is ready)
- * 初始化调色盘（在 DOM 准备好时调用）
+ * Khởi tạo bảng màu（trong DOM Được gọi khi sẵn sàng）
  */
 export const initColorPalette = () => {
   buildColorPalette()

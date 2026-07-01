@@ -10,12 +10,12 @@
         @click="removeRow(index)"
         :disabled="rows.length === 1"
       >
-        删除
+        Xóa
       </a-button>
     </div>
     <a-button @click="addRow" class="add-env">
       <template #icon><PlusOutlined /></template>
-      添加变量
+      Thêm biến
     </a-button>
   </div>
 </template>
@@ -101,9 +101,9 @@ watch(
   () => props.modelValue,
   (value) => {
     const normalized = normalizeEnvObject(value)
-    // 传入值若只是本组件 emit 出去的回声，则跳过重建 rows。否则 key 为空的行
-    // （刚点击新增的空行、或正在输入 key 但 value 还为空的行）会被
-    // rows -> object -> rows 的往返同步丢弃，导致无法新增环境变量。
+    // Nếu giá trị đến chỉ là thành phần này emit vang vọng ra，sau đó bỏ qua việc xây dựng lại rows。Nếu không key hàng trống
+    // （Chỉ cần nhấp vào hàng trống mới、hoặc gõ key Nhưng value Các hàng vẫn còn trống）sẽ được
+    // rows -> object -> rows đồng bộ hóa chuyến đi khứ hồi bị hủy，Không thêm được biến môi trường。
     if (JSON.stringify(normalized) === JSON.stringify(rowsToObject(rows.value))) {
       return
     }

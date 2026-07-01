@@ -9,7 +9,7 @@
         <template v-if="item">
           <template v-if="type === 'node'">
             <div :class="rowClass(item.data?.label)">
-              <span class="detail-label">名称</span>
+              <span class="detail-label">Tên</span>
               <span class="detail-value">
                 <DetailValue
                   :value="item.data?.label"
@@ -24,7 +24,7 @@
             </div>
             <template v-if="item.data?.original?.labels">
               <div class="detail-row">
-                <span class="detail-label">标签</span>
+                <span class="detail-label">nhãn</span>
                 <span class="detail-value">
                   <a-tag v-for="tag in item.data.original.labels" :key="tag" size="small">{{
                     tag
@@ -47,7 +47,7 @@
           </template>
           <template v-else-if="type === 'edge'">
             <div :class="rowClass(item.data?.label)">
-              <span class="detail-label">类型</span>
+              <span class="detail-label">Loại</span>
               <span class="detail-value">
                 <DetailValue
                   :value="item.data?.label"
@@ -105,7 +105,7 @@ const DetailValue = defineComponent({
                 props.expandedKeys.delete(props.fieldKey)
               }
             },
-            ' 收起'
+            ' đóng'
           )
         ]
       }
@@ -120,7 +120,7 @@ const DetailValue = defineComponent({
               props.expandedKeys.add(props.fieldKey)
             }
           },
-          '展开'
+          'Mở rộng'
         )
       ]
     }
@@ -151,7 +151,7 @@ const rowClass = (value) => {
 }
 
 const title = computed(() => {
-  return props.type === 'node' ? '节点详情' : '关系详情'
+  return props.type === 'node' ? 'Chi tiết nút' : 'Chi tiết mối quan hệ'
 })
 
 const filteredEdgeProperties = computed(() => {

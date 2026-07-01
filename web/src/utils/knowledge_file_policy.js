@@ -4,24 +4,24 @@ export const FILE_ACTIONS = {
 }
 
 const STATUS_VIEW = {
-  uploaded: { label: '待解析', tone: 'status-warning', icon: 'clock' },
-  parsing: { label: '解析中', tone: 'status-info', icon: 'progress' },
-  parsed: { label: '待入库', tone: 'status-primary', icon: 'file' },
-  error_parsing: { label: '重试解析', tone: 'status-error', icon: 'error' },
-  indexing: { label: '入库中', tone: 'status-info', icon: 'progress' },
-  indexed: { label: '已入库', tone: 'status-success', icon: 'success' },
-  error_indexing: { label: '重试入库', tone: 'status-error', icon: 'error' },
-  done: { label: '已入库', tone: 'status-success', icon: 'success' },
-  failed: { label: '入库失败', tone: 'status-error', icon: 'error' },
-  processing: { label: '处理中', tone: 'status-info', icon: 'progress' },
-  waiting: { label: '等待中', tone: 'status-warning', icon: 'clock' }
+  uploaded: { label: 'Để được phân tích cú pháp', tone: 'status-warning', icon: 'clock' },
+  parsing: { label: 'Phân tích cú pháp', tone: 'status-info', icon: 'progress' },
+  parsed: { label: 'Để được dự trữ', tone: 'status-primary', icon: 'file' },
+  error_parsing: { label: 'Thử lại phân tích cú pháp', tone: 'status-error', icon: 'error' },
+  indexing: { label: 'Còn hàng', tone: 'status-info', icon: 'progress' },
+  indexed: { label: 'Đã có hàng', tone: 'status-success', icon: 'success' },
+  error_indexing: { label: 'Thử nhập kho lại', tone: 'status-error', icon: 'error' },
+  done: { label: 'Đã có hàng', tone: 'status-success', icon: 'success' },
+  failed: { label: 'Lưu trữ không thành công', tone: 'status-error', icon: 'error' },
+  processing: { label: 'Đang xử lý', tone: 'status-info', icon: 'progress' },
+  waiting: { label: 'Đang chờ', tone: 'status-warning', icon: 'clock' }
 }
 
 const STATUS_ACTION = {
-  uploaded: { type: FILE_ACTIONS.PARSE, label: '解析文件' },
-  error_parsing: { type: FILE_ACTIONS.PARSE, label: '重试解析' },
-  parsed: { type: FILE_ACTIONS.INDEX, label: '入库' },
-  error_indexing: { type: FILE_ACTIONS.INDEX, label: '重试入库' }
+  uploaded: { type: FILE_ACTIONS.PARSE, label: 'tập tin phân tích' },
+  error_parsing: { type: FILE_ACTIONS.PARSE, label: 'Thử lại phân tích cú pháp' },
+  parsed: { type: FILE_ACTIONS.INDEX, label: 'Kho' },
+  error_indexing: { type: FILE_ACTIONS.INDEX, label: 'Thử nhập kho lại' }
 }
 
 const PARSED_PREVIEW_STATUSES = new Set(['done', 'parsed', 'indexed', 'error_indexing'])
@@ -48,13 +48,13 @@ const STATUS_SORT_ORDER = {
 }
 
 export const FILE_STATUS_FILTER_OPTIONS = [
-  { label: '待解析', value: 'uploaded' },
-  { label: '解析中', value: 'parsing' },
-  { label: '待入库', value: 'parsed' },
-  { label: '重试解析', value: 'error_parsing' },
-  { label: '入库中', value: 'indexing' },
-  { label: '已入库', value: 'indexed' },
-  { label: '重试入库', value: 'error_indexing' }
+  { label: 'Để được phân tích cú pháp', value: 'uploaded' },
+  { label: 'Phân tích cú pháp', value: 'parsing' },
+  { label: 'Để được dự trữ', value: 'parsed' },
+  { label: 'Thử lại phân tích cú pháp', value: 'error_parsing' },
+  { label: 'Còn hàng', value: 'indexing' },
+  { label: 'Đã có hàng', value: 'indexed' },
+  { label: 'Thử nhập kho lại', value: 'error_indexing' }
 ]
 
 export const getFileStatusView = (status) =>

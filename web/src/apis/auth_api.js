@@ -1,5 +1,5 @@
 /**
- * 认证相关 API
+ * Chứng chỉ liên quan API
  */
 
 import { apiAdminGet, apiGet, apiPost } from './base'
@@ -17,35 +17,35 @@ async function parseErrorDetail(response, fallbackMessage) {
 }
 
 /**
- * 获取 OIDC 配置
+ * Nhận OIDC Cấu hình
  * @returns {Promise<{enabled: boolean, provider_name?: string}>}
  */
 async function getOIDCConfig() {
   const response = await fetch('/api/auth/oidc/config')
   if (!response.ok) {
-    throw new Error('获取 OIDC 配置失败')
+    throw new Error('Nhận OIDC Cấu hình không thành công')
   }
   return response.json()
 }
 
 /**
- * 获取 OIDC 登录 URL
- * @param {string} redirectPath - 登录后的重定向路径
+ * Nhận OIDC Đăng nhập URL
+ * @param {string} redirectPath - Đường dẫn chuyển hướng sau khi đăng nhập
  * @returns {Promise<{login_url: string}>}
  */
 async function getOIDCLoginUrl(redirectPath = '/') {
   const params = new URLSearchParams({ redirect_path: redirectPath })
   const response = await fetch(`/api/auth/oidc/login-url?${params}`)
   if (!response.ok) {
-    const detail = await parseErrorDetail(response, '获取 OIDC 登录地址失败')
+    const detail = await parseErrorDetail(response, 'Nhận OIDC Địa chỉ đăng nhập không thành công')
     throw new Error(detail)
   }
   return response.json()
 }
 
 /**
- * 使用一次性 code 交换 OIDC 登录结果
- * @param {string} code - 一次性登录 code
+ * dùng một lần code trao đổi OIDC Kết quả đăng nhập
+ * @param {string} code - Đăng nhập một lần code
  * @returns {Promise<{
  *   access_token: string,
  *   token_type: string,
@@ -73,7 +73,7 @@ async function exchangeOIDCCode(code) {
   })
 
   if (!response.ok) {
-    const detail = await parseErrorDetail(response, 'OIDC 登录失败')
+    const detail = await parseErrorDetail(response, 'OIDC Đăng nhập không thành công')
     throw new Error(detail)
   }
 

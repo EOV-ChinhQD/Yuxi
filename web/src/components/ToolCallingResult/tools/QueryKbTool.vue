@@ -4,7 +4,7 @@
       <div class="sep-header">
         <span class="note">{{ operationLabel }}</span>
         <span class="separator" v-if="resourceLabel">|</span>
-        <span class="description" v-if="resourceLabel">知识库: {{ resourceLabel }}</span>
+        <span class="description" v-if="resourceLabel">cơ sở tri thức: {{ resourceLabel }}</span>
         <span class="separator" v-if="queryText">|</span>
         <span class="description">{{ queryText }}</span>
       </div>
@@ -18,13 +18,13 @@
 
         <div v-if="hasGraphData(parsedResult(resultContent))" class="graph-result-card">
           <div class="graph-summary">
-            图谱检索: 实体 {{ parsedResult(resultContent).entities.length }} 个, 关系
-            {{ parsedResult(resultContent).relationships.length }} 条, 引用
-            {{ parsedResult(resultContent).references.length }} 条
+            Tìm kiếm phổ: thực thể {{ parsedResult(resultContent).entities.length }} một, mối quan hệ
+            {{ parsedResult(resultContent).relationships.length }} Bài viết, Trích dẫn
+            {{ parsedResult(resultContent).references.length }} Bài viết
           </div>
 
           <div v-if="parsedResult(resultContent).entities.length > 0" class="graph-section">
-            <div class="section-title">实体</div>
+            <div class="section-title">thực thể</div>
             <div class="entity-list">
               <div
                 v-for="(entity, index) in parsedResult(resultContent).entities"
@@ -43,7 +43,7 @@
           </div>
 
           <div v-if="parsedResult(resultContent).relationships.length > 0" class="graph-section">
-            <div class="section-title">关系</div>
+            <div class="section-title">mối quan hệ</div>
             <div class="relation-list">
               <div
                 v-for="(relation, index) in parsedResult(resultContent).relationships"
@@ -53,13 +53,13 @@
                 <span class="relation-node">{{ relation?.src_id || '-' }}</span>
                 <span class="relation-arrow">→</span>
                 <span class="relation-node">{{ relation?.tgt_id || '-' }}</span>
-                <span class="relation-keywords">{{ relation?.keywords || '关联' }}</span>
+                <span class="relation-keywords">{{ relation?.keywords || 'hiệp hội' }}</span>
               </div>
             </div>
           </div>
 
           <div v-if="parsedResult(resultContent).references.length > 0" class="graph-section">
-            <div class="section-title">引用</div>
+            <div class="section-title">Trích dẫn</div>
             <div class="reference-list">
               <a
                 v-for="(reference, index) in parsedResult(resultContent).references"
@@ -82,7 +82,7 @@
           "
           class="no-results"
         >
-          未找到相关知识库内容
+          Không tìm thấy nội dung cơ sở kiến thức liên quan
         </div>
       </div>
     </template>
@@ -115,9 +115,9 @@ const args = computed(() => {
   }
 })
 
-const toolName = computed(() => props.toolCall.name || props.toolCall.function?.name || '知识库')
+const toolName = computed(() => props.toolCall.name || props.toolCall.function?.name || 'cơ sở tri thức')
 
-const operationLabel = computed(() => `${toolName.value} 搜索`)
+const operationLabel = computed(() => `${toolName.value} Tìm kiếm`)
 
 const resourceLabel = computed(
   () => args.value.kb_name || databaseStore.getDatabaseNameById(args.value.kb_id)
@@ -180,8 +180,8 @@ const parsedResult = (content) => parseResult(content)
 const hasGraphData = (result) =>
   result.entities.length > 0 || result.relationships.length > 0 || result.references.length > 0
 
-const getEntityName = (entity) => entity?.entity_name || entity?.name || '未命名实体'
-const getEntityType = (entity) => entity?.entity_type || entity?.type || '未分类'
+const getEntityName = (entity) => entity?.entity_name || entity?.name || 'thực thể không tên'
+const getEntityType = (entity) => entity?.entity_type || entity?.type || 'Chưa được phân loại'
 
 const getPreviewText = (text = '', maxLength = 100) => {
   const normalized = String(text)

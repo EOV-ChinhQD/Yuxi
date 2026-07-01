@@ -1,30 +1,30 @@
 <div align="center">
-<h1>语析 Yuxi</h1>
+<h1>Phân tích ngôn ngữ Yuxi</h1>
 
-<p><strong>多租户 Harness + 企业知识库</strong><br/>让企业知识可被智能体检索、推理与交付</p>
+<p><strong>nhiều người thuê nhà Harness + Cơ sở tri thức doanh nghiệp</strong><br/>Làm cho các đại lý có thể truy xuất được kiến thức doanh nghiệp、Lý luận và giao hàng</p>
 
 [![](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=ffffff)](https://github.com/xerrors/Yuxi/blob/main/docker-compose.yml)
 [![](https://img.shields.io/github/issues/xerrors/Yuxi?color=F48D73)](https://github.com/xerrors/Yuxi/issues)
 [![License](https://img.shields.io/github/license/bitcookies/winrar-keygen.svg?logo=github)](https://github.com/xerrors/Yuxi/blob/main/LICENSE)
 [![DeepWiki](https://img.shields.io/badge/DeepWiki-blue.svg)](https://deepwiki.com/xerrors/Yuxi)
-[![Bilibili](https://img.shields.io/badge/知识库演示-00A1D6?logo=bilibili&logoColor=fff)](https://www.bilibili.com/video/BV1erE26iEgv/?share_source=copy_web&vd_source=37b0bdbf95b72ea38b2dc959cfadc4d8)
+[![Bilibili](https://img.shields.io/badge/Bản demo cơ sở kiến thức-00A1D6?logo=bilibili&logoColor=fff)](https://www.bilibili.com/video/BV1erE26iEgv/?share_source=copy_web&vd_source=37b0bdbf95b72ea38b2dc959cfadc4d8)
 
 
 <a href="https://trendshift.io/repositories/24335" target="_blank"><img src="https://trendshift.io/api/badge/repositories/24335" alt="xerrors%2FYuxi | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-[[项目文档]](https://xerrors.github.io/Yuxi) · [[版本特性]](http://xhslink.com/o/5Y6QWnmjF2d) · [[🇬🇧 English README]](README.en.md)
+[[Tài liệu dự án]](https://xerrors.github.io/Yuxi) · [[Đặc điểm phiên bản]](http://xhslink.com/o/5Y6QWnmjF2d) · [[🇬🇧 English README]](README.en.md)
 
 </div>
 
 ![arch](https://xerrors.oss-cn-shanghai.aliyuncs.com/github/arch.png)
 
-## 简介
+## Giới thiệu
 
-语析（Yuxi）是一个基于大模型的智能知识库与知识图谱智能体开发平台。它把 **RAG 检索**、**Milvus 知识库内知识图谱** 与 **LangGraph 多智能体编排** 整合进统一的多租户工作台：管理员配置知识库、模型与权限，用户在类 ChatGPT 的界面中与可挂载 Skills、MCP、子智能体和沙盒工具的智能体对话，并获得带引用来源、知识图谱推理与可交付产物的回答。
+Phân tích ngôn ngữ（Yuxi）Nó là một nền tảng phát triển tác nhân đồ thị tri thức và cơ sở tri thức thông minh dựa trên các mô hình lớn.。nó đặt **RAG Tìm kiếm**、**Milvus Sơ đồ tri thức trong cơ sở tri thức** với **LangGraph Điều phối đa tác nhân** Được tích hợp vào một bàn làm việc nhiều người thuê thống nhất：Cơ sở kiến thức cấu hình quản trị viên、Mô hình và quyền，Người dùng trong lớp ChatGPT Giao diện và có thể gắn kết Skills、MCP、Đối thoại đại lý giữa đại lý phụ và công cụ hộp cát，và lấy nguồn có trích dẫn、Lập luận về biểu đồ tri thức và các câu trả lời về sản phẩm có thể phân phối được。
 
-导航：[项目介绍](https://xerrors.github.io/Yuxi/) ｜ [快速开始](https://xerrors.github.io/Yuxi/intro/quick-start) ｜ [开发路线图](https://xerrors.github.io/Yuxi/develop-guides/roadmap) | [0.7 版本特性](http://xhslink.com/o/5Y6QWnmjF2d)；最新开发动态，详见 [changelog](https://xerrors.github.io/Yuxi/develop-guides/changelog)。
+Điều hướng：[Giới thiệu dự án](https://xerrors.github.io/Yuxi/) ｜ [bắt đầu nhanh](https://xerrors.github.io/Yuxi/intro/quick-start) ｜ [Lộ trình phát triển](https://xerrors.github.io/Yuxi/develop-guides/roadmap) | [0.7 Đặc điểm phiên bản](http://xhslink.com/o/5Y6QWnmjF2d)；Tin tức phát triển mới nhất，Xem chi tiết [changelog](https://xerrors.github.io/Yuxi/develop-guides/changelog)。
 
-🩷 赞助商
+🩷 Nhà tài trợ
 
 <table>
   <tr>
@@ -38,8 +38,8 @@
     </td>
     <td style="padding: 8px 8px 8px 0; vertical-align: middle;">
       <p style="margin: 0 0 4px 0;">
-        感谢 <a href="https://sui-xiang.com/">随想AI网关</a > 对本项目的赞助！
-        随想AI网关 是一家可靠高效的 API 中继服务提供商，提供 Claude、Codex、Gemini 等的中继服务。注重隐私的中转站·无数据倒卖·无模型掺水，隐私，透明，极速售后。新账户注册每日签到就送 0.5 元测试额度，充值额度 1:1，无需订阅，按量付费。
+        Cảm ơn <a href="https://sui-xiang.com/">Những suy nghĩ ngẫu nhiênAIcửa ngõ</a > Tài trợ cho dự án này！
+        Những suy nghĩ ngẫu nhiênAIcửa ngõ Đây là một công ty đáng tin cậy và hiệu quả API Nhà cung cấp dịch vụ chuyển tiếp，cung cấp Claude、Codex、Gemini dịch vụ chuyển tiếp。Một trung tâm chuyển tiếp tập trung vào quyền riêng tư·Không bán lại dữ liệu·Không có mô hình trộn với nước，Quyền riêng tư，Minh bạch，Dịch vụ hậu mãi cực kỳ nhanh chóng。Đăng ký tài khoản mới và nhận quà miễn phí nếu bạn đăng nhập mỗi ngày 0.5 Số tiền kiểm tra meta，Số tiền nạp 1:1，Không cần đăng ký，Thanh toán khi bạn đi。
       </p >
     </td>
   </tr>
@@ -47,20 +47,20 @@
 
 ![image-20260606190609377](https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260606235615139.png)
 
-## 技术栈
+## ngăn xếp công nghệ
 
-| 层 | 技术 |
+| lớp | Công nghệ |
 | --- | --- |
-| 前端 | Vue 3 · Vite · Pinia |
-| 后端 | FastAPI · LangGraph · ARQ (异步 worker) |
-| 存储 | PostgreSQL · Redis · MinIO · Milvus · Neo4j |
-| 文档解析 | MinerU · PaddleX · RapidOCR |
-| 部署 | Docker Compose |
-## 快速开始
+| giao diện người dùng | Vue 3 · Vite · Pinia |
+| phụ trợ | FastAPI · LangGraph · ARQ (không đồng bộ worker) |
+| lưu trữ | PostgreSQL · Redis · MinIO · Milvus · Neo4j |
+| Phân tích tài liệu | MinerU · PaddleX · RapidOCR |
+| triển khai | Docker Compose |
+## bắt đầu nhanh
 
-**前置要求**：已安装 [Docker](https://docs.docker.com/get-docker/) 与 Docker Compose，并准备至少一个兼容 OpenAI 接口的大模型 API。
+**Điều kiện tiên quyết**：Đã cài đặt [Docker](https://docs.docker.com/get-docker/) với Docker Compose，và chuẩn bị ít nhất một cái tương thích OpenAI Mô hình giao diện lớn API。
 
-**1. 克隆代码并初始化**
+**1. Sao chép mã và khởi tạo nó**
 
 ```bash
 git clone --branch v0.7.0 --depth 1 https://github.com/xerrors/Yuxi.git
@@ -73,32 +73,32 @@ cd Yuxi
 .\scripts\init.ps1
 ```
 
-**2. 使用 Docker 启动**
+**2. sử dụng Docker bắt đầu**
 
 ```bash
 docker compose up --build
 ```
 
-**3. 访问平台**
+**3. nền tảng truy cập**
 
-等待启动完成后，浏览器打开 `http://localhost:5173`，使用初始化时生成的管理员账户登录即可。
+Đợi quá trình khởi động hoàn tất，Trình duyệt mở ra `http://localhost:5173`，Chỉ cần đăng nhập bằng tài khoản quản trị viên được tạo trong quá trình khởi tạo.。
 
-> 💡 不需要知识库 / 知识图谱等重依赖时，可使用 `make up-lite` 以 LITE 轻量模式启动，加快冷启动速度。更多部署说明见 [项目文档](https://xerrors.github.io/Yuxi)。
+> 💡 Không cần nền tảng kiến thức / Sơ đồ tri thức và các phụ thuộc nặng nề khác，Có sẵn `make up-lite` để LITE Bắt đầu ở chế độ ánh sáng，Tăng tốc độ khởi động nguội。Để biết thêm hướng dẫn triển khai, hãy xem [Tài liệu dự án](https://xerrors.github.io/Yuxi)。
 
-## 致谢
+## Lời cảm ơn
 
-本项目参考并引用了以下优秀开源项目，在此致以诚挚的感谢：
+Dự án này đề cập đến và trích dẫn các dự án nguồn mở xuất sắc sau đây，Tôi xin gửi lời cảm ơn chân thành：
 
-- [LightRAG](https://github.com/HKUDS/LightRAG) - 早期版本曾参考其图谱构建与检索思路；当前 Yuxi 已实现自研 Milvus 知识库/图谱链路以替换历史集成，降低兼容性问题
-- [DeepAgents](https://github.com/langchain-ai/deepagents) - 直接引入作为深度智能体框架
-- [DeerFlow](https://github.com/bytedance/deer-flow) - 参考了其 Sandbox 智能体架构的实现思路
-- [RAGflow](https://github.com/infiniflow/ragflow) - 参考了其文档 Text Chunking 的分块策略
-- [LangGraph](https://github.com/langchain-ai/langgraph) - 多智能体编排框架，本项目的核心架构基础
-- [QwenPaw](https://github.com/agentscope-ai/QwenPaw) - 参考模型配置与个人文件区域设计
+- [LightRAG](https://github.com/HKUDS/LightRAG) - Các phiên bản trước đó đã đề cập đến các ý tưởng xây dựng và truy xuất bản đồ của nó.；hiện tại Yuxi Tự nghiên cứu đã đạt được Milvus cơ sở tri thức/Liên kết đồ thị để thay thế tích hợp lịch sử，Giảm các vấn đề tương thích
+- [DeepAgents](https://github.com/langchain-ai/deepagents) - Được giới thiệu trực tiếp dưới dạng khung tác nhân sâu
+- [DeerFlow](https://github.com/bytedance/deer-flow) - tham khảo nó Sandbox Ý tưởng triển khai kiến trúc Agent thông minh
+- [RAGflow](https://github.com/infiniflow/ragflow) - Đã tham khảo tài liệu của nó Text Chunking chiến lược phân chia
+- [LangGraph](https://github.com/langchain-ai/langgraph) - Khung điều phối đa tác nhân，Nền tảng kiến trúc cốt lõi của dự án này
+- [QwenPaw](https://github.com/agentscope-ai/QwenPaw) - Cấu hình mô hình tham chiếu và thiết kế vùng tệp cá nhân
 
-## 参与贡献
+## Tham gia và đóng góp
 
-感谢所有贡献者的支持！
+Cảm ơn tất cả những người đóng góp đã hỗ trợ！
 
 <a href="https://github.com/xerrors/Yuxi/contributors">
   <img src="https://contrib.rocks/image?repo=xerrors/Yuxi&max=100&columns=10" />
@@ -109,14 +109,14 @@ docker compose up --build
 
 [![Star History Chart](https://api.star-history.com/svg?repos=xerrors/Yuxi)](https://star-history.com/#xerrors/Yuxi)
 
-## 📄 许可证
+## 📄 giấy phép
 
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+Dự án này sử dụng MIT giấy phép - Xem [LICENSE](LICENSE) Tài liệu để biết chi tiết。
 
 ---
 
 <div align="center">
 
-**如果这个项目对您有帮助，请不要忘记给我们一个 ⭐️**
+**Nếu dự án này hữu ích cho bạn，Xin đừng quên cung cấp cho chúng tôi một ⭐️**
 
 </div>

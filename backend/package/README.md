@@ -1,5 +1,5 @@
 # yuxi
 
-Yuxi 核心后端 Python 包。
+Yuxi phụ trợ cốt lõi Python gói。
 
-该目录用于将 `yuxi` 作为本地可构建、可安装的 Python package 提供给 `backend` 项目使用。
+Thư mục này được sử dụng để `yuxi` Có thể xây dựng như một địa phương、có thể cài đặt được Python package cung cấp cho `backend` sử dụng dự án。

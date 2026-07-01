@@ -8,12 +8,12 @@
         @click="$emit('select-personal')"
       >
         <FileTypeIcon is-dir folder-variant="personal" :size="18" />
-        <span>个人工作区</span>
+        <span>không gian làm việc cá nhân</span>
       </button>
     </section>
 
     <section class="sidebar-section">
-      <div class="section-title">快速访问</div>
+      <div class="section-title">truy cập nhanh</div>
       <button
         type="button"
         class="workspace-nav-item secondary"
@@ -37,7 +37,7 @@
     </section>
 
     <section v-if="myDatabases.length" class="sidebar-section">
-      <div class="section-title">我的知识库</div>
+      <div class="section-title">Cơ sở kiến thức của tôi</div>
       <button
         v-for="database in myDatabases"
         :key="database.kb_id || database.id || database.name"
@@ -52,7 +52,7 @@
     </section>
 
     <section v-if="sharedDatabases.length" class="sidebar-section">
-      <div class="section-title">共享知识库</div>
+      <div class="section-title">cơ sở tri thức được chia sẻ</div>
       <button
         v-for="database in sharedDatabases"
         :key="database.kb_id || database.id || database.name"
@@ -67,10 +67,10 @@
     </section>
 
     <section v-if="loadingDatabases" class="sidebar-section">
-      <div class="sidebar-muted">正在加载知识库...</div>
+      <div class="sidebar-muted">Đang tải cơ sở kiến thức...</div>
     </section>
     <section v-else-if="!databases.length" class="sidebar-section">
-      <div class="sidebar-muted">暂无可访问知识库</div>
+      <div class="sidebar-muted">Chưa có quyền truy cập vào cơ sở kiến thức</div>
     </section>
   </aside>
 </template>

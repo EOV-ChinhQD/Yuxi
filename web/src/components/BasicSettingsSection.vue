@@ -1,17 +1,17 @@
 <template>
   <div class="basic-settings-section">
     <template v-if="userStore.isAdmin">
-      <div class="section-title">默认项配置</div>
+      <div class="section-title">Cấu hình mục mặc định</div>
       <div class="settings-panel">
         <template v-if="userStore.isSuperAdmin">
           <div class="setting-row two-cols">
             <div class="col-item">
-              <div class="setting-label">{{ items?.default_model?.des || '默认对话模型' }}</div>
+              <div class="setting-label">{{ items?.default_model?.des || 'Mô hình hội thoại mặc định' }}</div>
               <div class="setting-content">
                 <ModelSelectorComponent
                   @select-model="handleChatModelSelect"
                   :model_spec="configStore.config?.default_model"
-                  placeholder="请选择默认模型"
+                  placeholder="Vui lòng chọn mẫu mặc định"
                 />
               </div>
             </div>
@@ -21,7 +21,7 @@
                 <ModelSelectorComponent
                   @select-model="handleFastModelSelect"
                   :model_spec="configStore.config?.fast_model"
-                  placeholder="请选择模型"
+                  placeholder="Vui lòng chọn một mẫu"
                 />
               </div>
             </div>
@@ -52,7 +52,7 @@
       </div>
 
       <template v-if="userStore.isSuperAdmin">
-        <div class="section-title">内容审查配置</div>
+        <div class="section-title">Cấu hình kiểm duyệt nội dung</div>
         <div class="section">
           <div class="card">
             <span class="label">{{ items?.enable_content_guard?.des }}</span>
@@ -79,24 +79,24 @@
             <ModelSelectorComponent
               @select-model="handleContentGuardModelSelect"
               :model_spec="configStore.config?.content_guard_llm_model"
-              placeholder="请选择模型"
+              placeholder="Vui lòng chọn một mẫu"
             />
           </div>
         </div>
       </template>
     </template>
 
-    <!-- 服务链接部分 -->
-    <div v-if="userStore.isAdmin" class="section-title">服务链接</div>
+    <!-- Phần liên kết dịch vụ -->
+    <div v-if="userStore.isAdmin" class="section-title">Liên kết dịch vụ</div>
     <div v-if="userStore.isAdmin">
       <p class="section-description">
-        快速访问系统相关的外部服务，需要将 localhost 替换为实际的 IP 地址。
+        Truy cập nhanh vào các dịch vụ bên ngoài liên quan đến hệ thống，cần phải localhost Thay thế bằng thực tế IP địa chỉ。
       </p>
       <div class="services-grid">
         <div class="service-link-card">
           <div class="service-info">
-            <h4>Neo4j 浏览器</h4>
-            <p>图数据库管理界面</p>
+            <h4>Neo4j Trình duyệt</h4>
+            <p>Giao diện quản lý cơ sở dữ liệu đồ thị</p>
           </div>
           <a-button
             type="default"
@@ -104,14 +104,14 @@
             @click="openLink('http://localhost:7474/')"
             :icon="h(Globe, { size: 18 })"
           >
-            访问
+            chuyến thăm
           </a-button>
         </div>
 
         <div class="service-link-card">
           <div class="service-info">
-            <h4>API 接口文档</h4>
-            <p>系统接口文档和调试工具</p>
+            <h4>API Tài liệu giao diện</h4>
+            <p>Tài liệu giao diện hệ thống và công cụ gỡ lỗi</p>
           </div>
           <a-button
             type="default"
@@ -119,14 +119,14 @@
             @click="openLink('http://localhost:5050/docs')"
             :icon="h(Globe, { size: 18 })"
           >
-            访问
+            chuyến thăm
           </a-button>
         </div>
 
         <div class="service-link-card">
           <div class="service-info">
-            <h4>MinIO 对象存储</h4>
-            <p>文件存储管理控制台</p>
+            <h4>MinIO lưu trữ đối tượng</h4>
+            <p>Bảng điều khiển quản lý lưu trữ tập tin</p>
           </div>
           <a-button
             type="default"
@@ -134,14 +134,14 @@
             @click="openLink('http://localhost:9001')"
             :icon="h(Globe, { size: 18 })"
           >
-            访问
+            chuyến thăm
           </a-button>
         </div>
 
         <div class="service-link-card">
           <div class="service-info">
             <h4>Milvus WebUI</h4>
-            <p>向量数据库管理界面</p>
+            <p>Giao diện quản lý cơ sở dữ liệu vector</p>
           </div>
           <a-button
             type="default"
@@ -149,7 +149,7 @@
             @click="openLink('http://localhost:9091/webui/')"
             :icon="h(Globe, { size: 18 })"
           >
-            访问
+            chuyến thăm
           </a-button>
         </div>
       </div>

@@ -227,7 +227,7 @@ def test_kb_upload_allows_concurrency_300(tmp_path):
 def test_kb_upload_rejects_concurrency_above_300(tmp_path):
     (tmp_path / "note.md").write_text("demo", encoding="utf-8")
 
-    with pytest.raises(KbUploadError, match="1 到 300"):
+    with pytest.raises(KbUploadError, match="1 Đến 300"):
         run_kb_upload(
             _store(tmp_path),
             None,
@@ -385,8 +385,8 @@ def test_kb_upload_treats_duplicate_content_as_already_uploaded(tmp_path):
     assert summary.real_upload_failed_count == 0
     assert summary.add_failed_count == 0
     output = buffer.getvalue()
-    assert "已上传过: 1" in output
-    assert "上传失败: 0" in output
+    assert "Đã tải lên: 1" in output
+    assert "Tải lên không thành công: 0" in output
 
 
 def test_kb_upload_skips_existing_relative_path_before_upload(tmp_path):
@@ -511,7 +511,7 @@ def test_upload_files_uses_log_progress_for_non_tty_console(tmp_path):
     assert failed == []
     assert add_response is not None
     assert add_response["added"] == 3
-    assert "处理进度: 3/3" in output
+    assert "Tiến trình xử lý: 3/3" in output
     assert "✓" not in output
 
 
@@ -539,8 +539,8 @@ def test_upload_files_uses_progress_bar_for_tty_console(tmp_path):
     assert failed == []
     assert add_response is not None
     assert add_response["added"] == 3
-    assert "处理进度" in output
-    assert "处理进度:" not in output
+    assert "Tiến trình xử lý" in output
+    assert "Tiến trình xử lý:" not in output
     assert "0.md" not in output
 
 
@@ -594,7 +594,7 @@ def test_unsupported_summary_truncates_extensions_without_per_extension_counts()
         )
     )
 
-    assert summary == "不支持: 550 (.py, .json, .js, .ts, .map, .css, .yaml, .lock, 等 2 类)"
+    assert summary == "Không được hỗ trợ: 550 (.py, .json, .js, .ts, .map, .css, .yaml, .lock, Đợi đã 2 lớp học)"
     assert ".py 100" not in summary
     assert ".json 90" not in summary
 
@@ -611,10 +611,10 @@ def test_selection_summary_shows_compact_selected_type_summary(tmp_path):
     _print_selection_summary(KbUploadSummary(scanned=3, selected=selected, skipped=skipped), console)
 
     output = buffer.getvalue()
-    assert "  扫描文件: 3" in output
-    assert "  将上传: 1 (.md)" in output
-    assert "  未选择: 1" in output
-    assert "  不支持: 1 (.py)" in output
-    assert "文件类型:" not in output
+    assert "  Quét tài liệu: 3" in output
+    assert "  sẽ tải lên: 1 (.md)" in output
+    assert "  Không được chọn: 1" in output
+    assert "  Không được hỗ trợ: 1 (.py)" in output
+    assert "Loại tệp:" not in output
     assert "[x]" not in output
     assert "[ ]" not in output

@@ -40,7 +40,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: '请选择重排序模型'
+    default: 'Vui lòng chọn một mô hình sắp xếp lại'
   },
   size: {
     type: String,
@@ -70,7 +70,7 @@ const handleOpenChange = async (open) => {
       v2Models.value = response.data || {}
     }
   } catch (error) {
-    console.error('获取 rerank 模型失败:', error)
+    console.error('Nhận rerank Mô hình không thành công:', error)
   }
 }
 

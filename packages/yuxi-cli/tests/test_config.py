@@ -47,7 +47,7 @@ def test_remote_url_change_clears_credentials(tmp_path):
 def test_config_escapes_special_chars_in_remote_name(tmp_path):
     store = ConfigStore(tmp_path / "config.toml")
     config = store.load()
-    # remote 名称由用户输入，可能包含引号/反斜杠，需转义后仍能往返解析。
+    # remote Tên do người dùng nhập，Có thể chứa dấu ngoặc kép/dấu gạch chéo ngược，Nó vẫn có thể được phân tích cú pháp qua lại sau khi cần thoát.。
     name = 'pr"o\\d'
     config.set_remote(name, "https://example.com")
     config.use_remote(name)

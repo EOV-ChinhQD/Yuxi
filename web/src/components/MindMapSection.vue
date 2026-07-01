@@ -1,36 +1,36 @@
 <template>
   <div class="mindmap-section">
     <div class="section-content">
-      <!-- 加载状态 -->
+      <!-- Trạng thái tải -->
       <div v-if="loading" class="loading-state">
         <a-spin size="small" />
-        <span>加载中...</span>
+        <span>Đang tải...</span>
       </div>
 
-      <!-- 生成中状态 -->
+      <!-- Đang tạo trạng thái -->
       <div v-else-if="generating" class="generating-state">
         <a-spin size="small" />
-        <span>AI 正在生成思维导图...</span>
+        <span>AI Tạo bản đồ tư duy...</span>
       </div>
 
-      <!-- 空状态 -->
+      <!-- Trạng thái trống -->
       <div v-else-if="!mindmapData" class="empty-state">
         <div class="empty-icon">
           <MapIcon :size="24" />
         </div>
-        <p class="empty-title">暂无思维导图</p>
-        <p class="empty-description">从当前知识库内容生成结构化导图。</p>
+        <p class="empty-title">Chưa có bản đồ tư duy</p>
+        <p class="empty-description">Tạo bản đồ có cấu trúc từ nội dung cơ sở kiến thức hiện tại。</p>
         <button
           type="button"
           class="lucide-icon-btn mindmap-primary-action"
           @click="generateMindmap"
         >
           <Sparkles :size="14" />
-          <span>生成思维导图</span>
+          <span>Tạo bản đồ tư duy</span>
         </button>
       </div>
 
-      <!-- 思维导图显示 -->
+      <!-- hiển thị bản đồ tư duy -->
       <div v-else class="mindmap-container">
         <div class="mindmap-toolbar">
           <a-space :size="8">
@@ -39,10 +39,10 @@
               class="lucide-icon-btn mindmap-toolbar-btn"
               :disabled="generating"
               @click="refreshMindmap"
-              title="重新生成"
+              title="tái sinh"
             >
               <RefreshCw :size="14" :class="{ spin: generating }" />
-              <span class="toolbar-text">重新生成</span>
+              <span class="toolbar-text">tái sinh</span>
             </button>
             <button
               v-if="isIncremental && mindmapData"
@@ -50,10 +50,10 @@
               class="lucide-icon-btn mindmap-toolbar-btn mindmap-toolbar-btn--accent"
               :disabled="generating"
               @click="incrementalUpdate"
-              title="增量更新"
+              title="cập nhật gia tăng"
             >
               <Plus :size="14" />
-              <span class="toolbar-text">增量更新</span>
+              <span class="toolbar-text">cập nhật gia tăng</span>
               <span v-if="mindmapDiff?.added_files?.length" class="mindmap-badge">
                 {{ mindmapDiff.added_files.length }}
               </span>
@@ -62,10 +62,10 @@
               type="button"
               class="lucide-icon-btn mindmap-toolbar-btn"
               @click="fitView"
-              title="适应视图"
+              title="Thích ứng với chế độ xem"
             >
               <Maximize2 :size="14" />
-              <span class="toolbar-text">适应视图</span>
+              <span class="toolbar-text">Thích ứng với chế độ xem</span>
             </button>
           </a-space>
         </div>
@@ -93,7 +93,7 @@ const props = defineProps({
 })
 
 // ============================================================================
-// 状态管理
+// Quản lý trạng thái
 // ============================================================================
 
 const loading = ref(false)
@@ -126,11 +126,11 @@ const useSvgTextFallback = (() => {
 })()
 
 // ============================================================================
-// 方法
+// phương pháp
 // ============================================================================
 
 /**
- * 加载思维导图
+ * Tải bản đồ tư duy
  */
 const loadMindmap = async () => {
   if (!props.kbId) return
@@ -150,7 +150,7 @@ const loadMindmap = async () => {
     if (mindmap) {
       await nextTick()
 
-      // 延迟渲染，确保DOM完全更新
+      // Hiển thị bị trì hoãn，đảm bảoDOMcập nhật đầy đủ
       setTimeout(() => {
         renderMindmap(mindmap)
       }, 100)
@@ -158,17 +158,17 @@ const loadMindmap = async () => {
 
     await checkMindmapDiff()
   } catch (error) {
-    // 如果是404错误，说明还没有生成，静默处理
+    // nếu có404Lỗi，Mô tả chưa được tạo，Xử lý im lặng
     if (
       error?.message?.includes('404') ||
-      error?.message?.includes('不存在') ||
-      error?.message?.includes('还没有生成')
+      error?.message?.includes('không tồn tại') ||
+      error?.message?.includes('Chưa được tạo')
     ) {
       mindmapData.value = null
     } else {
-      console.error('加载思维导图失败:', error)
+      console.error('Không tải được bản đồ tư duy:', error)
       const errorMsg = error?.message || String(error)
-      message.error('加载思维导图失败: ' + errorMsg)
+      message.error('Không tải được bản đồ tư duy: ' + errorMsg)
     }
   } finally {
     loading.value = false
@@ -176,7 +176,7 @@ const loadMindmap = async () => {
 }
 
 /**
- * 生成思维导图
+ * Tạo bản đồ tư duy
  */
 const generateMindmap = async () => {
   if (!props.kbId) return
@@ -186,40 +186,40 @@ const generateMindmap = async () => {
 
     const response = await mindmapApi.generateMindmap(
       props.kbId,
-      [], // 使用所有文件
-      '' // 无自定义提示
+      [], // sử dụng tất cả các tập tin
+      '' // Không có lời nhắc tùy chỉnh
     )
 
     mindmapData.value = response.mindmap
 
-    // 等待DOM更新
+    // chờ đãDOMcập nhật
     await nextTick()
 
-    // 再延迟一点，确保SVG元素完全渲染
+    // trì hoãn lâu hơn một chút，đảm bảoSVGPhần tử được hiển thị đầy đủ
     setTimeout(() => {
       renderMindmap(response.mindmap)
-      message.success('思维导图生成成功！')
+      message.success('Bản đồ tư duy được tạo thành công！')
     }, 100)
 
     await checkMindmapDiff()
   } catch (error) {
-    console.error('生成思维导图失败:', error)
+    console.error('Không tạo được bản đồ tư duy:', error)
     const errorMsg = error?.message || String(error)
-    message.error('生成失败: ' + errorMsg)
+    message.error('Xây dựng không thành công: ' + errorMsg)
   } finally {
     generating.value = false
   }
 }
 
 /**
- * 刷新思维导图
+ * Làm mới bản đồ tư duy
  */
 const refreshMindmap = async () => {
   await generateMindmap()
 }
 
 /**
- * 检测思维导图变更
+ * Phát hiện những thay đổi trong bản đồ tư duy
  */
 const checkMindmapDiff = async () => {
   if (!props.kbId || !mindmapData.value) {
@@ -238,7 +238,7 @@ const checkMindmapDiff = async () => {
 }
 
 /**
- * 增量更新思维导图
+ * Cập nhật dần dần bản đồ tư duy
  */
 const incrementalUpdate = async () => {
   if (!props.kbId) return
@@ -255,24 +255,24 @@ const incrementalUpdate = async () => {
     setTimeout(() => {
       renderMindmap(response.mindmap)
       if (response.no_ai_needed) {
-        message.success('思维导图已更新（自动清理已删除文件）')
+        message.success('Bản đồ tư duy đã được cập nhật（Tự động dọn dẹp các tập tin đã xóa）')
       } else {
-        message.success('增量更新完成！')
+        message.success('Đã hoàn tất cập nhật gia tăng！')
       }
     }, 100)
 
     await checkMindmapDiff()
   } catch (error) {
-    console.error('增量更新失败:', error)
+    console.error('Cập nhật gia tăng không thành công:', error)
     const errorMsg = error?.message || String(error)
-    message.error('增量更新失败: ' + errorMsg)
+    message.error('Cập nhật gia tăng không thành công: ' + errorMsg)
   } finally {
     generating.value = false
   }
 }
 
 /**
- * 将JSON转换为Markdown
+ * sẽJSONChuyển đổi thànhMarkdown
  */
 const jsonToMarkdown = (node, level = 0) => {
   if (!node || !node.content) return ''
@@ -450,40 +450,40 @@ const patchSafariTextFallback = () => {
 }
 
 /**
- * 渲染思维导图
+ * Kết xuất bản đồ tư duy
  */
 const renderMindmap = async (data, retryCount = 0) => {
   if (!data) return
 
   if (!mindmapSvg.value || !ensureSvgViewportSize()) {
-    // 如果SVG或尺寸还没准备好，最多重试3次
+    // nếuSVGHoặc kích thước chưa sẵn sàng，Số lần thử lại tối đa3lần
     if (retryCount < 3) {
       setTimeout(() => {
         renderMindmap(data, retryCount + 1)
       }, 100)
       return
     } else {
-      console.error('无法获取SVG容器，渲染失败')
-      message.error('渲染失败：无法找到SVG容器')
+      console.error('Không thể có đượcSVGthùng chứa，Hiển thị không thành công')
+      message.error('Hiển thị không thành công：không thể tìm thấySVGthùng chứa')
       return
     }
   }
 
   try {
-    // 清空之前的实例
+    // Xóa phiên bản trước đó
     if (markmapInstance) {
       markmapInstance.destroy()
     }
     mindmapSvg.value.classList.remove('mindmap-safari-fallback')
 
-    // 将JSON转换为Markdown
+    // sẽJSONChuyển đổi thànhMarkdown
     const markdown = jsonToMarkdown(data)
 
-    // 使用Transformer转换
+    // sử dụngTransformerChuyển đổi
     const transformer = new Transformer()
     const { root } = transformer.transform(markdown)
 
-    // 创建Markmap实例
+    // tạo raMarkmapVí dụ
     markmapInstance = Markmap.create(mindmapSvg.value, {
       duration: 300,
       maxWidth: MARKMAP_MAX_WIDTH,
@@ -497,7 +497,7 @@ const renderMindmap = async (data, retryCount = 0) => {
     await markmapInstance.setData(root)
     await markmapInstance.fit()
 
-    // 延迟再次适应，确保布局完全稳定
+    // Trì hoãn việc thích ứng trở lại，Đảm bảo bố cục hoàn toàn ổn định
     setTimeout(() => {
       if (markmapInstance) {
         syncSafariTextFallback()
@@ -505,13 +505,13 @@ const renderMindmap = async (data, retryCount = 0) => {
       }
     }, 300)
   } catch (error) {
-    console.error('渲染思维导图失败:', error)
-    message.error('渲染失败: ' + error.message)
+    console.error('Không thể hiển thị bản đồ tư duy:', error)
+    message.error('Hiển thị không thành công: ' + error.message)
   }
 }
 
 /**
- * 适应视图
+ * Thích ứng với chế độ xem
  */
 const fitView = () => {
   if (markmapInstance) {
@@ -522,7 +522,7 @@ const fitView = () => {
 }
 
 /**
- * 暴露给父组件的方法
+ * Các phương thức tiếp xúc với thành phần cha
  */
 defineExpose({
   refreshMindmap,
@@ -530,10 +530,10 @@ defineExpose({
 })
 
 // ============================================================================
-// 生命周期
+// vòng đời
 // ============================================================================
 
-// 监听数据库ID变化
+// Cơ sở dữ liệu ngheIDthay đổi
 watch(
   () => props.kbId,
   (newId) => {
@@ -544,11 +544,11 @@ watch(
   { immediate: true }
 )
 
-// 监听容器大小变化，自动适应
+// Theo dõi sự thay đổi kích thước vùng chứa，Tự động thích ứng
 let resizeObserver = null
 
 onMounted(() => {
-  // 设置ResizeObserver监听容器大小变化
+  // cài đặtResizeObserverTheo dõi sự thay đổi kích thước vùng chứa
   nextTick(() => {
     if (mindmapSvg.value) {
       const container = mindmapSvg.value.parentElement
@@ -566,7 +566,7 @@ onMounted(() => {
   })
 })
 
-// 清理
+// dọn dẹp
 onUnmounted(() => {
   if (markmapInstance) {
     markmapInstance.destroy()
@@ -754,7 +754,7 @@ onUnmounted(() => {
   display: block;
 }
 
-// 确保父容器有高度
+// Đảm bảo vùng chứa chính có chiều cao
 :deep(.markmap) {
   width: 100% !important;
   height: 100% !important;

@@ -2,12 +2,12 @@
   <div class="account-settings">
     <div class="header-section">
       <div class="header-content">
-        <div class="section-title">账户设置</div>
-        <p class="section-description">管理当前账户资料、身份信息和 API Key。</p>
+        <div class="section-title">Cài đặt tài khoản</div>
+        <p class="section-description">Quản lý thông tin tài khoản hiện tại、thông tin nhận dạng và API Key。</p>
       </div>
       <a-button class="lucide-icon-btn" :loading="refreshing" @click="refreshProfile">
         <template #icon><RefreshCw :size="16" :class="{ spin: refreshing }" /></template>
-        刷新
+        Làm mới
       </a-button>
     </div>
 
@@ -34,14 +34,14 @@
             <div class="avatar-mask">
               <Upload v-if="!avatarUploading" :size="16" />
               <RefreshCw v-else :size="16" class="spin" />
-              <span>{{ userStore.avatar ? '更换' : '上传' }}</span>
+              <span>{{ userStore.avatar ? 'Thay thế' : 'tải lên' }}</span>
             </div>
           </div>
         </a-upload>
 
         <div class="profile-fields">
           <div class="profile-row editable-row">
-            <span class="profile-label">用户名</span>
+            <span class="profile-label">Tên người dùng</span>
             <a-input
               v-if="editingField === 'username'"
               ref="usernameInput"
@@ -55,11 +55,11 @@
               @blur="cancelField"
             />
             <button v-else type="button" class="editable-value" @click="startFieldEdit('username')">
-              {{ userStore.username || '未设置' }}
+              {{ userStore.username || 'chưa được đặt' }}
             </button>
           </div>
           <div class="profile-row editable-row">
-            <span class="profile-label">手机号</span>
+            <span class="profile-label">Số điện thoại di động</span>
             <a-input
               v-if="editingField === 'phone_number'"
               ref="phoneInput"
@@ -78,26 +78,26 @@
               class="editable-value"
               @click="startFieldEdit('phone_number')"
             >
-              {{ userStore.phoneNumber || '未设置' }}
+              {{ userStore.phoneNumber || 'chưa được đặt' }}
             </button>
           </div>
           <div class="profile-row">
             <span class="profile-label">UID</span>
-            <span class="profile-value mono">{{ userStore.uid || '未设置' }}</span>
+            <span class="profile-value mono">{{ userStore.uid || 'chưa được đặt' }}</span>
           </div>
         </div>
       </div>
 
       <div class="identity-panel">
         <div class="identity-item">
-          <span class="profile-label">权限</span>
+          <span class="profile-label">Quyền</span>
           <span class="profile-value" :style="{ color: getRoleColor(userStore.userRole) }">
             {{ userRoleText }}
           </span>
         </div>
         <div class="identity-item">
-          <span class="profile-label">部门</span>
-          <span class="profile-value">{{ userStore.departmentName || '默认部门' }}</span>
+          <span class="profile-label">Sở</span>
+          <span class="profile-value">{{ userStore.departmentName || 'Bộ phận mặc định' }}</span>
         </div>
       </div>
     </div>
@@ -134,13 +134,13 @@ const avatarDefaultSrc = computed(() => (userStore.uid ? generatePixelAvatar(use
 const userRoleText = computed(() => {
   switch (userStore.userRole) {
     case 'superadmin':
-      return '超级管理员'
+      return 'siêu quản trị viên'
     case 'admin':
-      return '管理员'
+      return 'Quản trị viên'
     case 'user':
-      return '普通用户'
+      return 'Người dùng thông thường'
     default:
-      return '未知角色'
+      return 'vai trò không xác định'
   }
 })
 
@@ -154,10 +154,10 @@ const refreshProfile = async () => {
   try {
     await userStore.getCurrentUser()
     syncProfileDraft()
-    message.success('账户信息已刷新')
+    message.success('Thông tin tài khoản đã được làm mới')
   } catch (error) {
-    console.error('刷新用户信息失败:', error)
-    message.error('刷新失败：' + (error.message || '请稍后重试'))
+    console.error('Không thể làm mới thông tin người dùng:', error)
+    message.error('Làm mới không thành công：' + (error.message || 'Vui lòng thử lại sau'))
   } finally {
     refreshing.value = false
   }
@@ -182,7 +182,7 @@ const saveField = async (field) => {
   if (field === 'username') {
     const username = profileDraft.username.trim()
     if (username.length < 2 || username.length > 20) {
-      message.error('用户名长度必须在 2-20 个字符之间')
+      message.error('Độ dài tên người dùng phải nằm trong 2-20 giữa các ký tự')
       return
     }
     if (username === userStore.username) {
@@ -195,7 +195,7 @@ const saveField = async (field) => {
   if (field === 'phone_number') {
     const phoneNumber = profileDraft.phone_number.trim()
     if (phoneNumber && !validatePhoneNumber(phoneNumber)) {
-      message.error('请输入正确的手机号格式')
+      message.error('Vui lòng nhập đúng định dạng số điện thoại di động')
       return
     }
     if (phoneNumber === (userStore.phoneNumber || '')) {
@@ -210,10 +210,10 @@ const saveField = async (field) => {
     await userStore.updateProfile(payload)
     syncProfileDraft()
     editingField.value = ''
-    message.success('个人资料更新成功')
+    message.success('Thông tin cá nhân được cập nhật thành công')
   } catch (error) {
-    console.error('更新个人资料失败:', error)
-    message.error('更新失败：' + (error.message || '请稍后重试'))
+    console.error('Không thể cập nhật hồ sơ:', error)
+    message.error('Cập nhật không thành công：' + (error.message || 'Vui lòng thử lại sau'))
   } finally {
     savingField.value = ''
   }
@@ -241,13 +241,13 @@ const validatePhoneNumber = (phone) => {
 const beforeUpload = (file) => {
   const isImage = file.type.startsWith('image/')
   if (!isImage) {
-    message.error('只能上传图片文件！')
+    message.error('Chỉ có thể tải lên tệp hình ảnh！')
     return false
   }
 
   const isLt5M = file.size / 1024 / 1024 < 5
   if (!isLt5M) {
-    message.error('图片大小不能超过 5MB！')
+    message.error('Kích thước hình ảnh không thể vượt quá 5MB！')
     return false
   }
 
@@ -268,10 +268,10 @@ const handleAvatarChange = async (info) => {
   try {
     avatarUploading.value = true
     await userStore.uploadAvatar(info.file.originFileObj || info.file)
-    message.success('头像上传成功！')
+    message.success('Hình đại diện đã được tải lên thành công！')
   } catch (error) {
-    console.error('头像上传失败:', error)
-    message.error('头像上传失败：' + (error.message || '请稍后重试'))
+    console.error('Tải lên hình đại diện không thành công:', error)
+    message.error('Tải lên hình đại diện không thành công：' + (error.message || 'Vui lòng thử lại sau'))
   } finally {
     avatarUploading.value = false
   }

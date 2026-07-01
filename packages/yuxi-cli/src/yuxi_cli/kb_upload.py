@@ -123,12 +123,12 @@ def run_kb_upload(
     client_factory=YuxiClient,
 ) -> KbUploadSummary:
     if options.concurrency < 1 or options.concurrency > MAX_CONCURRENCY:
-        raise KbUploadError(f"--concurrency 必须在 1 到 {MAX_CONCURRENCY} 之间")
+        raise KbUploadError(f"--concurrency phải ở trong 1 Đến {MAX_CONCURRENCY} giữa")
 
     config = store.load()
     remote = config.get_remote(remote_name)
     if not remote.api_key:
-        raise KbUploadError(f"remote 尚未登录: {remote.name}")
+        raise KbUploadError(f"remote Chưa đăng nhập: {remote.name}")
 
     with client_factory(remote) as client:
         _ensure_kb_upload_supported(client)
@@ -136,7 +136,7 @@ def run_kb_upload(
         database = _resolve_database(client, options.kb_id, kb_types, console)
         kb_id = str(database.get("kb_id") or "")
         if not kb_id:
-            raise KbUploadError("知识库详情缺少 kb_id")
+            raise KbUploadError("Chi tiết cơ sở kiến thức bị thiếu kb_id")
         supported_extensions = _load_supported_extensions(client)
 
     scanned_files, initial_skipped = scan_local_files(options.path)
@@ -163,11 +163,11 @@ def run_kb_upload(
 
     if not selected:
         _print_selection_summary(summary, console)
-        raise KbUploadError("没有可上传的文件")
+        raise KbUploadError("Không có tập tin để tải lên")
 
     _print_selection_summary(summary, console)
-    if not options.yes and not typer.confirm("确认上传?", default=True):
-        raise KbUploadError("已取消")
+    if not options.yes and not typer.confirm("Xác nhận tải lên?", default=True):
+        raise KbUploadError("Đã hủy")
 
     uploaded, failed, add_response = upload_files(
         remote,
@@ -184,24 +184,24 @@ def run_kb_upload(
 
     if not uploaded and not summary.already_uploaded_count:
         _print_final_summary(summary, console)
-        raise KbUploadError("所有文件上传失败，未添加文档记录")
+        raise KbUploadError("Tải lên tất cả tệp không thành công，Không có tài liệu nào được thêm vào")
 
     _print_final_summary(summary, console)
     if any(not result.already_uploaded for result in failed) or summary.add_failed_count:
-        raise KbUploadError("部分文件处理失败，请查看摘要")
+        raise KbUploadError("Xử lý một số tệp không thành công，Vui lòng xem tóm tắt")
     return summary
 
 
 def scan_local_files(path: Path) -> tuple[list[LocalFile], list[SkippedFile]]:
     root = path.expanduser()
     if not root.exists():
-        raise KbUploadError(f"路径不存在: {path}")
+        raise KbUploadError(f"đường dẫn không tồn tại: {path}")
 
     if root.is_file():
         return _local_file_from_path(root, root.name)
 
     if not root.is_dir():
-        raise KbUploadError(f"路径不是文件或目录: {path}")
+        raise KbUploadError(f"đường dẫn không phải là một tập tin hoặc thư mục: {path}")
 
     files: list[LocalFile] = []
     skipped: list[SkippedFile] = []
@@ -281,7 +281,7 @@ def _prompt_select_extensions(
     if not options:
         return set()
     if not sys.stdin.isatty():
-        raise KbUploadError("非交互环境请传 --yes 或 --include-ext")
+        raise KbUploadError("Vui lòng gửi môi trường không tương tác --yes hoặc --include-ext")
 
     selected_extensions = _initial_selected_extensions(
         {option.extension for option in options},
@@ -290,15 +290,15 @@ def _prompt_select_extensions(
     )
     selected = _ask_question(
         questionary.checkbox(
-            "选择要上传的文件类型",
+            "Chọn loại tệp để tải lên",
             choices=_extension_choices(options, selected_extensions),
             pointer="›",
-            instruction="↑/↓ 移动 · Space 选择/取消 · Enter 确认",
+            instruction="↑/↓ di chuyển · Space chọn/Hủy bỏ · Enter Xác nhận",
             style=PROMPT_STYLE,
         )
     )
     if selected is None:
-        raise KbUploadError("已取消")
+        raise KbUploadError("Đã hủy")
     return set(selected)
 
 
@@ -351,12 +351,12 @@ def upload_files(
         failed.append(result)
         if result.already_uploaded:
             console.print(
-                f"[yellow]-[/yellow] {result.local_file.relative_path} ({completed}/{len(files)}): 已上传过，跳过"
+                f"[yellow]-[/yellow] {result.local_file.relative_path} ({completed}/{len(files)}): Đã tải lên，bỏ qua"
             )
             return
         console.print(f"[red]✗[/red] {result.local_file.relative_path} ({completed}/{len(files)}): {result.error}")
 
-    console.print(f"开始上传并添加: {len(files)} 个文件，并发 {concurrency}")
+    console.print(f"Bắt đầu tải lên và thêm: {len(files)} tập tin，Đồng thời {concurrency}")
     try:
         with ThreadPoolExecutor(max_workers=concurrency) as executor:
             pending: set[Future] = set()
@@ -392,7 +392,7 @@ def upload_files(
                 )
                 completed = 0
                 with progress:
-                    task_id = progress.add_task("处理进度", total=len(files))
+                    task_id = progress.add_task("Tiến trình xử lý", total=len(files))
                     for result, response in completed_results():
                         completed += 1
                         record_result(result, response, completed)
@@ -404,9 +404,9 @@ def upload_files(
                     completed += 1
                     record_result(result, response, completed)
                     if completed == len(files) or completed % progress_step == 0:
-                        console.print(f"处理进度: {completed}/{len(files)}")
+                        console.print(f"Tiến trình xử lý: {completed}/{len(files)}")
     except KeyboardInterrupt as exc:
-        raise KbUploadError("已取消上传队列，请查看已完成的文档记录") from exc
+        raise KbUploadError("Đã hủy hàng đợi tải lên，Vui lòng xem tài liệu đã hoàn thành") from exc
 
     uploaded.sort(key=lambda item: item.local_file.relative_path)
     failed.sort(key=lambda item: item.local_file.relative_path)
@@ -418,7 +418,7 @@ def _remote_document_exists(remote: Remote, client_factory, kb_id: str, item: Lo
         with client_factory(remote) as client:
             return client.knowledge_document_exists(kb_id, item.relative_path)
     except Exception:
-        # 存在性检查只是上传前优化；失败时保留原上传路径的行为。
+        # Kiểm tra sự tồn tại chỉ là tối ưu hóa trước khi tải lên；Hành vi giữ lại đường dẫn tải lên ban đầu khi thất bại。
         return False
 
 
@@ -446,13 +446,13 @@ def _merge_add_response(current: dict | None, response: dict) -> dict:
     failed = int(current["failed"])
     if failed == 0:
         current["status"] = "success"
-        current["message"] = f"已添加 {added} 个文件"
+        current["message"] = f"Đã thêm {added} tập tin"
     elif added == 0:
         current["status"] = "failed"
-        current["message"] = f"文件添加失败，失败 {failed} 个"
+        current["message"] = f"Thêm tệp không thành công，thất bại {failed} một"
     else:
         current["status"] = "partial_failed"
-        current["message"] = f"已添加 {added} 个文件，失败 {failed} 个"
+        current["message"] = f"Đã thêm {added} tập tin，thất bại {failed} một"
     return current
 
 
@@ -492,7 +492,7 @@ def _load_kb_types(client: YuxiClient) -> dict:
     payload = client.get_knowledge_base_types()
     kb_types = payload.get("kb_types")
     if not isinstance(kb_types, dict):
-        raise KbUploadError("服务端知识库类型响应格式无效")
+        raise KbUploadError("Định dạng phản hồi loại cơ sở kiến thức máy chủ không hợp lệ")
     return kb_types
 
 
@@ -504,13 +504,13 @@ def _resolve_database(client: YuxiClient, kb_id: str | None, kb_types: dict, con
 
     databases = _list_uploadable_databases(client, kb_types)
     if not databases:
-        raise KbUploadError("当前 remote 没有可用于文档上传的知识库")
+        raise KbUploadError("hiện tại remote Không có cơ sở kiến thức sẵn có để tải lên tài liệu")
     if len(databases) == 1:
         database = databases[0]
-        console.print(f"已选择唯一可用知识库: {database.get('name') or database.get('kb_id')}")
+        console.print(f"Chỉ có cơ sở kiến thức sẵn có được chọn: {database.get('name') or database.get('kb_id')}")
         return database
     if not sys.stdin.isatty():
-        raise KbUploadError("非交互环境必须显式传入 --kb-id")
+        raise KbUploadError("Môi trường không tương tác phải được chuyển vào một cách rõ ràng --kb-id")
 
     return _prompt_select_database(databases)
 
@@ -518,15 +518,15 @@ def _resolve_database(client: YuxiClient, kb_id: str | None, kb_types: dict, con
 def _prompt_select_database(databases: list[dict]) -> dict:
     selected_index = _ask_question(
         questionary.select(
-            "选择知识库",
+            "Lựa chọn cơ sở kiến thức",
             choices=_database_choices(databases),
             pointer="›",
-            instruction="↑/↓ 移动 · Enter 确认",
+            instruction="↑/↓ di chuyển · Enter Xác nhận",
             style=PROMPT_STYLE,
         )
     )
     if selected_index is None:
-        raise KbUploadError("已取消")
+        raise KbUploadError("Đã hủy")
     return databases[int(selected_index)]
 
 
@@ -534,7 +534,7 @@ def _ask_question(question) -> Any:
     try:
         return question.ask()
     except (EOFError, KeyboardInterrupt) as exc:
-        raise KbUploadError("已取消") from exc
+        raise KbUploadError("Đã hủy") from exc
 
 
 def _database_choices(databases: list[dict]) -> list[Choice]:
@@ -568,15 +568,15 @@ def _format_unsupported_summary(unsupported_counts: Counter[str]) -> str:
     extensions = [extension for extension, _count in unsupported_counts.most_common()]
     visible = extensions[:8]
     remaining = len(extensions) - len(visible)
-    suffix = f", 等 {remaining} 类" if remaining else ""
-    return f"不支持: {total} ({', '.join(visible)}{suffix})"
+    suffix = f", Đợi đã {remaining} lớp học" if remaining else ""
+    return f"Không được hỗ trợ: {total} ({', '.join(visible)}{suffix})"
 
 
 def _list_uploadable_databases(client: YuxiClient, kb_types: dict) -> list[dict]:
     payload = client.list_databases()
     databases = payload.get("databases")
     if not isinstance(databases, list):
-        raise KbUploadError("服务端知识库列表响应格式无效")
+        raise KbUploadError("Định dạng phản hồi của danh sách cơ sở kiến thức máy chủ không hợp lệ")
     uploadable = []
     for database in databases:
         if not isinstance(database, dict):
@@ -590,13 +590,13 @@ def _list_uploadable_databases(client: YuxiClient, kb_types: dict) -> list[dict]
 def _ensure_database_supports_documents(database: dict, kb_types: dict) -> None:
     kb_type = str(database.get("kb_type") or "")
     if not kb_type:
-        raise KbUploadError("知识库详情缺少 kb_type，无法确认是否支持文档上传")
+        raise KbUploadError("Chi tiết cơ sở kiến thức bị thiếu kb_type，Không thể xác nhận liệu tải lên tài liệu có được hỗ trợ hay không")
 
     type_info = kb_types.get(kb_type)
     if not isinstance(type_info, dict):
-        raise KbUploadError(f"服务端未返回知识库类型信息: {kb_type}")
+        raise KbUploadError(f"Máy chủ không trả về thông tin loại cơ sở kiến thức: {kb_type}")
     if type_info.get("supports_documents") is False:
-        raise KbUploadError(f"{database.get('name') or kb_type} 只支持检索，不支持文档上传")
+        raise KbUploadError(f"{database.get('name') or kb_type} Chỉ hỗ trợ tìm kiếm，Tải lên tài liệu không được hỗ trợ")
 
 
 def _database_supports_documents(database: dict, kb_types: dict) -> bool:
@@ -609,7 +609,7 @@ def _load_supported_extensions(client: YuxiClient) -> set[str]:
     payload = client.get_supported_file_types()
     raw_file_types = payload.get("file_types")
     if not isinstance(raw_file_types, list) or not raw_file_types:
-        raise KbUploadError("服务端支持文件类型响应格式无效")
+        raise KbUploadError("Máy chủ hỗ trợ loại tệp và định dạng phản hồi không hợp lệ.")
     return {str(item).lower() if str(item).startswith(".") else f".{str(item).lower()}" for item in raw_file_types}
 
 
@@ -623,7 +623,7 @@ def _upload_one_with_retry(remote: Remote, client_factory, kb_id: str, item: Loc
             content_hash = str(data.get("content_hash") or "")
             size = int(data.get("size") or item.size)
             if not file_path or not content_hash:
-                return UploadResult(item, error="上传响应缺少 file_path 或 content_hash")
+                return UploadResult(item, error="Thiếu phản hồi tải lên file_path hoặc content_hash")
             return UploadResult(item, file_path=file_path, content_hash=content_hash, size=size)
         except ClientError as exc:
             last_error = exc
@@ -635,7 +635,7 @@ def _upload_one_with_retry(remote: Remote, client_factory, kb_id: str, item: Loc
             last_error = exc
             break
         time.sleep(2**attempt)
-    return UploadResult(item, error=str(last_error) if last_error else "上传失败")
+    return UploadResult(item, error=str(last_error) if last_error else "Tải lên không thành công")
 
 
 def _is_retryable(exc: ClientError) -> bool:
@@ -654,24 +654,24 @@ def _print_selection_summary(summary: KbUploadSummary, console: Console) -> None
     unsupported_total = sum(unsupported_counts.values())
     other_skipped = len(summary.skipped) - not_selected - unsupported_total
 
-    console.print("上传预览")
-    console.print(f"  扫描文件: {summary.scanned}")
-    console.print(f"  将上传: {len(summary.selected)}{selected_extension_text}")
+    console.print("Tải lên bản xem trước")
+    console.print(f"  Quét tài liệu: {summary.scanned}")
+    console.print(f"  sẽ tải lên: {len(summary.selected)}{selected_extension_text}")
     if not_selected:
-        console.print(f"  未选择: {not_selected}")
+        console.print(f"  Không được chọn: {not_selected}")
     if unsupported_counts:
         console.print(f"  {_format_unsupported_summary(unsupported_counts)}", markup=False)
     if other_skipped:
-        console.print(f"  其他跳过: {other_skipped}")
+        console.print(f"  Những người khác bỏ qua: {other_skipped}")
 
 
 def _unsupported_counts_from_skipped(skipped: list[SkippedFile]) -> Counter[str]:
     counts = Counter()
     for item in skipped:
         if item.reason == "unsupported":
-            counts[item.path.suffix.lower() or "无扩展名"] += 1
+            counts[item.path.suffix.lower() or "không có phần mở rộng"] += 1
         elif item.reason == "no-extension":
-            counts["无扩展名"] += 1
+            counts["không có phần mở rộng"] += 1
     return counts
 
 
@@ -679,15 +679,15 @@ def _print_final_summary(summary: KbUploadSummary, console: Console) -> None:
     added = int((summary.add_response or {}).get("added") or 0)
     add_failed = int((summary.add_response or {}).get("failed") or 0)
 
-    console.print("上传结果")
-    console.print(f"  上传成功: {len(summary.uploaded)}")
+    console.print("Tải kết quả lên")
+    console.print(f"  Tải lên thành công: {len(summary.uploaded)}")
     if summary.already_uploaded_count:
-        console.print(f"  已上传过: {summary.already_uploaded_count}")
-    console.print(f"  上传失败: {summary.real_upload_failed_count}")
-    console.print(f"  添加成功: {added}")
-    console.print(f"  添加失败: {add_failed}")
+        console.print(f"  Đã tải lên: {summary.already_uploaded_count}")
+    console.print(f"  Tải lên không thành công: {summary.real_upload_failed_count}")
+    console.print(f"  Đã thêm thành công: {added}")
+    console.print(f"  Thêm không thành công: {add_failed}")
 
     failed_items = (summary.add_response or {}).get("failed_items") or []
     if failed_items:
         for item in failed_items:
-            console.print(f"[red]添加失败:[/red] {item.get('item')} - {item.get('error')}")
+            console.print(f"[red]Thêm không thành công:[/red] {item.get('item')} - {item.get('error')}")

@@ -1,52 +1,52 @@
 import { apiGet, apiAdminGet, apiAdminPost, apiAdminPut, apiAdminDelete } from './base'
 
 /**
- * 系统管理API模块
- * 包含系统配置、健康检查、信息管理等功能
+ * Quản lý hệ thốngAPImô-đun
+ * Chứa cấu hình hệ thống、kiểm tra sức khỏe、Quản lý thông tin và các chức năng khác
  */
 
 // =============================================================================
-// === 健康检查分组 ===
+// === nhóm khám sức khỏe ===
 // =============================================================================
 
 export const healthApi = {
   /**
-   * 系统健康检查（公开接口）
-   * @returns {Promise} - 健康检查结果
+   * Kiểm tra sức khỏe hệ thống（giao diện công cộng）
+   * @returns {Promise} - Kết quả kiểm tra sức khỏe
    */
   checkHealth: () => apiGet('/api/system/health', {}, false)
 }
 
 // =============================================================================
-// === 配置管理分组 ===
+// === Cấu hình các nhóm quản lý ===
 // =============================================================================
 
 export const configApi = {
   /**
-   * 获取系统配置
-   * @returns {Promise} - 系统配置
+   * Nhận cấu hình hệ thống
+   * @returns {Promise} - Cấu hình hệ thống
    */
   getConfig: async () => apiAdminGet('/api/system/config'),
 
   /**
-   * 更新单个配置项
-   * @param {string} key - 配置键
-   * @param {any} value - 配置值
-   * @returns {Promise} - 更新结果
+   * Cập nhật một mục cấu hình
+   * @param {string} key - phím cấu hình
+   * @param {any} value - giá trị cấu hình
+   * @returns {Promise} - Cập nhật kết quả
    */
   updateConfig: async (key, value) => apiAdminPost('/api/system/config', { key, value }),
 
   /**
-   * 批量更新配置项
-   * @param {Object} items - 配置项对象
-   * @returns {Promise} - 更新结果
+   * Cập nhật các mục cấu hình theo đợt
+   * @param {Object} items - Đối tượng mục cấu hình
+   * @returns {Promise} - Cập nhật kết quả
    */
   updateConfigBatch: async (items) => apiAdminPost('/api/system/config/update', items),
 
   /**
-   * 获取系统日志
-   * @param {string} levels - 可选的日志级别过滤，多个级别用逗号分隔
-   * @returns {Promise} - 系统日志
+   * Nhận nhật ký hệ thống
+   * @param {string} levels - Lọc cấp độ nhật ký tùy chọn，Nhiều cấp độ cách nhau bằng dấu phẩy
+   * @returns {Promise} - Nhật ký hệ thống
    */
   getLogs: async (levels) => {
     const url = levels
@@ -57,37 +57,37 @@ export const configApi = {
 }
 
 // =============================================================================
-// === 信息管理分组 ===
+// === Nhóm quản lý thông tin ===
 // =============================================================================
 
 export const brandApi = {
   /**
-   * 获取系统信息配置（公开接口）
-   * @returns {Promise} - 系统信息配置
+   * Nhận cấu hình thông tin hệ thống（giao diện công cộng）
+   * @returns {Promise} - Cấu hình thông tin hệ thống
    */
   getInfoConfig: () => apiGet('/api/system/info', {}, false)
 }
 
 // =============================================================================
-// === OCR服务分组 ===
+// === OCRNhóm dịch vụ ===
 // =============================================================================
 
 export const ocrApi = {
   /**
-   * 获取OCR服务健康状态
-   * @returns {Promise} - OCR健康状态
+   * NhậnOCRTình trạng sức khỏe dịch vụ
+   * @returns {Promise} - OCRtình trạng sức khỏe
    */
   getHealth: async () => apiAdminGet('/api/system/ocr/health')
 }
 
 // =============================================================================
-// === 聊天模型状态检查分组 ===
+// === Nhóm kiểm tra trạng thái mô hình trò chuyện ===
 // =============================================================================
 
 export const chatModelApi = {}
 
 // =============================================================================
-// === 独立模型供应商配置分组 ===
+// === Nhóm cấu hình nhà cung cấp mô hình độc lập ===
 // =============================================================================
 
 export const modelProviderApi = {

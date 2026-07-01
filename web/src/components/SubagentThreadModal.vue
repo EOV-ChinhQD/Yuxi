@@ -23,7 +23,7 @@
       </div>
     </template>
     <div class="subagent-thread-modal-body">
-      <div v-if="loading" class="subagent-thread-modal-state">正在加载子智能体消息...</div>
+      <div v-if="loading" class="subagent-thread-modal-state">Đang tải tin nhắn của đại lý con...</div>
       <div v-else-if="error" class="subagent-thread-modal-state is-error">{{ error }}</div>
       <ThreadMessageList v-else :messages="messages" />
     </div>
@@ -66,9 +66,9 @@ const loading = ref(false)
 const error = ref('')
 const messages = ref([])
 
-const modalTitleName = computed(() => props.subagentName || '子智能体')
+const modalTitleName = computed(() => props.subagentName || 'chất phụ')
 
-// LangChain 内容块数组 → 纯文本（仅保留 text 块）
+// LangChain mảng khối nội dung → văn bản thuần túy（Chỉ giữ lại text khối）
 const flattenContent = (content) => {
   if (typeof content === 'string') return content
   if (Array.isArray(content)) {
@@ -86,16 +86,16 @@ const loadHistory = async (threadId) => {
   error.value = ''
   messages.value = []
   try {
-    // 子智能体消息存于 LangGraph checkpoint，需走 state 接口并把 tool 结果嵌入 AI 消息。
+    // Tin nhắn của đại lý phụ được lưu trữ trong LangGraph checkpoint，Cần phải đi state giao diện và đặt tool Nhúng kết quả AI tin tức。
     const response = await agentApi.getAgentState(threadId, { includeMessages: true })
-    // checkpoint 的 content 可能是 LangChain 内容块数组，扁平成文本供 MarkdownPreview 渲染。
+    // checkpoint của content có thể LangChain mảng khối nội dung，văn bản viết phẳng MarkdownPreview kết xuất。
     const normalized = (response.messages || []).map((msg) => ({
       ...msg,
       content: flattenContent(msg.content)
     }))
     messages.value = MessageProcessor.convertToolResultToMessages(normalized)
   } catch (e) {
-    error.value = '加载子智能体消息失败'
+    error.value = 'Không tải được thông báo của tác nhân con'
     console.error('Failed to load subagent thread messages:', e)
   } finally {
     loading.value = false

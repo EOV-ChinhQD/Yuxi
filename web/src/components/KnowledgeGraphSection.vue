@@ -3,9 +3,9 @@
     <div class="graph-container-compact">
       <div v-if="!isGraphSupported" class="graph-disabled">
         <div class="disabled-content">
-          <h4>知识图谱不可用</h4>
-          <p>当前知识库类型 "{{ kbTypeLabel }}" 不支持知识图谱功能。</p>
-          <p>只有 Milvus 类型的知识库支持知识图谱。</p>
+          <h4>Sơ đồ tri thức không có sẵn</h4>
+          <p>Loại cơ sở kiến thức hiện tại "{{ kbTypeLabel }}" Không hỗ trợ chức năng biểu đồ tri thức。</p>
+          <p>chỉ Milvus Loại cơ sở tri thức hỗ trợ đồ thị tri thức。</p>
         </div>
       </div>
       <div v-else class="graph-wrapper">
@@ -21,7 +21,7 @@
               <div class="actions-left">
                 <a-input
                   v-model:value="searchInput"
-                  placeholder="搜索实体"
+                  placeholder="Tìm kiếm thực thể"
                   style="width: 240px"
                   @keydown.enter="onSearch"
                   allow-clear
@@ -35,7 +35,7 @@
                     />
                   </template>
                 </a-input>
-                <a-button class="action-btn" @click="loadGraph" title="刷新">
+                <a-button class="action-btn" @click="loadGraph" title="Làm mới">
                   <RefreshCw :size="16" :class="{ spin: graph.fetching }" />
                 </a-button>
               </div>
@@ -50,7 +50,7 @@
                 >
                   <Database :size="16" />
                   <span v-if="hasPendingGraphChunks" class="index-status-label"
-                    >{{ pendingGraphChunks }} 待索引</span
+                    >{{ pendingGraphChunks }} Để được lập chỉ mục</span
                   >
                   <span
                     v-if="graphIndexDotStatus"
@@ -58,7 +58,7 @@
                     :class="`status-dot--${graphIndexDotStatus}`"
                   ></span>
                 </a-button>
-                <a-button class="action-btn" @click="toggleSettingsPanel" title="设置">
+                <a-button class="action-btn" @click="toggleSettingsPanel" title="cài đặt">
                   <Settings :size="16" />
                 </a-button>
               </div>
@@ -68,15 +68,15 @@
         <ResourceEmptyState
           v-if="showGraphConfigEmpty"
           class="graph-empty-state"
-          title="暂无知识图谱"
-          description="配置抽取器后，才能从当前知识库构建实体与关系。"
+          title="Chưa có biểu đồ kiến thức"
+          description="Sau khi cấu hình trình giải nén，Xây dựng các thực thể và mối quan hệ từ cơ sở tri thức hiện tại。"
           :icon="Network"
           full-height
         >
           <template #actions>
             <a-button type="primary" class="lucide-icon-btn" @click="openGraphConfig">
               <Settings :size="16" />
-              配置抽取器
+              Cấu hình trình trích xuất
             </a-button>
           </template>
         </ResourceEmptyState>
@@ -91,7 +91,7 @@
           <template #actions>
             <a-button v-if="searchInput.trim()" class="lucide-icon-btn" @click="clearGraphSearch">
               <Search :size="16" />
-              清空搜索
+              Xóa tìm kiếm
             </a-button>
             <a-button
               v-else-if="hasPendingGraphChunks && !isBuildActive"
@@ -100,16 +100,16 @@
               @click="startGraphBuild"
             >
               <Database :size="16" />
-              开始索引
+              Bắt đầu lập chỉ mục
             </a-button>
             <a-button v-else class="lucide-icon-btn" @click="loadGraph">
               <RefreshCw :size="16" :class="{ spin: graph.fetching }" />
-              刷新图谱
+              Làm mới bản đồ
             </a-button>
           </template>
         </ResourceEmptyState>
 
-        <!-- 详情浮动卡片 -->
+        <!-- Chi tiết thẻ nổi -->
         <GraphDetailPanel
           :visible="graph.showDetailDrawer"
           :item="graph.selectedItem"
@@ -117,15 +117,15 @@
           @close="graph.handleCanvasClick"
         />
 
-        <!-- 设置浮动面板 -->
+        <!-- Thiết lập bảng nổi -->
         <transition name="slide-fade">
           <div v-if="showSettings" class="floating-panel settings-panel">
             <div class="panel-header">
-              <span class="panel-title">图谱设置</span>
+              <span class="panel-title">Cài đặt đồ thị</span>
             </div>
             <div class="panel-body">
               <a-form layout="vertical">
-                <a-form-item label="最大节点数 (limit)">
+                <a-form-item label="Số lượng nút tối đa (limit)">
                   <a-input-number
                     v-model:value="subgraphParams.maxNodes"
                     :min="10"
@@ -134,7 +134,7 @@
                     style="width: 100%"
                   />
                 </a-form-item>
-                <a-form-item label="搜索深度 (depth)">
+                <a-form-item label="Độ sâu tìm kiếm (depth)">
                   <a-input-number
                     v-model:value="subgraphParams.maxDepth"
                     :min="1"
@@ -143,12 +143,12 @@
                     style="width: 100%"
                   />
                 </a-form-item>
-                <a-form-item label="排除 Chunk 节点">
+                <a-form-item label="loại trừ Chunk nút">
                   <a-switch v-model:checked="subgraphParams.excludeChunk" />
                 </a-form-item>
                 <a-form-item>
                   <a-button type="primary" @click="applySettings" style="width: 100%">
-                    应用
+                    ứng dụng
                   </a-button>
                 </a-form-item>
               </a-form>
@@ -156,11 +156,11 @@
           </div>
         </transition>
 
-        <!-- 索引管理浮动面板 -->
+        <!-- Bảng điều khiển nổi quản lý chỉ mục -->
         <transition name="slide-fade">
           <div v-if="isMilvus && showBuildPanel" class="floating-panel build-panel">
             <div class="panel-header">
-              <span class="panel-title">索引管理</span>
+              <span class="panel-title">Quản lý chỉ mục</span>
               <a-button
                 size="small"
                 type="text"
@@ -173,13 +173,13 @@
             </div>
             <div class="panel-body">
               <div class="status-row">
-                <span class="status-label">状态</span>
-                <a-tag v-if="isBuildActive" color="blue" size="small">构建中</a-tag>
-                <a-tag v-else-if="isBuildFailed" color="red" size="small">构建失败</a-tag>
+                <span class="status-label">Trạng thái</span>
+                <a-tag v-if="isBuildActive" color="blue" size="small">Đang xây dựng</a-tag>
+                <a-tag v-else-if="isBuildFailed" color="red" size="small">Xây dựng không thành công</a-tag>
                 <a-tag v-else-if="graphBuildStatus?.locked" color="green" size="small"
-                  >已配置</a-tag
+                  >được cấu hình</a-tag
                 >
-                <a-tag v-else color="orange" size="small">未配置</a-tag>
+                <a-tag v-else color="orange" size="small">Chưa được định cấu hình</a-tag>
               </div>
               <a-progress
                 v-if="isBuildActive"
@@ -191,23 +191,23 @@
               <div class="stats-grid">
                 <div class="stat-item">
                   <span class="stat-value">{{ graphBuildStatus?.total_chunks ?? '-' }}</span>
-                  <span class="stat-label">总 Chunk</span>
+                  <span class="stat-label">tổng cộng Chunk</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-value">{{ graphBuildStatus?.pending_chunks ?? '-' }}</span>
-                  <span class="stat-label">待构建</span>
+                  <span class="stat-label">Để được xây dựng</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-value">{{ graphBuildStatus?.indexed_chunks ?? '-' }}</span>
-                  <span class="stat-label">已构建</span>
+                  <span class="stat-label">Được xây dựng</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-value">{{ graphBuildStatus?.entity_count ?? '-' }}</span>
-                  <span class="stat-label">实体</span>
+                  <span class="stat-label">thực thể</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-value">{{ graphBuildStatus?.relationship_count ?? '-' }}</span>
-                  <span class="stat-label">关系</span>
+                  <span class="stat-label">mối quan hệ</span>
                 </div>
               </div>
               <div class="build-actions">
@@ -217,10 +217,10 @@
                   block
                   @click="openGraphConfig"
                 >
-                  配置抽取器
+                  Cấu hình trình trích xuất
                 </a-button>
                 <a-button v-else-if="isBuildActive" type="primary" block disabled>
-                  构建中 {{ graphBuildStatus?.build_task_progress ?? 0 }}%
+                  Đang xây dựng {{ graphBuildStatus?.build_task_progress ?? 0 }}%
                 </a-button>
                 <a-button
                   v-else-if="isBuildFailed"
@@ -229,7 +229,7 @@
                   :disabled="!graphBuildStatus?.pending_chunks"
                   @click="startGraphBuild"
                 >
-                  重试索引
+                  Thử lập chỉ mục lại
                 </a-button>
                 <a-button
                   v-else
@@ -238,7 +238,7 @@
                   :disabled="!graphBuildStatus?.pending_chunks"
                   @click="startGraphBuild"
                 >
-                  开始索引
+                  Bắt đầu lập chỉ mục
                 </a-button>
                 <div class="actions-secondary">
                   <a-button
@@ -247,7 +247,7 @@
                     type="text"
                     @click="openGraphConfig"
                   >
-                    修改配置
+                    Sửa đổi cấu hình
                   </a-button>
                   <a-button
                     size="small"
@@ -255,7 +255,7 @@
                     danger
                     v-if="graphBuildStatus?.locked && !isBuildActive"
                     @click="confirmResetGraph"
-                    >重置</a-button
+                    >đặt lại</a-button
                   >
                 </div>
               </div>
@@ -277,10 +277,10 @@
           class="config-warning"
           type="warning"
           show-icon
-          message="修改配置仅影响后续构建；已构建的图谱不会自动重算，如需一致请重置后重新抽取。抽取器类型创建后不可修改。"
+          message="Việc sửa đổi cấu hình chỉ ảnh hưởng đến các bản dựng tiếp theo；Bản đồ đã được xây dựng sẽ không được tự động tính toán lại，Nếu đồng nhất thì reset lại và giải nén lại.。Loại trình trích xuất không thể được sửa đổi sau khi nó được tạo.。"
         />
-        <a-form-item label="抽取器类型">
-          <div class="extractor-type-cards" role="radiogroup" aria-label="抽取器类型">
+        <a-form-item label="loại máy vắt">
+          <div class="extractor-type-cards" role="radiogroup" aria-label="loại máy vắt">
             <div
               v-for="option in extractorTypeOptions"
               :key="option.value"
@@ -308,10 +308,10 @@
             </div>
           </div>
         </a-form-item>
-        <a-form-item label="模型">
+        <a-form-item label="người mẫu">
           <ModelSelectorComponent
             :model_spec="graphConfigForm.model_spec"
-            placeholder="选择抽取模型"
+            placeholder="Chọn mô hình trích xuất"
             @select-model="(spec) => (graphConfigForm.model_spec = spec)"
           />
         </a-form-item>
@@ -319,11 +319,11 @@
           <a-textarea
             v-model:value="graphConfigForm.schema"
             :rows="6"
-            placeholder="描述实体类型、关系类型和属性约束。后端会把 Schema 拼接到固定抽取 Prompt 中。"
+            placeholder="Mô tả loại thực thể、Các loại mối quan hệ và ràng buộc thuộc tính。Phần sau sẽ Schema mối nối để trích xuất cố định Prompt trong。"
           />
         </a-form-item>
         <div class="form-grid two-columns">
-          <a-form-item label="并发队列数">
+          <a-form-item label="Số lượng hàng đợi đồng thời">
             <a-input-number
               v-model:value="graphConfigForm.concurrency_count"
               :min="1"
@@ -332,10 +332,10 @@
               style="width: 100%"
             />
           </a-form-item>
-          <a-form-item label="模型参数 JSON">
+          <a-form-item label="Thông số mô hình JSON">
             <a-input
               v-model:value="graphConfigForm.model_params_text"
-              placeholder='例如 {"temperature":0.1}'
+              placeholder='Ví dụ {"temperature":0.1}'
             />
           </a-form-item>
         </div>
@@ -407,16 +407,16 @@ const extractorTypeOptions = [
   {
     value: 'llm',
     label: 'LLM',
-    description: '使用大模型按 Schema 抽取实体和关系',
-    helper: '当前唯一支持的图谱抽取方式',
+    description: 'Sử dụng máy ép mô hình lớn Schema Trích xuất các thực thể và mối quan hệ',
+    helper: 'Hiện tại phương pháp trích xuất bản đồ được hỗ trợ duy nhất',
     icon: BrainCircuit,
     disabled: false
   },
   {
     value: 'more',
-    label: '更多',
-    description: '更多抽取方式正在拓展中',
-    helper: '拓展中',
+    label: 'Thêm',
+    description: 'Nhiều phương pháp chiết xuất đang được phát triển',
+    helper: 'Mở rộng',
     icon: ScanText,
     disabled: true
   }
@@ -453,10 +453,10 @@ const graphIndexDotStatus = computed(() => {
 })
 
 const graphIndexButtonTitle = computed(() => {
-  if (hasPendingGraphChunks.value) return `索引管理，${pendingGraphChunks.value} 待索引`
-  if (isGraphIndexComplete.value) return '索引管理，已全部索引'
-  if (isBuildActive.value) return '索引管理，索引中'
-  return '索引管理'
+  if (hasPendingGraphChunks.value) return `Quản lý chỉ mục，${pendingGraphChunks.value} Để được lập chỉ mục`
+  if (isGraphIndexComplete.value) return 'Quản lý chỉ mục，Tất cả được lập chỉ mục'
+  if (isBuildActive.value) return 'Quản lý chỉ mục，Lập chỉ mục'
+  return 'Quản lý chỉ mục'
 })
 
 const toggleBuildPanel = () => {
@@ -472,7 +472,7 @@ const toggleSettingsPanel = () => {
 const isEditingGraphConfig = computed(() => Boolean(graphBuildStatus.value?.locked))
 
 const graphConfigTitle = computed(() =>
-  isEditingGraphConfig.value ? '修改图谱抽取配置' : '配置图谱抽取器'
+  isEditingGraphConfig.value ? 'Sửa đổi cấu hình trích xuất bản đồ' : 'Định cấu hình trình trích xuất biểu đồ'
 )
 
 const stopBuildStatusPoll = () => {
@@ -511,7 +511,7 @@ const graphConfigForm = reactive({
 const graph = reactive(useGraph(graphRef))
 const graphLoaded = ref(false)
 
-// 计算属性：是否支持知识图谱
+// Thuộc tính tính toán：Có hỗ trợ biểu đồ tri thức hay không
 const isGraphSupported = computed(() => GRAPH_SUPPORTED_KB_TYPES.has(kbType.value?.toLowerCase()))
 const hasGraphNodes = computed(() => graph.graphData.nodes.length > 0)
 const showGraphConfigEmpty = computed(
@@ -526,13 +526,13 @@ const showGraphDataEmpty = computed(
     !hasGraphNodes.value
 )
 const graphDataEmptyTitle = computed(() =>
-  searchInput.value.trim() ? '未找到匹配实体' : '暂无知识图谱'
+  searchInput.value.trim() ? 'Không tìm thấy thực thể phù hợp' : 'Chưa có biểu đồ kiến thức'
 )
 const graphDataEmptyDescription = computed(() => {
-  if (searchInput.value.trim()) return '换个关键词或调整图谱设置后再搜索。'
-  if (isBuildActive.value) return '图谱索引正在运行，完成后会展示实体与关系。'
-  if (hasPendingGraphChunks.value) return '当前还有待索引 Chunk，完成索引后会展示实体与关系。'
-  return '当前知识库还没有可展示的实体与关系。'
+  if (searchInput.value.trim()) return 'Thay đổi từ khóa hoặc điều chỉnh cài đặt bản đồ trước khi tìm kiếm lại。'
+  if (isBuildActive.value) return 'Chỉ số đồ thị đang chạy，Các thực thể và mối quan hệ sẽ được hiển thị sau khi hoàn thành。'
+  if (hasPendingGraphChunks.value) return 'Hiện tại vẫn chưa được lập chỉ mục Chunk，Các thực thể và mối quan hệ sẽ được hiển thị sau khi lập chỉ mục hoàn tất.。'
+  return 'Không có thực thể hoặc mối quan hệ nào có thể được hiển thị trong cơ sở kiến thức hiện tại.。'
 })
 
 let pendingLoadTimer = null
@@ -555,7 +555,7 @@ const loadGraphBuildStatus = async () => {
     }
   } catch (e) {
     console.error('Failed to load graph build status:', e)
-    message.error('加载图谱构建状态失败')
+    message.error('Không thể tải trạng thái xây dựng bản đồ')
   } finally {
     if (requestSeq === graphStatusRequestSeq) {
       graphBuildLoading.value = false
@@ -570,10 +570,10 @@ const parseModelParams = () => {
   try {
     params = JSON.parse(text)
   } catch {
-    throw new Error('模型参数必须是合法 JSON 对象')
+    throw new Error('Các tham số của mô hình phải hợp pháp JSON vật thể')
   }
   if (!params || Array.isArray(params) || typeof params !== 'object') {
-    throw new Error('模型参数必须是 JSON 对象')
+    throw new Error('Các tham số của mô hình phải JSON vật thể')
   }
   return params
 }
@@ -617,23 +617,23 @@ const configureGraphBuild = async () => {
       extractor_type: 'llm',
       extractor_options: buildExtractorOptions()
     })
-    message.success(isEditingGraphConfig.value ? '图谱抽取配置已更新' : '图谱抽取配置已保存')
+    message.success(isEditingGraphConfig.value ? 'Cấu hình trích xuất phổ đã được cập nhật' : 'Đã lưu cấu hình trích xuất phổ')
     showGraphConfig.value = false
     await loadGraphBuildStatus()
   } catch (e) {
     console.error('Failed to configure graph build:', e)
-    message.error(getErrorDetail(e, '配置图谱抽取失败'))
+    message.error(getErrorDetail(e, 'Trích xuất bản đồ cấu hình không thành công'))
   }
 }
 
 const startGraphBuild = async () => {
   try {
     const data = await graphBuildApi.startIndex(kbId.value, 20)
-    message.success(data.message || '图谱构建任务已提交')
+    message.success(data.message || 'Nhiệm vụ xây dựng đồ thị đã được gửi')
     if (data.task_id) {
       taskerStore.registerQueuedTask({
         task_id: data.task_id,
-        name: `图谱构建 (${kbId.value})`,
+        name: `Xây dựng bản đồ (${kbId.value})`,
         task_type: GRAPH_BUILD_TASK_TYPE,
         message: data.message,
         payload: { kb_id: kbId.value }
@@ -642,16 +642,16 @@ const startGraphBuild = async () => {
     await loadGraphBuildStatus()
   } catch (e) {
     console.error('Failed to start graph build:', e)
-    message.error(getErrorDetail(e, '提交图谱构建任务失败'))
+    message.error(getErrorDetail(e, 'Không thể gửi nhiệm vụ xây dựng biểu đồ'))
   }
 }
 
 const confirmResetGraph = () => {
   Modal.confirm({
-    title: '清空并重建图谱',
-    content: '将删除该知识库在 Neo4j 中的图谱，重置 Chunk 图谱状态，并清空抽取结果与配置。',
-    okText: '确认重置',
-    cancelText: '取消',
+    title: 'Xóa và xây dựng lại bản đồ',
+    content: 'Cơ sở kiến thức sẽ bị xóa tại Neo4j tập bản đồ ở，đặt lại Chunk Trạng thái bản đồ，Và xóa kết quả trích xuất và cấu hình。',
+    okText: 'Xác nhận đặt lại',
+    cancelText: 'Hủy bỏ',
     onOk: resetGraphBuild
   })
 }
@@ -662,13 +662,13 @@ const resetGraphBuild = async () => {
       clear_extraction_result: true,
       clear_config: true
     })
-    message.success('图谱构建状态已重置')
+    message.success('Đặt lại trạng thái xây dựng biểu đồ')
     graphLoaded.value = false
     graph.clearGraph()
     await loadGraphBuildStatus()
   } catch (e) {
     console.error('Failed to reset graph build:', e)
-    message.error(getErrorDetail(e, '重置图谱构建状态失败'))
+    message.error(getErrorDetail(e, 'Không thể đặt lại trạng thái xây dựng bản đồ'))
   }
 }
 
@@ -700,7 +700,7 @@ const loadGraph = async () => {
     }
   } catch (e) {
     console.error('Failed to load graph:', e)
-    message.error('加载图谱失败')
+    message.error('Không tải được bản đồ')
   } finally {
     if (requestSeq === graphLoadRequestSeq) {
       graph.fetching = false

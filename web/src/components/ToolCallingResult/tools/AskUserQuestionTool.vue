@@ -8,10 +8,10 @@
   >
     <template #header>
       <div class="sep-header">
-        <span class="note">提问</span>
+        <span class="note">Đặt một câu hỏi</span>
         <span class="separator">|</span>
         <span class="description">{{ shortQuestionSummary }}</span>
-        <span v-if="displayAnswer" class="tag tag-answered"> 已回答: {{ displayAnswer }} </span>
+        <span v-if="displayAnswer" class="tag tag-answered"> Đã trả lời: {{ displayAnswer }} </span>
       </div>
     </template>
 
@@ -29,17 +29,17 @@
             </div>
 
             <div v-if="questionItem.operation" class="operation-row">
-              <span class="row-label">操作</span>
+              <span class="row-label">hoạt động</span>
               <span class="operation-text">{{ questionItem.operation }}</span>
             </div>
 
             <div v-if="getQuestionAnswerText(questionItem)" class="answer-row">
-              <span class="row-label">回答</span>
+              <span class="row-label">câu trả lời</span>
               <span class="answer-text">{{ getQuestionAnswerText(questionItem) }}</span>
             </div>
           </div>
         </div>
-        <div v-else class="no-question">暂无提问内容</div>
+        <div v-else class="no-question">Chưa có nội dung câu hỏi</div>
       </div>
     </template>
   </BaseToolCall>
@@ -100,14 +100,14 @@ const questions = computed(() => {
 })
 
 const shortQuestionSummary = computed(() => {
-  if (!questions.value.length) return '无问题'
+  if (!questions.value.length) return 'Không vấn đề gì'
 
   const firstQuestion = questions.value[0].question
   const shortFirstQuestion =
     firstQuestion.length > 36 ? firstQuestion.slice(0, 36) + '...' : firstQuestion
 
   if (questions.value.length === 1) return shortFirstQuestion
-  return `${shortFirstQuestion} 等 ${questions.value.length} 题`
+  return `${shortFirstQuestion} Đợi đã ${questions.value.length} câu hỏi`
 })
 
 const userAnswer = computed(() => {
@@ -140,7 +140,7 @@ const formatSingleAnswer = (answer, questionItem) => {
         ? answer.selected.map((item) => getOptionLabel(item, questionItem)).filter(Boolean)
         : []
       const text = String(answer.text || '').trim()
-      return [...selected, text ? `其他: ${text}` : '其他'].join('、')
+      return [...selected, text ? `Khác: ${text}` : 'Khác'].join('、')
     }
     return JSON.stringify(answer)
   }

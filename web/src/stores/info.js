@@ -3,13 +3,13 @@ import { defineStore } from 'pinia'
 import { brandApi } from '@/apis/system_api'
 
 export const useInfoStore = defineStore('info', () => {
-  // 状态
+  // Trạng thái
   const infoConfig = ref({})
   const isLoading = ref(false)
   const isLoaded = ref(false)
   const debugMode = ref(false)
 
-  // 计算属性 - 组织信息
+  // Thuộc tính tính toán - tổ chức thông tin
   const organization = computed(
     () =>
       infoConfig.value.organization || {
@@ -19,7 +19,7 @@ export const useInfoStore = defineStore('info', () => {
       }
   )
 
-  // 计算属性 - 品牌信息
+  // Thuộc tính tính toán - Thông tin thương hiệu
   const branding = computed(
     () =>
       infoConfig.value.branding || {
@@ -30,7 +30,7 @@ export const useInfoStore = defineStore('info', () => {
       }
   )
 
-  // 计算属性 - 页脚信息
+  // Thuộc tính tính toán - Thông tin chân trang
   const footer = computed(() => ({
     copyright: '',
     user_agreement_url: '',
@@ -38,7 +38,7 @@ export const useInfoStore = defineStore('info', () => {
     ...(infoConfig.value.footer || {})
   }))
 
-  // 动作方法
+  // phương pháp hành động
   function setInfoConfig(newConfig) {
     infoConfig.value = newConfig
     isLoaded.value = true
@@ -49,7 +49,7 @@ export const useInfoStore = defineStore('info', () => {
   }
 
   async function loadInfoConfig(force = false) {
-    // 如果已经加载过且不强制刷新，则不重新加载
+    // Nếu nó đã được tải và không buộc phải làm mới，sau đó không tải lại
     if (isLoaded.value && !force) {
       return infoConfig.value
     }
@@ -60,14 +60,14 @@ export const useInfoStore = defineStore('info', () => {
 
       if (response.success && response.data) {
         setInfoConfig(response.data)
-        console.debug('信息配置加载成功:', response.data)
+        console.debug('Cấu hình thông tin được tải thành công:', response.data)
         return response.data
       } else {
-        console.warn('信息配置加载失败，使用默认配置')
+        console.warn('Tải cấu hình thông tin không thành công，Sử dụng cấu hình mặc định')
         return null
       }
     } catch (error) {
-      console.error('加载信息配置时发生错误:', error)
+      console.error('Đã xảy ra lỗi khi tải cấu hình thông tin:', error)
       return null
     } finally {
       isLoading.value = false
@@ -75,18 +75,18 @@ export const useInfoStore = defineStore('info', () => {
   }
 
   return {
-    // 状态
+    // Trạng thái
     infoConfig,
     isLoading,
     isLoaded,
     debugMode,
 
-    // 计算属性
+    // Thuộc tính tính toán
     organization,
     branding,
     footer,
 
-    // 方法
+    // phương pháp
     toggleDebugMode,
     loadInfoConfig
   }

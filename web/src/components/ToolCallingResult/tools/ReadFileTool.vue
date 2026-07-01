@@ -2,7 +2,7 @@
   <BaseToolCall :tool-call="toolCall">
     <template #header>
       <div class="sep-header">
-        <!-- 特殊处理：SKILL.md 文件显示为 Skill | <父目录名> -->
+        <!-- xử lý đặc biệt：SKILL.md Tệp xuất hiện dưới dạng Skill | <Tên thư mục mẹ> -->
         <template v-if="skillName">
           <span class="note skill-note">Skill</span>
           <span class="separator">|</span>
@@ -45,7 +45,7 @@ const parsedArgs = computed(() => {
 
 const filePath = computed(() => parsedArgs.value.file_path || '')
 
-// 仅显示文件名，悬浮时通过 title 显示完整路径
+// Chỉ hiển thị tên tệp，Vượt qua trong khi lơ lửng title hiển thị đường dẫn đầy đủ
 const fileName = computed(() => {
   const path = filePath.value
   if (!path) return ''
@@ -63,13 +63,13 @@ const lineRange = computed(() => {
   return ''
 })
 
-// 若读取的是 SKILL.md 文件，提取上一级目录名作为技能名称
-// 例：mmm/xxx/SKILL.md → skillName = 'xxx'
+// Nếu những gì được đọc là SKILL.md tập tin，Trích xuất tên thư mục cấp trên làm tên kỹ năng
+// Ví dụ：mmm/xxx/SKILL.md → skillName = 'xxx'
 const skillName = computed(() => {
   const path = filePath.value
   if (!path.endsWith('SKILL.md')) return null
   const parts = path.replace(/\\/g, '/').split('/')
-  // 取倒数第二段（SKILL.md 的父目录名）
+  // Lấy đoạn áp chót（SKILL.md tên thư mục mẹ）
   return parts.length >= 2 ? parts[parts.length - 2] : null
 })
 </script>
@@ -81,7 +81,7 @@ const skillName = computed(() => {
     background-color: var(--color-primary-50);
   }
 
-  // SKILL.md 专用样式
+  // SKILL.md phong cách đặc biệt
   .skill-note {
     color: var(--main-700);
   }

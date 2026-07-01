@@ -57,7 +57,7 @@ class FakeClient:
     def exchange_cli_token(self, _device_code):
         self.exchanges += 1
         if self.exchanges == 1:
-            raise ClientError("authorization_pending: 等待浏览器授权")
+            raise ClientError("authorization_pending: Đợi trình duyệt cấp phép")
         return {
             "secret": "yxkey_browser",
             "api_key": {"id": 42},
@@ -126,7 +126,7 @@ def test_login_rejects_unsupported_server_version(tmp_path):
 
     store = ConfigStore(tmp_path / "config.toml")
 
-    with pytest.raises(CommandError, match="低于 CLI 要求 0.7.1"):
+    with pytest.raises(CommandError, match="thấp hơn CLI yêu cầu 0.7.1"):
         login_with_api_key(store, None, "yxkey_existing", _console(), client_factory=OldServerClient)
 
 
@@ -138,9 +138,9 @@ def test_login_with_browser_retries_transient_errors(tmp_path):
         def exchange_cli_token(self, _device_code):
             self.exchanges += 1
             if self.exchanges == 1:
-                raise ClientError("请求远程失败: 连接被重置")  # 网络层错误，status_code=None
+                raise ClientError("Yêu cầu từ xa không thành công: thiết lập lại kết nối")  # lỗi lớp mạng，status_code=None
             if self.exchanges == 2:
-                raise ClientError("HTTP 503", status_code=503)  # 服务端瞬时错误
+                raise ClientError("HTTP 503", status_code=503)  # Lỗi tạm thời phía máy chủ
             return {
                 "secret": "yxkey_browser",
                 "api_key": {"id": 42},
@@ -167,7 +167,7 @@ def test_login_with_browser_aborts_on_terminal_error(tmp_path):
 
     class ExpiredClient(FakeClient):
         def exchange_cli_token(self, _device_code):
-            raise ClientError("expired_token: 授权会话已过期", error_code="expired_token", status_code=410)
+            raise ClientError("expired_token: Phiên ủy quyền đã hết hạn", error_code="expired_token", status_code=410)
 
     with pytest.raises(ClientError, match="expired_token"):
         login_with_browser(

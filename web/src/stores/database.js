@@ -19,7 +19,7 @@ export const useDatabaseStore = defineStore('database', () => {
   const kbId = ref(null)
   const fileDetailFileId = ref(null)
   const documentFiles = ref([])
-  const folderBreadcrumbs = ref([{ file_id: null, filename: '全部文件', path_prefix: '' }])
+  const folderBreadcrumbs = ref([{ file_id: null, filename: 'Tất cả các tập tin', path_prefix: '' }])
 
   const queryParams = ref([])
   const meta = reactive({})
@@ -62,7 +62,7 @@ export const useDatabaseStore = defineStore('database', () => {
 
   function resetFileBrowser() {
     documentFiles.value = []
-    folderBreadcrumbs.value = [{ file_id: null, filename: '全部文件', path_prefix: '' }]
+    folderBreadcrumbs.value = [{ file_id: null, filename: 'Tất cả các tập tin', path_prefix: '' }]
     selectedRowKeys.value = []
     Object.assign(fileBrowser, {
       loading: false,
@@ -79,7 +79,7 @@ export const useDatabaseStore = defineStore('database', () => {
   }
 
   // Actions
-  // 管理员获取所有知识库，普通用户获取有权限访问的知识库
+  // Quản trị viên có được tất cả các cơ sở kiến thức，Người dùng thông thường có quyền truy cập vào cơ sở tri thức
   async function loadDatabases() {
     state.listLoading = true
     try {
@@ -93,12 +93,12 @@ export const useDatabaseStore = defineStore('database', () => {
         if (!timeA && !timeB) return 0
         if (!timeA) return 1
         if (!timeB) return -1
-        return timeB.valueOf() - timeA.valueOf() // 降序排列，最新的在前面
+        return timeB.valueOf() - timeA.valueOf() // Thứ tự giảm dần，mới nhất đầu tiên
       })
     } catch (error) {
-      console.error('加载数据库列表失败:', error)
-      if (error.message.includes('权限')) {
-        message.error('没有权限访问知识库')
+      console.error('Không thể tải danh sách cơ sở dữ liệu:', error)
+      if (error.message.includes('Quyền')) {
+        message.error('Không có quyền truy cập vào cơ sở kiến thức')
       }
       throw error
     } finally {
@@ -107,26 +107,26 @@ export const useDatabaseStore = defineStore('database', () => {
   }
 
   async function createDatabase(formData) {
-    // 验证
+    // Xác minh
     if (!formData.database_name?.trim()) {
-      message.error('数据库名称不能为空')
+      message.error('Tên cơ sở dữ liệu không được để trống')
       return false
     }
 
     if (!formData.kb_type) {
-      message.error('请选择知识库类型')
+      message.error('Vui lòng chọn loại cơ sở kiến thức')
       return false
     }
 
     state.creating = true
     try {
       const data = await databaseApi.createDatabase(formData)
-      message.success('创建成功')
-      await loadDatabases() // 刷新列表
+      message.success('Đã tạo thành công')
+      await loadDatabases() // Làm mới danh sách
       return data
     } catch (error) {
-      console.error('创建数据库失败:', error)
-      message.error(error.message || '创建失败')
+      console.error('Không tạo được cơ sở dữ liệu:', error)
+      message.error(error.message || 'Tạo không thành công')
       throw error
     } finally {
       state.creating = false
@@ -153,7 +153,7 @@ export const useDatabaseStore = defineStore('database', () => {
       }
     } catch (error) {
       console.error(error)
-      message.error(error.message || '获取数据库信息失败')
+      message.error(error.message || 'Không thể lấy được thông tin cơ sở dữ liệu')
     } finally {
       if (!isBackground) {
         state.lock = false
@@ -166,11 +166,11 @@ export const useDatabaseStore = defineStore('database', () => {
     try {
       state.lock = true
       await databaseApi.updateDatabase(kbId.value, formData)
-      message.success('知识库信息更新成功')
+      message.success('Thông tin cơ sở kiến thức được cập nhật thành công')
       await getDatabaseInfo() // Load query params after updating database info
     } catch (error) {
       console.error(error)
-      message.error(error.message || '更新失败')
+      message.error(error.message || 'Cập nhật không thành công')
     } finally {
       state.lock = false
     }
@@ -178,19 +178,19 @@ export const useDatabaseStore = defineStore('database', () => {
 
   function deleteDatabase() {
     Modal.confirm({
-      title: '删除数据库',
-      content: '确定要删除该数据库吗？',
-      okText: '确认',
-      cancelText: '取消',
+      title: 'Xóa cơ sở dữ liệu',
+      content: 'Bạn có chắc chắn muốn xóa cơ sở dữ liệu này?？',
+      okText: 'Xác nhận',
+      cancelText: 'Hủy bỏ',
       onOk: async () => {
         state.lock = true
         try {
           const data = await databaseApi.deleteDatabase(kbId.value)
-          message.success(data.message || '删除成功')
+          message.success(data.message || 'Xóa thành công')
           router.push({ path: '/extensions', query: { tab: 'knowledge' } })
         } catch (error) {
           console.error(error)
-          message.error(error.message || '删除失败')
+          message.error(error.message || 'Xóa không thành công')
         } finally {
           state.lock = false
         }
@@ -206,7 +206,7 @@ export const useDatabaseStore = defineStore('database', () => {
       await loadDocumentFiles({ isBackground: true })
     } catch (error) {
       console.error(error)
-      message.error(error.message || '删除失败')
+      message.error(error.message || 'Xóa không thành công')
       throw error
     } finally {
       state.lock = false
@@ -215,10 +215,10 @@ export const useDatabaseStore = defineStore('database', () => {
 
   function handleDeleteFile(fileId) {
     Modal.confirm({
-      title: '删除文件',
-      content: '确定要删除该文件吗？',
-      okText: '确认',
-      cancelText: '取消',
+      title: 'Xóa tập tin',
+      content: 'Bạn có chắc chắn muốn xóa tập tin này?？',
+      okText: 'Xác nhận',
+      cancelText: 'Hủy bỏ',
       onOk: () => deleteFile(fileId)
     })
   }
@@ -231,15 +231,15 @@ export const useDatabaseStore = defineStore('database', () => {
     })
 
     if (validFileIds.length === 0) {
-      message.info('没有可删除的文件')
+      message.info('Không có tập tin để xóa')
       return
     }
 
     Modal.confirm({
-      title: '批量删除文件',
-      content: `确定要删除选中的 ${validFileIds.length} 个文件吗？`,
-      okText: '确认',
-      cancelText: '取消',
+      title: 'Xóa tập tin theo đợt',
+      content: `Bạn có chắc chắn muốn xóa mục đã chọn ${validFileIds.length} Một tập tin?？`,
+      okText: 'Xác nhận',
+      cancelText: 'Hủy bỏ',
       onOk: async () => {
         state.batchDeleting = true
         let successCount = 0
@@ -247,7 +247,7 @@ export const useDatabaseStore = defineStore('database', () => {
         let processedCount = 0
         const totalCount = validFileIds.length
         const progressKey = `batch-delete-${Date.now()}`
-        message.loading({ content: `正在删除文件 0/${totalCount}`, key: progressKey, duration: 0 })
+        message.loading({ content: `Xóa tập tin 0/${totalCount}`, key: progressKey, duration: 0 })
 
         try {
           const CHUNK_SIZE = 50
@@ -261,12 +261,12 @@ export const useDatabaseStore = defineStore('database', () => {
                 failureCount += res.failed_items.length
               }
             } catch (err) {
-              console.error(`删除批次 ${i / CHUNK_SIZE + 1} 失败:`, err)
+              console.error(`Xóa hàng loạt ${i / CHUNK_SIZE + 1} thất bại:`, err)
               failureCount += chunk.length
             } finally {
               processedCount += chunk.length
               message.loading({
-                content: `正在删除文件 ${processedCount}/${totalCount}`,
+                content: `Xóa tập tin ${processedCount}/${totalCount}`,
                 key: progressKey,
                 duration: 0
               })
@@ -275,11 +275,11 @@ export const useDatabaseStore = defineStore('database', () => {
 
           message.destroy(progressKey)
           if (successCount > 0 && failureCount === 0) {
-            message.success(`成功删除 ${successCount} 个文件`)
+            message.success(`đã xóa thành công ${successCount} tập tin`)
           } else if (successCount > 0 && failureCount > 0) {
-            message.warning(`成功删除 ${successCount} 个文件，${failureCount} 个文件删除失败`)
+            message.warning(`đã xóa thành công ${successCount} tập tin，${failureCount} Xóa tập tin không thành công`)
           } else if (failureCount > 0) {
-            message.error(`${failureCount} 个文件删除失败`)
+            message.error(`${failureCount} Xóa tập tin không thành công`)
           }
 
           selectedRowKeys.value = []
@@ -287,8 +287,8 @@ export const useDatabaseStore = defineStore('database', () => {
           await loadDocumentFiles({ isBackground: true })
         } catch (error) {
           message.destroy(progressKey)
-          console.error('批量删除出错:', error)
-          message.error(error.message || '批量删除过程中发生错误')
+          console.error('Lỗi xóa hàng loạt:', error)
+          message.error(error.message || 'Đã xảy ra lỗi khi xóa hàng loạt')
         } finally {
           state.batchDeleting = false
         }
@@ -388,7 +388,7 @@ export const useDatabaseStore = defineStore('database', () => {
     } catch (error) {
       console.error(error)
       if (!options.isBackground) {
-        message.error(error.message || '加载文件列表失败')
+        message.error(error.message || 'Không thể tải danh sách tập tin')
       }
     } finally {
       if (!options.isBackground) {
@@ -438,7 +438,7 @@ export const useDatabaseStore = defineStore('database', () => {
 
   async function addFiles({ items, contentType, params, parentId }) {
     if (items.length === 0) {
-      message.error(contentType === 'file' ? '请先上传文件' : '请输入有效的网页链接')
+      message.error(contentType === 'file' ? 'Vui lòng tải tập tin lên trước' : 'Vui lòng nhập một liên kết web hợp lệ')
       return
     }
 
@@ -450,13 +450,13 @@ export const useDatabaseStore = defineStore('database', () => {
       }
       const data = await documentApi.addDocuments(kbId.value, items, requestParams)
       if (data.status === 'success' || data.status === 'queued') {
-        const itemType = contentType === 'file' ? '文件' : 'URL'
+        const itemType = contentType === 'file' ? 'tập tin' : 'URL'
         enableAutoRefresh('auto')
-        message.success(data.message || `${itemType}已提交处理，请在任务中心查看进度`)
+        message.success(data.message || `${itemType}Đã gửi để xử lý，Vui lòng kiểm tra tiến độ trong trung tâm tác vụ`)
         if (data.task_id) {
           taskerStore.registerQueuedTask({
             task_id: data.task_id,
-            name: `知识库导入 (${kbId.value || ''})`,
+            name: `Nhập khẩu cơ sở kiến thức (${kbId.value || ''})`,
             task_type: 'knowledge_ingest',
             message: data.message,
             payload: {
@@ -466,15 +466,15 @@ export const useDatabaseStore = defineStore('database', () => {
             }
           })
         }
-        await delayedRefresh() // 延迟1秒后刷新
+        await delayedRefresh() // sự chậm trễ1Làm mới sau vài giây
         return true // Indicate success
       } else {
-        message.error(data.message || '处理失败')
+        message.error(data.message || 'Xử lý không thành công')
         return false
       }
     } catch (error) {
       console.error(error)
-      message.error(error.message || '处理请求失败')
+      message.error(error.message || 'Yêu cầu xử lý không thành công')
       return false
     } finally {
       state.chunkLoading = false
@@ -488,25 +488,25 @@ export const useDatabaseStore = defineStore('database', () => {
       const data = await documentApi.parseDocuments(kbId.value, fileIds)
       if (data.status === 'success' || data.status === 'queued') {
         enableAutoRefresh('auto')
-        message.success(data.message || '解析任务已提交')
+        message.success(data.message || 'Nhiệm vụ phân tích cú pháp đã được gửi')
         if (data.task_id) {
           taskerStore.registerQueuedTask({
             task_id: data.task_id,
-            name: `文档解析 (${kbId.value})`,
+            name: `Phân tích tài liệu (${kbId.value})`,
             task_type: 'knowledge_parse',
             message: data.message,
             payload: { kb_id: kbId.value, count: fileIds.length }
           })
         }
-        await delayedRefresh() // 延迟1秒后刷新
+        await delayedRefresh() // sự chậm trễ1Làm mới sau vài giây
         return true
       } else {
-        message.error(data.message || '提交失败')
+        message.error(data.message || 'Gửi không thành công')
         return false
       }
     } catch (error) {
       console.error(error)
-      message.error(error.message || '请求失败')
+      message.error(error.message || 'Yêu cầu không thành công')
       return false
     } finally {
       state.chunkLoading = false
@@ -519,11 +519,11 @@ export const useDatabaseStore = defineStore('database', () => {
       const data = await documentApi.parsePendingDocuments(kbId.value)
       if (data.status === 'success' || data.status === 'queued') {
         enableAutoRefresh('auto')
-        message.success(data.message || '解析任务已提交')
+        message.success(data.message || 'Nhiệm vụ phân tích cú pháp đã được gửi')
         if (data.task_id) {
           taskerStore.registerQueuedTask({
             task_id: data.task_id,
-            name: `文档解析 (${kbId.value})`,
+            name: `Phân tích tài liệu (${kbId.value})`,
             task_type: 'knowledge_parse',
             message: data.message,
             payload: { kb_id: kbId.value, count: data.queued_count || count, scope: 'pending' }
@@ -532,12 +532,12 @@ export const useDatabaseStore = defineStore('database', () => {
         await delayedRefresh()
         return true
       } else {
-        message.error(data.message || '提交失败')
+        message.error(data.message || 'Gửi không thành công')
         return false
       }
     } catch (error) {
       console.error(error)
-      message.error(error.message || '请求失败')
+      message.error(error.message || 'Yêu cầu không thành công')
       return false
     } finally {
       state.chunkLoading = false
@@ -551,25 +551,25 @@ export const useDatabaseStore = defineStore('database', () => {
       const data = await documentApi.indexDocuments(kbId.value, fileIds, params)
       if (data.status === 'success' || data.status === 'queued') {
         enableAutoRefresh('auto')
-        message.success(data.message || '入库任务已提交')
+        message.success(data.message || 'Nhiệm vụ kho bãi đã được gửi')
         if (data.task_id) {
           taskerStore.registerQueuedTask({
             task_id: data.task_id,
-            name: `文档入库 (${kbId.value})`,
+            name: `Lưu trữ tài liệu (${kbId.value})`,
             task_type: 'knowledge_index',
             message: data.message,
             payload: { kb_id: kbId.value, count: fileIds.length }
           })
         }
-        await delayedRefresh() // 延迟1秒后刷新
+        await delayedRefresh() // sự chậm trễ1Làm mới sau vài giây
         return true
       } else {
-        message.error(data.message || '提交失败')
+        message.error(data.message || 'Gửi không thành công')
         return false
       }
     } catch (error) {
       console.error(error)
-      message.error(error.message || '请求失败')
+      message.error(error.message || 'Yêu cầu không thành công')
       return false
     } finally {
       state.chunkLoading = false
@@ -582,11 +582,11 @@ export const useDatabaseStore = defineStore('database', () => {
       const data = await documentApi.indexPendingDocuments(kbId.value, params)
       if (data.status === 'success' || data.status === 'queued') {
         enableAutoRefresh('auto')
-        message.success(data.message || '入库任务已提交')
+        message.success(data.message || 'Nhiệm vụ kho bãi đã được gửi')
         if (data.task_id) {
           taskerStore.registerQueuedTask({
             task_id: data.task_id,
-            name: `文档入库 (${kbId.value})`,
+            name: `Lưu trữ tài liệu (${kbId.value})`,
             task_type: 'knowledge_index',
             message: data.message,
             payload: { kb_id: kbId.value, count: data.queued_count || count, scope: 'pending' }
@@ -595,12 +595,12 @@ export const useDatabaseStore = defineStore('database', () => {
         await delayedRefresh()
         return true
       } else {
-        message.error(data.message || '提交失败')
+        message.error(data.message || 'Gửi không thành công')
         return false
       }
     } catch (error) {
       console.error(error)
-      message.error(error.message || '请求失败')
+      message.error(error.message || 'Yêu cầu không thành công')
       return false
     } finally {
       state.chunkLoading = false
@@ -610,7 +610,7 @@ export const useDatabaseStore = defineStore('database', () => {
   function openFileDetail(fileId) {
     const nextFileId = typeof fileId === 'object' ? fileId?.file_id : fileId
     if (!nextFileId) {
-      message.error('文件信息不完整')
+      message.error('Thông tin tập tin không đầy đủ')
       return
     }
     fileDetailFileId.value = nextFileId
@@ -649,7 +649,7 @@ export const useDatabaseStore = defineStore('database', () => {
       })
     } catch (error) {
       console.error('Failed to load query params:', error)
-      message.error('加载查询参数失败')
+      message.error('Không tải được tham số truy vấn')
     } finally {
       state.queryParamsLoading = false
     }
@@ -671,7 +671,7 @@ export const useDatabaseStore = defineStore('database', () => {
     }
   }
 
-  // 延时刷新文件理解（延迟1秒后刷新）
+  // Hiểu tập tin làm mới bị trì hoãn（sự chậm trễ1Làm mới sau vài giây）
   async function delayedRefresh() {
     await new Promise((resolve) => setTimeout(resolve, 1000))
     await getDatabaseInfo(undefined, true)
@@ -700,9 +700,9 @@ export const useDatabaseStore = defineStore('database', () => {
     selectedRowKeys.value = newSelectedKeys
 
     if (failedFiles.length > 0) {
-      message.success(`已选择 ${failedFiles.length} 个失败的文件`)
+      message.success(`Đã chọn ${failedFiles.length} tập tin bị lỗi`)
     } else {
-      message.info('当前没有失败的文件')
+      message.info('Hiện tại không có tập tin bị lỗi')
     }
   }
 

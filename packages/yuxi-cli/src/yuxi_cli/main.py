@@ -45,7 +45,7 @@ def _print_remote_context(store: ConfigStore, remote_name: str | None) -> None:
 
 
 def _handle_error(exc: Exception) -> None:
-    console.print(f"[red]错误:[/red] {exc}")
+    console.print(f"[red]Lỗi:[/red] {exc}")
     raise typer.Exit(1) from exc
 
 
@@ -62,7 +62,7 @@ def main(
 def add_remote(name: str, url: str):
     try:
         remote = remote_add(_store(), name, url)
-        console.print(f"已保存 remote {remote.name}: {remote.url}")
+        console.print(f"đã lưu remote {remote.name}: {remote.url}")
     except ConfigError as exc:
         _handle_error(exc)
 
@@ -71,7 +71,7 @@ def add_remote(name: str, url: str):
 def use_remote(name: str):
     try:
         remote = remote_use(_store(), name)
-        console.print(f"当前 remote: {remote.name}")
+        console.print(f"hiện tại remote: {remote.name}")
     except ConfigError as exc:
         _handle_error(exc)
 
@@ -102,7 +102,7 @@ def login(
     no_open: bool = typer.Option(False, "--no-open", help="Print browser URL without opening it."),
 ):
     if browser and api_key:
-        _handle_error(CommandError("--browser 和 --api-key 不能同时使用"))
+        _handle_error(CommandError("--browser và --api-key không thể được sử dụng cùng một lúc"))
     store = _store()
     try:
         _print_remote_context(store, remote)

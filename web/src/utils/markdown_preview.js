@@ -81,7 +81,7 @@ const renderFrontmatterCard = (data) => {
     .join('')
 
   return `<section class="frontmatter-card">
-    <div class="fm-body">${rows || '<div class="fm-empty">无 frontmatter 信息</div>'}</div>
+    <div class="fm-body">${rows || '<div class="fm-empty">không có frontmatter thông tin</div>'}</div>
   </section>`
 }
 

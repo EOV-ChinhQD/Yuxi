@@ -1,19 +1,19 @@
 <template>
   <div class="dashboard-container">
-    <!-- 顶部状态条 -->
+    <!-- thanh trạng thái trên cùng -->
 
-    <!-- 现代化顶部统计栏 -->
+    <!-- Thanh thống kê hàng đầu hiện đại -->
     <div class="modern-stats-header">
       <StatusBar />
       <StatsOverviewComponent :basic-stats="basicStats" @open-feedback="handleOpenFeedback" />
     </div>
 
-    <!-- Grid布局的主要内容区域 -->
+    <!-- GridKhu vực nội dung chính của bố cục -->
     <div class="dashboard-grid">
-      <!-- 调用统计模块 - 占据2x1网格 -->
+      <!-- Mô-đun thống kê cuộc gọi - chiếm giữ2x1lưới -->
       <CallStatsComponent :loading="loading" ref="callStatsRef" />
 
-      <!-- 用户活跃度分析 - 占据1x1网格 -->
+      <!-- Phân tích hoạt động của người dùng - chiếm giữ1x1lưới -->
       <div class="grid-item user-stats">
         <UserStatsComponent
           :user-stats="allStatsData?.users"
@@ -22,7 +22,7 @@
         />
       </div>
 
-      <!-- AI智能体分析 - 占据1x1网格 -->
+      <!-- AIphân tích tác nhân - chiếm giữ1x1lưới -->
       <div class="grid-item agent-stats">
         <AgentStatsComponent
           :agent-stats="allStatsData?.agents"
@@ -31,7 +31,7 @@
         />
       </div>
 
-      <!-- 工具调用监控 - 占据1x1网格 -->
+      <!-- Giám sát cuộc gọi công cụ - chiếm giữ1x1lưới -->
       <div class="grid-item tool-stats">
         <ToolStatsComponent
           :tool-stats="allStatsData?.tools"
@@ -40,7 +40,7 @@
         />
       </div>
 
-      <!-- 知识库使用情况 - 占据1x1网格 -->
+      <!-- Cách sử dụng cơ sở kiến thức - chiếm giữ1x1lưới -->
       <div class="grid-item knowledge-stats">
         <KnowledgeStatsComponent
           :knowledge-stats="allStatsData?.knowledge"
@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    <!-- 反馈模态框 -->
+    <!-- Hộp phương thức phản hồi -->
     <FeedbackModalComponent ref="feedbackModal" />
   </div>
 </template>
@@ -60,7 +60,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { dashboardApi } from '@/apis/dashboard_api'
 
-// 导入子组件
+// Nhập thành phần phụ
 import StatusBar from '@/components/StatusBar.vue'
 import UserStatsComponent from '@/components/dashboard/UserStatsComponent.vue'
 import ToolStatsComponent from '@/components/dashboard/ToolStatsComponent.vue'
@@ -70,10 +70,10 @@ import CallStatsComponent from '@/components/dashboard/CallStatsComponent.vue'
 import StatsOverviewComponent from '@/components/dashboard/StatsOverviewComponent.vue'
 import FeedbackModalComponent from '@/components/dashboard/FeedbackModalComponent.vue'
 
-// 组件引用
+// tham chiếu thành phần
 const feedbackModal = ref(null)
 
-// 统计数据 - 使用新的响应式结构
+// Thống kê - Sử dụng các cấu trúc đáp ứng mới
 const basicStats = ref({})
 const allStatsData = ref({
   users: null,
@@ -82,29 +82,29 @@ const allStatsData = ref({
   agents: null
 })
 
-// 对话列表
+// Danh sách cuộc trò chuyện
 const loading = ref(false)
 
-// 调用统计子组件引用
+// Tham chiếu thành phần phụ thống kê cuộc gọi
 const callStatsRef = ref(null)
 
-// 子组件引用
+// tham chiếu thành phần phụ
 const userStatsRef = ref(null)
 const toolStatsRef = ref(null)
 const knowledgeStatsRef = ref(null)
 const agentStatsRef = ref(null)
 
-// 加载统计数据 - 使用并行API调用
+// Tải số liệu thống kê - Sử dụng song songAPIgọi
 const loadAllStats = async () => {
   loading.value = true
   try {
-    // 使用并行API调用获取所有统计数据
+    // Sử dụng song songAPIGọi để nhận tất cả số liệu thống kê
     const response = await dashboardApi.getAllStats()
 
-    // 更新基础统计数据
+    // Cập nhật số liệu thống kê cơ bản
     basicStats.value = response.basic
 
-    // 更新详细统计数据
+    // Cập nhật số liệu thống kê chi tiết
     allStatsData.value = {
       users: response.users,
       tools: response.tools,
@@ -112,32 +112,32 @@ const loadAllStats = async () => {
       agents: response.agents
     }
 
-    console.log('Dashboard 数据加载完成:', response)
-    message.success('数据加载成功')
+    console.log('Dashboard Tải dữ liệu hoàn tất:', response)
+    message.success('Dữ liệu được tải thành công')
   } catch (error) {
-    console.error('加载统计数据失败:', error)
-    message.error('加载统计数据失败')
+    console.error('Không tải được số liệu thống kê:', error)
+    message.error('Không tải được số liệu thống kê')
 
-    // 如果并行请求失败，尝试单独加载基础数据
+    // Nếu yêu cầu song song không thành công，Hãy thử tải riêng dữ liệu cơ bản
     try {
       const basicResponse = await dashboardApi.getStats()
       basicStats.value = basicResponse
-      message.warning('详细数据加载失败，仅显示基础统计')
+      message.warning('Tải dữ liệu chi tiết không thành công，Chỉ hiển thị số liệu thống kê cơ bản')
     } catch (basicError) {
-      console.error('加载基础统计数据也失败:', basicError)
-      message.error('无法加载任何统计数据')
+      console.error('Tải số liệu thống kê cơ bản cũng không thành công:', basicError)
+      message.error('Không thể tải bất kỳ số liệu thống kê nào')
     }
   } finally {
     loading.value = false
   }
 }
 
-// 打开反馈详情弹窗
+// Mở cửa sổ bật lên chi tiết phản hồi
 const handleOpenFeedback = () => {
   feedbackModal.value?.show()
 }
 
-// 清理函数 - 清理所有子组件的图表实例
+// Chức năng dọn dẹp - Dọn dẹp các phiên bản biểu đồ của tất cả các thành phần con
 const cleanupCharts = () => {
   if (userStatsRef.value?.cleanup) userStatsRef.value.cleanup()
   if (toolStatsRef.value?.cleanup) userStatsRef.value.cleanup()
@@ -146,12 +146,12 @@ const cleanupCharts = () => {
   if (callStatsRef.value?.cleanup) callStatsRef.value.cleanup()
 }
 
-// 初始化
+// khởi tạo
 onMounted(() => {
   loadAllStats()
 })
 
-// 组件卸载时清理图表
+// Làm sạch biểu đồ khi thành phần được dỡ xuống
 onUnmounted(() => {
   cleanupCharts()
 })
@@ -164,7 +164,7 @@ onUnmounted(() => {
   overflow-x: hidden;
 }
 
-// Dashboard 特有的网格布局
+// Dashboard Bố cục lưới độc đáo
 .dashboard-grid {
   display: grid;
   padding: var(--page-padding);
@@ -192,7 +192,7 @@ onUnmounted(() => {
       }
     }
 
-    // 大页面布局：第一行 2x1 + 1x1，第二行 3x1x1
+    // Bố cục trang lớn：dòng đầu tiên 2x1 + 1x1，dòng thứ hai 3x1x1
     &.call-stats {
       grid-column: 1 / 3;
       grid-row: 1 / 2;
@@ -225,7 +225,7 @@ onUnmounted(() => {
   }
 }
 
-// Dashboard 特有的卡片样式
+// Dashboard Những kiểu thiệp độc đáo
 .call-stats-section {
   background-color: var(--gray-0);
   border: 1px solid var(--gray-200);
@@ -264,7 +264,7 @@ onUnmounted(() => {
   }
 }
 
-// Dashboard 特有的占位符样式
+// Dashboard Các kiểu giữ chỗ độc đáo
 .placeholder-content {
   display: flex;
   flex-direction: column;
@@ -303,7 +303,7 @@ onUnmounted(() => {
   }
 }
 
-// 调用统计模块样式
+// Kiểu mô-đun thống kê cuộc gọi
 .call-stats-section {
   .call-stats-container {
     .call-summary {
@@ -351,7 +351,7 @@ onUnmounted(() => {
   }
 }
 
-// Dashboard 特有的响应式设计
+// Dashboard Thiết kế đáp ứng độc đáo
 @media (max-width: 1200px) {
   .dashboard-grid {
     grid-template-columns: 1fr 1fr;
@@ -359,7 +359,7 @@ onUnmounted(() => {
     gap: 16px;
 
     .grid-item {
-      // 小页面布局：第一行 2x1，第二行和第三行各是 2x1x1
+      // Bố cục trang nhỏ：dòng đầu tiên 2x1，Dòng thứ hai và thứ ba là mỗi dòng 2x1x1
       &.call-stats {
         grid-column: 1 / 3;
         grid-row: 1 / 2;

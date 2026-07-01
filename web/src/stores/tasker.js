@@ -17,7 +17,7 @@ const createDefaultSummary = () => ({
 
 const toTask = (raw = {}) => ({
   id: raw.id,
-  name: raw.name || '后台任务',
+  name: raw.name || 'Tác vụ nền',
   type: raw.type || 'general',
   status: raw.status || 'pending',
   progress: raw.progress ?? 0,
@@ -69,7 +69,7 @@ export const useTaskerStore = defineStore('tasker', () => {
   const successCount = computed(() => statusCounts.value?.success || 0)
   const totalCount = computed(() => summary.value?.total || 0)
 
-  // 是否存在需要持续轮询的任务：summary 统计或本地乐观登记的活跃任务
+  // Có nhiệm vụ nào yêu cầu bỏ phiếu liên tục không?：summary Nhiệm vụ tích cực để thống kê hoặc đăng ký lạc quan cục bộ
   const hasActiveTasks = computed(
     () => activeCount.value > 0 || tasks.value.some((task) => ACTIVE_STATUSES.has(task.status))
   )
@@ -105,7 +105,7 @@ export const useTaskerStore = defineStore('tasker', () => {
       }
       tasks.value = taskList.map(toTask)
     } catch (error) {
-      console.error('加载任务列表失败', error)
+      console.error('Không tải được danh sách nhiệm vụ', error)
       lastError.value = error
       summary.value = createDefaultSummary()
     } finally {
@@ -122,7 +122,7 @@ export const useTaskerStore = defineStore('tasker', () => {
         upsertTask(response.task)
       }
     } catch (error) {
-      console.error(`刷新任务 ${taskId} 详情失败`, error)
+      console.error(`nhiệm vụ làm mới ${taskId} Chi tiết không thành công`, error)
       lastError.value = error
     }
   }
@@ -131,11 +131,11 @@ export const useTaskerStore = defineStore('tasker', () => {
     if (!taskId) return
     try {
       await taskerApi.cancelTask(taskId)
-      message.success('取消任务成功')
+      message.success('Đã hủy tác vụ thành công')
       await refreshTask(taskId)
     } catch (error) {
-      console.error(`取消任务 ${taskId} 失败`, error)
-      message.error(error?.message || '取消任务失败')
+      console.error(`Hủy tác vụ ${taskId} thất bại`, error)
+      message.error(error?.message || 'Không hủy được nhiệm vụ')
     }
   }
 
@@ -143,15 +143,15 @@ export const useTaskerStore = defineStore('tasker', () => {
     if (!taskId) return
     try {
       await taskerApi.deleteTask(taskId)
-      message.success('删除任务成功')
-      // 从本地列表中移除
+      message.success('Đã xóa tác vụ thành công')
+      // Xóa khỏi danh sách cục bộ
       const index = tasks.value.findIndex((item) => item.id === taskId)
       if (index >= 0) {
         tasks.value.splice(index, 1)
       }
     } catch (error) {
-      console.error(`删除任务 ${taskId} 失败`, error)
-      message.error(error?.message || '删除任务失败')
+      console.error(`Xóa tác vụ ${taskId} thất bại`, error)
+      message.error(error?.message || 'Xóa tác vụ không thành công')
     }
   }
 
@@ -160,11 +160,11 @@ export const useTaskerStore = defineStore('tasker', () => {
     const now = new Date().toISOString()
     upsertTask({
       id: task_id,
-      name: name || '后台任务',
+      name: name || 'Tác vụ nền',
       type: task_type || 'manual',
       status: 'queued',
       progress: 0,
-      message: msg || '任务已排队',
+      message: msg || 'Nhiệm vụ được xếp hàng đợi',
       created_at: now,
       updated_at: now,
       payload: payload || {}
@@ -196,8 +196,8 @@ export const useTaskerStore = defineStore('tasker', () => {
     }
   }
 
-  // 轮询所有权收敛到 store：抽屉打开或存在活跃任务时持续轮询，否则停止，
-  // 修复抽屉关闭后任务角标（activeCount）不再更新的问题。
+  // Quyền sở hữu cuộc thăm dò hội tụ đến store：Thăm dò liên tục khi ngăn kéo mở hoặc có tác vụ đang hoạt động，Nếu không thì dừng lại，
+  // Đã sửa biểu tượng tác vụ sau khi đóng ngăn kéo（activeCount）Vấn đề không còn được cập nhật。
   function syncPolling() {
     if (userStore.isAdmin && (isDrawerOpen.value || hasActiveTasks.value)) {
       startPolling()

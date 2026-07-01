@@ -4,22 +4,22 @@ import { ref } from 'vue'
 export const useChatUIStore = defineStore(
   'chatUI',
   () => {
-    // ==================== 聊天界面 UI 状态 ====================
-    // 加载状态
+    // ==================== Giao diện trò chuyện UI Trạng thái ====================
+    // Trạng thái tải
     const isLoadingMessages = ref(false)
 
-    // 应用侧边栏折叠态
+    // Trạng thái thu gọn thanh bên của ứng dụng
     const sidebarCollapsed = ref(false)
 
-    // 更多菜单
+    // Thực đơn khác
     const moreMenuOpen = ref(false)
     const moreMenuPosition = ref({ x: 0, y: 0 })
 
-    // ==================== 方法 ====================
+    // ==================== phương pháp ====================
     /**
-     * 打开更多菜单
-     * @param {number} x - X 坐标
-     * @param {number} y - Y 坐标
+     * Mở thêm menu
+     * @param {number} x - X tọa độ
+     * @param {number} y - Y tọa độ
      */
     function openMoreMenu(x, y) {
       moreMenuPosition.value = { x, y }
@@ -27,14 +27,14 @@ export const useChatUIStore = defineStore(
     }
 
     /**
-     * 关闭更多菜单
+     * Đóng nhiều menu hơn
      */
     function closeMoreMenu() {
       moreMenuOpen.value = false
     }
 
     /**
-     * 重置所有 UI 状态（不包括持久化状态）
+     * thiết lập lại tất cả UI Trạng thái（Không bao gồm trạng thái liên tục）
      */
     function reset() {
       isLoadingMessages.value = false
@@ -43,13 +43,13 @@ export const useChatUIStore = defineStore(
     }
 
     return {
-      // 状态
+      // Trạng thái
       isLoadingMessages,
       sidebarCollapsed,
       moreMenuOpen,
       moreMenuPosition,
 
-      // 方法
+      // phương pháp
       openMoreMenu,
       closeMoreMenu,
       reset

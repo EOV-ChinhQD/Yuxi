@@ -28,7 +28,7 @@
           </div>
         </div>
         <div v-if="todoListData(resultContent).length === 0" class="no-results">
-          <p>暂无待办事项</p>
+          <p>Chưa có mục việc cần làm nào</p>
         </div>
       </div>
     </template>
@@ -71,15 +71,15 @@ const query = computed(() => {
     if (list && list.length > 0) {
       // 1. In Progress
       const inProgress = list.find((item) => item.status === 'in_progress')
-      if (inProgress) return `进行中: ${formatTodoName(inProgress.content)}`
+      if (inProgress) return `Đang tiến hành: ${formatTodoName(inProgress.content)}`
 
       // 2. Pending
       const pending = list.find((item) => item.status === 'pending')
-      if (pending) return `待处理: ${formatTodoName(pending.content)}`
+      if (pending) return `Đang chờ xử lý: ${formatTodoName(pending.content)}`
 
       // 3. Last item fallback
       const last = list[list.length - 1]
-      return `更新: ${formatTodoName(last.content)}`
+      return `cập nhật: ${formatTodoName(last.content)}`
     }
   }
 

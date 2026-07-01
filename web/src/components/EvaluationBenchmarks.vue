@@ -1,43 +1,43 @@
 <template>
   <div class="evaluation-benchmarks-container">
-    <!-- 操作栏 -->
+    <!-- Thanh hành động -->
     <div class="benchmarks-header">
       <div class="header-left">
         <a-button type="primary" class="lucide-icon-btn" @click="showUploadModal">
           <template #icon><Upload :size="16" /></template>
-          上传基准
+          Tải điểm chuẩn lên
         </a-button>
         <a-button class="lucide-icon-btn" @click="showGenerateModal">
           <template #icon><Bot :size="16" /></template>
-          自动生成
+          Được tạo tự động
         </a-button>
-        <span class="total-count">{{ benchmarks.length }} 个基准</span>
+        <span class="total-count">{{ benchmarks.length }} điểm chuẩn</span>
       </div>
       <div class="header-right">
         <a-button class="lucide-icon-btn" @click="loadBenchmarks">
           <template #icon><RefreshCw :size="16" /></template>
-          刷新
+          Làm mới
         </a-button>
       </div>
     </div>
 
-    <!-- 基准列表 -->
+    <!-- Danh sách điểm chuẩn -->
     <div class="benchmarks-list">
       <ResourceEmptyState
         v-if="!loading && benchmarks.length === 0"
-        title="暂无评估基准"
-        description="上传数据集，或从当前知识库自动生成评估问题。"
+        title="Chưa có cơ sở đánh giá"
+        description="Tải tập dữ liệu lên，hoặc tự động tạo ra các câu hỏi đánh giá từ cơ sở kiến thức hiện tại。"
         :icon="ClipboardList"
         size="compact"
       >
         <template #actions>
           <a-button type="primary" class="lucide-icon-btn" @click="showUploadModal">
             <template #icon><Upload :size="16" /></template>
-            上传基准
+            Tải điểm chuẩn lên
           </a-button>
           <a-button class="lucide-icon-btn" @click="showGenerateModal">
             <template #icon><Bot :size="16" /></template>
-            自动生成
+            Được tạo tự động
           </a-button>
         </template>
       </ResourceEmptyState>
@@ -54,7 +54,7 @@
           :class="{ 'benchmark-item-disabled': !isDatasetCompleted(benchmark) }"
           @click="isDatasetCompleted(benchmark) && previewDataset(benchmark)"
         >
-          <!-- 主要内容 -->
+          <!-- Nội dung chính -->
           <div class="benchmark-main">
             <div class="benchmark-header">
               <h4 class="benchmark-name">{{ benchmark.name }}</h4>
@@ -63,7 +63,7 @@
                   <button
                     type="button"
                     class="benchmark-more-action"
-                    aria-label="更多操作"
+                    aria-label="Thêm hành động"
                     @click.stop
                   >
                     <MoreVertical :size="16" />
@@ -80,7 +80,7 @@
                       >
                         <span class="benchmark-menu-item">
                           <Download :size="14" />
-                          <span>下载</span>
+                          <span>Tải xuống</span>
                         </span>
                       </a-menu-item>
                       <a-menu-item
@@ -91,7 +91,7 @@
                       >
                         <span class="benchmark-menu-item">
                           <Trash2 :size="14" />
-                          <span>删除</span>
+                          <span>Xóa</span>
                         </span>
                       </a-menu-item>
                     </a-menu>
@@ -100,28 +100,28 @@
               </div>
             </div>
 
-            <p class="benchmark-desc">{{ benchmark.description || '暂无描述' }}</p>
+            <p class="benchmark-desc">{{ benchmark.description || 'Chưa có mô tả' }}</p>
 
-            <!-- 标签区域 -->
+            <!-- khu vực nhãn -->
             <div class="benchmark-meta">
               <div class="meta-row">
                 <span
                   v-if="benchmark.has_gold_chunks && !benchmark.has_gold_answers"
                   class="card-tag benchmark-tag tag-blue"
                 >
-                  检索评估
+                  Đánh giá tìm kiếm
                 </span>
                 <span
                   v-if="benchmark.has_gold_answers && !benchmark.has_gold_chunks"
                   class="card-tag benchmark-tag tag-gold"
                 >
-                  问答评估
+                  Đánh giá hỏi đáp
                 </span>
                 <span
                   v-if="!benchmark.has_gold_chunks && !benchmark.has_gold_answers"
                   class="card-tag benchmark-tag"
                 >
-                  仅查询
+                  Chỉ truy vấn
                 </span>
 
                 <span v-if="benchmark.has_gold_chunks" class="card-tag benchmark-tag tag-green">
@@ -144,7 +144,7 @@
             </div>
           </div>
 
-          <!-- 底部信息 -->
+          <!-- Thông tin đáy -->
           <div class="benchmark-footer">
             <span class="benchmark-time">{{ formatDate(benchmark.created_at) }}</span>
             <div v-if="shouldShowBuildProgress(benchmark)" class="footer-build-progress">
@@ -158,20 +158,20 @@
                 {{ getDatasetBuildMessage(benchmark) }}
               </span>
             </div>
-            <span v-else class="benchmark-count">{{ benchmark.item_count }} 个问题</span>
+            <span v-else class="benchmark-count">{{ benchmark.item_count }} câu hỏi</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 上传模态框 -->
+    <!-- Hộp phương thức tải lên -->
     <BenchmarkUploadModal
       v-model:visible="uploadModalVisible"
       :kb-id="kbId"
       @success="onUploadSuccess"
     />
 
-    <!-- 生成模态框 -->
+    <!-- Tạo hộp phương thức -->
     <BenchmarkGenerateModal
       v-model:visible="generateModalVisible"
       :kb-id="kbId"
@@ -182,12 +182,12 @@
       <div v-if="previewModalVisible" class="evaluation-detail-overlay">
         <div class="evaluation-detail-panel">
           <div class="evaluation-detail-titlebar">
-            <div class="evaluation-detail-title">评估基准详情</div>
+            <div class="evaluation-detail-title">Chi tiết điểm chuẩn đánh giá</div>
             <a-button
               type="text"
               size="small"
               class="lucide-icon-btn"
-              title="关闭"
+              title="đóng"
               @click="previewModalVisible = false"
             >
               <X :size="16" />
@@ -199,19 +199,19 @@
               <h3>{{ previewData.name }}</h3>
               <div class="preview-meta">
                 <span class="meta-item">
-                  <span class="meta-label">问题数:</span>
+                  <span class="meta-label">số lượng câu hỏi:</span>
                   {{ previewData.item_count }}
                 </span>
                 <span class="meta-item">
                   <span class="meta-label">Gold Chunks:</span>
                   <span :class="previewData.has_gold_chunks ? 'status-yes' : 'status-no'">
-                    {{ previewData.has_gold_chunks ? '有' : '无' }}
+                    {{ previewData.has_gold_chunks ? 'Có' : 'không có' }}
                   </span>
                 </span>
                 <span class="meta-item">
                   <span class="meta-label">Gold Answer:</span>
                   <span :class="previewData.has_gold_answers ? 'status-yes' : 'status-no'">
-                    {{ previewData.has_gold_answers ? '有' : '无' }}
+                    {{ previewData.has_gold_answers ? 'Có' : 'không có' }}
                   </span>
                 </span>
               </div>
@@ -220,13 +220,13 @@
             <div class="preview-questions" v-if="previewQuestions && previewQuestions.length > 0">
               <div class="table-section-header">
                 <div class="table-title-group">
-                  <h4>问题列表</h4>
-                  <span>共 {{ previewPagination.total }} 条</span>
+                  <h4>Danh sách câu hỏi</h4>
+                  <span>tổng cộng {{ previewPagination.total }} Bài viết</span>
                 </div>
                 <a-switch
                   v-model:checked="previewAutoWrap"
-                  checked-children="换行"
-                  un-checked-children="不换行"
+                  checked-children="dòng mới"
+                  un-checked-children="Không ngắt dòng"
                 />
               </div>
               <a-table
@@ -312,7 +312,7 @@ const emit = defineEmits(['refresh'])
 
 const taskerStore = useTaskerStore()
 
-// 状态
+// Trạng thái
 const loading = ref(false)
 const benchmarks = ref([])
 const uploadModalVisible = ref(false)
@@ -382,7 +382,7 @@ const withResizableTitle = (column) => ({
   ])
 })
 
-// 表格列定义
+// định nghĩa cột trong bảng
 const questionColumns = [
   {
     title: '#',
@@ -391,7 +391,7 @@ const questionColumns = [
     align: 'center'
   },
   {
-    title: '问题',
+    title: 'câu hỏi',
     dataIndex: 'query',
     key: 'query',
     width: 280,
@@ -429,12 +429,12 @@ const questionTableScrollX = computed(() => {
   )
 })
 
-// 分页配置
+// Cấu hình phân trang
 const paginationConfig = computed(() => ({
   current: previewPagination.value.current,
   pageSize: previewPagination.value.pageSize,
   total: previewPagination.value.total,
-  showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+  showTotal: (total, range) => `Không. ${range[0]}-${range[1]} Bài viết，tổng cộng ${total} Bài viết`,
   showSizeChanger: true,
   pageSizeOptions: ['10', '20', '50', '100'],
   showQuickJumper: true,
@@ -468,15 +468,15 @@ const getDatasetProgress = (benchmark) => {
 
 const getDatasetSourceText = (benchmark) => {
   const source = getBuildMetadata(benchmark).source
-  return source === 'generated' ? '自动生成' : '上传'
+  return source === 'generated' ? 'Được tạo tự động' : 'tải lên'
 }
 
 const getDatasetStatusText = (benchmark) => {
   const statusTextMap = {
-    pending: '等待生成',
-    running: '生成中',
-    completed: '已完成',
-    failed: '生成失败'
+    pending: 'Chờ đợi thế hệ',
+    running: 'Đang tạo',
+    completed: 'Đã hoàn thành',
+    failed: 'Xây dựng không thành công'
   }
   return statusTextMap[getDatasetBuildStatus(benchmark)] || getDatasetBuildStatus(benchmark)
 }
@@ -515,7 +515,7 @@ const syncBuildRefresh = () => {
   }
 }
 
-// 加载基准列表
+// Tải danh sách điểm chuẩn
 const loadBenchmarks = async (silent = false) => {
   if (!props.kbId) return
 
@@ -526,47 +526,47 @@ const loadBenchmarks = async (silent = false) => {
     if (response && response.message === 'success' && Array.isArray(response.data)) {
       benchmarks.value = response.data
     } else {
-      console.error('响应格式不符合预期:', response)
-      message.error('基准数据格式错误')
+      console.error('Định dạng phản hồi không như mong đợi:', response)
+      message.error('Lỗi định dạng dữ liệu điểm chuẩn')
     }
   } catch (error) {
-    console.error('加载评估基准失败:', error)
-    if (!silent) message.error('加载评估基准失败')
+    console.error('Không tải được điểm chuẩn đánh giá:', error)
+    if (!silent) message.error('Không tải được điểm chuẩn đánh giá')
   } finally {
     if (!silent) loading.value = false
     syncBuildRefresh()
   }
 }
 
-// 显示上传模态框
+// Hiển thị hộp phương thức tải lên
 const showUploadModal = () => {
   uploadModalVisible.value = true
 }
 
-// 显示生成模态框
+// Hiển thị hộp phương thức được tạo
 const showGenerateModal = () => {
   generateModalVisible.value = true
 }
 
-// 上传成功回调
+// Tải lên gọi lại thành công
 const onUploadSuccess = () => {
   loadBenchmarks()
-  message.success('基准上传成功')
-  taskerStore.loadTasks() // 刷新任务列表
-  // 通知父组件刷新基准列表
+  message.success('Tải lên điểm chuẩn thành công')
+  taskerStore.loadTasks() // Làm mới danh sách nhiệm vụ
+  // Thông báo cho thành phần cha mẹ để làm mới danh sách cơ sở
   emit('refresh')
 }
 
-// 生成成功回调
+// Tạo cuộc gọi lại thành công
 const onGenerateSuccess = () => {
   loadBenchmarks()
-  // message.success('基准生成成功'); // 移除，由模态框提示任务提交
-  taskerStore.loadTasks() // 刷新任务列表
-  // 通知父组件刷新基准列表
+  // message.success('Tạo điểm chuẩn thành công'); // Xóa，Gửi bởi tác vụ nhắc hộp phương thức
+  taskerStore.loadTasks() // Làm mới danh sách nhiệm vụ
+  // Thông báo cho thành phần cha mẹ để làm mới danh sách cơ sở
   emit('refresh')
 }
 
-// 分页处理函数
+// Chức năng xử lý phân trang
 const handlePageChange = (page, pageSize) => {
   previewPagination.value.current = page
   previewPagination.value.pageSize = pageSize
@@ -579,7 +579,7 @@ const handlePageSizeChange = (current, size) => {
   loadPreviewQuestions()
 }
 
-// 加载预览问题（分页）
+// Đang tải sự cố xem trước（Phân trang）
 const loadPreviewQuestions = async () => {
   if (!previewData.value?.dataset_id) return
 
@@ -597,22 +597,22 @@ const loadPreviewQuestions = async () => {
       previewPagination.value.total = response.data.pagination?.total_items || 0
     }
   } catch (error) {
-    console.error('加载预览问题失败:', error)
-    message.error('加载预览问题失败')
+    console.error('Vấn đề tải bản xem trước không thành công:', error)
+    message.error('Vấn đề tải bản xem trước không thành công')
   } finally {
     previewPagination.value.loading = false
   }
 }
 
-// 预览基准
+// Xem trước điểm chuẩn
 const previewDataset = async (benchmark) => {
   if (!isDatasetCompleted(benchmark)) {
-    message.warning('评估基准生成完成后才能预览')
+    message.warning('Việc xem trước chỉ có thể được thực hiện sau khi đường cơ sở đánh giá được tạo.')
     return
   }
 
   try {
-    // 重置分页状态
+    // Đặt lại trạng thái phân trang
     previewPagination.value = {
       current: 1,
       pageSize: 50,
@@ -628,18 +628,18 @@ const previewDataset = async (benchmark) => {
     )
 
     if (response.message === 'success') {
-      // 保存基准ID用于后续分页请求
+      // lưu đường cơ sởIDcho các yêu cầu phân trang tiếp theo
       previewData.value = {
         ...response.data,
-        dataset_id: benchmark.dataset_id // 手动添加dataset_id
+        dataset_id: benchmark.dataset_id // Thêm thủ côngdataset_id
       }
       previewQuestions.value = response.data.items || []
       previewPagination.value.total = response.data.pagination?.total_items || 0
       previewModalVisible.value = true
     }
   } catch (error) {
-    console.error('获取基准详情失败:', error)
-    message.error('获取基准详情失败')
+    console.error('Không lấy được chi tiết điểm chuẩn:', error)
+    message.error('Không lấy được chi tiết điểm chuẩn')
   }
 }
 
@@ -651,7 +651,7 @@ const parseDownloadFilename = (contentDisposition) => {
     try {
       return decodeURIComponent(utf8Match[1])
     } catch (error) {
-      console.warn('解析 UTF-8 文件名失败:', error)
+      console.warn('phân tích cú pháp UTF-8 Tên tệp không thành công:', error)
     }
   }
 
@@ -663,12 +663,12 @@ const parseDownloadFilename = (contentDisposition) => {
   return ''
 }
 
-// 下载基准
+// Tải xuống điểm chuẩn
 const downloadDataset = async (benchmark) => {
   const benchmarkId = benchmark?.dataset_id
   if (!benchmarkId) return
   if (!isDatasetCompleted(benchmark)) {
-    message.warning('评估基准生成完成后才能下载')
+    message.warning('Điểm chuẩn đánh giá chỉ có thể được tải xuống sau khi quá trình tạo hoàn tất.')
     return
   }
   if (downloadingDatasetMap[benchmarkId]) return
@@ -692,43 +692,43 @@ const downloadDataset = async (benchmark) => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
 
-    message.success('下载成功')
+    message.success('Tải xuống thành công')
   } catch (error) {
-    console.error('下载基准失败:', error)
-    message.error(`下载失败: ${error.message || '未知错误'}`)
+    console.error('Tải xuống điểm chuẩn không thành công:', error)
+    message.error(`Tải xuống không thành công: ${error.message || 'lỗi không xác định'}`)
   } finally {
     delete downloadingDatasetMap[benchmarkId]
   }
 }
 
-// 删除基准
+// Xóa đường cơ sở
 const deleteDataset = (benchmark) => {
   if (shouldShowBuildProgress(benchmark)) {
-    message.warning('评估基准生成中，暂不能删除')
+    message.warning('Điểm chuẩn đánh giá đang được tạo，Chưa thể xóa được')
     return
   }
 
   Modal.confirm({
-    title: '确认删除',
-    content: `确定要删除评估基准"${benchmark.name}"吗？此操作不可恢复。`,
-    okText: '确定',
-    cancelText: '取消',
+    title: 'Xác nhận xóa',
+    content: `Bạn có chắc chắn muốn xóa đường cơ sở đánh giá không?"${benchmark.name}"?？Hoạt động này là không thể đảo ngược。`,
+    okText: 'được rồi',
+    cancelText: 'Hủy bỏ',
     onOk: async () => {
       try {
         const response = await evaluationApi.deleteDataset(benchmark.dataset_id)
         if (response.message === 'success') {
-          message.success('删除成功')
+          message.success('Xóa thành công')
           loadBenchmarks()
         }
       } catch (error) {
-        console.error('删除基准失败:', error)
-        message.error('删除基准失败')
+        console.error('Xóa đường cơ sở không thành công:', error)
+        message.error('Xóa đường cơ sở không thành công')
       }
     }
   })
 }
 
-// 格式化日期
+// Định dạng ngày
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
@@ -743,7 +743,7 @@ const formatDate = (dateStr) => {
 
 watch(benchmarks, syncBuildRefresh, { deep: true })
 
-// 组件挂载时加载数据
+// Tải dữ liệu khi thành phần được gắn kết
 onMounted(() => {
   loadBenchmarks()
 })

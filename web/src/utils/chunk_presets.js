@@ -2,32 +2,32 @@ export const CHUNK_PRESET_OPTIONS = [
   {
     value: 'general',
     label: 'General',
-    description: '通用分块：按分隔符和长度切分，适合大多数普通文档。'
+    description: 'Phân chia phổ quát：Chia theo dấu phân cách và độ dài，Thích hợp cho hầu hết các tài liệu thông thường。'
   },
   {
     value: 'qa',
     label: 'QA',
-    description: '问答分块：优先抽取问题-回答结构，适合 FAQ、题库、问答手册。'
+    description: 'Phân chia câu hỏi và trả lời：Ưu tiên trích xuất câu hỏi-Cấu trúc câu trả lời，thích hợp cho FAQ、ngân hàng câu hỏi、Hướng dẫn hỏi đáp。'
   },
   {
     value: 'book',
     label: 'Book',
-    description: '书籍分块：强化章节标题识别并做层级合并，适合教材、手册、长章节文档。'
+    description: 'Sách nhỏ：Tăng cường nhận dạng tiêu đề chương và thực hiện hợp nhất theo thứ bậc，Phù hợp làm tài liệu giảng dạy、Hướng dẫn sử dụng、tài liệu dài。'
   },
   {
     value: 'laws',
     label: 'Laws',
-    description: '法规分块：按法条层级组织与合并，适合法律法规、制度规范类文本。'
+    description: 'Ngăn chặn quy định：Tổ chức, thống nhất theo cấp độ pháp lý，Phù hợp với pháp luật và các quy định、Văn bản quy phạm thể chế。'
   },
   {
     value: 'semantic',
     label: 'Semantic',
-    description: '语义分块：利用嵌入和聚类算法进行语义切分，并自动增强标题上下文。'
+    description: 'phân đoạn ngữ nghĩa：Phân đoạn ngữ nghĩa bằng thuật toán nhúng và phân cụm，và tự động nâng cao bối cảnh tiêu đề。'
   },
   {
     value: 'separator',
     label: 'Separator',
-    description: '严格分隔：命中分隔符即切分，仅超长片段内部继续按长度切分。'
+    description: 'sự tách biệt nghiêm ngặt：Nhấn dấu phân cách để phân chia，Chỉ những đoạn rất dài mới tiếp tục được chia theo chiều dài。'
   }
 ]
 

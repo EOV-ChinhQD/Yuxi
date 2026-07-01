@@ -16,7 +16,7 @@ const hasVisibleAssistantBody = (message) => {
 
 const defaultEnrichToolCalls = (message) => enrichTaskToolCalls(message?.tool_calls)
 
-// 将 AI 消息拆成“正文块”和“工具块”，再跨消息合并相邻工具块。
+// sẽ AI Chia tin nhắn thành“khối cơ thể”và“khối công cụ”，Sau đó hợp nhất các khối công cụ liền kề trên các tin nhắn。
 export const getConversationDisplayItems = (
   conv,
   { enrichToolCalls = defaultEnrichToolCalls } = {}

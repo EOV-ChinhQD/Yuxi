@@ -23,7 +23,7 @@ import { Search } from 'lucide-vue-next'
 const searchModel = defineModel('search', { type: String, default: '' })
 
 defineProps({
-  searchPlaceholder: { type: String, default: '搜索...' }
+  searchPlaceholder: { type: String, default: 'Tìm kiếm...' }
 })
 </script>
 

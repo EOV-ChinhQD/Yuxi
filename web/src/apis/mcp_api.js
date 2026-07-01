@@ -1,111 +1,111 @@
 import { apiGet, apiAdminGet, apiAdminPost, apiAdminPut, apiAdminDelete } from './base'
 
 /**
- * MCP 服务器管理 API 模块
- * 包含 MCP 服务器的增删改查和工具管理功能
+ * MCP Quản lý máy chủ API mô-đun
+ * chứa MCP Chức năng thêm, xóa, sửa đổi máy chủ và quản lý công cụ
  */
 
 const BASE_URL = '/api/system/mcp-servers'
 
 // =============================================================================
-// === MCP 服务器 CRUD ===
+// === MCP máy chủ CRUD ===
 // =============================================================================
 
 /**
- * 获取所有 MCP 服务器配置
- * @returns {Promise} - 服务器列表
+ * Nhận tất cả MCP Cấu hình máy chủ
+ * @returns {Promise} - Danh sách máy chủ
  */
 export const getMcpServers = async () => {
   return apiGet(BASE_URL)
 }
 
 /**
- * 获取单个 MCP 服务器配置
- * @param {string} name - 服务器名称
- * @returns {Promise} - 服务器配置
+ * Nhận một đĩa đơn MCP Cấu hình máy chủ
+ * @param {string} name - Tên máy chủ
+ * @returns {Promise} - Cấu hình máy chủ
  */
 export const getMcpServer = async (name) => {
   return apiAdminGet(`${BASE_URL}/${encodeURIComponent(name)}`)
 }
 
 /**
- * 创建新的 MCP 服务器
- * @param {Object} data - 服务器配置数据
- * @returns {Promise} - 创建结果
+ * tạo mới MCP máy chủ
+ * @param {Object} data - Dữ liệu cấu hình máy chủ
+ * @returns {Promise} - Tạo kết quả
  */
 export const createMcpServer = async (data) => {
   return apiAdminPost(BASE_URL, data)
 }
 
 /**
- * 更新 MCP 服务器配置
- * @param {string} name - 服务器名称
- * @param {Object} data - 更新数据
- * @returns {Promise} - 更新结果
+ * cập nhật MCP Cấu hình máy chủ
+ * @param {string} name - Tên máy chủ
+ * @param {Object} data - Cập nhật dữ liệu
+ * @returns {Promise} - Cập nhật kết quả
  */
 export const updateMcpServer = async (name, data) => {
   return apiAdminPut(`${BASE_URL}/${encodeURIComponent(name)}`, data)
 }
 
 /**
- * 删除 MCP 服务器
- * @param {string} name - 服务器名称
- * @returns {Promise} - 删除结果
+ * Xóa MCP máy chủ
+ * @param {string} name - Tên máy chủ
+ * @returns {Promise} - Xóa kết quả
  */
 export const deleteMcpServer = async (name) => {
   return apiAdminDelete(`${BASE_URL}/${encodeURIComponent(name)}`)
 }
 
 // =============================================================================
-// === MCP 服务器操作 ===
+// === MCP Vận hành máy chủ ===
 // =============================================================================
 
 /**
- * 测试 MCP 服务器连接
- * @param {string} name - 服务器名称
- * @returns {Promise} - 测试结果
+ * kiểm tra MCP Kết nối máy chủ
+ * @param {string} name - Tên máy chủ
+ * @returns {Promise} - Kết quả kiểm tra
  */
 export const testMcpServer = async (name) => {
   return apiAdminPost(`${BASE_URL}/${encodeURIComponent(name)}/test`, {})
 }
 
 /**
- * 更新 MCP 服务器启用状态
- * @param {string} name - 服务器名称
- * @param {boolean} enabled - 是否启用
- * @returns {Promise} - 切换结果
+ * cập nhật MCP Trạng thái kích hoạt máy chủ
+ * @param {string} name - Tên máy chủ
+ * @param {boolean} enabled - Có bật hay không
+ * @returns {Promise} - Chuyển đổi kết quả
  */
 export const updateMcpServerStatus = async (name, enabled) => {
   return apiAdminPut(`${BASE_URL}/${encodeURIComponent(name)}/status`, { enabled })
 }
 
 // =============================================================================
-// === MCP 工具管理 ===
+// === MCP Quản lý công cụ ===
 // =============================================================================
 
 /**
- * 获取 MCP 服务器的工具列表
- * @param {string} name - 服务器名称
- * @returns {Promise} - 工具列表
+ * Nhận MCP Danh sách công cụ máy chủ
+ * @param {string} name - Tên máy chủ
+ * @returns {Promise} - Danh sách công cụ
  */
 export const getMcpServerTools = async (name) => {
   return apiAdminGet(`${BASE_URL}/${encodeURIComponent(name)}/tools`)
 }
 
 /**
- * 刷新 MCP 服务器的工具列表（清除缓存重新获取）
- * @param {string} name - 服务器名称
- * @returns {Promise} - 刷新结果
+ * Làm mới MCP Danh sách công cụ máy chủ（Xóa bộ nhớ cache và truy xuất lại）
+ * @param {string} name - Tên máy chủ
+ * @returns {Promise} - làm mới kết quả
  */
 export const refreshMcpServerTools = async (name) => {
   return apiAdminPost(`${BASE_URL}/${encodeURIComponent(name)}/tools/refresh`, {})
 }
 
 /**
- * 切换单个工具的启用状态
- * @param {string} serverName - 服务器名称
- * @param {string} toolName - 工具名称
- * @returns {Promise} - 切换结果
+ * Chuyển đổi trạng thái kích hoạt của một công cụ riêng lẻ
+ * @param {string} serverName - Tên máy chủ
+ * @param {string} toolName - Tên công cụ
+ * @returns {Promise} - Chuyển đổi kết quả
  */
 export const toggleMcpServerTool = async (serverName, toolName) => {
   return apiAdminPut(

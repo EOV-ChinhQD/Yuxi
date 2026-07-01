@@ -1,16 +1,16 @@
 import { message } from 'ant-design-vue'
 
 /**
- * 统一错误处理工具类
+ * Lớp công cụ xử lý lỗi thống nhất
  */
 export class ErrorHandler {
   /**
-   * 处理通用错误
-   * @param {Error} error - 错误对象
-   * @param {string} context - 错误上下文
-   * @param {Object} options - 配置选项
+   * Xử lý các lỗi thường gặp
+   * @param {Error} error - đối tượng lỗi
+   * @param {string} context - bối cảnh lỗi
+   * @param {Object} options - Tùy chọn cấu hình
    */
-  static handleError(error, context = '操作', options = {}) {
+  static handleError(error, context = 'hoạt động', options = {}) {
     const {
       showMessage = true,
       logToConsole = true,
@@ -18,12 +18,12 @@ export class ErrorHandler {
       severity = 'error'
     } = options
 
-    // 控制台日志
+    // nhật ký bảng điều khiển
     if (logToConsole) {
-      console.error(`${context}失败:`, error)
+      console.error(`${context}thất bại:`, error)
     }
 
-    // 用户提示
+    // Mẹo sử dụng
     if (showMessage) {
       const displayMessage = customMessage || this.getErrorMessage(error, context)
 
@@ -45,55 +45,55 @@ export class ErrorHandler {
   }
 
   /**
-   * 获取错误消息
-   * @param {Error} error - 错误对象
-   * @param {string} context - 错误上下文
-   * @returns {string} 错误消息
+   * Nhận thông báo lỗi
+   * @param {Error} error - đối tượng lỗi
+   * @param {string} context - bối cảnh lỗi
+   * @returns {string} thông báo lỗi
    */
   static getErrorMessage(error, context) {
     if (error?.message) {
-      return `${context}失败: ${error.message}`
+      return `${context}thất bại: ${error.message}`
     }
-    return `${context}失败`
+    return `${context}thất bại`
   }
 
   /**
-   * 处理网络请求错误
-   * @param {Error} error - 错误对象
-   * @param {string} context - 错误上下文
+   * Xử lý lỗi yêu cầu mạng
+   * @param {Error} error - đối tượng lỗi
+   * @param {string} context - bối cảnh lỗi
    */
-  static handleNetworkError(error, context = '网络请求') {
+  static handleNetworkError(error, context = 'yêu cầu mạng') {
     let customMessage = null
 
     if (error?.code === 'NETWORK_ERROR') {
-      customMessage = '网络连接失败，请检查网络设置'
+      customMessage = 'Kết nối mạng không thành công，Vui lòng kiểm tra cài đặt mạng'
     } else if (error?.status === 401) {
-      customMessage = '认证失败，请重新登录'
+      customMessage = 'Xác thực không thành công，Vui lòng đăng nhập lại'
     } else if (error?.status === 403) {
-      customMessage = '权限不足，无法执行此操作'
+      customMessage = 'Không đủ quyền，Không thể thực hiện thao tác này'
     } else if (error?.status === 404) {
-      customMessage = '请求的资源不存在'
+      customMessage = 'Tài nguyên được yêu cầu không tồn tại'
     } else if (error?.status >= 500) {
-      customMessage = '服务器错误，请稍后重试'
+      customMessage = 'Lỗi máy chủ，Vui lòng thử lại sau'
     }
 
     return this.handleError(error, context, { customMessage })
   }
 
   /**
-   * 处理聊天相关错误
-   * @param {Error} error - 错误对象
-   * @param {string} operation - 操作类型
+   * Xử lý các lỗi liên quan đến trò chuyện
+   * @param {Error} error - đối tượng lỗi
+   * @param {string} operation - Loại hoạt động
    */
   static handleChatError(error, operation) {
     const contextMap = {
-      send: '发送消息',
-      create: '创建对话',
-      delete: '删除对话',
-      rename: '重命名对话',
-      load: '加载对话',
-      export: '导出对话',
-      stream: '流式处理'
+      send: 'Gửi tin nhắn',
+      create: 'Tạo cuộc trò chuyện',
+      delete: 'Xóa cuộc trò chuyện',
+      rename: 'Đổi tên cuộc trò chuyện',
+      load: 'Tải cuộc trò chuyện',
+      export: 'Xuất cuộc trò chuyện',
+      stream: 'phát trực tuyến'
     }
 
     const context = contextMap[operation] || operation
@@ -101,21 +101,21 @@ export class ErrorHandler {
   }
 
   /**
-   * 处理验证错误
-   * @param {string} message - 验证错误消息
+   * Xử lý lỗi xác thực
+   * @param {string} message - Thông báo lỗi xác thực
    */
   static handleValidationError(message) {
-    return this.handleError(new Error(message), '输入验证', {
+    return this.handleError(new Error(message), 'Xác thực đầu vào', {
       severity: 'warning',
       customMessage: message
     })
   }
 
   /**
-   * 处理异步操作错误
-   * @param {Function} asyncFn - 异步函数
-   * @param {string} context - 错误上下文
-   * @param {Object} options - 配置选项
+   * Xử lý lỗi hoạt động không đồng bộ
+   * @param {Function} asyncFn - hàm không đồng bộ
+   * @param {string} context - bối cảnh lỗi
+   * @param {Object} options - Tùy chọn cấu hình
    */
   static async handleAsync(asyncFn, context, options = {}) {
     try {
@@ -127,9 +127,9 @@ export class ErrorHandler {
   }
 
   /**
-   * 创建错误处理装饰器
-   * @param {string} context - 错误上下文
-   * @param {Object} options - 配置选项
+   * Tạo một trang trí xử lý lỗi
+   * @param {string} context - bối cảnh lỗi
+   * @param {Object} options - Tùy chọn cấu hình
    */
   static createHandler(context, options = {}) {
     return (error) => this.handleError(error, context, options)
@@ -137,7 +137,7 @@ export class ErrorHandler {
 }
 
 /**
- * 快捷方法
+ * phương pháp phím tắt
  */
 export const handleChatError = ErrorHandler.handleChatError.bind(ErrorHandler)
 export const handleNetworkError = ErrorHandler.handleNetworkError.bind(ErrorHandler)

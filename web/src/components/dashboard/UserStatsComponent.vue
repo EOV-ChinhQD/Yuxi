@@ -1,26 +1,26 @@
 <template>
-  <a-card title="用户活跃度分析" :loading="loading" class="dashboard-card">
-    <!-- 紧凑型用户统计概览 -->
+  <a-card title="Phân tích hoạt động của người dùng" :loading="loading" class="dashboard-card">
+    <!-- Tổng quan về thống kê người dùng nhỏ gọn -->
     <div class="compact-stats-grid">
       <div class="mini-stat-card">
         <div class="mini-stat-value">{{ userStats?.total_users || 0 }}</div>
-        <div class="mini-stat-label">总用户</div>
+        <div class="mini-stat-label">tổng số người dùng</div>
       </div>
       <div class="mini-stat-card">
         <div class="mini-stat-value">{{ userStats?.active_users_24h || 0 }}</div>
-        <div class="mini-stat-label">24h活跃</div>
+        <div class="mini-stat-label">24hhoạt động</div>
       </div>
       <div class="mini-stat-card">
         <div class="mini-stat-value">{{ userStats?.active_users_30d || 0 }}</div>
-        <div class="mini-stat-label">30天活跃</div>
+        <div class="mini-stat-label">30ngày năng động</div>
       </div>
     </div>
 
-    <!-- 图表区域 - 更紧凑 -->
+    <!-- khu vực biểu đồ - nhỏ gọn hơn -->
     <div class="compact-chart-container">
       <div class="chart-header">
-        <span class="chart-title">活跃度趋势</span>
-        <span class="chart-subtitle">最近7天</span>
+        <span class="chart-title">xu hướng hoạt động</span>
+        <span class="chart-subtitle">Gần đây7ngày</span>
       </div>
       <div ref="activityChartRef" class="compact-chart"></div>
     </div>
@@ -32,7 +32,7 @@ import { ref, onMounted, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 import { useThemeStore } from '@/stores/theme'
 
-// CSS 变量解析工具函数
+// CSS Chức năng công cụ phân tích cú pháp biến
 function getCSSVariable(variableName, element = document.documentElement) {
   return getComputedStyle(element).getPropertyValue(variableName).trim()
 }
@@ -56,11 +56,11 @@ const props = defineProps({
 const activityChartRef = ref(null)
 let activityChart = null
 
-// 初始化活跃度趋势图
+// Khởi tạo biểu đồ xu hướng hoạt động
 const initActivityChart = () => {
   if (!activityChartRef.value || !props.userStats?.daily_active_users) return
 
-  // 如果已存在图表实例，先销毁
+  // Nếu một phiên bản biểu đồ đã tồn tại，Tiêu diệt đầu tiên
   if (activityChart) {
     activityChart.dispose()
     activityChart = null
@@ -115,7 +115,7 @@ const initActivityChart = () => {
     },
     series: [
       {
-        name: '活跃用户数',
+        name: 'Số lượng người dùng đang hoạt động',
         type: 'line',
         data: props.userStats.daily_active_users.map((item) => item.active_users),
         smooth: true,
@@ -163,14 +163,14 @@ const initActivityChart = () => {
   activityChart.setOption(option)
 }
 
-// 更新图表
+// Cập nhật biểu đồ
 const updateCharts = () => {
   nextTick(() => {
     initActivityChart()
   })
 }
 
-// 监听数据变化
+// Theo dõi sự thay đổi dữ liệu
 watch(
   () => props.userStats,
   () => {
@@ -179,7 +179,7 @@ watch(
   { deep: true }
 )
 
-// 窗口大小变化时重新调整图表
+// Thay đổi kích thước biểu đồ khi kích thước cửa sổ thay đổi
 const handleResize = () => {
   if (activityChart) activityChart.resize()
 }
@@ -189,7 +189,7 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
-// 监听主题变化，重新渲染图表
+// Theo dõi thay đổi chủ đề，Hiển thị lại biểu đồ
 watch(
   () => themeStore.isDark,
   () => {
@@ -201,7 +201,7 @@ watch(
   }
 )
 
-// 组件卸载时清理
+// Dọn dẹp khi các thành phần được gỡ cài đặt
 const cleanup = () => {
   window.removeEventListener('resize', handleResize)
   if (activityChart) {
@@ -210,14 +210,14 @@ const cleanup = () => {
   }
 }
 
-// 导出清理函数供父组件调用
+// Xuất hàm dọn dẹp cho thành phần cha để gọi
 defineExpose({
   cleanup
 })
 </script>
 
 <style scoped lang="less">
-/* 紧凑型统计网格 */
+/* lưới thống kê nhỏ gọn */
 .compact-stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -254,7 +254,7 @@ defineExpose({
   }
 }
 
-/* 紧凑型图表容器 */
+/* Hộp đựng biểu đồ nhỏ gọn */
 .compact-chart-container {
   background-color: var(--gray-0);
   border: 1px solid var(--gray-100);
@@ -297,7 +297,7 @@ defineExpose({
   }
 }
 
-/* 响应式设计 */
+/* Thiết kế đáp ứng */
 @media (max-width: 1200px) {
   .compact-stats-grid {
     grid-template-columns: repeat(2, 1fr);

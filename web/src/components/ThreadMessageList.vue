@@ -12,7 +12,7 @@
         <ToolCallsGroupComponent v-else :tool-calls="displayItem.toolCalls" />
       </template>
     </template>
-    <div v-if="conversations.length === 0" class="thread-message-list-empty">暂无消息</div>
+    <div v-if="conversations.length === 0" class="thread-message-list-empty">Chưa có tin tức nào</div>
   </div>
 </template>
 

@@ -1,7 +1,7 @@
 import { nextTick } from 'vue'
 
 /**
- * 滚动控制工具类
+ * Công cụ điều khiển cuộn
  */
 export class ScrollController {
   constructor(containerSelector = '.chat', options = {}) {
@@ -23,7 +23,7 @@ export class ScrollController {
   }
 
   /**
-   * 获取滚动容器
+   * Nhận thùng chứa cuộn
    * @returns {Element|null}
    */
   getContainer() {
@@ -31,7 +31,7 @@ export class ScrollController {
   }
 
   /**
-   * 检查是否在底部
+   * Kiểm tra xem nó có ở dưới cùng không
    * @returns {boolean}
    */
   isAtBottom() {
@@ -43,61 +43,61 @@ export class ScrollController {
   }
 
   /**
-   * 处理滚动事件
+   * Xử lý các sự kiện cuộn
    */
   handleScroll() {
     if (this.scrollTimer) {
       clearTimeout(this.scrollTimer)
     }
 
-    // 如果是程序性滚动，忽略此次事件
+    // Nếu đó là cuộn theo chương trình，Bỏ qua sự kiện này
     if (this.isProgrammaticScroll) {
       this.isProgrammaticScroll = false
       return
     }
 
-    // 标记用户正在滚动
+    // Người dùng gắn cờ đang cuộn
     this.isUserScrolling = true
 
-    // 检查是否在底部
+    // Kiểm tra xem nó có ở dưới cùng không
     this.shouldAutoScroll = this.isAtBottom()
 
-    // 滚动结束后一段时间重置用户滚动状态
+    // Đặt lại trạng thái cuộn của người dùng một thời gian sau khi quá trình cuộn kết thúc
     this.scrollTimer = setTimeout(() => {
       this.isUserScrolling = false
     }, this.options.scrollDelay)
   }
 
   /**
-   * 等待 DOM 布局稳定
+   * chờ đã DOM Bố cục ổn định
    * @returns {Promise<void>}
    */
   async waitForLayoutStable() {
-    // 使用 requestAnimationFrame 确保 DOM 渲染完成
+    // sử dụng requestAnimationFrame đảm bảo DOM Kết xuất hoàn tất
     await new Promise((resolve) => requestAnimationFrame(resolve))
-    // 额外等待一小段时间确保 CSS 布局完成
+    // Chờ một thời gian ngắn để đảm bảo CSS Bố cục đã hoàn thành
     await new Promise((resolve) => setTimeout(resolve, 50))
   }
 
   /**
-   * 智能滚动到底部
-   * @param {boolean} force - 是否强制滚动
+   * Cuộn thông minh xuống dưới cùng
+   * @param {boolean} force - Có buộc cuộn hay không
    */
   async scrollToBottom(force = false) {
     await nextTick()
-    // 等待 DOM 布局稳定
+    // chờ đã DOM Bố cục ổn định
     await this.waitForLayoutStable()
 
-    // 只有在应该自动滚动时才执行（除非强制）
+    // Chỉ được thực thi khi tính năng tự động cuộn được cho là sẽ xảy ra（trừ khi bị ép buộc）
     if (!force && !this.shouldAutoScroll) return
 
     const container = this.getContainer()
     if (!container) return
 
-    // 标记为程序性滚动
+    // Được đánh dấu để cuộn theo chương trình
     this.isProgrammaticScroll = true
 
-    // 记录滚动前的容器高度
+    // Ghi lại chiều cao của container trước khi cuộn
     const initialHeight = container.scrollHeight
 
     const scrollOptions = {
@@ -105,10 +105,10 @@ export class ScrollController {
       behavior: 'smooth'
     }
 
-    // 立即滚动
+    // Cuộn ngay bây giờ
     container.scrollTo(scrollOptions)
 
-    // 多次重试确保滚动成功，包括等待输入框等动态元素布局完成
+    // Thử lại nhiều lần để đảm bảo cuộn thành công，Bao gồm cả việc chờ hoàn thành bố cục của các phần tử động như hộp nhập liệu
     const retryDelays = [50, 100, 200, 400]
     retryDelays.forEach((delay, index) => {
       setTimeout(() => {
@@ -116,7 +116,7 @@ export class ScrollController {
           this.isProgrammaticScroll = true
           const behavior = index === retryDelays.length - 1 ? 'auto' : 'smooth'
 
-          // 如果高度变化了，说明可能有动态内容正在渲染，再次等待
+          // Nếu chiều cao thay đổi，Cho biết rằng có thể có nội dung động đang được hiển thị，đợi lại
           if (container.scrollHeight !== initialHeight && index < retryDelays.length - 1) {
             this.waitForLayoutStable().then(() => {
               container.scrollTo({
@@ -139,7 +139,7 @@ export class ScrollController {
     const container = this.getContainer()
     if (!container) return
 
-    // 标记为程序性滚动
+    // Được đánh dấu để cuộn theo chương trình
     this.isProgrammaticScroll = true
 
     const scrollOptions = {
@@ -151,21 +151,21 @@ export class ScrollController {
   }
 
   /**
-   * 启用自动滚动
+   * Bật tính năng tự động cuộn
    */
   enableAutoScroll() {
     this.shouldAutoScroll = true
   }
 
   /**
-   * 禁用自动滚动
+   * Tắt tính năng tự động cuộn
    */
   disableAutoScroll() {
     this.shouldAutoScroll = false
   }
 
   /**
-   * 获取滚动状态
+   * Nhận trạng thái cuộn
    */
   getScrollState() {
     return {
@@ -176,7 +176,7 @@ export class ScrollController {
   }
 
   /**
-   * 清理定时器
+   * Hẹn giờ dọn dẹp
    */
   cleanup() {
     if (this.scrollTimer) {
@@ -186,7 +186,7 @@ export class ScrollController {
   }
 
   /**
-   * 重置滚动状态
+   * Đặt lại trạng thái cuộn
    */
   reset() {
     this.cleanup()
@@ -197,7 +197,7 @@ export class ScrollController {
 }
 
 /**
- * 创建默认的滚动控制器实例
+ * Tạo một phiên bản bộ điều khiển cuộn mặc định
  */
 export const createScrollController = (containerSelector, options) => {
   return new ScrollController(containerSelector, options)

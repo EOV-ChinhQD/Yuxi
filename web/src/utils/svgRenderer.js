@@ -1,16 +1,16 @@
 /**
- * SVG 渲染工具函数
- * 将 Markdown 中的 ```svg 围栏代码块转换为内联 SVG HTML
+ * SVG Chức năng công cụ kết xuất
+ * sẽ Markdown trong ```svg Chuyển đổi khối mã hàng rào thành nội tuyến SVG HTML
  */
 
 /**
- * 将 Markdown 字符串中的 ```svg 围栏代码块转换为内联 SVG HTML
+ * sẽ Markdown trong chuỗi ```svg Chuyển đổi khối mã hàng rào thành nội tuyến SVG HTML
  *
- * 使用逐行扫描算法而非单一大正则，以避免嵌套围栏和内容中反引号的误匹配。
- * SVG 内容会被压缩为单行，防止 markdown-it HTML 块解析因空白行截断内容。
+ * Sử dụng thuật toán quét lũy tiến thay vì một thuật toán lớn thông thường，để tránh sự không khớp của dấu ngược trong hàng rào và nội dung lồng nhau。
+ * SVG Nội dung sẽ được nén thành một dòng duy nhất，ngăn chặn markdown-it HTML Chặn phân tích cú pháp cắt ngắn nội dung do dòng trống。
  *
- * @param {string} markdown - 原始 Markdown 字符串
- * @returns {string} 转换后的字符串，SVG 围栏被替换为 <div class="svg-inline-render"><svg>...</svg></div>
+ * @param {string} markdown - nguyên bản Markdown chuỗi
+ * @returns {string} chuỗi đã chuyển đổi，SVG Hàng rào đã được thay thế bằng <div class="svg-inline-render"><svg>...</svg></div>
  */
 export function renderSvgBlocks(markdown) {
   const lines = markdown.split('\n')
@@ -27,7 +27,7 @@ export function renderSvgBlocks(markdown) {
       const svgLines = []
       i++
 
-      // 扫描闭合围栏
+      // Quét hàng rào kín
       let closed = false
       while (i < lines.length) {
         const closeMatch = lines[i].match(/^( {0,3})(`{3,}|~{3,})\s*$/)
@@ -38,7 +38,7 @@ export function renderSvgBlocks(markdown) {
           closeMatch[2].length >= fenceChar.length
         ) {
           closed = true
-          // 压缩 SVG 为单行，防止 markdown-it HTML 块解析截断
+          // nén SVG dưới dạng một dòng，ngăn chặn markdown-it HTML Khối cắt bớt phân tích cú pháp
           const singleLine = svgLines
             .join('')
             .replace(/>\s+</g, '><')
@@ -46,8 +46,8 @@ export function renderSvgBlocks(markdown) {
             .trim()
           const actionsHtml = [
             `<div class="svg-actions">`,
-            `<button class="svg-action-btn svg-copy-btn" type="button">复制 SVG</button>`,
-            `<button class="svg-action-btn svg-png-btn" type="button">复制为 PNG</button>`,
+            `<button class="svg-action-btn svg-copy-btn" type="button">Sao chép SVG</button>`,
+            `<button class="svg-action-btn svg-png-btn" type="button">Sao chép dưới dạng PNG</button>`,
             `</div>`
           ].join('')
           output.push(`<div class="svg-inline-render">${actionsHtml}${singleLine}</div>`)
@@ -59,7 +59,7 @@ export function renderSvgBlocks(markdown) {
       }
 
       if (!closed) {
-        // 未闭合的围栏 — 保持原样（流式安全）
+        // hàng rào không đóng — giữ nguyên như vậy（Bảo mật truyền phát）
         output.push(openLine)
         output.push(...svgLines)
       }

@@ -34,20 +34,20 @@ const coerceDayjs = (value) => {
       return null
     }
 
-    // 值小于 10^12 时视为秒级时间戳，否则视为毫秒
+    // giá trị nhỏ hơn 10^12 thời gian được coi là dấu thời gian cấp hai，Mặt khác được coi là mili giây
     if (Math.abs(numeric) < 1e12) {
       return dayjs.unix(numeric).tz(DEFAULT_TZ)
     }
     return dayjs(numeric).tz(DEFAULT_TZ)
   }
 
-  // 解析 ISO 字符串（dayjs 会自动识别时区信息，如 Z 后缀表示 UTC）
-  // 需要先转换为 UTC 再设置时区，否则 .tz() 只会改变显示而不会正确转换
+  // phân tích cú pháp ISO chuỗi（dayjs Thông tin múi giờ sẽ được tự động nhận dạng，Chẳng hạn như Z Hậu tố chỉ ra UTC）
+  // Cần phải chuyển đổi thành UTC Đặt lại múi giờ，Nếu không .tz() sẽ chỉ thay đổi hiển thị mà không chuyển đổi chính xác
   const parsed = dayjs(stringValue)
   if (!parsed.isValid()) {
     return null
   }
-  // 先转换为 UTC（保留原始时间值），再转换到上海时区
+  // Đầu tiên chuyển đổi thành UTC（Giữ giá trị thời gian ban đầu），Sau đó chuyển đổi sang múi giờ Thượng Hải
   return parsed.utc().tz(DEFAULT_TZ)
 }
 

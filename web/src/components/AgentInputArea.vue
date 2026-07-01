@@ -37,7 +37,7 @@
             <button
               class="attachment-remove-btn"
               type="button"
-              :aria-label="`移除附件 ${attachment.name}`"
+              :aria-label="`Xóa tệp đính kèm ${attachment.name}`"
               @click.stop="handleAttachmentRemoved(attachment)"
             >
               <X :size="14" />
@@ -101,7 +101,7 @@ const emit = defineEmits([
 
 const inputRef = ref(null)
 const currentImage = ref(null)
-const placeholder = '问点什么？使用 @ 可以提及哦~'
+const placeholder = 'Hỏi điều gì đó？sử dụng @ Bạn có thể đề cập đến nó~'
 
 const previewAttachments = computed(() => normalizeAttachmentPreviews(props.attachments))
 
@@ -262,7 +262,7 @@ defineExpose({
   }
 }
 
-// 输入框操作按钮通用样式（穿透到 slot 内容）
+// Kiểu chung của nút hành động hộp đầu vào（thâm nhập vào slot nội dung）
 :deep(.input-action-btn) {
   display: flex;
   align-items: center;
@@ -300,7 +300,7 @@ defineExpose({
   }
 }
 
-// slot 内容的 hide-text 响应式样式
+// slot nội dung hide-text phong cách đáp ứng
 :deep(.hide-text) {
   @media (max-width: 768px) {
     display: none;

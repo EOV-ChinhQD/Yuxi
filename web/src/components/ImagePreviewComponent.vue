@@ -9,7 +9,7 @@
       <button
         class="remove-button"
         type="button"
-        :aria-label="`移除图片 ${imageData.originalName || ''}`"
+        :aria-label="`Xóa hình ảnh ${imageData.originalName || ''}`"
         @click="handleRemove"
       >
         <X :size="14" />
@@ -30,7 +30,7 @@ defineProps({
 
 const emit = defineEmits(['remove'])
 
-// 移除图片
+// Xóa hình ảnh
 const handleRemove = () => {
   emit('remove')
 }

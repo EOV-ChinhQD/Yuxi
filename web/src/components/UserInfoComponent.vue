@@ -35,7 +35,7 @@
           <a-menu-divider />
           <a-menu-item key="docs" @click="openDocs">
             <template #icon><BookOpen :size="16" /></template>
-            <span class="menu-text">文档中心</span>
+            <span class="menu-text">Trung tâm tài liệu</span>
           </a-menu-item>
           <a-menu-item key="theme" @click="toggleTheme">
             <template #icon>
@@ -43,28 +43,28 @@
               <Moon v-else :size="16" />
             </template>
             <span class="menu-text">{{
-              themeStore.isDark ? '切换到浅色模式' : '切换到深色模式 (Beta)'
+              themeStore.isDark ? 'Chuyển sang chế độ ánh sáng' : 'Chuyển sang chế độ tối (Beta)'
             }}</span>
           </a-menu-item>
           <a-menu-divider v-if="userStore.isAdmin" />
           <a-menu-item v-if="userStore.isSuperAdmin" key="debug" @click="showDebug = true">
             <template #icon><Terminal :size="16" /></template>
-            <span class="menu-text">调试面板（非生产环境）</span>
+            <span class="menu-text">Bảng gỡ lỗi（môi trường phi sản xuất）</span>
           </a-menu-item>
           <a-menu-item v-if="userStore.isAdmin" key="setting" @click="goToSetting">
             <template #icon><Settings :size="16" /></template>
-            <span class="menu-text">系统设置</span>
+            <span class="menu-text">Cài đặt hệ thống</span>
           </a-menu-item>
           <a-menu-item key="logout" @click="logout">
             <template #icon><LogOut :size="16" /></template>
-            <span class="menu-text">退出登录</span>
+            <span class="menu-text">Đăng xuất</span>
           </a-menu-item>
         </a-menu>
       </template>
     </a-dropdown>
-    <a-button v-else-if="showButton" type="primary" @click="goToLogin"> 登录 </a-button>
+    <a-button v-else-if="showButton" type="primary" @click="goToLogin"> Đăng nhập </a-button>
 
-    <!-- 调试面板 Modal -->
+    <!-- Bảng gỡ lỗi Modal -->
     <DebugComponent v-model:show="showDebug" />
   </div>
 </template>
@@ -85,7 +85,7 @@ const userStore = useUserStore()
 const themeStore = useThemeStore()
 const slots = useSlots()
 
-// 调试面板状态
+// Trạng thái bảng gỡ lỗi
 const showDebug = ref(false)
 
 // Inject settings modal methods
@@ -104,29 +104,29 @@ defineProps({
   }
 })
 
-// 用户角色显示文本
+// Văn bản hiển thị vai trò người dùng
 const userRoleText = computed(() => {
   switch (userStore.userRole) {
     case 'superadmin':
-      return '超级管理员'
+      return 'siêu quản trị viên'
     case 'admin':
-      return '管理员'
+      return 'Quản trị viên'
     case 'user':
-      return '普通用户'
+      return 'Người dùng thông thường'
     default:
-      return '未知角色'
+      return 'vai trò không xác định'
   }
 })
 
-// 退出登录
+// Đăng xuất
 const logout = () => {
   userStore.logout()
-  message.success('已退出登录')
-  // 跳转到首页
+  message.success('Đã đăng xuất')
+  // Chuyển đến trang chủ
   router.push('/login')
 }
 
-// 前往登录页
+// Tới trang đăng nhập
 const goToLogin = () => {
   router.push('/login')
 }
@@ -139,7 +139,7 @@ const toggleTheme = () => {
   themeStore.toggleTheme()
 }
 
-// 前往设置页
+// Đi tới trang cài đặt
 const goToSetting = () => {
   if (openSettingsModal) {
     openSettingsModal('base')
@@ -239,11 +239,11 @@ const openProfile = () => {
   }
 
   &.admin {
-    background-color: var(--color-info-500); /* 蓝色，管理员 */
+    background-color: var(--color-info-500); /* màu xanh，Quản trị viên */
   }
 
   &.user {
-    background-color: var(--color-success-500); /* 绿色，普通用户 */
+    background-color: var(--color-success-500); /* màu xanh lá cây，Người dùng thông thường */
   }
 }
 

@@ -165,8 +165,8 @@ class YuxiClient:
         try:
             response = self.client.request(method, url, **request_kwargs)
         except httpx.HTTPError as exc:
-            # 网络层错误（连接失败、超时等）没有 HTTP 状态码，视为可重试的瞬时错误。
-            raise ClientError(f"请求远程失败: {exc}") from exc
+            # lỗi lớp mạng（Kết nối không thành công、Hết thời gian, v.v.）Không HTTP mã trạng thái，Được coi là lỗi nhất thời có thể thử lại。
+            raise ClientError(f"Yêu cầu từ xa không thành công: {exc}") from exc
 
         if response.status_code >= 400:
             error_code, error_message = _parse_http_error(response)
@@ -176,14 +176,14 @@ class YuxiClient:
         try:
             data = response.json()
         except ValueError as exc:
-            raise ClientError("远程响应不是 JSON") from exc
+            raise ClientError("Phản hồi từ xa không JSON") from exc
         if not isinstance(data, dict):
-            raise ClientError("远程响应格式无效")
+            raise ClientError("Định dạng phản hồi từ xa không hợp lệ")
         return data
 
 
 def _parse_http_error(response: httpx.Response) -> tuple[str | None, str]:
-    """解析远程错误，返回 (机器可读 error code, 人类可读 message)。"""
+    """Phân tích lỗi từ xa，Trở lại (máy có thể đọc được error code, con người có thể đọc được message)。"""
     try:
         detail = response.json().get("detail")
     except ValueError:

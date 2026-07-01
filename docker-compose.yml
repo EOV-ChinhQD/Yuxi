@@ -13,7 +13,7 @@ x-api-worker-env: &api-worker-env
   MILVUS_DB_NAME: ${MILVUS_DB_NAME:-default}
   MILVUS_TOKEN: ${MILVUS_TOKEN:-}
   MINIO_URI: ${MINIO_URI:-http://minio:9000}
-  # 文档解析
+  # Phân tích tài liệu (Document parsing)
   MINERU_API_URI: ${MINERU_API_URI:-http://mineru-api:30001}
   PADDLEX_URI: ${PADDLEX_URI:-http://paddlex:8080}
   # Sandbox related
@@ -30,7 +30,7 @@ x-api-worker-env: &api-worker-env
   RUN_CANCEL_KEY_TTL_SECONDS: ${RUN_CANCEL_KEY_TTL_SECONDS:-1800}
   RUN_EVENTS_STREAM_TTL_SECONDS: ${RUN_EVENTS_STREAM_TTL_SECONDS:-7200}
   YUXI_CORS_ORIGINS: ${YUXI_CORS_ORIGINS:-}
-  # 其他环境变量
+  # Các biến môi trường khác (Other environment variables)
   NO_PROXY: localhost,127.0.0.1,milvus,graph,minio,milvus-etcd-dev,etcd,mineru,paddlex,sandbox-provisioner,api.siliconflow.cn
   no_proxy: localhost,127.0.0.1,milvus,graph,minio,milvus-etcd-dev,etcd,mineru,paddlex,sandbox-provisioner,api.siliconflow.cn
 
@@ -52,7 +52,7 @@ services:
       - ./docker/sandbox_provisioner:/app/docker/sandbox_provisioner:ro
       - ./.env:/app/.env
       - /var/run/docker.sock:/var/run/docker.sock
-      - nltk_data:/root/nltk_data  # 使用命名卷持久化NLTK数据，避免路径展开差异
+      - nltk_data:/root/nltk_data  # Sử dụng named volume để lưu trữ dữ liệu NLTK, tránh sự khác biệt về đường dẫn
     ports:
       - "5050:5050"
     networks:

@@ -62,7 +62,7 @@ const providerForm = reactive({
 
 // Model form state
 const showModelModal = ref(false)
-const isCreating = ref(false) // true=手动添加新模型，false=编辑已有模型
+const isCreating = ref(false) // true=Thêm mô hình mới theo cách thủ công，false=Chỉnh sửa mô hình hiện có
 const editingModel = ref({
   id: '',
   display_name: '',
@@ -179,16 +179,16 @@ const isModelTesting = (providerId, modelId) =>
 const getModelTestTitle = (providerId, model) => {
   const spec = buildModelSpec(providerId, model.id)
   const result = modelTestResultBySpec.value[spec]
-  if (!result) return '测试连接'
+  if (!result) return 'kết nối thử nghiệm'
 
   const statusText =
     {
-      available: '可用',
-      unavailable: '不可用',
-      unsupported: '暂不支持',
-      error: '错误'
-    }[result.status] || '未知'
-  return `${statusText}: ${result.message || '无详细信息'}`
+      available: 'Có sẵn',
+      unavailable: 'Không có sẵn',
+      unsupported: 'Chưa được hỗ trợ',
+      error: 'Lỗi'
+    }[result.status] || 'không rõ'
+  return `${statusText}: ${result.message || 'Không có chi tiết'}`
 }
 
 const getInputModalities = (model) => {
@@ -229,7 +229,7 @@ const filteredRemoteModels = computed(() => {
 })
 
 const remoteModelTypeOptions = computed(() => {
-  if (!currentProviderForModels.value) return [{ label: '全部', value: 'all' }]
+  if (!currentProviderForModels.value) return [{ label: 'Tất cả', value: 'all' }]
   const providerId = currentProviderForModels.value.provider_id
   const models = remoteModelsMap.value[providerId] || []
   const counts = models.reduce((acc, model) => {
@@ -238,15 +238,15 @@ const remoteModelTypeOptions = computed(() => {
     return acc
   }, {})
   return [
-    { label: `全部 ${models.length}`, value: 'all' },
+    { label: `Tất cả ${models.length}`, value: 'all' },
     { label: `Chat ${counts.chat || 0}`, value: 'chat' },
     { label: `Embedding ${counts.embedding || 0}`, value: 'embedding' },
     { label: `Rerank ${counts.rerank || 0}`, value: 'rerank' }
   ]
 })
 
-// Model Config Modal 的 type 下拉选项：基于 provider.capabilities 限定
-// 旧数据 capabilities 为空时回退到全集，保持现状
+// Model Config Modal của type tùy chọn thả xuống：Dựa trên provider.capabilities hạn chế
+// dữ liệu cũ capabilities Quay lại bộ sưu tập đầy đủ khi trống，duy trì hiện trạng
 const editingModelTypeOptions = computed(() => {
   const caps = currentProviderForModels.value?.capabilities
   const types = Array.isArray(caps) && caps.length ? caps : ['chat', 'embedding', 'rerank']
@@ -257,11 +257,11 @@ const parseJsonObject = (text, label) => {
   try {
     const parsed = JSON.parse(text || '{}')
     if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-      throw new Error(`${label} 必须是 JSON 对象`)
+      throw new Error(`${label} phải là JSON vật thể`)
     }
     return parsed
   } catch {
-    throw new Error(`${label} 格式不正确`)
+    throw new Error(`${label} Định dạng không chính xác`)
   }
 }
 
@@ -272,7 +272,7 @@ const loadProviders = async () => {
     const result = await modelProviderApi.getProviders()
     providers.value = result.data || []
   } catch (error) {
-    message.error(error.message || '加载模型供应商失败')
+    message.error(error.message || 'Không tải được nhà cung cấp mô hình')
   } finally {
     loading.value = false
   }
@@ -282,13 +282,13 @@ function getProviderInfo(provider) {
   return [
     { label: 'Provider Type', value: getProviderTypeLabel(provider.provider_type) },
     { label: 'Base URL', value: provider.base_url || '-' },
-    { label: '能力', value: provider.capabilities?.join(', ') || 'chat' }
+    { label: 'khả năng', value: provider.capabilities?.join(', ') || 'chat' }
   ]
 }
 
 function getProviderStatus(provider) {
-  if (!provider.is_enabled) return { label: '未启用', level: 'info' }
-  if (provider.credential_status === 'warning') return { label: '凭证缺失', level: 'warning' }
+  if (!provider.is_enabled) return { label: 'Chưa bật', level: 'info' }
+  if (provider.credential_status === 'warning') return { label: 'Thiếu thông tin xác thực', level: 'warning' }
   if (provider.is_enabled) return { label: '', level: 'success' }
   return null
 }
@@ -354,19 +354,19 @@ const buildProviderPayload = () => ({
   api_key: providerForm.api_key || null,
   capabilities: providerForm.capabilities,
   is_enabled: providerForm.is_enabled,
-  headers_json: parseJsonObject(providerForm.headers_text, '请求头'),
-  extra_json: parseJsonObject(providerForm.extra_text, '扩展配置')
+  headers_json: parseJsonObject(providerForm.headers_text, 'Tiêu đề yêu cầu'),
+  extra_json: parseJsonObject(providerForm.extra_text, 'cấu hình mở rộng')
 })
 
 const createProvider = async () => {
   saving.value = true
   try {
     await modelProviderApi.createProvider(buildProviderPayload())
-    message.success('供应商已创建')
+    message.success('Nhà cung cấp đã được tạo')
     showProviderModal.value = false
     await loadProviders()
   } catch (error) {
-    message.error(error.message || '创建失败')
+    message.error(error.message || 'Tạo không thành công')
   } finally {
     saving.value = false
   }
@@ -376,11 +376,11 @@ const saveProvider = async () => {
   saving.value = true
   try {
     await modelProviderApi.updateProvider(providerForm.provider_id, buildProviderPayload())
-    message.success('供应商已保存')
+    message.success('Đã lưu nhà cung cấp')
     showProviderModal.value = false
     await loadProviders()
   } catch (error) {
-    message.error(error.message || '保存失败')
+    message.error(error.message || 'Lưu không thành công')
   } finally {
     saving.value = false
   }
@@ -388,15 +388,15 @@ const saveProvider = async () => {
 
 const deleteProvider = async (provider) => {
   Modal.confirm({
-    title: `删除 ${provider.display_name}`,
-    content: '删除后不会影响当前系统正在使用的旧模型配置。',
-    okText: '删除',
+    title: `Xóa ${provider.display_name}`,
+    content: 'Việc xóa sẽ không ảnh hưởng đến cấu hình model cũ hiện đang được hệ thống sử dụng.。',
+    okText: 'Xóa',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy bỏ',
     async onOk() {
       try {
         await modelProviderApi.deleteProvider(provider.provider_id)
-        message.success('已删除')
+        message.success('Đã xóa')
         if (currentProviderForModels.value?.provider_id === provider.provider_id) {
           showModelsModal.value = false
           currentProviderForModels.value = null
@@ -407,7 +407,7 @@ const deleteProvider = async (provider) => {
         }
         await loadProviders()
       } catch (error) {
-        message.error(error.message || '删除失败')
+        message.error(error.message || 'Xóa không thành công')
       }
     }
   })
@@ -424,10 +424,10 @@ const toggleProviderEnabled = async (provider, checked) => {
   togglingProviderId.value = provider.provider_id
   try {
     await modelProviderApi.updateProvider(provider.provider_id, { is_enabled: checked })
-    message.success(checked ? '已启用' : '已停用')
+    message.success(checked ? 'Đã bật' : 'Đã tắt')
     await loadProviders()
   } catch (error) {
-    message.error(error.message || '操作失败')
+    message.error(error.message || 'Thao tác không thành công')
     await loadProviders()
   } finally {
     togglingProviderId.value = null
@@ -456,9 +456,9 @@ const fetchRemoteModels = async (providerId) => {
       [providerId]: result.data || []
     }
     remoteModelsLoaded.value[providerId] = true
-    message.success(`已获取 ${result.data?.length || 0} 个远端模型`)
+    message.success(`thu được ${result.data?.length || 0} mô hình từ xa`)
   } catch (error) {
-    message.error(error.message || '获取远端模型失败')
+    message.error(error.message || 'Không lấy được mô hình từ xa')
   } finally {
     remoteLoading.value = false
   }
@@ -486,24 +486,24 @@ const testModelConnection = async (providerId, model) => {
   modelTestLoadingBySpec.value = { ...modelTestLoadingBySpec.value, [spec]: true }
   try {
     const result = await modelProviderApi.getModelStatusBySpec(spec)
-    const status = result.data || { spec, status: 'error', message: '检查失败' }
+    const status = result.data || { spec, status: 'error', message: 'Kiểm tra không thành công' }
     modelTestResultBySpec.value = { ...modelTestResultBySpec.value, [spec]: status }
 
     if (status.status === 'available') {
-      message.success(`${getModelDisplayName(model)} 连接正常`)
+      message.success(`${getModelDisplayName(model)} Kết nối vẫn bình thường`)
     } else if (status.status === 'unsupported') {
-      message.warning(status.message || '暂不支持测试该类型模型')
+      message.warning(status.message || 'Việc thử nghiệm loại mô hình này hiện không được hỗ trợ.')
     } else if (status.status === 'unavailable') {
-      message.warning(status.message || '模型连接不可用')
+      message.warning(status.message || 'Kết nối mô hình không có sẵn')
     } else {
-      message.error(status.message || '模型连接测试失败')
+      message.error(status.message || 'Kiểm tra kết nối mô hình không thành công')
     }
   } catch (error) {
     modelTestResultBySpec.value = {
       ...modelTestResultBySpec.value,
-      [spec]: { spec, status: 'error', message: error.message || '检查失败' }
+      [spec]: { spec, status: 'error', message: error.message || 'Kiểm tra không thành công' }
     }
-    message.error(error.message || '模型连接测试失败')
+    message.error(error.message || 'Kiểm tra kết nối mô hình không thành công')
   } finally {
     modelTestLoadingBySpec.value = { ...modelTestLoadingBySpec.value, [spec]: false }
   }
@@ -515,25 +515,25 @@ const addModelFromRemote = async (providerId, remoteModel) => {
 
   const enabledModels = provider.enabled_models || []
   if (enabledModels.some((m) => m.id === remoteModel.id)) {
-    message.info('模型已存在')
+    message.info('Mô hình đã tồn tại')
     return
   }
 
   const newModel = normalizeModel(remoteModel)
-  newModel.source = 'remote' // 远端拉取的模型显式标注，避免后续被误判为旧数据
+  newModel.source = 'remote' // Chú thích rõ ràng của các mô hình được kéo từ xa，Tránh đánh giá sai về sau vì dữ liệu cũ
   newModel.enabled = true
   const newEnabledModels = [...enabledModels, newModel]
 
   try {
     await modelProviderApi.updateProvider(providerId, { enabled_models: newEnabledModels })
-    message.success(`已添加模型 ${remoteModel.id}`)
+    message.success(`Đã thêm mô hình ${remoteModel.id}`)
     await loadProviders()
     // Refresh current provider reference if modal is open
     if (currentProviderForModels.value?.provider_id === providerId) {
       currentProviderForModels.value = providers.value.find((p) => p.provider_id === providerId)
     }
   } catch (error) {
-    message.error(error.message || '添加模型失败')
+    message.error(error.message || 'Không thể thêm mô hình')
   }
 }
 
@@ -543,7 +543,7 @@ const openModelConfigModal = (model) => {
   showModelModal.value = true
 }
 
-// 手动添加模型：弹出与编辑共用的 Model Config Modal，但 id 字段可编辑、type 选项受 provider 能力约束
+// Thêm mô hình theo cách thủ công：Cửa sổ bật lên được chia sẻ với người chỉnh sửa Model Config Modal，Nhưng id Các trường có thể chỉnh sửa、type Tùy chọn theo provider Hạn chế về năng lực
 const openCreateModal = (provider) => {
   if (!provider) return
   const types = provider.capabilities?.length ? provider.capabilities : ['chat']
@@ -578,11 +578,11 @@ const saveModelConfig = async () => {
     if (isCreating.value) {
       const newId = (editingModel.value.id || '').trim()
       if (!newId) {
-        message.error('请填写模型 ID')
+        message.error('Vui lòng điền vào mẫu ID')
         return
       }
       if ((provider.enabled_models || []).some((m) => m.id === newId)) {
-        message.error('模型 ID 已存在')
+        message.error('người mẫu ID Đã tồn tại')
         return
       }
       const newModel = { ...editingModel.value, id: newId, source: 'manual', enabled: true }
@@ -596,7 +596,7 @@ const saveModelConfig = async () => {
     await modelProviderApi.updateProvider(currentProviderForModels.value.provider_id, {
       enabled_models: enabledModels
     })
-    message.success(isCreating.value ? '模型已添加' : '模型配置已保存')
+    message.success(isCreating.value ? 'Đã thêm mô hình' : 'Đã lưu cấu hình mô hình')
     showModelModal.value = false
     isCreating.value = false
     await loadProviders()
@@ -605,7 +605,7 @@ const saveModelConfig = async () => {
       (p) => p.provider_id === currentProviderForModels.value.provider_id
     )
   } catch (error) {
-    message.error(error.message || '保存失败')
+    message.error(error.message || 'Lưu không thành công')
   } finally {
     saving.value = false
   }
@@ -616,23 +616,23 @@ const removeModel = async (providerId, modelId) => {
   if (!provider) return
 
   Modal.confirm({
-    title: '移除模型',
-    content: `确定要移除模型 ${modelId} 吗？`,
-    okText: '移除',
+    title: 'Xóa mô hình',
+    content: `Xác nhận bạn muốn xóa mô hình ${modelId} ?？`,
+    okText: 'Xóa',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy bỏ',
     async onOk() {
       try {
         const enabledModels = (provider.enabled_models || []).filter((m) => m.id !== modelId)
         await modelProviderApi.updateProvider(providerId, { enabled_models: enabledModels })
-        message.success('模型已移除')
+        message.success('Đã xóa mô hình')
         await loadProviders()
         // Refresh current provider reference if modal is open
         if (currentProviderForModels.value?.provider_id === providerId) {
           currentProviderForModels.value = providers.value.find((p) => p.provider_id === providerId)
         }
       } catch (error) {
-        message.error(error.message || '移除失败')
+        message.error(error.message || 'Xóa không thành công')
       }
     }
   })
@@ -649,11 +649,11 @@ defineExpose({
 
 <template>
   <div class="model-provider-manage-panel">
-    <PageShoulder v-model:search="searchQuery" search-placeholder="搜索供应商...">
+    <PageShoulder v-model:search="searchQuery" search-placeholder="Tìm kiếm nhà cung cấp...">
       <template #actions>
         <a-button type="primary" class="lucide-icon-btn" @click="openCreateProviderModal">
           <Plus :size="14" />
-          新增供应商
+          Thêm nhà cung cấp mới
         </a-button>
         <a-button class="lucide-icon-btn" @click="loadProviders" :loading="loading">
           <RefreshCw :size="14" :class="{ spinning: loading }" />
@@ -682,9 +682,9 @@ defineExpose({
         <template #footer>
           <button class="view-models-btn" type="button" @click.stop="openModelsModal(provider)">
             <Settings2 :size="14" />
-            管理模型
+            mô hình quản lý
             <span v-if="provider.enabled_models?.length" class="enabled-count"
-              >（已启用 {{ provider.enabled_models.length }} 个）</span
+              >（Đã bật {{ provider.enabled_models.length }} một）</span
             >
           </button>
           <span class="provider-enable-switch" @click.stop>
@@ -702,7 +702,7 @@ defineExpose({
     <!-- Provider Edit Modal -->
     <a-modal
       v-model:open="showProviderModal"
-      :title="editingProviderId ? '编辑供应商' : '新增供应商'"
+      :title="editingProviderId ? 'Chỉnh sửa nhà cung cấp' : 'Thêm nhà cung cấp mới'"
       :width="560"
       :confirm-loading="saving"
     >
@@ -715,17 +715,17 @@ defineExpose({
             @click="deleteProviderFromEdit"
           >
             <Trash2 :size="14" />
-            删除供应商
+            Xóa nhà cung cấp
           </a-button>
           <span v-else></span>
           <div class="provider-modal-footer-actions">
-            <a-button @click="showProviderModal = false">取消</a-button>
+            <a-button @click="showProviderModal = false">Hủy bỏ</a-button>
             <a-button
               type="primary"
               :loading="saving"
               @click="editingProviderId ? saveProvider() : createProvider()"
             >
-              确认
+              Xác nhận
             </a-button>
           </div>
         </div>
@@ -741,7 +741,7 @@ defineExpose({
             />
           </label>
           <label class="form-label">
-            <span>展示名称</span>
+            <span>tên hiển thị</span>
             <a-input v-model:value="providerForm.display_name" placeholder="My Provider" />
           </label>
         </div>
@@ -771,7 +771,7 @@ defineExpose({
         <div class="form-row">
           <label class="form-label">
             <span>API Key Env</span>
-            <a-input v-model:value="providerForm.api_key_env" placeholder="环境变量名" />
+            <a-input v-model:value="providerForm.api_key_env" placeholder="Tên biến môi trường" />
           </label>
           <label class="form-label">
             <span>API Key</span>
@@ -818,14 +818,14 @@ defineExpose({
               <span>Rerank Endpoint</span>
               <a-input
                 v-model:value="providerForm.rerank_models_endpoint"
-                placeholder="按供应商文档填写，留空则不自动加载"
+                placeholder="Điền theo tài liệu của nhà cung cấp，Để trống để không tự động tải"
               />
             </label>
           </div>
         </template>
 
         <label class="form-label full-width">
-          <span>能力</span>
+          <span>khả năng</span>
           <a-select v-model:value="providerForm.capabilities" mode="multiple">
             <a-select-option value="chat">chat</a-select-option>
             <a-select-option value="embedding">embedding</a-select-option>
@@ -834,23 +834,23 @@ defineExpose({
         </label>
 
         <div class="form-switch">
-          <span>状态</span>
+          <span>Trạng thái</span>
           <a-switch
             v-model:checked="providerForm.is_enabled"
-            checked-children="启用"
-            un-checked-children="停用"
+            checked-children="kích hoạt"
+            un-checked-children="vô hiệu hóa"
           />
         </div>
 
         <a-collapse expand-icon-position="end" :ghost="true" class="advanced-collapse">
-          <a-collapse-panel key="advanced" header="高级配置">
+          <a-collapse-panel key="advanced" header="Cấu hình nâng cao">
             <label class="form-label full-width">
-              <span>请求头 JSON</span>
+              <span>Tiêu đề yêu cầu JSON</span>
               <a-textarea v-model:value="providerForm.headers_text" :rows="4" placeholder="{}" />
             </label>
 
             <label class="form-label full-width">
-              <span>扩展配置 JSON</span>
+              <span>cấu hình mở rộng JSON</span>
               <a-textarea v-model:value="providerForm.extra_text" :rows="4" placeholder="{}" />
             </label>
           </a-collapse-panel>
@@ -862,8 +862,8 @@ defineExpose({
       v-model:open="showModelsModal"
       :title="
         currentProviderForModels
-          ? `${currentProviderForModels.display_name} - 模型配置`
-          : '模型配置'
+          ? `${currentProviderForModels.display_name} - Cấu hình mô hình`
+          : 'Cấu hình mô hình'
       "
       :width="800"
       :footer="null"
@@ -873,7 +873,7 @@ defineExpose({
         <div class="models-section">
           <div class="enabled-header">
             <h4 class="models-section-title">
-              已启用模型 ({{ currentProviderForModels.enabled_models?.length || 0 }})
+              Đã bật mô hình ({{ currentProviderForModels.enabled_models?.length || 0 }})
             </h4>
             <div class="actions">
               <a-button
@@ -883,7 +883,7 @@ defineExpose({
                 :loading="remoteLoading"
                 @click="fetchRemoteModels(currentProviderForModels.provider_id)"
               >
-                获取远程模型
+                Nhận mô hình từ xa
               </a-button>
               <a-button
                 size="small"
@@ -891,17 +891,17 @@ defineExpose({
                 @click="openCreateModal(currentProviderForModels)"
               >
                 <Plus :size="14" />
-                <span>手动添加</span>
+                <span>Thêm thủ công</span>
               </a-button>
             </div>
           </div>
           <div class="models-table" v-if="currentProviderForModels.enabled_models?.length">
             <div class="table-head">
-              <span class="col-name">模型</span>
-              <span class="col-type">类型</span>
-              <span class="col-context">上下文</span>
-              <span class="col-dim">维度</span>
-              <span class="col-ops">操作</span>
+              <span class="col-name">người mẫu</span>
+              <span class="col-type">Loại</span>
+              <span class="col-context">bối cảnh</span>
+              <span class="col-dim">Kích thước</span>
+              <span class="col-ops">hoạt động</span>
             </div>
             <div
               v-for="model in currentProviderForModels.enabled_models"
@@ -918,8 +918,8 @@ defineExpose({
                 <span
                   v-if="model.source === 'manual'"
                   class="type-tag manual"
-                  title="管理员手动添加"
-                  aria-label="管理员手动添加"
+                  title="Quản trị viên thêm thủ công"
+                  aria-label="Quản trị viên thêm thủ công"
                 >
                   <LayersPlus :size="12" />
                 </span>
@@ -929,7 +929,7 @@ defineExpose({
                 <span
                   v-if="model.type === 'embedding' && !model.dimension"
                   class="dim-warning"
-                  title="缺少维度配置"
+                  title="Thiếu cấu hình thứ nguyên"
                   >⚠</span
                 >
                 <span v-else>{{ model.dimension || '-' }}</span>
@@ -941,7 +941,7 @@ defineExpose({
                   :class="{
                     'is-testing': isModelTesting(currentProviderForModels.provider_id, model.id)
                   }"
-                  aria-label="测试模型连接"
+                  aria-label="Kết nối mô hình thử nghiệm"
                   :aria-busy="isModelTesting(currentProviderForModels.provider_id, model.id)"
                   :title="getModelTestTitle(currentProviderForModels.provider_id, model)"
                   @click="testModelConnection(currentProviderForModels.provider_id, model)"
@@ -967,18 +967,18 @@ defineExpose({
               </span>
             </div>
           </div>
-          <a-empty v-else description="暂无已启用模型" />
+          <a-empty v-else description="Chưa có mô hình nào được kích hoạt" />
         </div>
 
         <!-- Remote Models Section -->
         <div class="models-section">
           <div class="remote-header">
-            <h4 class="models-section-title">远端候选模型 ({{ filteredRemoteModels.length }})</h4>
+            <h4 class="models-section-title">mô hình ứng viên từ xa ({{ filteredRemoteModels.length }})</h4>
             <a-input
               v-if="remoteModelsMap[currentProviderForModels.provider_id]?.length"
               v-model:value="remoteModelSearch[currentProviderForModels.provider_id]"
               class="remote-search-input"
-              placeholder="搜索模型..."
+              placeholder="Tìm kiếm mô hình..."
               allow-clear
             >
               <template #prefix><Search :size="12" /></template>
@@ -1045,7 +1045,7 @@ defineExpose({
     <!-- Model Config Modal -->
     <a-modal
       v-model:open="showModelModal"
-      :title="isCreating ? '手动添加模型' : '模型配置'"
+      :title="isCreating ? 'Thêm mô hình theo cách thủ công' : 'Cấu hình mô hình'"
       :width="520"
       :confirm-loading="saving"
       @ok="saveModelConfig"
@@ -1053,22 +1053,22 @@ defineExpose({
       <div class="modal-form">
         <div v-if="isCreating" class="form-row">
           <label class="form-label">
-            <span>模型 ID <span class="required-mark">*</span></span>
-            <a-input v-model:value="editingModel.id" placeholder="例如 BAAI/bge-m3" allow-clear />
+            <span>người mẫu ID <span class="required-mark">*</span></span>
+            <a-input v-model:value="editingModel.id" placeholder="Ví dụ BAAI/bge-m3" allow-clear />
           </label>
         </div>
         <div v-else class="model-id-display">
-          <span class="info-label">模型 ID</span>
+          <span class="info-label">người mẫu ID</span>
           <code>{{ editingModel.id }}</code>
         </div>
 
         <div class="form-row">
           <label class="form-label">
-            <span>展示名称</span>
+            <span>tên hiển thị</span>
             <a-input v-model:value="editingModel.display_name" />
           </label>
           <label class="form-label">
-            <span>模型类型</span>
+            <span>Loại mô hình</span>
             <a-select
               v-model:value="editingModel.type"
               :options="editingModelTypeOptions"
@@ -1079,18 +1079,18 @@ defineExpose({
 
         <div class="form-row">
           <label class="form-label">
-            <span>协议覆盖</span>
-            <a-input v-model:value="editingModel.protocol_override" placeholder="可选" />
+            <span>Phạm vi thỏa thuận</span>
+            <a-input v-model:value="editingModel.protocol_override" placeholder="Tùy chọn" />
           </label>
           <label class="form-label">
-            <span>Base URL 覆盖</span>
-            <a-input v-model:value="editingModel.base_url_override" placeholder="可选" />
+            <span>Base URL Bìa</span>
+            <a-input v-model:value="editingModel.base_url_override" placeholder="Tùy chọn" />
           </label>
         </div>
 
         <div class="form-row">
           <label class="form-label" v-if="editingModel.type === 'embedding'">
-            <span>维度</span>
+            <span>Kích thước</span>
             <a-input-number v-model:value="editingModel.dimension" :min="1" />
           </label>
           <label

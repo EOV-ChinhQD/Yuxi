@@ -59,12 +59,12 @@ const normalizeAgent = (agent) => {
 }
 
 const agentModalMenuItems = computed(() => {
-  const items = [{ key: 'basic', label: '基本信息', icon: Info }]
+  const items = [{ key: 'basic', label: 'Thông tin cơ bản', icon: Info }]
   if (editingAgentId.value) {
     items.push(
-      { key: 'model', label: '模型配置', icon: SlidersHorizontal },
-      { key: 'tools', label: '工具配置', icon: Wrench },
-      { key: 'other', label: '其他配置', icon: Settings2 }
+      { key: 'model', label: 'Cấu hình mô hình', icon: SlidersHorizontal },
+      { key: 'tools', label: 'Cấu hình công cụ', icon: Wrench },
+      { key: 'other', label: 'Các cấu hình khác', icon: Settings2 }
     )
   }
   return items
@@ -104,16 +104,16 @@ const getAgentShareAllowedLevels = () => {
   return userStore.isAdmin ? ['global', 'department', 'user'] : ['user']
 }
 
-const agentModalTitle = computed(() => (editingAgentId.value ? '编辑智能体' : '新增智能体'))
+const agentModalTitle = computed(() => (editingAgentId.value ? 'Chỉnh sửa đại lý' : 'Thêm đại lý mới'))
 const agentPreviewDefaultIcon = computed(() =>
   editingAgentId.value ? generatePixelAvatar(editingAgentId.value) : ''
 )
-const agentPreviewName = computed(() => agentForm.name || editingAgentId.value || '智能体')
+const agentPreviewName = computed(() => agentForm.name || editingAgentId.value || 'đại lý')
 const selectedBackendOption = computed(() =>
   props.backendOptions.find((backend) => backend.value === agentForm.backend_id)
 )
 const selectedBackendLabel = computed(
-  () => selectedBackendOption.value?.label || agentForm.backend_id || '未选择'
+  () => selectedBackendOption.value?.label || agentForm.backend_id || 'Không được chọn'
 )
 const selectedBackendIcon = computed(() => {
   const backendText = `${agentForm.backend_id} ${selectedBackendLabel.value}`.toLowerCase()
@@ -154,7 +154,7 @@ const openEdit = async (agent) => {
 
   const detail = await agentStore.fetchAgentDetail(agentId, true)
   if (!detail?.can_manage) {
-    message.warning('当前智能体不可编辑')
+    message.warning('Đại lý hiện tại không thể được chỉnh sửa')
     return
   }
 
@@ -188,12 +188,12 @@ const closeAgentModal = async () => {
 
 const beforeAgentIconUpload = (file) => {
   if (!file.type.startsWith('image/')) {
-    message.error('只能上传图片文件')
+    message.error('Chỉ có thể tải lên tệp hình ảnh')
     return false
   }
 
   if (file.size > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
-    message.error(`图片大小不能超过 ${MAX_IMAGE_UPLOAD_SIZE_MB}MB`)
+    message.error(`Kích thước hình ảnh không thể vượt quá ${MAX_IMAGE_UPLOAD_SIZE_MB}MB`)
     return false
   }
 
@@ -206,9 +206,9 @@ const uploadAgentIcon = async (file) => {
   try {
     const data = await userApi.uploadImage(file)
     agentForm.icon = data.image_url || data.url || ''
-    message.success('图标上传成功')
+    message.success('Biểu tượng được tải lên thành công')
   } catch (error) {
-    message.error(error.message || '图标上传失败')
+    message.error(error.message || 'Tải lên biểu tượng không thành công')
   } finally {
     agentIconUploading.value = false
   }
@@ -234,7 +234,7 @@ const buildAgentPayload = () => {
 const saveAgent = async () => {
   if (!agentForm.name.trim()) {
     agentModalActiveTab.value = 'basic'
-    message.error('请填写智能体名称')
+    message.error('Vui lòng điền tên đại lý')
     return
   }
 
@@ -264,16 +264,16 @@ const saveAgent = async () => {
       const updated = await agentStore.updateAgentProfile(editingAgentId.value, payload)
       agentStore.originalAgentConfig = { ...agentStore.agentConfig }
       emit('saved', { mode: 'edit', agent: updated })
-      message.success('智能体已保存')
+      message.success('Đã lưu đại lý')
     } else {
       const created = await agentStore.createAgent(payload)
       emit('saved', { mode: 'create', agent: normalizeAgent(created) })
-      message.success('智能体已创建')
+      message.success('Đại lý đã được tạo')
     }
     showAgentModal.value = false
     await restoreChatAgentSelectionIfNeeded()
   } catch (error) {
-    message.error(error.message || '保存智能体失败')
+    message.error(error.message || 'Không lưu được đại diện')
   } finally {
     saving.value = false
   }
@@ -300,8 +300,8 @@ defineExpose({
       <div class="agent-modal-titlebar">
         <span class="agent-modal-title">{{ agentModalTitle }}</span>
         <div class="agent-modal-actions">
-          <a-button :disabled="saving" @click="closeAgentModal">取消</a-button>
-          <a-button type="primary" :loading="saving" @click="saveAgent">保存</a-button>
+          <a-button :disabled="saving" @click="closeAgentModal">Hủy bỏ</a-button>
+          <a-button type="primary" :loading="saving" @click="saveAgent">lưu lại</a-button>
         </div>
       </div>
     </template>
@@ -312,7 +312,7 @@ defineExpose({
         'create-mode': !editingAgentId
       }"
     >
-      <aside v-if="showAgentModalSidebar" class="agent-modal-sidebar" aria-label="智能体配置分组">
+      <aside v-if="showAgentModalSidebar" class="agent-modal-sidebar" aria-label="Nhóm cấu hình đại lý">
         <button
           v-for="item in agentModalMenuItems"
           :key="item.key"
@@ -332,7 +332,7 @@ defineExpose({
       <div class="agent-modal-main">
         <section v-show="agentModalActiveTab === 'basic'" class="agent-modal-section">
           <div class="agent-profile-header">
-            <div class="agent-icon-preview" aria-label="智能体图标、名称与后端">
+            <div class="agent-icon-preview" aria-label="Biểu tượng đại lý、Tên và phụ trợ">
               <div class="agent-profile-main">
                 <a-upload
                   :show-upload-list="false"
@@ -356,13 +356,13 @@ defineExpose({
                       kind="agent"
                       :size="56"
                       shape="rounded"
-                      :alt="`${agentForm.name || '智能体'}图标`"
+                      :alt="`${agentForm.name || 'đại lý'}biểu tượng`"
                       class="agent-icon-preview-avatar"
                     />
                     <div class="agent-icon-mask">
                       <RefreshCw v-if="agentIconUploading" :size="16" class="spinning" />
                       <Upload v-else :size="16" />
-                      <span>{{ agentForm.icon ? '更换图标' : '上传图标' }}</span>
+                      <span>{{ agentForm.icon ? 'Thay đổi biểu tượng' : 'biểu tượng tải lên' }}</span>
                     </div>
                   </div>
                 </a-upload>
@@ -372,16 +372,16 @@ defineExpose({
                     v-model="agentForm.name"
                     class="agent-inline-name-input"
                     type="text"
-                    placeholder="点击输入智能体名称"
-                    aria-label="智能体名称"
+                    placeholder="Click để nhập tên đại lý"
+                    aria-label="Tên đại lý"
                   />
                   <input
                     v-if="!editingAgentId"
                     v-model="agentForm.slug"
                     class="agent-inline-slug-input"
                     type="text"
-                    placeholder="标识可选，留空自动生成"
-                    aria-label="智能体标识"
+                    placeholder="Logo tùy chọn，Để trống để tự động tạo"
+                    aria-label="ID đại lý"
                   />
                   <span v-else class="agent-inline-slug">{{
                     agentForm.slug || editingAgentId
@@ -391,13 +391,13 @@ defineExpose({
               <div
                 class="agent-backend-summary"
                 :class="{ editable: !editingAgentId }"
-                aria-label="智能体后端"
+                aria-label="Phụ trợ đại lý"
               >
                 <span class="agent-backend-icon">
                   <component :is="selectedBackendIcon" :size="16" />
                 </span>
                 <div class="agent-backend-text">
-                  <span class="agent-backend-label">智能体后端</span>
+                  <span class="agent-backend-label">Phụ trợ đại lý</span>
                   <a-select
                     v-if="!editingAgentId"
                     v-model:value="agentForm.backend_id"
@@ -412,14 +412,14 @@ defineExpose({
           </div>
           <div class="modal-form">
             <label class="form-label full-width">
-              <span>描述</span>
-              <a-textarea v-model:value="agentForm.description" :rows="3" placeholder="可选" />
+              <span>Mô tả</span>
+              <a-textarea v-model:value="agentForm.description" :rows="3" placeholder="Tùy chọn" />
             </label>
           </div>
 
           <div v-if="canEditAgentShareConfig" class="share-config-block">
             <div class="section-heading">
-              <span>共享权限</span>
+              <span>Quyền chia sẻ</span>
             </div>
             <ShareConfigForm
               ref="agentShareConfigFormRef"
@@ -436,7 +436,7 @@ defineExpose({
           class="agent-modal-section runtime-section"
         >
           <div v-if="agentStore.hasConfigChanges" class="runtime-dirty-row">
-            <span class="dirty-hint">有未保存修改</span>
+            <span class="dirty-hint">Có những thay đổi chưa được lưu</span>
           </div>
           <AgentRuntimeConfigForm
             ref="runtimeConfigFormRef"

@@ -61,18 +61,18 @@ def login_with_api_key(
     client_factory=YuxiClient,
 ) -> Remote:
     if not api_key.startswith("yxkey_"):
-        raise CommandError("API Key 格式无效，应以 yxkey_ 开头")
+        raise CommandError("API Key Định dạng không hợp lệ，nên yxkey_ Bắt đầu")
 
     config = store.load()
     remote = config.get_remote(remote_name)
     with client_factory(remote) as client:
         _ensure_server_compatible(client, "cli.api_key_auth")
-        client.me(api_key=api_key)  # 校验 Key 是否可用
+        client.me(api_key=api_key)  # Xác minh Key Nó có sẵn không
 
     remote.api_key = api_key
     remote.api_key_id = ""
     store.save(config)
-    console.print(f"已保存 {remote.name} 的 API Key。")
+    console.print(f"đã lưu {remote.name} của API Key。")
     return remote
 
 
@@ -94,8 +94,8 @@ def login_with_browser(
         _ensure_server_compatible(client, "cli.browser_login")
         session = client.create_cli_session()
         authorize_url = client.authorize_url(session)
-        console.print(f"授权码: {session.user_code}")
-        console.print(f"浏览器授权地址: {authorize_url}")
+        console.print(f"Mã ủy quyền: {session.user_code}")
+        console.print(f"Địa chỉ ủy quyền của trình duyệt: {authorize_url}")
         if not no_open:
             open_browser(authorize_url)
 
@@ -106,26 +106,26 @@ def login_with_browser(
                 api_key = data.get("secret") or ""
                 api_key_meta = data.get("api_key") or {}
                 if not api_key:
-                    raise CommandError("远程未返回 API Key secret")
+                    raise CommandError("Điều khiển từ xa đã không trở lại API Key secret")
 
                 remote.api_key = api_key
                 remote.api_key_id = str(api_key_meta.get("id") or "")
                 store.save(config)
-                console.print(f"已完成 {remote.name} 的浏览器登录。")
+                console.print(f"Đã hoàn thành {remote.name} Đăng nhập trình duyệt。")
                 return remote
             except ClientError as exc:
                 if not _should_keep_polling(exc):
                     raise
             sleep(max(1, session.interval))
 
-    raise CommandError("浏览器授权超时")
+    raise CommandError("Hết thời gian ủy quyền của trình duyệt")
 
 
 def _should_keep_polling(exc: ClientError) -> bool:
-    """轮询期间是否应继续重试：等待授权、限流，或瞬时网络/服务端错误。"""
+    """Liệu việc thử lại có nên tiếp tục trong quá trình bỏ phiếu hay không：Đang chờ cấp phép、Giới hạn hiện tại，hoặc mạng tức thời/Lỗi máy chủ。"""
     if exc.error_code in PENDING_ERRORS or str(exc).startswith(PENDING_ERRORS):
         return True
-    # status_code 为 None 表示网络层错误；5xx 为服务端瞬时错误，均可重试。
+    # status_code cho None Cho biết lỗi lớp mạng；5xx Một lỗi nhất thời ở phía máy chủ，Bạn có thể thử lại。
     return exc.status_code is None or exc.status_code >= 500
 
 
@@ -133,7 +133,7 @@ def whoami(store: ConfigStore, remote_name: str | None, console: Console, client
     config = store.load()
     remote = config.get_remote(remote_name)
     if not remote.api_key:
-        raise CommandError(f"remote 尚未登录: {remote.name}")
+        raise CommandError(f"remote Chưa đăng nhập: {remote.name}")
     with client_factory(remote) as client:
         user = client.me()
     console.print(f"{user.get('username')} ({user.get('uid')}) - {user.get('role')}")
@@ -144,13 +144,13 @@ def status(store: ConfigStore, remote_name: str | None, console: Console, client
     remote = config.get_remote(remote_name)
     with client_factory(remote) as client:
         health = client.health()
-        auth = "未登录"
+        auth = "Chưa đăng nhập"
         if remote.api_key:
             try:
                 user = client.me()
                 auth = f"{user.get('username')} ({user.get('uid')})"
             except ClientError:
-                auth = "API Key 无效"
+                auth = "API Key không hợp lệ"
 
     table = Table(show_header=False)
     table.add_row("Remote", remote.name)
@@ -176,17 +176,17 @@ def logout(
     remote.api_key = ""
     remote.api_key_id = ""
     store.save(config)
-    console.print(f"已退出 {remote.name}。")
+    console.print(f"Đã thoát {remote.name}。")
     return remote
 
 
 def select_login_mode(console: Console) -> str:
-    console.print("选择登录方式:")
-    console.print("> 1. 浏览器登录（推荐）")
+    console.print("Chọn phương thức đăng nhập:")
+    console.print("> 1. Đăng nhập trình duyệt（Được đề xuất）")
     console.print("  2. API Key")
     if not sys.stdin.isatty():
         return "browser"
-    value = input("直接回车使用浏览器登录，输入 2 使用 API Key: ").strip()
+    value = input("Chỉ cần nhấn Enter và đăng nhập bằng trình duyệt của bạn，đầu vào 2 sử dụng API Key: ").strip()
     return "api_key" if value == "2" else "browser"
 
 
@@ -194,7 +194,7 @@ def _ensure_server_compatible(client: YuxiClient, required_capability: str) -> N
     try:
         discovery = client.discovery()
     except ClientError as exc:
-        raise CommandError(f"无法读取服务端 discovery，请确认远程是 Yuxi 0.7.1 或更高版本: {exc}") from exc
+        raise CommandError(f"Không thể đọc máy chủ discovery，Vui lòng xác nhận rằng điều khiển từ xa là Yuxi 0.7.1 hoặc cao hơn: {exc}") from exc
     try:
         ensure_server_compatible(discovery, required_capability)
     except ServerCompatibilityError as exc:

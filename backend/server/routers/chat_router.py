@@ -403,7 +403,7 @@ async def search_threads(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """搜索当前用户的历史对话。"""
+    """Tìm kiếm các cuộc hội thoại lịch sử của người dùng hiện tại。"""
     return await search_threads_view(
         query=q,
         agent_id=agent_id,

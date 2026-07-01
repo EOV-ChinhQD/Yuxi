@@ -1,27 +1,27 @@
-# 单位信息配置文件
-# 用于配置网站的基本信息、品牌信息等
+# Tệp cấu hình thông tin đơn vị
+# Thông tin cơ bản để cấu hình trang web、Thông tin thương hiệu, v.v.
 
-# 组织信息
+# tổ chức thông tin
 organization:
-  name: "江南语析"           # 完整组织名称
-  logo: "/favicon.svg"       # Logo文件路径（放在 web/public 目录下）
-  avatar: "/avatar.jpg"      # 头像文件路径（放在 web/public 目录下）
-  login_bg: "/login-bg.jpg"  # 登录背景图片路径（放在 web/public 目录下）
+  name: "Phân tích tiếng Giang Nam"           # Tên tổ chức đầy đủ
+  logo: "/favicon.svg"       # Logođường dẫn tập tin（mặc vào web/public dưới thư mục）
+  avatar: "/avatar.jpg"      # Đường dẫn tập tin hình đại diện（mặc vào web/public dưới thư mục）
+  login_bg: "/login-bg.jpg"  # Đường dẫn ảnh nền đăng nhập（mặc vào web/public dưới thư mục）
 
-# 项目信息
+# Thông tin dự án
 branding:
   name: "Yuxi"
-  title: "让智能体可构建、可编排、可落地"     # 系统标题
-  subtitle: "开源智能体平台套件，融合 RAG 与知识图谱"          # 副标题（subtitles 为空时使用）
+  title: "Làm cho các tác nhân có thể xây dựng được、Có thể lập trình、Có thể được thả nổi"     # tiêu đề hệ thống
+  subtitle: "Bộ nền tảng đại lý nguồn mở，Sự kết hợp RAG và đồ thị kiến thức"          # phụ đề（subtitles Được sử dụng khi trống）
   subtitles:
-    - "开源智能体平台套件，融合 RAG 与知识图谱"
-    - "统一编排 Agent、知识库、图谱与工具链"
-    - "让智能体可构建，让知识可连接，让决策可验证"
-    - "让智能体可落地，让流程可编排，让协作可扩展"
-    - "让数据可沉淀，让能力可复用，让系统可进化"
+    - "Bộ nền tảng đại lý nguồn mở，Sự kết hợp RAG và đồ thị kiến thức"
+    - "sắp xếp thống nhất Agent、cơ sở tri thức、Bản đồ và chuỗi công cụ"
+    - "Làm cho các tác nhân có thể xây dựng được，Làm cho kiến thức có thể kết nối được，Đưa ra các quyết định có thể kiểm chứng được"
+    - "Làm cho các tác nhân thông minh có thể triển khai được，Làm cho quá trình có thể sắp xếp được，Làm cho việc cộng tác có thể mở rộng được"
+    - "Làm cho dữ liệu có thể lắng đọng，Làm cho khả năng có thể tái sử dụng，Làm cho hệ thống có thể phát triển"
 
-# 页脚信息
+# Thông tin chân trang
 footer:
-  copyright: "© 江南语析 2026 v{{YUXI_VERSION}}"
+  copyright: "© Phân tích tiếng Giang Nam 2026 v{{YUXI_VERSION}}"
   user_agreement_url: "/protocols/user-agreement.template.html"
   privacy_policy_url: "/protocols/privacy-policy.template.html"

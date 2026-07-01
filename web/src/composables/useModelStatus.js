@@ -2,7 +2,7 @@ import { reactive } from 'vue'
 import { modelProviderApi } from '@/apis/system_api'
 
 /**
- * 模型状态检查 composable，供 Chat/Embedding/Rerank 模型选择器共用。
+ * Kiểm tra trạng thái mô hình composable，cung cấp Chat/Embedding/Rerank Bộ chọn mô hình chung。
  */
 export function useModelStatus() {
   const statusMap = reactive({})
@@ -22,10 +22,10 @@ export function useModelStatus() {
 
   const getStatusTooltip = (key) => {
     const status = statusMap[key]
-    if (!status) return '状态未知'
+    if (!status) return 'Trạng thái không xác định'
     const text =
-      { available: '可用', unavailable: '不可用', error: '错误' }[status.status] || '未知'
-    return `${text}: ${status.message || '无详细信息'}`
+      { available: 'Có sẵn', unavailable: 'Không có sẵn', error: 'Lỗi' }[status.status] || 'không rõ'
+    return `${text}: ${status.message || 'Không có chi tiết'}`
   }
 
   const checkV2Status = async (spec) => {
@@ -35,7 +35,7 @@ export function useModelStatus() {
         statusMap[spec] = response.data
       }
     } catch {
-      statusMap[spec] = { spec, status: 'error', message: '检查失败' }
+      statusMap[spec] = { spec, status: 'error', message: 'Kiểm tra không thành công' }
     }
   }
 

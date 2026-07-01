@@ -1,26 +1,26 @@
 <template>
   <a-modal
     v-model:open="visible"
-    title="上传评估基准"
+    title="Tải lên điểm chuẩn đánh giá"
     width="600px"
     :mask-closable="!uploading"
     :closable="!uploading"
     @cancel="handleCancel"
   >
     <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
-      <a-form-item label="基准名称" name="name">
-        <a-input v-model:value="formState.name" placeholder="请输入评估基准名称" />
+      <a-form-item label="Tên điểm chuẩn" name="name">
+        <a-input v-model:value="formState.name" placeholder="Vui lòng nhập tên điểm chuẩn đánh giá" />
       </a-form-item>
 
-      <a-form-item label="描述" name="description">
+      <a-form-item label="Mô tả" name="description">
         <a-textarea
           v-model:value="formState.description"
-          placeholder="请输入评估基准描述（可选）"
+          placeholder="Vui lòng nhập mô tả về điểm chuẩn đánh giá（Tùy chọn）"
           :rows="3"
         />
       </a-form-item>
 
-      <a-form-item label="基准文件" name="file">
+      <a-form-item label="Tệp điểm chuẩn" name="file">
         <a-upload-dragger
           v-model:fileList="fileList"
           name="file"
@@ -30,28 +30,28 @@
           @remove="handleRemove"
         >
           <UploadCloud class="upload-icon" />
-          <p class="ant-upload-text">点击或拖拽 JSONL 文件到此区域上传</p>
-          <p class="ant-upload-hint">每行一个 JSON 对象，仅支持 .jsonl，最大 100MB</p>
+          <p class="ant-upload-text">Bấm hoặc kéo JSONL Tải tập tin lên khu vực này</p>
+          <p class="ant-upload-hint">mỗi dòng một cái JSON vật thể，Chỉ hỗ trợ .jsonl，tối đa 100MB</p>
         </a-upload-dragger>
       </a-form-item>
     </a-form>
     <template #footer>
       <div class="benchmark-modal-footer">
         <div class="benchmark-help-text">
-          需要了解评估基准格式？查看
+          Cần biết định dạng chuẩn đánh giá？Xem
           <a
             class="benchmark-help-link"
             href="https://xerrors.github.io/Yuxi/intro/evaluation.html"
             target="_blank"
             rel="noopener noreferrer"
           >
-            使用说明
+            Hướng dẫn sử dụng
           </a>
         </div>
         <div class="footer-actions">
-          <a-button :disabled="uploading" @click="handleCancel">取消</a-button>
+          <a-button :disabled="uploading" @click="handleCancel">Hủy bỏ</a-button>
           <a-button type="primary" :loading="uploading" :disabled="uploading" @click="handleUpload">
-            上传
+            tải lên
           </a-button>
         </div>
       </div>
@@ -78,7 +78,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:visible', 'success'])
 
-// 响应式数据
+// Dữ liệu đáp ứng
 const formRef = ref()
 const fileList = ref([])
 const uploading = ref(false)
@@ -89,54 +89,54 @@ const formState = reactive({
   file: null
 })
 
-// 表单验证规则
+// quy tắc xác thực biểu mẫu
 const rules = {
   name: [
-    { required: true, message: '请输入基准名称', trigger: 'blur' },
-    { min: 2, max: 100, message: '基准名称长度应在2-100个字符之间', trigger: 'blur' }
+    { required: true, message: 'Vui lòng nhập tên điểm chuẩn', trigger: 'blur' },
+    { min: 2, max: 100, message: 'Độ dài tên cơ sở phải nằm trong2-100giữa các ký tự', trigger: 'blur' }
   ],
-  file: [{ required: true, message: '请选择基准文件', trigger: 'change' }]
+  file: [{ required: true, message: 'Vui lòng chọn một tập tin điểm chuẩn', trigger: 'change' }]
 }
 
-// 双向绑定visible
+// Ràng buộc hai chiềuvisible
 const visible = computed({
   get: () => props.visible,
   set: (val) => emit('update:visible', val)
 })
 
-// 文件上传前验证
+// Xác minh trước khi tải lên tập tin
 const beforeUpload = async (file) => {
-  // 检查文件类型
+  // Kiểm tra loại tập tin
   if (!file.name.endsWith('.jsonl')) {
-    message.error('仅支持 JSONL 格式文件')
+    message.error('Chỉ hỗ trợ JSONL tập tin định dạng')
     return false
   }
 
-  // 检查文件大小（限制为100MB）
+  // Kiểm tra kích thước tập tin（giới hạn ở100MB）
   const isLt100M = file.size / 1024 / 1024 < 100
   if (!isLt100M) {
-    message.error('文件大小不能超过 100MB')
+    message.error('Kích thước tệp không thể vượt quá 100MB')
     return false
   }
 
   try {
-    // 读取文件内容验证格式
+    // Đọc định dạng xác minh nội dung tập tin
     const content = await new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = (e) => resolve(e.target.result)
-      reader.onerror = () => reject(new Error('文件读取失败'))
+      reader.onerror = () => reject(new Error('Đọc tệp không thành công'))
       reader.readAsText(file)
     })
 
     const lines = content.trim().split('\n')
 
-    // 验证至少有一行
+    // Xác minh rằng có ít nhất một hàng
     if (lines.length === 0) {
-      message.error('文件不能为空')
+      message.error('Tệp không thể trống')
       return false
     }
 
-    // 验证JSON格式
+    // Xác minhJSONđịnh dạng
     for (let i = 0; i < Math.min(5, lines.length); i++) {
       const line = lines[i].trim()
       if (line) {
@@ -144,32 +144,32 @@ const beforeUpload = async (file) => {
       }
     }
 
-    // 验证通过，设置文件
+    // Xác minh đã được thông qua，tập tin cài đặt
     formState.file = file
     return true
   } catch (error) {
     if (error instanceof SyntaxError) {
-      message.error('文件格式错误，请检查JSONL格式')
+      message.error('Lỗi định dạng tệp，vui lòng kiểm traJSONLđịnh dạng')
     } else {
-      message.error('文件验证失败: ' + error.message)
+      message.error('Xác minh tệp không thành công: ' + error.message)
     }
     return false
   }
 }
 
-// 移除文件
+// Xóa tập tin
 const handleRemove = () => {
   formState.file = null
 }
 
-// 上传文件
+// Tải tập tin lên
 const handleUpload = async () => {
   try {
-    // 表单验证
+    // xác nhận mẫu
     await formRef.value.validate()
 
     if (!formState.file) {
-      message.error('请选择基准文件')
+      message.error('Vui lòng chọn một tập tin điểm chuẩn')
       return
     }
 
@@ -181,27 +181,27 @@ const handleUpload = async () => {
     })
 
     if (response.message === 'success') {
-      message.success('上传成功')
+      message.success('Tải lên thành công')
       handleCancel()
       emit('success')
     } else {
-      message.error(response.message || '上传失败')
+      message.error(response.message || 'Tải lên không thành công')
     }
   } catch (error) {
-    console.error('上传失败:', error)
-    message.error('上传失败')
+    console.error('Tải lên không thành công:', error)
+    message.error('Tải lên không thành công')
   } finally {
     uploading.value = false
   }
 }
 
-// 取消操作
+// Hủy thao tác
 const handleCancel = () => {
   visible.value = false
   resetForm()
 }
 
-// 重置表单
+// Đặt lại biểu mẫu
 const resetForm = () => {
   formRef.value?.resetFields()
   fileList.value = []
@@ -209,7 +209,7 @@ const resetForm = () => {
   uploading.value = false
 }
 
-// 监听visible变化
+// màn hìnhvisiblethay đổi
 watch(visible, (val) => {
   if (!val) {
     resetForm()

@@ -1,5 +1,5 @@
-// 文件 / 文件夹类型图标（彩色 SVG），用于在文件路径前渲染。
-// 注意：仅用于「渲染文件/文件夹名称前的类型图标」，按钮图标请勿使用此处的资源。
+// tập tin / Biểu tượng loại thư mục（màu sắc SVG），Được sử dụng để hiển thị trước đường dẫn tệp。
+// Lưu ý：chỉ dành cho「kết xuất tập tin/Gõ biểu tượng trước tên thư mục」，Biểu tượng nút Không sử dụng tài nguyên ở đây。
 import archiveIcon from '@/assets/icons/files/archive.svg?url'
 import audioIcon from '@/assets/icons/files/audio.svg?url'
 import cadIcon from '@/assets/icons/files/cad.svg?url'
@@ -35,7 +35,7 @@ export const FOLDER_ICONS = {
 }
 
 const EXTENSION_ICONS = {
-  // 文档
+  // Tài liệu
   pdf: pdfIcon,
   doc: wordIcon,
   docx: wordIcon,
@@ -45,14 +45,14 @@ const EXTENSION_ICONS = {
   xls: spreadsheetIcon,
   xlsx: spreadsheetIcon,
   csv: spreadsheetIcon,
-  // 文本 / Markdown
+  // văn bản / Markdown
   txt: textIcon,
   text: textIcon,
   log: textIcon,
   md: markdownIcon,
   markdown: markdownIcon,
   mdx: markdownIcon,
-  // 代码
+  // mã
   py: pythonIcon,
   js: codeIcon,
   mjs: codeIcon,
@@ -82,10 +82,10 @@ const EXTENSION_ICONS = {
   scss: codeIcon,
   sql: codeIcon,
   xml: codeIcon,
-  // 网页
+  // trang web
   html: webIcon,
   htm: webIcon,
-  // 图片
+  // hình ảnh
   png: imageIcon,
   jpg: imageIcon,
   jpeg: imageIcon,
@@ -96,11 +96,11 @@ const EXTENSION_ICONS = {
   apng: imageIcon,
   avif: imageIcon,
   ico: imageIcon,
-  // 设计 / 工程
+  // thiết kế / Kỹ thuật
   psd: psdIcon,
   dwg: cadIcon,
   dxf: cadIcon,
-  // 音视频
+  // Âm thanh và video
   mp3: audioIcon,
   wav: audioIcon,
   flac: audioIcon,
@@ -113,7 +113,7 @@ const EXTENSION_ICONS = {
   mkv: videoIcon,
   webm: videoIcon,
   flv: videoIcon,
-  // 压缩包
+  // Gói nén
   zip: archiveIcon,
   rar: archiveIcon,
   '7z': archiveIcon,
@@ -133,11 +133,11 @@ const getExtension = (name) => {
 }
 
 /**
- * 解析文件 / 文件夹对应的彩色图标 URL。
- * @param {string} name 文件名或路径（目录可以 `/` 结尾）
+ * tập tin phân tích / Biểu tượng màu tương ứng với các thư mục URL。
+ * @param {string} name tên tệp hoặc đường dẫn（Thư mục có thể `/` kết thúc）
  * @param {object} [options]
- * @param {boolean} [options.isDir] 是否为目录
- * @param {string} [options.folderVariant] 文件夹图标变体：default | agent | enterprise | favorite | knowledge | personal | trash
+ * @param {boolean} [options.isDir] Nó có phải là một thư mục?
+ * @param {string} [options.folderVariant] Các biến thể biểu tượng thư mục：default | agent | enterprise | favorite | knowledge | personal | trash
  */
 export const resolveFileIconUrl = (name, { isDir = false, folderVariant = 'default' } = {}) => {
   const isDirectory = isDir || String(name || '').endsWith('/')

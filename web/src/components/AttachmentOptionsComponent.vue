@@ -1,19 +1,19 @@
 <template>
   <div class="attachment-options">
     <div class="option-item" :class="{ disabled: disabled }" @click="handleAttachmentClick">
-      <a-tooltip title="支持任意文件格式 ≤ 5 MB" placement="right">
+      <a-tooltip title="Hỗ trợ mọi định dạng tập tin ≤ 5 MB" placement="right">
         <div class="option-content">
           <FileText :size="14" class="option-icon" />
-          <span class="option-text">添加附件</span>
+          <span class="option-text">Thêm tệp đính kèm</span>
         </div>
       </a-tooltip>
     </div>
 
     <div class="option-item" @click="handleImageUpload">
-      <a-tooltip title="支持 jpg/jpeg/png/gif， ≤ 5 MB" placement="right">
+      <a-tooltip title="hỗ trợ jpg/jpeg/png/gif， ≤ 5 MB" placement="right">
         <div class="option-content">
           <Image :size="14" class="option-icon" />
-          <span class="option-text">上传图片</span>
+          <span class="option-text">Tải ảnh lên</span>
         </div>
       </a-tooltip>
     </div>
@@ -39,11 +39,11 @@ const handleAttachmentClick = () => {
   emit('upload')
 }
 
-// 处理图片上传
+// Xử lý tải lên hình ảnh
 const handleImageUpload = () => {
   if (props.disabled) return
 
-  // 创建隐藏的文件输入
+  // Tạo đầu vào tập tin ẩn
   const input = document.createElement('input')
   input.type = 'file'
   input.accept = 'image/*'
@@ -64,33 +64,33 @@ const handleImageUpload = () => {
   emit('upload-image')
 }
 
-// 处理图片上传逻辑
+// Xử lý logic tải lên hình ảnh
 const processImageUpload = async (file) => {
   try {
-    // 验证文件大小（10MB）
+    // Xác minh kích thước tập tin（10MB）
     if (file.size > 10 * 1024 * 1024) {
-      message.error('图片文件过大，请选择小于10MB的图片')
+      message.error('Tệp hình ảnh quá lớn，Vui lòng chọn ít hơn10MBhình ảnh')
       return
     }
 
-    // 验证文件类型
+    // Xác minh loại tệp
     if (!file.type.startsWith('image/')) {
-      message.error('请选择有效的图片文件')
+      message.error('Vui lòng chọn một tệp hình ảnh hợp lệ')
       return
     }
 
-    message.loading({ content: '正在处理图片...', key: 'image-upload' })
+    message.loading({ content: 'Đang xử lý hình ảnh...', key: 'image-upload' })
 
     const result = await multimodalApi.uploadImage(file)
 
     if (result.success) {
       message.success({
-        content: '图片处理成功',
+        content: 'Xử lý hình ảnh thành công',
         key: 'image-upload',
         duration: 2
       })
 
-      // 发出上传成功事件，包含处理后的图片数据
+      // Gửi sự kiện tải lên thành công，Chứa dữ liệu hình ảnh đã được xử lý
       emit('upload-image', {
         success: true,
         imageContent: result.image_content,
@@ -103,18 +103,18 @@ const processImageUpload = async (file) => {
         originalName: file.name
       })
 
-      // 发出上传成功通知事件，用于关闭选项面板
+      // Gửi sự kiện thông báo tải lên thành công，Dùng để đóng bảng tùy chọn
       emit('upload-image-success')
     } else {
       message.error({
-        content: `图片处理失败: ${result.error}`,
+        content: `Xử lý hình ảnh không thành công: ${result.error}`,
         key: 'image-upload'
       })
     }
   } catch (error) {
-    console.error('图片上传失败:', error)
+    console.error('Tải hình ảnh lên không thành công:', error)
     message.error({
-      content: `图片上传失败: ${error.message || '未知错误'}`,
+      content: `Tải hình ảnh lên không thành công: ${error.message || 'lỗi không xác định'}`,
       key: 'image-upload'
     })
   }

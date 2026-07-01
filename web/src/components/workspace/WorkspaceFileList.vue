@@ -11,19 +11,19 @@
     :root-label="rootLabel"
     :pagination="pagination"
     :selection="tableSelection"
-    empty-text="当前文件夹为空"
+    empty-text="Thư mục hiện tại trống"
     @open-row="(entry) => $emit('select-entry', entry)"
     @breadcrumb-click="handleBreadcrumbClick"
     @page-change="(payload) => $emit('page-change', payload)"
   >
     <template #toolbar-actions>
       <span class="entry-count">{{ entryCountText }}</span>
-      <a-tooltip v-if="!readonly" title="多选">
+      <a-tooltip v-if="!readonly" title="Nhiều lựa chọn">
         <a-button
           size="small"
           class="lucide-icon-btn"
           :type="effectiveSelectionMode ? 'primary' : 'default'"
-          aria-label="多选"
+          aria-label="Nhiều lựa chọn"
           @click="toggleSelectionMode"
         >
           <ListChecks :size="14" />
@@ -37,7 +37,7 @@
         :loading="deletingPaths.length > 0"
         @click="$emit('delete-selected')"
       >
-        删除选中
+        Xóa đã chọn
       </a-button>
     </template>
 
@@ -62,7 +62,7 @@
           type="button"
           class="more-action"
           :disabled="isDeleting(row.path)"
-          aria-label="更多操作"
+          aria-label="Thêm hành động"
           @click.stop
         >
           <MoreHorizontal :size="16" />
@@ -72,13 +72,13 @@
             <a-menu-item v-if="!row.is_dir" key="download" @click="$emit('download-entry', row)">
               <span class="menu-item-content">
                 <Download :size="14" />
-                <span>下载</span>
+                <span>Tải xuống</span>
               </span>
             </a-menu-item>
             <a-menu-item v-if="!readonly" key="delete" danger @click="$emit('delete-entry', row)">
               <span class="menu-item-content">
                 <Trash2 :size="14" />
-                <span>删除</span>
+                <span>Xóa</span>
               </span>
             </a-menu-item>
           </a-menu>
@@ -105,7 +105,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   readonly: { type: Boolean, default: false },
   breadcrumbItems: { type: Array, default: null },
-  rootLabel: { type: String, default: '工作区' },
+  rootLabel: { type: String, default: 'không gian làm việc' },
   pagination: { type: Object, default: null }
 })
 
@@ -122,10 +122,10 @@ const emit = defineEmits([
 ])
 
 const columns = [
-  { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true },
-  { title: '大小', dataIndex: 'size', key: 'size', width: 86 },
-  { title: '修改时间', dataIndex: 'modified_at', key: 'modified_at', width: 126 },
-  { title: '操作', key: 'action', dataIndex: 'path', width: 58, align: 'center' }
+  { title: 'Tên', dataIndex: 'name', key: 'name', ellipsis: true },
+  { title: 'kích thước', dataIndex: 'size', key: 'size', width: 86 },
+  { title: 'thời gian sửa đổi', dataIndex: 'modified_at', key: 'modified_at', width: 126 },
+  { title: 'hoạt động', key: 'action', dataIndex: 'path', width: 58, align: 'center' }
 ]
 
 const deletingPathSet = computed(() => new Set(props.deletingPaths))
@@ -134,9 +134,9 @@ const normalizedCurrentPath = computed(() => (props.currentPath || '/').replace(
 const effectiveSelectionMode = computed(() => !props.readonly && props.selectionMode)
 const entryCountText = computed(() => {
   if (props.pagination?.total !== undefined) {
-    return `${props.pagination.total} 项`
+    return `${props.pagination.total} mục`
   }
-  return `${props.entries.length} 项`
+  return `${props.entries.length} mục`
 })
 
 const resolvedBreadcrumbItems = computed(() => {

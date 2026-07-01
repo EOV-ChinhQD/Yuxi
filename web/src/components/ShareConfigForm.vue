@@ -4,7 +4,7 @@
       class="share-mode-cards"
       :class="`active-${config.access_level}`"
       role="radiogroup"
-      aria-label="共享设置"
+      aria-label="Cài đặt chia sẻ"
     >
       <div
         v-for="option in shareModeOptions"
@@ -37,7 +37,7 @@
                 <a-button
                   size="small"
                   class="select-action lucide-icon-btn"
-                  :aria-label="option.value === 'department' ? '选择部门' : '选择用户'"
+                  :aria-label="option.value === 'department' ? 'Chọn bộ phận' : 'Chọn người dùng'"
                   :disabled="disabled"
                 >
                   <UserPlus class="select-action-icon" :size="14" />
@@ -47,7 +47,7 @@
                   <div class="selection-dropdown" @mousedown.stop @click.stop>
                     <div class="selection-dropdown-header">
                       <div class="selection-dropdown-title">
-                        {{ option.value === 'department' ? '可访问部门' : '可访问用户' }}
+                        {{ option.value === 'department' ? 'các phòng ban có thể tiếp cận' : 'Người dùng có thể truy cập' }}
                       </div>
                       <div class="selection-dropdown-subtitle">
                         {{ getAccessSummary(option.value) }}
@@ -58,7 +58,7 @@
                       size="small"
                       allow-clear
                       class="selection-search"
-                      :placeholder="option.value === 'department' ? '搜索部门' : '搜索用户'"
+                      :placeholder="option.value === 'department' ? 'Bộ phận tìm kiếm' : 'Tìm kiếm người dùng'"
                       @mousedown.stop
                       @click.stop
                     />
@@ -111,10 +111,10 @@
                           />
                           <span class="selection-label">{{ item.label }}</span>
                         </span>
-                        <span v-if="item.disabled" class="selection-required">必选</span>
+                        <span v-if="item.disabled" class="selection-required">Bắt buộc</span>
                       </div>
                     </div>
-                    <div v-else class="selection-empty">暂无可选项</div>
+                    <div v-else class="selection-empty">Chưa có tùy chọn nào</div>
                   </div>
                 </template>
               </a-dropdown>
@@ -149,20 +149,20 @@ const syncingFromProps = ref(false)
 const baseShareModeOptions = [
   {
     value: 'global',
-    title: '全局共享',
-    description: '所有用户都可以访问',
+    title: 'chia sẻ toàn cầu',
+    description: 'Tất cả người dùng đều có thể truy cập',
     icon: Globe
   },
   {
     value: 'department',
-    title: '部门共享',
-    description: '选中的部门成员可以访问',
+    title: 'Chia sẻ khoa',
+    description: 'Các thành viên bộ phận được chọn có thể truy cập',
     icon: Building2
   },
   {
     value: 'user',
-    title: '指定人',
-    description: '选中的用户可以访问',
+    title: 'người được chỉ định',
+    description: 'Người dùng được chọn có thể truy cập',
     icon: Users
   }
 ]
@@ -319,10 +319,10 @@ const setAccessLevel = (accessLevel) => {
 }
 
 const getAccessSummary = (accessLevel) => {
-  if (accessLevel === 'global') return '所有用户可访问'
-  if (accessLevel === 'department') return `${config.department_ids.length} 个部门可访问`
-  if (accessLevel === 'user' && config.user_uids.length === 1) return '仅自己可访问'
-  return `${config.user_uids.length} 个用户可访问`
+  if (accessLevel === 'global') return 'Có thể truy cập được cho tất cả người dùng'
+  if (accessLevel === 'department') return `${config.department_ids.length} các bộ phận có thể truy cập`
+  if (accessLevel === 'user' && config.user_uids.length === 1) return 'Chỉ có thể truy cập được cho chính bạn'
+  return `${config.user_uids.length} Người dùng có thể truy cập`
 }
 
 const getAccessCount = (accessLevel) => {
@@ -370,7 +370,7 @@ const loadDepartments = async () => {
     departments.value = res.departments || res || []
     if (config.access_level === 'department') ensureCurrentDepartment()
   } catch (e) {
-    console.error('加载部门列表失败:', e)
+    console.error('Không thể tải danh sách bộ phận:', e)
     departments.value = []
   }
 }
@@ -380,7 +380,7 @@ const loadUsers = async () => {
     users.value = await authApi.getUserAccessOptions()
     if (config.access_level === 'user') ensureCurrentUser()
   } catch (e) {
-    console.error('加载用户列表失败:', e)
+    console.error('Không thể tải danh sách người dùng:', e)
     users.value = []
   }
 }
@@ -418,19 +418,19 @@ const validate = () => {
 
   if (config.access_level === 'department') {
     if (!currentDepartmentId.value) {
-      return { valid: false, message: '您不属于任何部门，无法使用部门共享模式' }
+      return { valid: false, message: 'Bạn không thuộc bộ phận nào，Không thể sử dụng chế độ chia sẻ khoa' }
     }
     if (!config.department_ids.includes(currentDepartmentId.value)) {
-      return { valid: false, message: '您所在的部门必须在可访问部门范围内' }
+      return { valid: false, message: 'Bộ phận của bạn phải nằm trong phạm vi bộ phận có thể truy cập được' }
     }
     return { valid: true, message: '' }
   }
 
   if (!currentUserUid.value) {
-    return { valid: false, message: '无法获取当前用户，无法使用指定人可访问模式' }
+    return { valid: false, message: 'Không thể có được người dùng hiện tại，Không thể sử dụng chế độ truy cập được chỉ định' }
   }
   if (!config.user_uids.includes(currentUserUid.value)) {
-    return { valid: false, message: '当前用户必须在可访问用户范围内' }
+    return { valid: false, message: 'Người dùng hiện tại phải ở trong phạm vi người dùng có thể truy cập' }
   }
   return { valid: true, message: '' }
 }

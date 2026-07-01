@@ -1,20 +1,20 @@
 import { apiAdminGet } from './base'
 
 /**
- * Dashboard API模块
- * 用于管理员查看所有用户的对话记录
+ * Dashboard APImô-đun
+ * Được quản trị viên sử dụng để xem bản ghi cuộc trò chuyện của tất cả người dùng
  */
 
 export const dashboardApi = {
   /**
-   * 获取所有对话记录
-   * @param {Object} params - 查询参数
-   * @param {string} params.uid - 用户 UID 过滤
-   * @param {string} params.agent_id - 智能体ID过滤
-   * @param {string} params.status - 状态过滤 (active/deleted/all)
-   * @param {number} params.limit - 每页数量
-   * @param {number} params.offset - 偏移量
-   * @returns {Promise<Array>} - 对话列表
+   * Nhận tất cả các bản ghi cuộc trò chuyện
+   * @param {Object} params - tham số truy vấn
+   * @param {string} params.uid - người dùng UID bộ lọc
+   * @param {string} params.agent_id - đại lýIDbộ lọc
+   * @param {string} params.status - Lọc trạng thái (active/deleted/all)
+   * @param {number} params.limit - Số lượng mỗi trang
+   * @param {number} params.offset - bù đắp
+   * @returns {Promise<Array>} - Danh sách cuộc trò chuyện
    */
   getConversations: (params = {}) => {
     const queryParams = new URLSearchParams()
@@ -28,28 +28,28 @@ export const dashboardApi = {
   },
 
   /**
-   * 获取对话详情
-   * @param {string} threadId - 对话线程ID
-   * @returns {Promise<Object>} - 对话详情
+   * Nhận chi tiết cuộc trò chuyện
+   * @param {string} threadId - chủ đề hội thoạiID
+   * @returns {Promise<Object>} - Chi tiết cuộc trò chuyện
    */
   getConversationDetail: (threadId) => {
     return apiAdminGet(`/api/dashboard/conversations/${threadId}`)
   },
 
   /**
-   * 获取Dashboard统计信息
-   * @returns {Promise<Object>} - 统计信息
+   * NhậnDashboardThống kê
+   * @returns {Promise<Object>} - Thống kê
    */
   getStats: () => {
     return apiAdminGet('/api/dashboard/stats')
   },
 
   /**
-   * 获取用户反馈列表
-   * @param {Object} params - 查询参数
-   * @param {string} params.rating - 反馈类型过滤 (like/dislike/all)
-   * @param {string} params.agent_id - 智能体ID过滤
-   * @returns {Promise<Array>} - 反馈列表
+   * Nhận danh sách phản hồi của người dùng
+   * @param {Object} params - tham số truy vấn
+   * @param {string} params.rating - Lọc loại phản hồi (like/dislike/all)
+   * @param {string} params.agent_id - đại lýIDbộ lọc
+   * @returns {Promise<Array>} - Danh sách phản hồi
    */
   getFeedbacks: (params = {}) => {
     const queryParams = new URLSearchParams()
@@ -59,43 +59,43 @@ export const dashboardApi = {
     return apiAdminGet(`/api/dashboard/feedbacks?${queryParams.toString()}`)
   },
 
-  // ========== 新增并行API接口 ==========
+  // ========== Thêm song songAPIgiao diện ==========
 
   /**
-   * 获取用户活跃度统计
-   * @returns {Promise<Object>} - 用户活跃度统计信息
+   * Nhận số liệu thống kê hoạt động của người dùng
+   * @returns {Promise<Object>} - Thống kê hoạt động của người dùng
    */
   getUserStats: () => {
     return apiAdminGet('/api/dashboard/stats/users')
   },
 
   /**
-   * 获取工具调用统计
-   * @returns {Promise<Object>} - 工具调用统计信息
+   * Nhận số liệu thống kê cuộc gọi công cụ
+   * @returns {Promise<Object>} - Thống kê cuộc gọi công cụ
    */
   getToolStats: () => {
     return apiAdminGet('/api/dashboard/stats/tools')
   },
 
   /**
-   * 获取知识库统计
-   * @returns {Promise<Object>} - 知识库统计信息
+   * Nhận số liệu thống kê cơ sở kiến thức
+   * @returns {Promise<Object>} - Thống kê cơ sở kiến thức
    */
   getKnowledgeStats: () => {
     return apiAdminGet('/api/dashboard/stats/knowledge')
   },
 
   /**
-   * 获取AI智能体分析数据
-   * @returns {Promise<Object>} - AI智能体分析信息
+   * NhậnAIĐại lý phân tích dữ liệu
+   * @returns {Promise<Object>} - AIThông tin phân tích đại lý
    */
   getAgentStats: () => {
     return apiAdminGet('/api/dashboard/stats/agents')
   },
 
   /**
-   * 批量获取所有统计数据（并行请求）
-   * @returns {Promise<Object>} - 所有统计数据
+   * Nhận tất cả số liệu thống kê theo đợt（Yêu cầu song song）
+   * @returns {Promise<Object>} - Tất cả số liệu thống kê
    */
   getAllStats: async () => {
     try {
@@ -115,16 +115,16 @@ export const dashboardApi = {
         agents: agentStats
       }
     } catch (error) {
-      console.error('批量获取统计数据失败:', error)
+      console.error('Không thể lấy số liệu thống kê theo đợt:', error)
       throw error
     }
   },
 
   /**
-   * 获取调用统计时间序列数据
-   * @param {string} type - 数据类型 (models/agents/tokens/tools)
-   * @param {string} timeRange - 时间范围 (14hours/14days/14weeks)
-   * @returns {Promise<Object>} - 时间序列统计数据
+   * Nhận dữ liệu chuỗi thời gian thống kê cuộc gọi
+   * @param {string} type - kiểu dữ liệu (models/agents/tokens/tools)
+   * @param {string} timeRange - phạm vi thời gian (14hours/14days/14weeks)
+   * @returns {Promise<Object>} - thống kê chuỗi thời gian
    */
   getCallTimeseries: (type = 'models', timeRange = '14days') => {
     return apiAdminGet(`/api/dashboard/stats/calls/timeseries?type=${type}&time_range=${timeRange}`)

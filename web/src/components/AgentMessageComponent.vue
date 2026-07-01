@@ -2,11 +2,11 @@
   <div v-if="message.type === 'human' && message.image_content" class="message-image">
     <img
       :src="`data:${messageImageMimeType};base64,${message.image_content}`"
-      alt="用户上传的图片"
+      alt="Hình ảnh do người dùng tải lên"
       @click="
         openImagePreview(
           `data:${messageImageMimeType};base64,${message.image_content}`,
-          '用户上传的图片'
+          'Hình ảnh do người dùng tải lên'
         )
       "
     />
@@ -19,7 +19,7 @@
       { 'has-attachments': message.type === 'human' && messageAttachments.length }
     ]"
   >
-    <!-- 用户消息 -->
+    <!-- Tin nhắn của người dùng -->
     <div
       v-if="message.type === 'human'"
       class="message-copy-btn human-copy"
@@ -35,7 +35,7 @@
 
     <p v-else-if="message.type === 'system'" class="message-text-system">{{ message.content }}</p>
 
-    <!-- 助手消息 -->
+    <!-- Tin nhắn trợ lý -->
     <div v-else-if="message.type === 'ai'" class="assistant-message">
       <div v-if="parsedData.reasoning_content" class="reasoning-box">
         <a-collapse v-model:activeKey="reasoningActiveKey" :bordered="false">
@@ -44,7 +44,7 @@
           </template>
           <a-collapse-panel
             key="show"
-            :header="message.status == 'reasoning' ? '正在思考...' : '推理过程'"
+            :header="message.status == 'reasoning' ? 'suy nghĩ...' : 'quá trình suy luận'"
             class="reasoning-header"
           >
             <p class="reasoning-content">{{ parsedData.reasoning_content }}</p>
@@ -52,7 +52,7 @@
         </a-collapse>
       </div>
 
-      <!-- 消息内容 -->
+      <!-- Nội dung tin nhắn -->
       <MarkdownPreview
         v-if="parsedData.content"
         :key="message.id"
@@ -63,15 +63,15 @@
 
       <div v-else-if="parsedData.reasoning_content" class="empty-block"></div>
 
-      <!-- 错误提示块 -->
+      <!-- khối thông báo lỗi -->
       <div v-if="displayError" class="error-hint">
         <span v-if="getErrorMessage">{{ getErrorMessage }}</span>
-        <span v-else-if="message.error_type === 'interrupted'">回答生成已中断</span>
-        <span v-else-if="message.error_type === 'unexpect'">生成过程中出现异常</span>
+        <span v-else-if="message.error_type === 'interrupted'">Việc tạo câu trả lời bị gián đoạn</span>
+        <span v-else-if="message.error_type === 'unexpect'">Ngoại lệ xảy ra trong quá trình tạo</span>
         <span v-else-if="message.error_type === 'content_guard_blocked'"
-          >检测到敏感内容，已中断输出</span
+          >Đã phát hiện nội dung nhạy cảm，Đầu ra bị gián đoạn</span
         >
-        <span v-else>{{ message.error_type || '未知错误' }}</span>
+        <span v-else>{{ message.error_type || 'lỗi không xác định' }}</span>
       </div>
 
       <ToolCallsGroupComponent
@@ -80,9 +80,9 @@
       />
 
       <div v-if="message.isStoppedByUser" class="retry-hint">
-        你停止生成了本次回答
+        Bạn đã ngừng tạo câu trả lời này
         <span class="retry-link" @click="emit('retryStoppedMessage', message.id)"
-          >重新编辑问题</span
+          >Chỉnh sửa lại câu hỏi</span
         >
       </div>
 
@@ -102,12 +102,12 @@
           @openRefs="emit('openRefs', $event)"
         />
       </div>
-      <!-- 错误消息 -->
+      <!-- thông báo lỗi -->
     </div>
 
     <div v-if="infoStore.debugMode" class="status-info">{{ message }}</div>
 
-    <!-- 自定义内容 -->
+    <!-- Nội dung tùy chỉnh -->
     <slot></slot>
   </div>
 
@@ -138,7 +138,7 @@
       class="message-image-preview-overlay"
       @click="closeImagePreview"
     >
-      <button class="message-image-preview-close" title="关闭" @click.stop="closeImagePreview">
+      <button class="message-image-preview-close" title="đóng" @click.stop="closeImagePreview">
         <X :size="20" />
       </button>
       <img :src="imagePreview.src" :alt="imagePreview.alt" class="message-image-preview-img" />
@@ -164,27 +164,27 @@ import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
 import { enrichTaskToolCalls } from '@/components/ToolCallingResult/toolRegistry'
 
 const props = defineProps({
-  // 消息角色：'user'|'assistant'|'sent'|'received'
+  // vai trò tin nhắn：'user'|'assistant'|'sent'|'received'
   message: {
     type: Object,
     required: true
   },
-  // 是否正在处理中
+  // Nó có đang được xử lý không?
   isProcessing: {
     type: Boolean,
     default: false
   },
-  // 自定义类
+  // Lớp tùy chỉnh
   customClasses: {
     type: Object,
     default: () => ({})
   },
-  // 是否显示推理过程
+  // Có thể hiện quá trình lập luận hay không
   showRefs: {
     type: [Array, Boolean],
     default: () => false
   },
-  // 是否为最新消息
+  // Đây có phải là tin tức mới nhất?
   isLatestMessage: {
     type: Boolean,
     default: false
@@ -197,7 +197,7 @@ const props = defineProps({
     type: Object,
     default: () => null
   },
-  // 是否显示调试信息 (已废弃，使用 infoStore.debugMode)
+  // Có hiển thị thông tin gỡ lỗi hay không (Không được dùng nữa，sử dụng infoStore.debugMode)
   debugMode: {
     type: Boolean,
     default: false
@@ -206,7 +206,7 @@ const props = defineProps({
 
 const emit = defineEmits(['retry', 'retryStoppedMessage', 'openRefs'])
 
-// 图片全屏预览
+// Hình ảnh xem trước toàn màn hình
 const imagePreview = ref({ visible: false, src: '', alt: '' })
 
 const handleImagePreviewKeydown = (e) => {
@@ -230,7 +230,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleImagePreviewKeydown)
 })
 
-// 复制状态
+// trạng thái sao chép
 const isCopied = ref(false)
 
 const copyToClipboard = async (text) => {
@@ -238,7 +238,7 @@ const copyToClipboard = async (text) => {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       await navigator.clipboard.writeText(text)
     } else {
-      // 降级处理：使用传统的 execCommand 方法
+      // Xử lý hạ cấp：Sử dụng truyền thống execCommand phương pháp
       const textArea = document.createElement('textarea')
       textArea.value = text
       textArea.style.position = 'fixed'
@@ -260,42 +260,42 @@ const copyToClipboard = async (text) => {
   }
 }
 
-// 推理面板展开状态
+// Trạng thái mở rộng bảng lý luận
 const reasoningActiveKey = ref(['hide'])
 
-// 错误消息处理
+// Xử lý thông báo lỗi
 const displayError = computed(() => {
-  // 简化错误判断：只检查明确的错误类型标识
+  // Đơn giản hóa việc phán đoán lỗi：Chỉ kiểm tra các mã định danh loại lỗi rõ ràng
   return !!(props.message.error_type || props.message.extra_metadata?.error_type)
 })
 
 const getErrorMessage = computed(() => {
-  // 优先使用直接的 error_message 字段
+  // Ưu tiên trực tiếp error_message trường
   if (props.message.error_message) {
     return props.message.error_message
   }
 
-  // 其次从 extra_metadata 中获取具体的错误信息
+  // Thứ hai từ extra_metadata Nhận thông tin lỗi cụ thể từ
   if (props.message.extra_metadata?.error_message) {
     return props.message.extra_metadata.error_message
   }
 
-  // 对于已知的错误类型，返回默认提示
+  // Đối với các loại lỗi đã biết，Quay lại lời nhắc mặc định
   switch (props.message.error_type) {
     case 'interrupted':
-      return '回答生成已中断'
+      return 'Việc tạo câu trả lời bị gián đoạn'
     case 'content_guard_blocked':
-      return '检测到敏感内容，已中断输出'
+      return 'Đã phát hiện nội dung nhạy cảm，Đầu ra bị gián đoạn'
     case 'unexpect':
-      return '生成过程中出现异常'
+      return 'Ngoại lệ xảy ra trong quá trình tạo'
     case 'agent_error':
-      return '智能体获取失败'
+      return 'Việc mua lại đại lý không thành công'
     default:
       return null
   }
 })
 
-// 引入智能体 store
+// Giới thiệu tác nhân thông minh store
 const agentStore = useAgentStore()
 const { availableKnowledgeBases } = storeToRefs(agentStore)
 const infoStore = useInfoStore()
@@ -635,7 +635,7 @@ const parsedData = computed(() => {
   }
 }
 
-// 多模态消息样式
+// Kiểu tin nhắn đa phương thức
 .message-image {
   border-radius: 12px;
   overflow: hidden;

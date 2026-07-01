@@ -222,7 +222,7 @@ async def standard_user(test_client: httpx.AsyncClient, admin_headers: dict[str,
     username = f"pytest_user_{uuid.uuid4().hex[:8]}"
     password = f"Pw!{uuid.uuid4().hex[:8]}"
 
-    # 用户隔离重构后所有登录用户必须绑定部门，创建时显式指定一个已存在部门
+    # Sau khi cách ly và xây dựng lại người dùng, tất cả người dùng đã đăng nhập phải được liên kết với các phòng ban.，Chỉ định rõ ràng một bộ phận hiện có khi tạo
     dept_response = await test_client.get("/api/departments", headers=admin_headers)
     if dept_response.status_code != 200 or not dept_response.json():
         pytest.fail(f"No department available to bind standard user: {dept_response.text}")

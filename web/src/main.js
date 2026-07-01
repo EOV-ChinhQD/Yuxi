@@ -17,7 +17,7 @@ app.use(pinia)
 app.use(router)
 app.use(Antd)
 
-// 预加载信息配置
+// Tải trước cấu hình thông tin
 import { useInfoStore } from '@/stores/info'
 const infoStore = useInfoStore()
 infoStore.loadInfoConfig()

@@ -3,19 +3,19 @@
     <div class="callback-container">
       <div v-if="loading" class="loading-section">
         <a-spin size="large" />
-        <p class="loading-text">正在处理登录...</p>
+        <p class="loading-text">Đang xử lý đăng nhập...</p>
       </div>
 
       <div v-else-if="error" class="error-section">
         <a-result status="error" :title="errorTitle" :sub-title="errorMessage">
           <template #extra>
-            <a-button type="primary" @click="goToLogin"> 返回登录页 </a-button>
+            <a-button type="primary" @click="goToLogin"> Quay lại trang đăng nhập </a-button>
           </template>
         </a-result>
       </div>
 
       <div v-else class="success-section">
-        <a-result status="success" title="登录成功" sub-title="正在跳转...">
+        <a-result status="success" title="Đăng nhập thành công" sub-title="Chuyển hướng...">
           <template #icon>
             <a-spin />
           </template>
@@ -39,28 +39,28 @@ const route = useRoute()
 const userStore = useUserStore()
 const agentStore = useAgentStore()
 
-// 状态
+// Trạng thái
 const loading = ref(true)
 const error = ref(false)
-const errorTitle = ref('登录失败')
-const errorMessage = ref('处理登录请求时发生错误')
+const errorTitle = ref('Đăng nhập không thành công')
+const errorMessage = ref('Đã xảy ra lỗi khi xử lý yêu cầu đăng nhập')
 
-// 返回登录页
+// Quay lại trang đăng nhập
 const goToLogin = () => {
   router.push('/login')
 }
 
-// 处理 OIDC 回调 - 从 URL 参数中获取一次性 code
+// Quy trình OIDC gọi lại - từ URL Nhận một lần từ các tham số code
 const handleCallback = async () => {
   try {
     const code = route.query.code
 
-    // 检查必要的参数
+    // Kiểm tra các thông số cần thiết
     if (!code || typeof code !== 'string') {
       loading.value = false
       error.value = true
-      errorTitle.value = '参数错误'
-      errorMessage.value = '缺少有效的登录 code，请重新登录'
+      errorTitle.value = 'Lỗi tham số'
+      errorMessage.value = 'Thiếu thông tin đăng nhập hợp lệ code，Vui lòng đăng nhập lại'
       return
     }
 
@@ -68,7 +68,7 @@ const handleCallback = async () => {
 
     await router.replace({ path: route.path, query: {} })
 
-    // 更新用户状态
+    // Cập nhật trạng thái người dùng
     userStore.token = tokenData.access_token
     userStore.userId = tokenData.uid
     userStore.username = tokenData.username
@@ -79,28 +79,28 @@ const handleCallback = async () => {
     userStore.departmentId = tokenData.department_id || null
     userStore.departmentName = tokenData.department_name || ''
 
-    // 保存 token 到 localStorage
+    // lưu lại token Đến localStorage
     localStorage.setItem('user_token', tokenData.access_token)
 
-    // 显示成功消息
-    message.success('登录成功')
+    // Hiển thị thông báo thành công
+    message.success('Đăng nhập thành công')
 
-    // 获取重定向路径并清理 OIDC 相关标记
+    // Nhận đường dẫn chuyển hướng và làm sạch nó OIDC Thẻ liên quan
     const redirectPath = sessionStorage.getItem('oidc_redirect') || '/'
     sessionStorage.removeItem('oidc_redirect')
     clearAutoStartAttempt()
 
     loading.value = false
 
-    // 延迟跳转，让用户看到成功提示
+    // nhảy chậm，Cho phép người dùng nhìn thấy lời nhắc thành công
     setTimeout(async () => {
-      // 跳转
+      // Nhảy
       if (redirectPath === '/') {
         try {
           await agentStore.initialize()
           router.push('/agent')
         } catch (err) {
-          console.error('获取智能体信息失败:', err)
+          console.error('Không thể lấy được thông tin đại lý:', err)
           router.push('/agent')
         }
       } else {
@@ -108,17 +108,17 @@ const handleCallback = async () => {
       }
     }, 500)
   } catch (err) {
-    console.error('OIDC 回调处理失败:', err)
+    console.error('OIDC Xử lý cuộc gọi lại không thành công:', err)
     loading.value = false
     error.value = true
-    errorTitle.value = '登录失败'
-    errorMessage.value = err?.message || '处理登录请求时发生错误，请重试'
+    errorTitle.value = 'Đăng nhập không thành công'
+    errorMessage.value = err?.message || 'Đã xảy ra lỗi khi xử lý yêu cầu đăng nhập，Vui lòng thử lại'
   }
 }
 
-// 组件挂载时处理回调
+// Xử lý cuộc gọi lại khi thành phần được gắn kết
 onMounted(async () => {
-  // 如果已登录，跳转到首页
+  // Nếu đăng nhập，Chuyển đến trang chủ
   if (userStore.isLoggedIn) {
     router.push('/')
     return
