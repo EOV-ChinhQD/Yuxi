@@ -1,4 +1,4 @@
-"""运行时配置 Redis 快照同步。"""
+"""Configure Redis snapshot synchronization at runtime."""
 
 from __future__ import annotations
 

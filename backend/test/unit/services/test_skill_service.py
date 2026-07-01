@@ -136,7 +136,7 @@ async def test_management_readable_skill_rejects_disabled_shared_readonly(monkey
 
     monkeypatch.setattr(svc, "SkillRepository", FakeRepo)
 
-    with pytest.raises(ValueError, match="不存在或无权访问"):
+    with pytest.raises(ValueError, match="không tồn tại hoặc không có quyền truy cập"):
         await svc.get_management_readable_skill_or_raise(None, _user("root", role="user"), skill.slug)
 
 
@@ -215,7 +215,7 @@ async def test_normal_user_confirm_skill_draft_rejects_wider_share_scope(
             return False
 
         async def create(self, **_kwargs) -> Skill:
-            raise AssertionError("普通用户的越权共享范围应在创建前被拒绝")
+            raise AssertionError("Phạm vi chia sẻ vượt quyền của người dùng thông thường phải bị từ chối trước khi tạo")
 
     monkeypatch.setattr(svc, "SkillRepository", FakeRepo)
     operator = _user("normal-user", role="user")
@@ -226,7 +226,7 @@ async def test_normal_user_confirm_skill_draft_rejects_wider_share_scope(
         operator=operator,
     )
 
-    with pytest.raises(ValueError, match="无权使用该 Skill 共享范围"):
+    with pytest.raises(ValueError, match="Không có quyền sử dụng phạm vi chia sẻ Skill này"):
         await svc.confirm_skill_install_draft(
             None,
             draft_id=draft["draft_id"],
@@ -389,7 +389,7 @@ def test_resolve_relative_path_blocks_traversal(tmp_path: Path):
     skill_dir = tmp_path / "skill"
     skill_dir.mkdir(parents=True, exist_ok=True)
 
-    with pytest.raises(ValueError, match="上级路径"):
+    with pytest.raises(ValueError, match="đường dẫn cấp trên"):
         svc._resolve_relative_path(skill_dir, "../outside.txt")
 
 
@@ -513,7 +513,7 @@ async def test_skill_zip_import_validates_skill_md_name_not_zip_filename(
         }
     )
 
-    with pytest.raises(ValueError, match="SKILL.md frontmatter.name 必须是小写字母/数字/短横线"):
+    with pytest.raises(ValueError, match="SKILL.md frontmatter.name phải là chữ thường/số/dấu gạch ngang"):
         await svc.prepare_skill_upload(
             None,
             filename="valid-archive.zip",
@@ -689,7 +689,7 @@ async def test_import_skill_dir_requires_root_skill_md(tmp_path: Path, monkeypat
     source_dir = tmp_path / "source-skill"
     source_dir.mkdir(parents=True, exist_ok=True)
 
-    with pytest.raises(ValueError, match="根级 SKILL.md"):
+    with pytest.raises(ValueError, match="SKILL.md cấp rễ"):
         await svc.import_skill_dir(
             None,
             source_dir=source_dir,
@@ -1071,7 +1071,7 @@ async def test_init_builtin_skills_rejects_non_builtin_conflict(tmp_path: Path, 
 
     monkeypatch.setattr(svc, "SkillRepository", FakeRepo)
 
-    with pytest.raises(ValueError, match="非内置 skill 冲突"):
+    with pytest.raises(ValueError, match="xung đột với skill không tích hợp"):
         await svc.init_builtin_skills(None)
 
 
@@ -1133,7 +1133,7 @@ async def test_builtin_skill_file_edit_blocked(tmp_path: Path, monkeypatch: pyte
 
     monkeypatch.setattr(svc, "get_skill_or_raise", fake_get_skill_or_raise)
 
-    with pytest.raises(ValueError, match="内置 skill 不允许直接修改文件"):
+    with pytest.raises(ValueError, match="Skill tích hợp không được phép sửa đổi file trực tiếp"):
         await svc.update_skill_file(
             None,
             slug="reporter",
@@ -1147,7 +1147,7 @@ async def test_builtin_skill_file_edit_blocked(tmp_path: Path, monkeypatch: pyte
 async def test_delete_skills_batch_ok(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(svc.sys_config, "save_dir", str(tmp_path))
 
-    # 模拟两个已安装的技能
+    # Emulate two installed skills
     (tmp_path / "skills" / "skill-a").mkdir(parents=True, exist_ok=True)
     (tmp_path / "skills" / "skill-b").mkdir(parents=True, exist_ok=True)
 
@@ -1170,13 +1170,13 @@ async def test_delete_skills_batch_ok(tmp_path: Path, monkeypatch: pytest.Monkey
 
     monkeypatch.setattr(svc, "SkillRepository", FakeRepo)
 
-    # 执行批量删除，skill-a, skill-b, skill-c (不存在)
+    # Perform batch deletion, skill-a, skill-b, skill-c (does not exist)
     results = await svc.delete_skills_batch(None, slugs=["skill-a", "skill-b", "skill-c"])
 
     assert results == [
         {"slug": "skill-a", "success": True},
         {"slug": "skill-b", "success": True},
-        {"slug": "skill-c", "success": False, "error": "技能 'skill-c' 不存在"},
+        {"slug": "skill-c", "success": False, "error": "Skill 'skill-c' does not exist"},
     ]
     assert deleted_slugs == ["skill-a", "skill-b"]
     assert not (tmp_path / "skills" / "skill-a").exists()
@@ -1186,7 +1186,7 @@ async def test_delete_skills_batch_ok(tmp_path: Path, monkeypatch: pytest.Monkey
 @pytest.mark.asyncio
 async def test_delete_skills_batch_limit_exceeded():
     slugs = [f"skill-{i}" for i in range(51)]
-    with pytest.raises(ValueError, match="批量删除的技能数量不能超过 50 个"):
+    with pytest.raises(ValueError, match="Số lượng skill bị xóa hàng loạt không được vượt quá 50"):
         await svc.delete_skills_batch(None, slugs=slugs)
 
 
@@ -1207,7 +1207,7 @@ async def test_delete_skill_concurrent_lock(tmp_path: Path, monkeypatch: pytest.
             pass
 
         async def get_by_slug(self, slug: str, *, for_update: bool = False):
-            # 用 asyncio.Lock 模拟 with_for_update() 的排他锁
+            # Use asyncio.Lock to simulate the exclusive lock of with_for_update()
             if for_update:
                 await lock_active.acquire()
                 try:
@@ -1224,7 +1224,7 @@ async def test_delete_skill_concurrent_lock(tmp_path: Path, monkeypatch: pytest.
 
     monkeypatch.setattr(svc, "SkillRepository", FakeRepo)
 
-    # 同时发起两个 delete_skill 调用
+    # Make two delete_skill calls simultaneously
     task1 = asyncio.create_task(svc.delete_skill(None, slug="concurrent-skill"))
     task2 = asyncio.create_task(svc.delete_skill(None, slug="concurrent-skill"))
 
@@ -1235,7 +1235,7 @@ async def test_delete_skill_concurrent_lock(tmp_path: Path, monkeypatch: pytest.
     for r in results:
         if r is None:
             success_count += 1
-        elif isinstance(r, ValueError) and "不存在" in str(r):
+        elif isinstance(r, ValueError) and "không tồn tại" in str(r):
             error_count += 1
 
     assert success_count == 1

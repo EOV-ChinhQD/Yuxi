@@ -23,7 +23,7 @@ def test_retrieval_metrics_use_metadata_chunk_id():
 
 
 def test_overall_score_uses_answer_accuracy_when_available():
-    # 有答案准确率时，综合得分取各题 score 的平均，且与检索指标无关
+    # When the answer accuracy rate is available, the comprehensive score is the average of the scores of each question and has nothing to do with the retrieval index.
     retrieval = [{"recall@10": 1.0, "f1@10": 0.2}, {"recall@10": 0.0, "f1@10": 0.0}]
     answers = [{"score": 1.0}, {"score": 0.0}, {"score": 1.0}, {"score": 1.0}]
 
@@ -33,7 +33,7 @@ def test_overall_score_uses_answer_accuracy_when_available():
 
 
 def test_overall_score_uses_recall_at_10_without_answers():
-    # 无答案准确率时，综合得分取各题 recall@10 的平均，不受 f1/其它 k 影响
+    # When there is no answer accuracy, the comprehensive score is the average of recall@10 for each question, which is not affected by f1/other k
     retrieval = [
         {"recall@1": 0.0, "recall@5": 0.5, "recall@10": 0.8, "f1@10": 0.1},
         {"recall@1": 1.0, "recall@5": 1.0, "recall@10": 0.4, "f1@10": 0.9},

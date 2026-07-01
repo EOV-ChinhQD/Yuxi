@@ -289,7 +289,7 @@ async def test_repair_missing_file_stats_updates_files_and_database_metadata(tmp
             assert file_ids == ["file-1"]
             return [
                 types.SimpleNamespace(file_id="file-1", content="alpha beta"),
-                types.SimpleNamespace(file_id="file-1", content="中文"),
+                types.SimpleNamespace(file_id="file-1", content="Chinese"),
             ]
 
     async def persist_kb(kb_id):
@@ -304,7 +304,7 @@ async def test_repair_missing_file_stats_updates_files_and_database_metadata(tmp
 
     result = await kb.repair_missing_file_stats("db")
 
-    expected_token_count = count_tokens("alpha beta") + count_tokens("中文")
+    expected_token_count = count_tokens("alpha beta") + count_tokens("Chinese")
     expected_stats = {"file_count": 2, "chunk_count": 5, "token_count": expected_token_count + 7}
     assert records["file-1"].chunk_count == 2
     assert records["file-1"].token_count == expected_token_count

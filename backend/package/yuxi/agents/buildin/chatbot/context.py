@@ -8,9 +8,9 @@ class ChatBotContext(BaseContext):
     subagents: list[str] | None = field(
         default=None,
         metadata={
-            "name": "子智能体",
+            "name": "Sub-agents",
             "options": [],
-            "description": "可选子智能体列表，为空表示启用当前用户可见的全部子智能体。",
+            "description": "Optional list of subagents, empty means enabling all subagents visible to the current user.",
             "type": "list",
             "kind": "subagents",
         },

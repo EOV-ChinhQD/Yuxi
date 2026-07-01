@@ -27,7 +27,7 @@ def _build_app(*, role: str = "admin") -> FastAPI:
 
     async def fake_admin_user():
         if role not in {"admin", "superadmin"}:
-            raise HTTPException(status_code=403, detail="需要管理员权限")
+            raise HTTPException(status_code=403, detail="Cần quyền quản trị viên")
         return await fake_required_user()
 
     app.dependency_overrides[get_db] = fake_db

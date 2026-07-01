@@ -40,18 +40,18 @@ class FakeLlm:
     async def call(self, prompt, stream):
         self.prompts.append(prompt)
         return SimpleNamespace(
-            content=('{"query":"问题","gold_answer":"答案","gold_chunk_ids":["' + self.gold_chunk_id + '"]}')
+            content=('{"query":"question","gold_answer":"Answer","gold_chunk_ids":["' + self.gold_chunk_id + '"]}')
         )
 
 
 class NoQueryKnowledgeBase(FakeGenerationKnowledgeBase):
     async def aquery(self, query_text, kb_id, **kwargs):
-        raise AssertionError("neighbors_count=1 时不应调用 aquery")
+        raise AssertionError("Không nên gọi aquery khi neighbors_count=1")
 
 
 class TrackingLlm:
     def __init__(self, content=None, delay=0):
-        self.content = content or '{"query":"问题","gold_answer":"答案","gold_chunk_ids":["anchor_chunk"]}'
+        self.content = content or '{"query":"question","gold_answer":"Answer","gold_chunk_ids":["anchor_chunk"]}'
         self.delay = delay
         self.active_calls = 0
         self.max_active_calls = 0
@@ -126,17 +126,17 @@ def test_normalize_generation_concurrency_count():
 
 
 def test_build_benchmark_generation_prompt_contains_required_schema():
-    prompt = build_benchmark_generation_prompt([("chunk_1", "片段内容")])
+    prompt = build_benchmark_generation_prompt([("chunk_1", "fragment content")])
 
-    assert "片段ID=chunk_1" in prompt
+    assert "Fragment ID=chunk_1" in prompt
     assert "query、gold_answer、gold_chunk_ids" in prompt
 
 
 @pytest.mark.asyncio
 async def test_collect_kb_chunks_filters_kb_id(fake_chunk_repository):
     fake_chunk_repository.chunks = [
-        make_chunk("file_a_chunk", content="内容"),
-        make_chunk("file_b_chunk", kb_id="db_2", file_id="file_b", content="其他"),
+        make_chunk("file_a_chunk", content="content"),
+        make_chunk("file_b_chunk", kb_id="db_2", file_id="file_b", content="other"),
     ]
 
     chunks = await collect_kb_chunks(FakeKnowledgeBase(), "db_1")
@@ -144,7 +144,7 @@ async def test_collect_kb_chunks_filters_kb_id(fake_chunk_repository):
     assert chunks == [
         {
             "id": "file_a_chunk",
-            "content": "内容",
+            "content": "content",
             "file_id": "file_a",
             "chunk_index": 0,
             "graph_indexed": False,
@@ -171,8 +171,8 @@ async def test_iter_generated_benchmark_items_with_one_chunk_does_not_query(monk
         )
     ]
 
-    assert items == [{"query": "问题", "gold_chunk_ids": ["anchor_chunk"], "gold_answer": "答案"}]
-    assert "片段ID=anchor_chunk" in fake_llm.prompts[0]
+    assert items == [{"query": "question", "gold_chunk_ids": ["anchor_chunk"], "gold_answer": "Answer"}]
+    assert "Fragment ID=anchor_chunk" in fake_llm.prompts[0]
 
 
 @pytest.mark.asyncio
@@ -294,11 +294,11 @@ async def test_iter_generated_benchmark_items_graph_mode_uses_graph_indexed_anch
         )
     ]
 
-    assert items == [{"query": "问题", "gold_chunk_ids": ["graph_neighbor"], "gold_answer": "答案"}]
+    assert items == [{"query": "question", "gold_chunk_ids": ["graph_neighbor"], "gold_answer": "Answer"}]
     assert kb.query_calls == []
-    assert "片段ID=graph_anchor" in fake_llm.prompts[0]
-    assert "片段ID=graph_neighbor" in fake_llm.prompts[0]
-    assert "片段ID=vector_anchor" not in fake_llm.prompts[0]
+    assert "Fragment ID=graph_anchor" in fake_llm.prompts[0]
+    assert "Fragment ID=graph_neighbor" in fake_llm.prompts[0]
+    assert "Fragment ID=vector_anchor" not in fake_llm.prompts[0]
 
 
 @pytest.mark.asyncio
@@ -325,10 +325,10 @@ async def test_iter_generated_benchmark_items_uses_query_neighbor(monkeypatch):
         )
     ]
 
-    assert items == [{"query": "问题", "gold_chunk_ids": ["neighbor_chunk"], "gold_answer": "答案"}]
+    assert items == [{"query": "question", "gold_chunk_ids": ["neighbor_chunk"], "gold_answer": "Answer"}]
     assert kb.query_calls[0]["query_text"] == "anchor content"
     assert kb.query_calls[0]["search_mode"] == "vector"
-    assert "片段ID=neighbor_chunk" in fake_llm.prompts[0]
+    assert "Fragment ID=neighbor_chunk" in fake_llm.prompts[0]
 
 
 @pytest.mark.asyncio
@@ -347,8 +347,8 @@ async def test_iter_generated_benchmark_items_falls_back_to_anchor_when_query_em
         )
     ]
 
-    assert items == [{"query": "问题", "gold_chunk_ids": ["anchor_chunk"], "gold_answer": "答案"}]
-    assert "片段ID=anchor_chunk" in fake_llm.prompts[0]
+    assert items == [{"query": "question", "gold_chunk_ids": ["anchor_chunk"], "gold_answer": "Answer"}]
+    assert "Fragment ID=anchor_chunk" in fake_llm.prompts[0]
 
 
 @pytest.mark.asyncio
@@ -394,7 +394,7 @@ async def test_iter_generated_benchmark_items_returns_at_most_count(monkeypatch)
 
 @pytest.mark.asyncio
 async def test_iter_generated_benchmark_items_stops_at_max_attempts(monkeypatch):
-    fake_llm = TrackingLlm(content='{"query":"","gold_answer":"答案","gold_chunk_ids":["anchor_chunk"]}')
+    fake_llm = TrackingLlm(content='{"query":"","gold_answer":"Answer","gold_chunk_ids":["anchor_chunk"]}')
     monkeypatch.setattr(benchmark_generation, "select_model", lambda model_spec: fake_llm)
 
     items = [

@@ -1,7 +1,7 @@
-"""Viewer 文件系统路由
+"""Viewer document system routing
 
-提供 Viewer UI 使用的文件系统 API 端点。
-- /viewer/filesystem/* - Viewer UI 使用
+Provides the Viewer UI useofdocument system API endpoint.
+- /viewer/filesystem/* - Viewer UI use
 """
 
 from __future__ import annotations
@@ -32,8 +32,8 @@ class CreateViewerDirectoryRequest(BaseModel):
 
 @filesystem_router.get("/tree", response_model=dict)
 async def get_viewer_tree(
-    thread_id: str = Query(..., description="线程 ID"),
-    path: str = Query("/", description="目录路径"),
+    thread_id: str = Query(..., description="ID thread"),
+    path: str = Query("/", description="Đường dẫn thư mục"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -47,8 +47,8 @@ async def get_viewer_tree(
 
 @filesystem_router.get("/file")
 async def get_viewer_file(
-    thread_id: str = Query(..., description="线程 ID"),
-    path: str = Query(..., description="文件路径"),
+    thread_id: str = Query(..., description="ID thread"),
+    path: str = Query(..., description="Đường dẫn tệp"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -62,8 +62,8 @@ async def get_viewer_file(
 
 @filesystem_router.delete("/file", response_model=dict)
 async def delete_viewer_file_route(
-    thread_id: str = Query(..., description="线程 ID"),
-    path: str = Query(..., description="文件路径"),
+    thread_id: str = Query(..., description="ID thread"),
+    path: str = Query(..., description="Đường dẫn tệp"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -92,9 +92,9 @@ async def create_viewer_directory_route(
 
 @filesystem_router.post("/upload", response_model=dict)
 async def upload_viewer_files_route(
-    thread_id: str = Form(..., description="线程 ID"),
-    parent_path: str = Form(..., description="父目录路径"),
-    files: list[UploadFile] = File(..., description="上传文件列表"),
+    thread_id: str = Form(..., description="ID thread"),
+    parent_path: str = Form(..., description="Đường dẫn thư mục cha"),
+    files: list[UploadFile] = File(..., description="Danh sách tệp tải lên"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -109,8 +109,8 @@ async def upload_viewer_files_route(
 
 @filesystem_router.get("/download")
 async def download_viewer(
-    thread_id: str = Query(..., description="线程 ID"),
-    path: str = Query(..., description="文件路径"),
+    thread_id: str = Query(..., description="ID thread"),
+    path: str = Query(..., description="Đường dẫn tệp"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):

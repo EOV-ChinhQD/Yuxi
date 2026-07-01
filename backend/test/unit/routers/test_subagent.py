@@ -74,7 +74,7 @@ class _CreateRepo(_ListRepo):
 
 class _RejectingCreateRepo(_ListRepo):
     async def create(self, **_kwargs):
-        raise ValueError("SubAgentBackend 与 is_subagent 必须保持一致")
+        raise ValueError("SubAgentBackend và is_subagent phải nhất quán")
 
 
 def _build_app(monkeypatch, repo_cls, *, role: str = "admin") -> TestClient:

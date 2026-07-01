@@ -1,4 +1,4 @@
-"""PostgreSQL 知识库模型 - KnowledgeBase、KnowledgeFile、评估相关表"""
+"""PostgreSQL knowledge base model - KnowledgeBase, KnowledgeFile, Assessment related tables"""
 
 from sqlalchemy import (
     JSON,
@@ -22,7 +22,7 @@ JSON_VALUE = JSON().with_variant(JSONB, "postgresql")
 
 
 class KnowledgeBase(Base):
-    """知识库模型"""
+    """knowledge base model"""
 
     __tablename__ = "knowledge_bases"
     __table_args__ = (UniqueConstraint("kb_id", name="uq_knowledge_bases_kb_id"),)
@@ -47,7 +47,7 @@ class KnowledgeBase(Base):
 
 
 class KnowledgeFile(Base):
-    """知识文件模型"""
+    """knowledge document model"""
 
     __tablename__ = "knowledge_files"
     __table_args__ = (UniqueConstraint("file_id", name="uq_knowledge_files_file_id"),)
@@ -78,7 +78,7 @@ class KnowledgeFile(Base):
 
 
 class KnowledgeChunk(Base):
-    """知识库 Chunk 模型"""
+    """Knowledge Base Chunk Model"""
 
     __tablename__ = "knowledge_chunks"
     __table_args__ = (
@@ -107,7 +107,7 @@ class KnowledgeChunk(Base):
 
 
 class KnowledgeGraphEntity(Base):
-    """知识图谱实体"""
+    """Knowledge graph entity"""
 
     __tablename__ = "knowledge_graph_entities"
     __table_args__ = (
@@ -128,7 +128,7 @@ class KnowledgeGraphEntity(Base):
 
 
 class KnowledgeGraphEntityMention(Base):
-    """知识图谱实体在 chunk 中的引用"""
+    """Reference of knowledge graph entities in chunk"""
 
     __tablename__ = "knowledge_graph_entity_mentions"
     __table_args__ = (
@@ -147,7 +147,7 @@ class KnowledgeGraphEntityMention(Base):
 
 
 class KnowledgeGraphTriple(Base):
-    """知识图谱三元组"""
+    """Knowledge graph triplet"""
 
     __tablename__ = "knowledge_graph_triples"
     __table_args__ = (
@@ -171,7 +171,7 @@ class KnowledgeGraphTriple(Base):
 
 
 class KnowledgeGraphTripleMention(Base):
-    """知识图谱三元组在 chunk 中的引用"""
+    """Reference of knowledge graph triplet in chunk"""
 
     __tablename__ = "knowledge_graph_triple_mentions"
     __table_args__ = (
@@ -192,7 +192,7 @@ class KnowledgeGraphTripleMention(Base):
 
 
 class EvaluationDataset(Base):
-    """评估数据集模型"""
+    """Evaluate the data set model"""
 
     __tablename__ = "evaluation_datasets"
     __table_args__ = (UniqueConstraint("dataset_id", name="uq_evaluation_datasets_dataset_id"),)
@@ -212,7 +212,7 @@ class EvaluationDataset(Base):
 
 
 class EvaluationDatasetItem(Base):
-    """评估数据集题目模型"""
+    """Evaluate the data set question model"""
 
     __tablename__ = "evaluation_dataset_items"
     __table_args__ = (
@@ -238,7 +238,7 @@ class EvaluationDatasetItem(Base):
 
 
 class EvaluationRun(Base):
-    """评估运行模型"""
+    """Evaluate running model"""
 
     __tablename__ = "evaluation_runs"
     __table_args__ = (UniqueConstraint("run_id", name="uq_evaluation_runs_run_id"),)
@@ -264,7 +264,7 @@ class EvaluationRun(Base):
 
 
 class EvaluationRunItem(Base):
-    """评估逐题结果模型"""
+    """Evaluating the question-by-question outcome model"""
 
     __tablename__ = "evaluation_run_items"
     __table_args__ = (

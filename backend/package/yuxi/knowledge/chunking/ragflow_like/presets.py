@@ -22,12 +22,12 @@ CHUNK_PRESET_IDS = {
 }
 
 CHUNK_PRESET_DESCRIPTIONS: dict[str, str] = {
-    CHUNK_PRESET_GENERAL: "通用分块：按分隔符和长度切分，适合大多数普通文档。",
-    CHUNK_PRESET_QA: "问答分块：优先抽取问题-回答结构，适合 FAQ、题库、问答手册。",
-    CHUNK_PRESET_BOOK: "书籍分块：强化章节标题识别并做层级合并，适合教材、手册、长章节文档。",
-    CHUNK_PRESET_LAWS: "法规分块：按法条层级组织与合并，适合法律法规、制度规范类文本。",
-    CHUNK_PRESET_SEMANTIC: "语义分块：利用嵌入和聚类算法进行语义切分，并自动增强标题上下文。",
-    CHUNK_PRESET_SEPARATOR: "严格分隔：命中分隔符即切分，仅超长片段内部继续按长度切分。",
+    CHUNK_PRESET_GENERAL: "Phân đoạn chung: Cắt theo dấu phân cách và độ dài, phù hợp với hầu hết các tài liệu thông thường.",
+    CHUNK_PRESET_QA: "Phân đoạn hỏi đáp: Ưu tiên trích xuất cấu trúc hỏi-đáp, phù hợp với FAQ, ngân hàng câu hỏi, sổ tay hỏi đáp.",
+    CHUNK_PRESET_BOOK: "Phân đoạn sách: Tăng cường nhận diện tiêu đề chương và gộp theo cấp, phù hợp với giáo trình, sổ tay, tài liệu có chương dài.",
+    CHUNK_PRESET_LAWS: "Phân đoạn pháp luật: Tổ chức và gộp theo cấp điều khoản, phù hợp với luật pháp, quy định, tiêu chuẩn.",
+    CHUNK_PRESET_SEMANTIC: "Phân đoạn ngữ nghĩa: Sử dụng thuật toán nhúng và phân cụm để phân đoạn ngữ nghĩa, đồng thời tăng cường ngữ cảnh tiêu đề tự động.",
+    CHUNK_PRESET_SEPARATOR: "Phân đoạn chặt chẽ: Cắt khi gặp dấu phân cách, chỉ tiếp tục cắt theo độ dài bên trong đoạn siêu dài.",
 }
 
 CHUNK_ENGINE_VERSION = "ragflow_like_v1"

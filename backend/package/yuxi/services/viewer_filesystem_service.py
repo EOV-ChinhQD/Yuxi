@@ -71,7 +71,7 @@ def _resolve_local_user_data_path(thread_id: str, uid: str, path: str) -> Path:
     try:
         actual_path = resolve_virtual_path(thread_id, path, uid=uid)
     except ValueError as exc:
-        # 真实路径越过允许根目录时，按权限拒绝处理，而不是当作普通参数错误。
+        # When the real path exceeds the allowed root directory, it will be treated as permission denial instead of being treated as a normal parameter error.
         if "path traversal" in str(exc):
             raise HTTPException(status_code=403, detail="Access denied") from exc
         raise
@@ -96,10 +96,10 @@ def _is_skills_path(path: str) -> bool:
 
 
 def _is_in_home_gem(path: str) -> bool:
-    """检查路径是否在 /home/gem/ 下但不在虚拟挂载点内"""
+    """Check if the path is in /home/gem/ downloaded but not within the virtual mount point"""
     if not path.startswith("/home/gem/"):
         return False
-    # 排除虚拟挂载点
+    # Exclude virtual mount points
     if path.startswith(f"{USER_DATA_PATH}/") or path == USER_DATA_PATH:
         return False
     if path.startswith(f"{SKILLS_PATH}/") or path == SKILLS_PATH:
@@ -197,7 +197,7 @@ def _workspace_relative_path(path: str) -> str:
     if path == VIRTUAL_PATH_WORKSPACE:
         return "/"
     if not path.startswith(f"{VIRTUAL_PATH_WORKSPACE}/"):
-        raise HTTPException(status_code=400, detail="当前路径不是工作区路径")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại không phải là đường dẫn không gian làm việc")
     return path[len(VIRTUAL_PATH_WORKSPACE) :] or "/"
 
 
@@ -277,7 +277,7 @@ async def list_viewer_filesystem_tree(
     db: AsyncSession,
 ) -> dict:
     if not thread_id:
-        raise HTTPException(status_code=422, detail="thread_id 不能为空")
+        raise HTTPException(status_code=422, detail="thread_id không được để trống")
 
     normalized_path = _normalize_path(path)
     sandbox_backend, skills_backend, selected_skills = await _resolve_viewer_state(
@@ -287,7 +287,7 @@ async def list_viewer_filesystem_tree(
     )
 
     if normalized_path == "/":
-        # 根目录只显示 viewer 暴露的虚拟命名空间，避免为只读树视图触发 sandbox 冷启动。
+        # The root directory only displays the virtual namespace exposed by the viewer to avoid triggering sandbox cold starts for read-only tree views.
         entries = []
 
         entries.append(
@@ -316,7 +316,7 @@ async def list_viewer_filesystem_tree(
             if not actual_path.exists():
                 return {"entries": []}
             if not actual_path.is_dir():
-                raise HTTPException(status_code=400, detail="当前路径不是目录")
+                raise HTTPException(status_code=400, detail="Đường dẫn hiện tại không phải là thư mục")
             entries = await asyncio.to_thread(_list_local_entries, thread_id, uid, actual_path)
             return {"entries": _sort_entries(entries)}
 
@@ -342,7 +342,7 @@ async def read_viewer_file_content(
     db: AsyncSession,
 ) -> dict | StreamingResponse:
     if not thread_id:
-        raise HTTPException(status_code=422, detail="thread_id 不能为空")
+        raise HTTPException(status_code=422, detail="thread_id không được để trống")
     normalized_path = _normalize_path(path)
 
     sandbox_backend, skills_backend, _selected_skills = await _resolve_viewer_state(
@@ -360,9 +360,9 @@ async def read_viewer_file_content(
                 )
             actual_path = _resolve_local_user_data_path(thread_id, str(current_user.uid), normalized_path)
             if not actual_path.exists():
-                raise HTTPException(status_code=404, detail="文件不存在")
+                raise HTTPException(status_code=404, detail="File không tồn tại")
             if not actual_path.is_file():
-                raise HTTPException(status_code=400, detail="当前路径是目录")
+                raise HTTPException(status_code=400, detail="Đường dẫn hiện tại là thư mục")
             if actual_path.stat().st_size > MAX_BINARY_PREVIEW_SIZE_BYTES:
                 return _preview_too_large_payload()
             raw_content = await asyncio.to_thread(actual_path.read_bytes)
@@ -370,7 +370,7 @@ async def read_viewer_file_content(
         elif _is_skills_path(normalized_path):
             responses = await asyncio.to_thread(skills_backend.download_files, [_strip_skills_prefix(normalized_path)])
         elif _is_in_home_gem(normalized_path):
-            # /home/gem/ 下的其他文件（如 workspace 目录）
+            # Other files under /home/gem/ (such as workspace directory)
             responses = await asyncio.to_thread(sandbox_backend.download_files, [normalized_path])
         else:
             raise HTTPException(
@@ -384,9 +384,9 @@ async def read_viewer_file_content(
 
     response = responses[0] if responses else None
     if response is None or response.error == "file_not_found":
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise HTTPException(status_code=404, detail="File không tồn tại")
     if response.error == "is_directory":
-        raise HTTPException(status_code=400, detail="当前路径是目录")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại là thư mục")
     if response.error:
         raise HTTPException(status_code=400, detail=str(response.error))
 
@@ -417,9 +417,9 @@ async def download_viewer_file(
                 )
             actual_path = _resolve_local_user_data_path(thread_id, str(current_user.uid), normalized_path)
             if not actual_path.exists():
-                raise HTTPException(status_code=404, detail="文件不存在")
+                raise HTTPException(status_code=404, detail="File không tồn tại")
             if not actual_path.is_file():
-                raise HTTPException(status_code=400, detail="当前路径是目录")
+                raise HTTPException(status_code=400, detail="Đường dẫn hiện tại là thư mục")
 
             file_name = actual_path.name or "download"
             media_type = mimetypes.guess_type(file_name)[0] or "application/octet-stream"
@@ -431,7 +431,7 @@ async def download_viewer_file(
         if _is_skills_path(normalized_path):
             responses = await asyncio.to_thread(skills_backend.download_files, [_strip_skills_prefix(normalized_path)])
         elif _is_in_home_gem(normalized_path):
-            # /home/gem/ 下的其他文件（如 workspace 目录）
+            # Other files under /home/gem/ (such as workspace directory)
             responses = await asyncio.to_thread(sandbox_backend.download_files, [normalized_path])
         else:
             raise HTTPException(
@@ -445,9 +445,9 @@ async def download_viewer_file(
 
     response = responses[0] if responses else None
     if response is None or response.error == "file_not_found":
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise HTTPException(status_code=404, detail="File không tồn tại")
     if response.error == "is_directory":
-        raise HTTPException(status_code=400, detail="当前路径是目录")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại là thư mục")
     if response.error:
         raise HTTPException(status_code=400, detail=str(response.error))
 
@@ -468,7 +468,7 @@ async def delete_viewer_file(
     db: AsyncSession,
 ) -> dict:
     if not thread_id:
-        raise HTTPException(status_code=422, detail="thread_id 不能为空")
+        raise HTTPException(status_code=422, detail="thread_id không được để trống")
 
     normalized_path = _normalize_path(path)
     await _resolve_viewer_state(
@@ -478,9 +478,9 @@ async def delete_viewer_file(
     )
 
     if not _is_user_data_path(normalized_path):
-        raise HTTPException(status_code=400, detail="当前路径不支持删除")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại không hỗ trợ xóa")
     if normalized_path in _PROTECTED_USER_DATA_ROOTS:
-        raise HTTPException(status_code=400, detail="当前目录不允许删除")
+        raise HTTPException(status_code=400, detail="Thư mục hiện tại không cho phép xóa")
 
     try:
         if _is_workspace_path(normalized_path):
@@ -488,7 +488,7 @@ async def delete_viewer_file(
             return {"success": True, "path": normalized_path}
         actual_path = _resolve_local_user_data_path(thread_id, str(current_user.uid), normalized_path)
         if not actual_path.exists():
-            raise HTTPException(status_code=404, detail="文件不存在")
+            raise HTTPException(status_code=404, detail="File không tồn tại")
         if actual_path.is_dir():
             await asyncio.to_thread(shutil.rmtree, actual_path)
         else:
@@ -510,7 +510,7 @@ async def create_viewer_directory(
     db: AsyncSession,
 ) -> dict:
     if not thread_id:
-        raise HTTPException(status_code=422, detail="thread_id 不能为空")
+        raise HTTPException(status_code=422, detail="thread_id không được để trống")
 
     await _resolve_viewer_state(
         thread_id=thread_id,
@@ -520,7 +520,7 @@ async def create_viewer_directory(
 
     normalized_parent = _normalize_path(parent_path)
     if not _is_workspace_path(normalized_parent):
-        raise HTTPException(status_code=400, detail="当前路径不支持写入")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại không hỗ trợ ghi")
 
     response = await create_workspace_directory_entry(
         parent_path=_workspace_relative_path(normalized_parent),
@@ -539,7 +539,7 @@ async def upload_viewer_files(
     db: AsyncSession,
 ) -> dict:
     if not thread_id:
-        raise HTTPException(status_code=422, detail="thread_id 不能为空")
+        raise HTTPException(status_code=422, detail="thread_id không được để trống")
 
     await _resolve_viewer_state(
         thread_id=thread_id,
@@ -549,7 +549,7 @@ async def upload_viewer_files(
 
     normalized_parent = _normalize_path(parent_path)
     if not _is_workspace_path(normalized_parent):
-        raise HTTPException(status_code=400, detail="当前路径不支持写入")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại không hỗ trợ ghi")
 
     response = await upload_workspace_files_entry(
         parent_path=_workspace_relative_path(normalized_parent),

@@ -41,7 +41,7 @@ def normalize_share_config(
             department_ids.append(int(department_id))
         department_ids = sorted(set(department_ids))
         if not department_ids:
-            raise ValueError("部门共享至少需要选择一个部门")
+            raise ValueError("Chia sẻ bộ phận yêu cầu chọn ít nhất một bộ phận")
         return {"access_level": "department", "department_ids": department_ids, "user_uids": []}
 
     user_uids = _normalize_user_uids(config.get("user_uids"))
@@ -49,5 +49,5 @@ def normalize_share_config(
         user_uids.append(str(user_uid))
     user_uids = sorted(set(user_uids))
     if not user_uids:
-        raise ValueError("指定人至少需要选择一个用户")
+        raise ValueError("Cần chỉ định ít nhất một người dùng")
     return {"access_level": "user", "department_ids": [], "user_uids": user_uids}

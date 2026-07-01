@@ -19,7 +19,7 @@ def _build_app(*, allow_admin: bool = True) -> FastAPI:
         if not allow_admin:
             from fastapi import HTTPException
 
-            raise HTTPException(status_code=403, detail="需要管理员权限")
+            raise HTTPException(status_code=403, detail="Cần quyền quản trị viên")
         return User(
             username="admin",
             uid="admin",
@@ -111,7 +111,7 @@ def test_get_mcp_servers_normal_user_is_stripped(monkeypatch):
 
     monkeypatch.setattr("server.routers.mcp_router.get_all_mcp_servers", fake_get_all_mcp_servers)
 
-    # 1. 管理员请求，应该返回全部字段
+    # 1. Administrator request, all fields should be returned
     client_admin = TestClient(_build_app(allow_admin=True))
     resp_admin = client_admin.get("/api/system/mcp-servers")
     assert resp_admin.status_code == 200
@@ -120,7 +120,7 @@ def test_get_mcp_servers_normal_user_is_stripped(monkeypatch):
     assert data_admin["command"] == "python"
     assert data_admin["env"] == {"API_KEY": "secret"}
 
-    # 2. 普通用户请求，敏感字段及一切非安全白名单字段应该被彻底脱敏
+    # 2. For ordinary user requests, sensitive fields and all non-security whitelisted fields should be completely desensitized.
     client_user = TestClient(_build_app(allow_admin=False))
     resp_user = client_user.get("/api/system/mcp-servers")
     assert resp_user.status_code == 200
@@ -129,7 +129,7 @@ def test_get_mcp_servers_normal_user_is_stripped(monkeypatch):
     assert "command" not in data_user
     assert "env" not in data_user
     assert "headers" not in data_user
-    assert "transport" not in data_user  # NOTE: 进一步验证连 transport 等配置层元数据也一并过滤
+    assert "transport" not in data_user  # NOTE: Further verify that even configuration layer metadata such as transport is also filtered
     assert data_user["name"] == "test-mcp"
     assert data_user["description"] == "test mcp description"
     assert data_user["enabled"] is True

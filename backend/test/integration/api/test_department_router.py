@@ -68,7 +68,7 @@ async def test_superadmin_can_delete_department_with_users(test_client, admin_he
         assert list_users_after_delete_response.status_code == 200, list_users_after_delete_response.text
         users_after_delete = list_users_after_delete_response.json()
 
-        # 删除部门后用户迁移到默认部门（代码中默认部门固定为 id=1，其名称可被用户修改）
+        # After deleting the department, the user is moved to the default department (the default department in the code is fixed at id=1, and its name can be modified by the user)
         migrated_admin = next((user for user in users_after_delete if user["id"] == department_admin_id), None)
         assert migrated_admin is not None
         assert migrated_admin["department_id"] == 1
@@ -90,10 +90,10 @@ async def test_superadmin_cannot_delete_default_department(test_client, admin_he
     assert departments_response.status_code == 200, departments_response.text
     departments = departments_response.json()
 
-    # 默认部门在代码中固定为 id=1（受保护不可删除），其名称可被用户修改，故按 id 定位
+    # The default department is fixed at id=1 in the code (protected and cannot be deleted), and its name can be modified by the user, so it is positioned by id
     default_department = next((department for department in departments if department["id"] == 1), None)
     assert default_department is not None
 
     delete_response = await test_client.delete(f"/api/departments/{default_department['id']}", headers=admin_headers)
     assert delete_response.status_code == 400, delete_response.text
-    assert delete_response.json()["detail"] == "默认部门不允许删除"
+    assert delete_response.json()["detail"] == "Không cho phép xóa bộ phận mặc định"

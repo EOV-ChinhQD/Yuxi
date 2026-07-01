@@ -213,13 +213,13 @@ async def test_embed_and_store_chunks_batches_embedding_and_insert():
 
 def test_calculate_chunk_stats_counts_chunks_and_tokens():
     kb = MilvusKB.__new__(MilvusKB)
-    chunks = [make_chunk(0, content="alpha beta"), make_chunk(1, content="中文")]
+    chunks = [make_chunk(0, content="alpha beta"), make_chunk(1, content="Chinese")]
 
     stats = kb._calculate_chunk_stats(chunks)
 
     assert stats == {
         "chunk_count": 2,
-        "token_count": count_tokens("alpha beta") + count_tokens("中文"),
+        "token_count": count_tokens("alpha beta") + count_tokens("Chinese"),
     }
 
 
@@ -232,7 +232,7 @@ async def test_index_file_persists_chunk_stats(monkeypatch):
     deleted_files = []
     store_calls = []
     refreshed_kbs = []
-    chunks = [make_chunk(0, content="alpha beta"), make_chunk(1, content="中文")]
+    chunks = [make_chunk(0, content="alpha beta"), make_chunk(1, content="Chinese")]
 
     async def get_collection(kb_id):
         return collection
@@ -268,7 +268,7 @@ async def test_index_file_persists_chunk_stats(monkeypatch):
     assert [chunk["chunk_id"] for chunk in store_calls[0][3]] == ["chunk-0", "chunk-1"]
     assert result["status"] == FileStatus.INDEXED
     assert result["chunk_count"] == 2
-    assert result["token_count"] == count_tokens("alpha beta") + count_tokens("中文")
+    assert result["token_count"] == count_tokens("alpha beta") + count_tokens("Chinese")
     assert file_repo.records["file-1"].chunk_count == result["chunk_count"]
     assert file_repo.conditional_update_calls[0][3]["status"] == FileStatus.INDEXING
     assert file_repo.update_calls[-1][2]["status"] == FileStatus.INDEXED

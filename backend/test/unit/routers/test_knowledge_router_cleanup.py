@@ -61,7 +61,7 @@ async def test_document_file_exists_returns_boolean_for_relative_path(monkeypatc
         "exists": True,
     }
     assert captured == {
-        "ensure": ("kb_1", "文档存在性检查"),
+        "ensure": ("kb_1", "Document existence check"),
         "exists": ("kb_1", "google_drive/shared_drives/engineering/playbook.txt"),
     }
 
@@ -159,7 +159,7 @@ async def test_upload_file_invalid_kb_fails_before_read_or_minio(monkeypatch):
     calls = {"read": 0, "upload": 0}
 
     async def fake_ensure_database_supports_documents(kb_id: str, operation: str) -> None:
-        raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Cơ sở kiến thức {kb_id} không tồn tại")
 
     async def fake_read_upload_with_limit(*_args, **_kwargs) -> bytes:
         calls["read"] += 1
@@ -190,7 +190,7 @@ async def test_upload_file_read_only_kb_fails_before_read_or_minio(monkeypatch):
     calls = {"read": 0, "upload": 0}
 
     async def fake_ensure_database_supports_documents(kb_id: str, operation: str) -> None:
-        raise HTTPException(status_code=400, detail="只支持检索，不支持文档上传")
+        raise HTTPException(status_code=400, detail="Chỉ hỗ trợ truy xuất, không hỗ trợ tải lên tài liệu")
 
     async def fake_read_upload_with_limit(*_args, **_kwargs) -> bytes:
         calls["read"] += 1
@@ -235,7 +235,7 @@ async def test_index_documents_uses_uid_for_operator(monkeypatch):
         return None
 
     async def fake_get_database_info(kb_id: str) -> dict:
-        return {"name": "测试知识库"}
+        return {"name": "Test knowledge base"}
 
     async def fake_index_file(kb_id: str, file_id: str, operator_id: str | None = None, params: dict | None = None):
         captured["operator_id"] = operator_id
@@ -286,7 +286,7 @@ async def test_parse_pending_documents_enqueues_status_scoped_task(monkeypatch):
         captured["ensure"] = (kb_id, operation)
 
     async def fake_get_database_info(kb_id: str) -> dict:
-        return {"name": "测试知识库", "stats": {"pending_parse_count": 2}}
+        return {"name": "Test knowledge base", "stats": {"pending_parse_count": 2}}
 
     async def fake_list_document_file_ids_by_statuses(kb_id: str, *, statuses, after_file_id, limit):
         captured["list_calls"].append(
@@ -326,7 +326,7 @@ async def test_parse_pending_documents_enqueues_status_scoped_task(monkeypatch):
 
     assert result["status"] == "queued"
     assert result["task_id"] == "task_1"
-    assert captured["ensure"] == ("kb_1", "文档解析")
+    assert captured["ensure"] == ("kb_1", "Document parsing")
     assert captured["payload_match"] == {"kb_id": "kb_1", "scope": "pending", "action": "parse"}
     assert captured["statuses"] == knowledge_router.ACTIVE_DOCUMENT_ACTION_TASK_STATUSES
     assert captured["payload"]["statuses"] == knowledge_router.PENDING_PARSE_STATUSES
@@ -357,7 +357,7 @@ async def test_index_pending_documents_uses_pending_statuses_and_params(monkeypa
         captured["ensure"] = (kb_id, operation)
 
     async def fake_get_database_info(kb_id: str) -> dict:
-        return {"name": "测试知识库", "stats": {"pending_index_count": 2}}
+        return {"name": "Test knowledge base", "stats": {"pending_index_count": 2}}
 
     async def fake_list_document_file_ids_by_statuses(kb_id: str, *, statuses, after_file_id, limit):
         captured["list_calls"].append(
@@ -401,7 +401,7 @@ async def test_index_pending_documents_uses_pending_statuses_and_params(monkeypa
     )
 
     assert result["status"] == "queued"
-    assert captured["ensure"] == ("kb_1", "文档入库")
+    assert captured["ensure"] == ("kb_1", "Document storage")
     assert captured["payload_match"] == {"kb_id": "kb_1", "scope": "pending", "action": "index"}
     assert captured["payload"]["statuses"] == knowledge_router.PENDING_INDEX_STATUSES
     assert captured["payload"]["params"] == params
@@ -424,7 +424,7 @@ async def test_add_documents_auto_index_returns_one_final_result_per_item(monkey
         return None
 
     async def fake_get_database_info(kb_id: str) -> dict:
-        return {"name": "测试知识库"}
+        return {"name": "Test knowledge base"}
 
     async def fake_add_file_record(kb_id: str, item_path: str, params: dict, operator_id: str | None = None):
         return {"file_id": "file_1", "status": "indexing"}
@@ -468,7 +468,7 @@ async def test_add_documents_auto_index_returns_one_final_result_per_item(monkey
 
 
 async def test_add_documents_auto_index_treats_error_none_as_success(monkeypatch):
-    """成功入库的文件元数据会携带 error=None，不应被统计为失败 (#793)。"""
+    """File metadata thành công vào kho sẽ mang error=None, không nên bị đếm là thất bại (#793)."""
     context = FakeTaskContext()
     item = "minio://knowledgebases/kb_1/upload/demo.txt"
 
@@ -476,7 +476,7 @@ async def test_add_documents_auto_index_treats_error_none_as_success(monkeypatch
         return None
 
     async def fake_get_database_info(kb_id: str) -> dict:
-        return {"name": "测试知识库"}
+        return {"name": "Test knowledge base"}
 
     async def fake_add_file_record(kb_id: str, item_path: str, params: dict, operator_id: str | None = None):
         return {"file_id": "file_1", "status": "indexing"}

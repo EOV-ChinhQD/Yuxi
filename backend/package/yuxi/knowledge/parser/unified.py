@@ -51,7 +51,7 @@ def is_supported_file_extension(file_name: str | os.PathLike[str]) -> bool:
 
 @dataclass(slots=True)
 class MarkdownParseResult:
-    """统一的 Markdown 解析结果。"""
+    """Unified Markdown parsing results."""
 
     markdown: str
     file_ext: str | None = None
@@ -62,7 +62,7 @@ _docling_converter: DocumentConverter | None = None
 
 
 def _get_docling_converter() -> DocumentConverter:
-    """获取 Docling 文档转换器单例。"""
+    """Get the Docling document converter singleton."""
     global _docling_converter
     if _docling_converter is None:
         _docling_converter = DocumentConverter(
@@ -99,7 +99,7 @@ def _resolve_ocr_engine_params(params: dict | None) -> tuple[str, dict[str, Any]
 
 
 def _upload_image_to_minio(image_data: bytes, filename: str, bucket_name: str, object_prefix: str) -> str:
-    """上传图片到 MinIO，返回 URL。"""
+    """Upload images to MinIO and return URL."""
     minio_client = get_minio_client()
     minio_client.ensure_bucket_exists(bucket_name)
 
@@ -116,7 +116,7 @@ def _upload_image_to_minio(image_data: bytes, filename: str, bucket_name: str, o
 
 
 def _parse_data_uri(data_uri: str) -> tuple[bytes, str]:
-    """解析 data URI，返回 (image_data, mime_type)。"""
+    """Parse the data URI and return (image_data, mime_type)。"""
     header, base64_data = data_uri.split(",", 1)
     mime_type = header.split(":")[1].split(";")[0]
     image_data = base64.b64decode(base64_data)
@@ -124,7 +124,7 @@ def _parse_data_uri(data_uri: str) -> tuple[bytes, str]:
 
 
 def _convert_with_docling(file_path: Path, params: dict | None = None) -> str:
-    """使用 Docling 将 docx/xlsx/pptx 转换为 Markdown。"""
+    """Use Docling to convert docx/xlsx/pptx Convert to Markdown."""
     params = params or {}
     image_bucket, image_prefix = _resolve_image_storage_params(params)
 
@@ -132,7 +132,7 @@ def _convert_with_docling(file_path: Path, params: dict | None = None) -> str:
     result = converter.convert(file_path)
 
     if result.status.name != "SUCCESS":
-        raise RuntimeError(f"Docling 转换失败: {result.status}")
+        raise RuntimeError(f"Chuyển đổi Docling thất bại: {result.status}")
 
     doc = result.document
 
@@ -148,8 +148,8 @@ def _convert_with_docling(file_path: Path, params: dict | None = None) -> str:
                     url = _upload_image_to_minio(image_data, filename, image_bucket, image_prefix)
                     replacements.append(f"![{filename}]({url})")
                 except Exception as e:  # noqa: BLE001
-                    logger.error(f"上传图片失败 {filename}: {e}")
-                    replacements.append(f"[图片: {filename}]")
+                    logger.error(f"Failed to upload image {filename}: {e}")
+                    replacements.append(f"[picture: {filename}]")
             else:
                 replacements.append("")
 
@@ -162,7 +162,7 @@ def _convert_with_docling(file_path: Path, params: dict | None = None) -> str:
 
 
 def _convert_docx_with_python_docx(file_path: Path) -> str:
-    """使用 python-docx 解析 DOCX（Docling 失败时兜底）。"""
+    """using python-docx Parse DOCX (cover when Docling fails)."""
     from docx import Document
 
     document = Document(str(file_path))
@@ -197,7 +197,7 @@ def _convert_docx_with_python_docx(file_path: Path) -> str:
 
 
 def pdfreader(file_path, params=None):
-    """读取 PDF 文件并返回 text 文本。"""
+    """Reads a PDF file and returns text."""
     if isinstance(file_path, str):
         file_path = Path(file_path)
 
@@ -211,7 +211,7 @@ def pdfreader(file_path, params=None):
 
 
 def parse_pdf(file, params=None):
-    """解析 PDF 文件，支持多种 OCR 方式。"""
+    """Parse PDF files and support multiple OCR methods."""
     from yuxi.knowledge.parser.base import DocumentProcessorException
     from yuxi.knowledge.parser.factory import DocumentProcessorFactory
 
@@ -227,15 +227,15 @@ def parse_pdf(file, params=None):
     try:
         return DocumentProcessorFactory.process_file(opt_ocr, file, processor_params)
     except DocumentProcessorException as e:
-        logger.error(f"文档处理失败: {e.service_name} - {str(e)}")
+        logger.error(f"Document processing failed: {e.service_name} - {str(e)}")
         raise
     except Exception as e:  # noqa: BLE001
-        logger.error(f"PDF 解析失败: {str(e)}")
-        raise DocumentProcessorException(f"PDF解析失败: {str(e)}", opt_ocr, "parsing_failed")
+        logger.error(f"PDF Parsing failed: {str(e)}")
+        raise DocumentProcessorException(f"Phân tích PDF thất bại: {str(e)}", opt_ocr, "parsing_failed")
 
 
 def parse_image(file, params=None):
-    """解析图像文件，支持多种 OCR 方式。"""
+    """Parse image files and support multiple OCR methods."""
     from yuxi.knowledge.parser.base import DocumentProcessorException
     from yuxi.knowledge.parser.factory import DocumentProcessorFactory
 
@@ -243,8 +243,8 @@ def parse_image(file, params=None):
 
     if opt_ocr == "disable":
         raise ValueError(
-            "图像文件必须启用OCR才能提取文本内容。"
-            "请选择OCR方式 (rapid_ocr/mineru_ocr/mineru_official/pp_structure_v3_ocr/deepseek_ocr) 或移除该文件。"
+            "Image files must have OCR enabled to extract text content."
+            "Please select OCR method (rapid_ocr/mineru_ocr/mineru_official/pp_structure_v3_ocr/deepseek_ocr) Or remove the file."
         )
 
     image_bucket, image_prefix = _resolve_image_storage_params(processor_params)
@@ -254,11 +254,11 @@ def parse_image(file, params=None):
     try:
         return DocumentProcessorFactory.process_file(opt_ocr, file, processor_params)
     except DocumentProcessorException as e:
-        logger.error(f"图像处理失败: {e.service_name} - {str(e)}")
+        logger.error(f"Image processing failed: {e.service_name} - {str(e)}")
         raise
     except Exception as e:  # noqa: BLE001
-        logger.error(f"图像解析失败: {str(e)}")
-        raise DocumentProcessorException(f"图像解析失败: {str(e)}", opt_ocr, "parsing_failed")
+        logger.error(f"Phân tích hình ảnh thất bại: {str(e)}")
+        raise DocumentProcessorException(f"Phân tích hình ảnh thất bại: {str(e)}", opt_ocr, "parsing_failed")
 
 
 async def parse_pdf_async(file, params=None):
@@ -272,7 +272,7 @@ async def parse_image_async(file, params=None):
 async def _process_file_to_markdown_core(
     file_path: str, params: dict | None = None
 ) -> tuple[str, str | None, dict[str, Any]]:
-    """将不同类型的文件转换为 markdown，支持本地文件和 MinIO 文件。"""
+    """Convert different types of files to markdown, supporting local files and MinIO files."""
     from yuxi.knowledge.utils.kb_utils import is_minio_url, parse_minio_url
     from yuxi.storage.minio.client import get_minio_client
 
@@ -304,7 +304,7 @@ async def _process_file_to_markdown_core(
             if os.path.exists(temp_path):
                 os.unlink(temp_path)
             logger.error(f"Failed to download file from MinIO: {e}")
-            raise ValueError(f"无法从MinIO下载文件: {e}")
+            raise ValueError(f"Không thể tải tệp xuống từ MinIO: {e}")
     else:
         actual_file_path = file_path
 
@@ -328,7 +328,7 @@ async def _process_file_to_markdown_core(
             try:
                 result = _convert_with_docling(file_path_obj, params=params)
             except Exception as e:  # noqa: BLE001
-                logger.warning(f"Docling 解析 DOCX 失败，回退到 python-docx: {file_path_obj.name}, {e}")
+                logger.warning(f"Docling Failed to parse DOCX, fallback to python-docx: {file_path_obj.name}, {e}")
                 result = _convert_docx_with_python_docx(file_path_obj)
 
         elif file_ext == ".pptx":
@@ -417,7 +417,7 @@ async def _process_file_to_markdown_core(
 
 
 async def parse_source_to_markdown(source: str, params: dict | None = None) -> MarkdownParseResult:
-    """统一入口: 将文件解析为 Markdown（URL 解析已废弃）。"""
+    """unified entrance: Parse files into Markdown (URL parsing is deprecated)."""
     markdown, file_ext, artifacts = await _process_file_to_markdown_core(source, params=params)
     return MarkdownParseResult(
         markdown=markdown,
@@ -443,4 +443,4 @@ class Parser:
         except RuntimeError:
             return asyncio.run(cls.aparse(source=source, params=params))
 
-        raise RuntimeError("当前处于异步上下文，请使用 `await Parser.aparse(...)`")
+        raise RuntimeError("Hiện đang trong bối cảnh bất đồng bộ, vui lòng sử dụng `await Parser.aparse(...)`")

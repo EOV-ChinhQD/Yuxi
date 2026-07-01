@@ -31,9 +31,9 @@ from yuxi.utils.question_utils import (
 
 
 def _build_state_files(attachments: list[dict]) -> dict:
-    """将附件列表转换为 StateBackend 格式的 files 字典
+    """Convert attachment column surface to StateBackend Formatof files dictionary
 
-    StateBackend 期望的格式:
+    StateBackend expects ofFormat:
     {
         "/attachments/file.md": {
             "content": ["line1", "line2", ...],
@@ -54,7 +54,7 @@ def _build_state_files(attachments: list[dict]) -> dict:
             continue
 
         now = datetime.now(UTC).isoformat()
-        # 将 markdown 内容按行拆分
+        # Split markdown content by lines
         content_lines = markdown.split("\n")
         files[file_path] = {
             "content": content_lines,
@@ -90,7 +90,7 @@ def _build_langfuse_run_context(
     extra_metadata = None
     extra_tags = None
     evaluation = (meta or {}).get("evaluation") if isinstance(meta, dict) else None
-    # 如果请求来自智能体评测，添加评测相关的 metadata 和 tags，方便在 Langfuse 中进行过滤和分析
+    # If the request comes from an agent evaluation, add evaluation-related metadata and tags to facilitate filtering and analysis in Langfuse.
     if (meta or {}).get("source") == "agent_evaluation" or (isinstance(evaluation, dict) and evaluation):
         extra_metadata = {
             "source": "agent_evaluation",
@@ -126,11 +126,11 @@ def _build_langfuse_run_context(
 
 
 def extract_agent_state(values: dict) -> AgentStatePayload:
-    """从 LangGraph state 中提取 agent 状态"""
+    """Extract agent state from LangGraph state"""
     if not isinstance(values, dict):
         return {"todos": [], "files": {}, "artifacts": [], "subagent_runs": [], "token_usage": None}
 
-    # 直接获取，信任 state 的数据结构
+    # Obtain directly and trust the data structure of the state
     todos = values.get("todos")
     artifacts = values.get("artifacts")
     subagent_runs = values.get("subagent_runs")
@@ -194,7 +194,7 @@ def _json_safe(value: Any) -> Any:
 
 
 def _apply_model_override(input_context: dict, meta: dict | None) -> None:
-    """对话级模型覆盖：meta.model_spec 优先于智能体配置的 model。值已在创建 run 时校验。"""
+    """Conversation-level model coverage: meta.model_spec Model takes precedence over agent configuration. The value is verified when creating the run."""
     model_spec = (meta or {}).get("model_spec")
     model_spec = model_spec.strip() if isinstance(model_spec, str) else model_spec
     if model_spec:
@@ -451,7 +451,7 @@ async def save_partial_message(
         extra_metadata = {
             "error_type": error_type,
             "is_error": True,
-            "error_message": error_message or f"发生错误: {error_type}",
+            "error_message": error_message or f"An error occurred: {error_type}",
         }
         if full_msg:
             msg_dict = full_msg.model_dump() if hasattr(full_msg, "model_dump") else {}
@@ -535,7 +535,7 @@ async def save_messages_from_langgraph_state(
 
 
 def _extract_interrupt_info(state) -> Any | None:
-    """从 LangGraph state 中提取中断信息"""
+    """Extract interruption information from LangGraph state"""
     if hasattr(state, "tasks") and state.tasks:
         for task in state.tasks:
             if hasattr(task, "interrupts") and task.interrupts:
@@ -549,7 +549,7 @@ def _extract_interrupt_info(state) -> Any | None:
 
 
 def _coerce_interrupt_payload(info: Any) -> dict:
-    """将 LangGraph interrupt 对象转换为 dict 结构。"""
+    """Convert LangGraph interrupt object to dict structure."""
     if isinstance(info, dict):
         return info
 
@@ -568,7 +568,7 @@ def _coerce_interrupt_payload(info: Any) -> dict:
 
 
 def _build_ask_user_question_payload(info: Any, thread_id: str) -> dict[str, Any]:
-    """将 interrupt 信息标准化为 ask_user_question_required 载荷。"""
+    """Normalize interrupt information into ask_user_question_required payload."""
     payload = _coerce_interrupt_payload(info)
 
     questions = _normalize_interrupt_questions(payload.get("questions"))
@@ -577,7 +577,7 @@ def _build_ask_user_question_payload(info: Any, thread_id: str) -> dict[str, Any
         questions = [
             {
                 "question_id": str(uuid.uuid4()),
-                "question": "请选择一个选项",
+                "question": "Please select an option",
                 "options": [],
                 "multi_select": False,
                 "allow_other": True,
@@ -594,14 +594,14 @@ def _build_ask_user_question_payload(info: Any, thread_id: str) -> dict[str, Any
 
 
 def _ensure_full_msg(full_msg: AIMessage | None, accumulated_content: list[str]) -> AIMessage | None:
-    """如果 full_msg 为空且有累积内容，构建 AIMessage"""
+    """If full_msg is empty and has accumulated content, build AIMessage"""
     if not full_msg and accumulated_content:
         return AIMessage(content="".join(accumulated_content))
     return full_msg
 
 
 def _extract_ai_message(messages: list[Any] | None) -> AIMessage | None:
-    """从消息列表中提取最后一条 AIMessage。"""
+    """Extract the last AIMessage from the message list."""
     if not isinstance(messages, list):
         return None
 
@@ -632,21 +632,21 @@ async def _resolve_agent_runtime(
         conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
         if conversation:
             if conversation.uid != str(user.uid) or conversation.status == "deleted":
-                raise ValueError("对话线程不存在")
+                raise ValueError("Thread trò chuyện không tồn tại")
             if requested_agent_id and requested_agent_id != conversation.agent_id:
-                raise ValueError("已有线程已绑定智能体，不能切换")
+                raise ValueError("Thread đã được gắn với một agent, không thể chuyển đổi")
             bound_agent_id = conversation.agent_id
 
     if not bound_agent_id:
-        raise ValueError("缺少必需的 agent_id 字段")
+        raise ValueError("Thiếu trường agent_id bắt buộc")
 
     agent_item = await agent_repo.get_visible_by_slug(slug=bound_agent_id, user=user)
     if not agent_item:
-        raise ValueError("智能体不存在或无权限访问")
+        raise ValueError("Agent không tồn tại hoặc không có quyền truy cập")
 
     backend = agent_manager.get_agent(agent_item.backend_id)
     if not backend:
-        raise ValueError(f"智能体后端 {agent_item.backend_id} 不存在")
+        raise ValueError(f"Backend của tác nhân {agent_item.backend_id} không tồn tại")
 
     agent_config = await normalize_agent_context_config(
         (agent_item.config_json or {}).get("context", {}),
@@ -699,7 +699,7 @@ async def _ensure_thread_bound_agent(
         return
 
     if conversation.agent_id != agent_item.slug:
-        raise ValueError("已有线程已绑定智能体，不能切换")
+        raise ValueError("Thread đã được gắn với một agent, không thể chuyển đổi")
 
 
 def _normalize_attachment_file_ids(meta: dict | None) -> list[str]:
@@ -747,7 +747,7 @@ async def agent_chat(
     current_user,
     db,
 ) -> dict:
-    """非流式对话，返回完整响应"""
+    """Non-streaming conversation, return full response"""
     start_time = asyncio.get_event_loop().time()
 
     if image_content:
@@ -766,14 +766,14 @@ async def agent_chat(
         return {
             "status": "error",
             "error_type": "content_guard_blocked",
-            "error_message": "输入内容包含敏感词",
+            "error_message": "Nội dung đầu vào chứa từ nhạy cảm",
             "request_id": meta.get("request_id"),
         }
 
     uid = str(current_user.uid)
     meta = dict(meta or {})
     if "request_id" not in meta or not meta.get("request_id"):
-        logger.warning("请求缺少 request_id，已自动生成一个新的 request_id")
+        logger.warning("The request is missing request_id, a new request_id has been automatically generated")
         meta["request_id"] = str(uuid.uuid4())
 
     if not thread_id:
@@ -893,7 +893,7 @@ async def agent_chat(
             )
             return {
                 "status": "interrupted",
-                "message": "检测到敏感内容，已中断输出",
+                "message": "Đã phát hiện nội dung nhạy cảm, đầu ra đã bị gián đoạn",
                 "request_id": meta.get("request_id"),
                 "time_cost": asyncio.get_event_loop().time() - start_time,
             }
@@ -920,7 +920,7 @@ async def agent_chat(
             return {
                 "status": "error",
                 "error_type": "save_message_error",
-                "error_message": f"消息保存失败: {e}",
+                "error_message": f"Lưu tin nhắn thất bại: {e}",
                 "request_id": meta.get("request_id"),
             }
 
@@ -970,7 +970,7 @@ async def stream_agent_chat(
 
     meta = dict(meta or {})
     if "request_id" not in meta or not meta.get("request_id"):
-        logger.warning("请求缺少 request_id，已自动生成一个新的 request_id")
+        logger.warning("The request is missing request_id, a new request_id has been automatically generated")
         meta["request_id"] = str(uuid.uuid4())
 
     uid = str(current_user.uid)
@@ -992,7 +992,7 @@ async def stream_agent_chat(
 
     if conf.enable_content_guard and await content_guard.check(query):
         yield make_chunk(
-            status="error", error_type="content_guard_blocked", error_message="输入内容包含敏感词", meta=meta
+            status="error", error_type="content_guard_blocked", error_message="Nội dung đầu vào chứa từ nhạy cảm", meta=meta
         )
         return
 
@@ -1090,11 +1090,11 @@ async def stream_agent_chat(
             except Exception as e:
                 logger.error(f"Error saving user message: {e}")
 
-        # 先构建 langgraph_config
+        # Build langgraph_config first
         langgraph_config = {"configurable": {"thread_id": thread_id, "uid": uid}}
 
-        # LangGraph 会自动从 checkpointer 恢复 state（包括 uploads）
-        # 无需手动加载或传递
+        # LangGraph will automatically restore state from checkpointer (including uploads)
+        # No need to manually load or pass
 
         full_msg = None
         accumulated_content = []
@@ -1158,7 +1158,7 @@ async def stream_agent_chat(
                             request_id=meta.get("request_id"),
                         )
                         meta["time_cost"] = asyncio.get_event_loop().time() - start_time
-                        yield make_chunk(status="interrupted", message="检测到敏感内容，已中断输出", meta=meta)
+                        yield make_chunk(status="interrupted", message="Đã phát hiện nội dung nhạy cảm, đầu ra đã bị gián đoạn", meta=meta)
                         return
 
                 yield make_chunk(
@@ -1183,7 +1183,7 @@ async def stream_agent_chat(
                 request_id=meta.get("request_id"),
             )
             meta["time_cost"] = asyncio.get_event_loop().time() - start_time
-            yield make_chunk(status="interrupted", message="检测到敏感内容，已中断输出", meta=meta)
+            yield make_chunk(status="interrupted", message="Đã phát hiện nội dung nhạy cảm, đầu ra đã bị gián đoạn", meta=meta)
             return
 
         interrupted = False
@@ -1204,7 +1204,7 @@ async def stream_agent_chat(
             last_agent_state_signature = final_signature
             yield make_chunk(status="agent_state", agent_state=agent_state, meta=meta)
 
-        # 先存储数据库，再返回 finished，避免前端查询时数据未落库
+        # Store the database first and then return finished to avoid data not being stored in the database during front-end query.
         try:
             await save_messages_from_langgraph_state(
                 agent_instance=agent,
@@ -1217,7 +1217,7 @@ async def stream_agent_chat(
             )
         except Exception as e:
             logger.exception(f"Error saving messages from LangGraph state: {e}")
-            yield make_chunk(status="warning", message=f"消息保存失败: {e}", meta=meta)
+            yield make_chunk(status="warning", message=f"Lưu tin nhắn thất bại: {e}", meta=meta)
 
         if interrupted:
             return
@@ -1237,7 +1237,7 @@ async def stream_agent_chat(
                     new_conv_repo,
                     thread_id,
                     full_msg=full_msg,
-                    error_message="对话已中断" if not full_msg else None,
+                    error_message="Trò chuyện đã bị gián đoạn" if not full_msg else None,
                     error_type="interrupted",
                     trace_info=trace_info,
                     run_id=meta.get("run_id"),
@@ -1252,7 +1252,7 @@ async def stream_agent_chat(
         except Exception as exc:
             logger.error(f"Error during cleanup save: {exc}")
 
-        yield make_chunk(status="interrupted", message="对话已中断", meta=meta)
+        yield make_chunk(status="interrupted", message="Trò chuyện đã bị gián đoạn", meta=meta)
 
     except Exception as e:
         logger.exception(f"Error streaming messages: {e}")
@@ -1422,7 +1422,7 @@ async def stream_agent_resume(
         if final_signature and final_signature != last_agent_state_signature:
             yield make_resume_chunk(status="agent_state", agent_state=agent_state, meta=meta)
 
-        # 先存储数据库，再返回 finished，避免前端查询时数据未落库
+        # Store the database first and then return finished to avoid data not being stored in the database during front-end query.
         conv_repo = ConversationRepository(db)
         try:
             await save_messages_from_langgraph_state(
@@ -1436,7 +1436,7 @@ async def stream_agent_resume(
             )
         except Exception as e:
             logger.exception(f"Error saving messages from LangGraph state: {e}")
-            yield make_resume_chunk(status="warning", message=f"消息保存失败: {e}", meta=meta)
+            yield make_resume_chunk(status="warning", message=f"Lưu tin nhắn thất bại: {e}", meta=meta)
 
         if interrupted:
             return
@@ -1451,14 +1451,14 @@ async def stream_agent_resume(
             await save_partial_message(
                 new_conv_repo,
                 thread_id,
-                error_message="对话恢复已中断",
+                error_message="Khôi phục trò chuyện đã bị gián đoạn",
                 error_type="resume_interrupted",
                 trace_info=trace_info,
                 run_id=meta.get("run_id"),
                 request_id=meta.get("request_id"),
             )
 
-        yield make_resume_chunk(status="interrupted", message="对话恢复已中断", meta=meta)
+        yield make_resume_chunk(status="interrupted", message="Khôi phục trò chuyện đã bị gián đoạn", meta=meta)
 
     except Exception as e:
         logger.exception(f"Error during resume: {e}")
@@ -1533,14 +1533,14 @@ async def get_agent_state_view(
     conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
     if conversation:
         if conversation.uid != str(current_uid) or conversation.status == "deleted":
-            raise HTTPException(status_code=404, detail="对话线程不存在")
+            raise HTTPException(status_code=404, detail="Thread trò chuyện không tồn tại")
 
         agent_item = await agent_repo.get_by_slug(conversation.agent_id)
         if not agent_item:
-            raise HTTPException(status_code=404, detail="智能体不存在")
+            raise HTTPException(status_code=404, detail="Agent không tồn tại")
         agent = agent_manager.get_agent(agent_item.backend_id)
         if not agent:
-            raise HTTPException(status_code=404, detail="智能体后端不存在")
+            raise HTTPException(status_code=404, detail="Backend của agent không tồn tại")
         state = await _read_checkpoint_state(agent, uid=str(current_uid), thread_id=thread_id)
         values = getattr(state, "values", {}) if state else {}
         response = {"agent_state": extract_agent_state(values)}
@@ -1551,11 +1551,11 @@ async def get_agent_state_view(
     run_repo = AgentRunRepository(db)
     subagent_run = await run_repo.get_latest_subagent_run_by_thread_for_user(thread_id, str(current_uid))
     if not subagent_run or not subagent_run.parent_agent_run_id:
-        raise HTTPException(status_code=404, detail="对话线程不存在")
+        raise HTTPException(status_code=404, detail="Thread trò chuyện không tồn tại")
 
     parent_run = await run_repo.get_run_for_user(subagent_run.parent_agent_run_id, str(current_uid))
     if not parent_run:
-        raise HTTPException(status_code=404, detail="对话线程不存在")
+        raise HTTPException(status_code=404, detail="Thread trò chuyện không tồn tại")
 
     parent_conversation = await conv_repo.get_conversation_by_thread_id(parent_run.thread_id)
     if (
@@ -1564,14 +1564,14 @@ async def get_agent_state_view(
         or parent_conversation.uid != str(current_uid)
         or parent_conversation.status == "deleted"
     ):
-        raise HTTPException(status_code=404, detail="对话线程不存在")
+        raise HTTPException(status_code=404, detail="Thread trò chuyện không tồn tại")
 
     child_agent_item = await agent_repo.get_by_slug(subagent_run.agent_id)
     if not child_agent_item:
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent không tồn tại")
     child_agent = agent_manager.get_agent(child_agent_item.backend_id)
     if not child_agent:
-        raise HTTPException(status_code=404, detail="智能体后端不存在")
+        raise HTTPException(status_code=404, detail="Backend của agent không tồn tại")
 
     checkpoint_thread_id = subagent_run.checkpoint_thread_id or subagent_run.thread_id
     child_state = await _read_checkpoint_state(child_agent, uid=str(current_uid), thread_id=checkpoint_thread_id)

@@ -1,4 +1,4 @@
-"""部门数据访问层 - Repository"""
+"""Department data access layer - Repository"""
 
 from typing import Any
 
@@ -9,28 +9,28 @@ from yuxi.storage.postgres.models_business import Department
 
 
 class DepartmentRepository:
-    """部门数据访问层"""
+    """Department data access layer"""
 
     async def get_by_id(self, id: int) -> Department | None:
-        """根据 ID 获取部门"""
+        """Get department by ID"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(Department).where(Department.id == id))
             return result.scalar_one_or_none()
 
     async def get_by_name(self, name: str) -> Department | None:
-        """根据名称获取部门"""
+        """Get department by name"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(Department).where(Department.name == name))
             return result.scalar_one_or_none()
 
     async def list_departments(self) -> list[Department]:
-        """获取所有部门列表"""
+        """Get list of all departments"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(Department).order_by(Department.created_at.desc()))
             return list(result.scalars().all())
 
     async def list_with_user_count(self) -> list[dict[str, Any]]:
-        """获取所有部门列表，包含用户数量"""
+        """Get a list of all departments, including the number of users"""
         async with pg_manager.get_async_session_context() as session:
             from yuxi.storage.postgres.models_business import User
 
@@ -50,14 +50,14 @@ class DepartmentRepository:
             return department_list
 
     async def create(self, data: dict[str, Any]) -> Department:
-        """创建部门"""
+        """Create department"""
         async with pg_manager.get_async_session_context() as session:
             department = Department(**data)
             session.add(department)
         return department
 
     async def update(self, id: int, data: dict[str, Any]) -> Department | None:
-        """更新部门"""
+        """Update department"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(Department).where(Department.id == id))
             department = result.scalar_one_or_none()
@@ -69,7 +69,7 @@ class DepartmentRepository:
         return department
 
     async def delete(self, id: int) -> bool:
-        """删除部门"""
+        """Delete department"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(Department).where(Department.id == id))
             department = result.scalar_one_or_none()
@@ -79,7 +79,7 @@ class DepartmentRepository:
         return True
 
     async def count_users(self, id: int) -> int:
-        """统计部门用户数量"""
+        """Number of users in the statistics department"""
         async with pg_manager.get_async_session_context() as session:
             from yuxi.storage.postgres.models_business import User
 
@@ -89,7 +89,7 @@ class DepartmentRepository:
             return result.scalar() or 0
 
     async def exists_by_name(self, name: str) -> bool:
-        """检查部门名称是否存在"""
+        """Check if the department name exists"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(Department.id).where(Department.name == name))
             return result.scalar_one_or_none() is not None

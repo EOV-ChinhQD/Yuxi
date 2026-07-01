@@ -189,7 +189,7 @@ async def test_subagent_stream_records_run_and_shares_output_files(
     sub_slug = f"e2e-subagent-{suffix}"
     main_slug = f"e2e-main-{suffix}"
     output_path = "/home/gem/user-data/outputs/subagents.txt"
-    expected_content = "由这个子智能体创建"
+    expected_content = "Created by this subagent"
     created_agents: list[str] = []
 
     default_response = await e2e_client.get("/api/agent/default", headers=e2e_headers)
@@ -206,17 +206,17 @@ async def test_subagent_stream_records_run_and_shares_output_files(
             e2e_client,
             e2e_headers,
             {
-                "name": f"E2E 子智能体 {suffix}",
+                "name": f"E2E subagent {suffix}",
                 "slug": sub_slug,
                 "backend_id": "SubAgentBackend",
-                "description": "真实流式 E2E 子智能体",
+                "description": "Real streaming E2E subagent",
                 "config_json": {
                     "context": {
                         **base_context,
                         "system_prompt": (
-                            "你是专门负责文件写入和文件校验的子智能体。收到任务后必须使用文件系统工具完成任务，"
-                            "不要向用户提问。必须严格写入用户指定路径，文件内容必须完全符合用户要求，"
-                            "不要自动追加句号、引号、说明或其他字符。完成后只回复写入的路径和文件内容。"
+                            "You are a sub-agent specifically responsible for file writing and file verification. After receiving the task, you must use file system tools to complete the task."
+                            "Don't ask users questions. The path specified by the user must be strictly written, and the file content must fully meet the user's requirements."
+                            "Do not automatically append periods, quotation marks, comments, or other characters. After completion, only the written path and file content will be replied."
                         ),
                     }
                 },
@@ -230,18 +230,18 @@ async def test_subagent_stream_records_run_and_shares_output_files(
             e2e_client,
             e2e_headers,
             {
-                "name": f"E2E 主智能体 {suffix}",
+                "name": f"E2E main agent {suffix}",
                 "slug": main_slug,
                 "backend_id": "ChatbotAgent",
-                "description": "真实流式 E2E 主智能体",
+                "description": "Real streaming E2E main agent",
                 "config_json": {
                     "context": {
                         **base_context,
                         "subagents": [sub_slug],
                         "system_prompt": (
-                            "你是主智能体。遇到用户要求创建、修改或验证文件的任务时，"
-                            "必须调用 task 工具交给可用子智能体完成，不要自己写文件，"
-                            "也不要通过 shell、curl 或 HTTP API 调用子智能体。子智能体完成后，简短汇总结果。"
+                            "You are the main agent. When faced with a task that requires the user to create, modify, or verify a file,"
+                            "You must call the task tool and let it be completed by the available sub-agent. Do not write the file yourself."
+                            "Also do not call subagents via shell, curl, or HTTP API. After the subagent is complete, briefly summarize the results."
                         ),
                     }
                 },
@@ -265,10 +265,10 @@ async def test_subagent_stream_records_run_and_shares_output_files(
 
         thread_id = await _create_thread(e2e_client, e2e_headers, main_slug, marker)
         query = (
-            f"请调用子智能体 {sub_slug} 在 outputs 目录创建文件 {output_path}。"
-            "必须通过 task 工具调用子智能体完成。"
-            f"文件内容必须完全等于下面一行：\n{expected_content}\n"
-            "不要添加句号、引号、说明或其他任何字符。完成后只需要回复文件路径。"
+            f"Please call the subagent {sub_slug} Create files in the outputs directory {output_path}。"
+            "It must be completed by calling the sub-agent through the task tool."
+            f"The file content must be exactly equal to the following line:\n{expected_content}\n"
+            "Do not add periods, quotes, captions, or any other characters. Just reply with the file path when done."
         )
         run_id = await _create_run(
             e2e_client,

@@ -80,8 +80,8 @@ async def _build_middlewares(context):
 
 
 class SubAgentBackend(BaseAgent):
-    name = "子智能体"
-    description = "用于被主智能体通过 task 工具调用的专用智能体后端。"
+    name = "Sub-agent"
+    description = "The dedicated agent backend for being called by the main agent through the task tool."
     capabilities = ["file_upload", "files"]
     context_schema = SubAgentContext
 

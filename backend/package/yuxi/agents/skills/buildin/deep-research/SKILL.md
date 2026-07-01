@@ -1,50 +1,50 @@
 ---
 name: deep-research
-description: "深度研究编排方法论：澄清范围、拆解规划、并行调度子智能体调研、对抗式核验、综合成带引用的结构化报告。当任务需要多来源、可追溯、需事实核查的深度研究时使用此技能。"
+description: "In-depth research orchestration methodology: clarifying scope, dismantling planning, parallel scheduling sub-agent investigation, adversarial verification, and synthesis into a structured report with references. Use this skill when the task requires in-depth research with multiple sources, traceability, and fact-checking."
 ---
 
-# 深度研究技能
+# Deep research skills
 
-当任务目标是产出**多来源、可追溯、经过核验**的深度研究结论（科研综述、行业/竞品调研、技术选型、专题分析等）时，使用此技能组织整个研究过程。本技能的核心是**编排**：你负责整体把控与子智能体调度，把繁重的检索与核验工作派发出去，自己专注规划与综合。
+When the task goal is to produce in-depth research conclusions with multiple sources, traceability, and verification (scientific research review, industry/competitive product research, technology selection, thematic analysis, etc.), use this skill to organize the entire research process. The core of this skill is **Orchestration**: You are responsible for the overall control and sub-agent scheduling, dispatch the heavy retrieval and verification work, and focus on planning and synthesis yourself.
 
-## 可用子智能体
+## Available subagents
 
-通过 `task` 工具调度（可并行多开，互不依赖的子任务同时派发）：
+Scheduling through the `task` tool (multiple tasks can be started in parallel, and subtasks that are independent of each other are dispatched at the same time):
 
-- `research-explorer`（调研探索员）：围绕一个明确子问题做多轮网页/知识库检索，返回按要点组织、带 `<cite>` 引用的结构化发现。**这是主力，按子问题并行多开。**
-- `fact-verifier`（事实核查员）：对给定的关键论断做对抗式核验，逐条给出 支持 / 存疑 / 反驳 + 依据来源 + 置信度，并标注冲突。
+- `research-explorer` (research explorer): performs multiple rounds of web/knowledge base searches around a clear sub-question and returns structured findings organized by key points and cited with `<cite>`. **This is the main force, and can be opened in parallel according to sub-issues. **
+- `fact-verifier` (fact checker): conduct adversarial verification of given key assertions, provide support / doubt / refutation + source + confidence level one by one, and mark conflicts.
 
-## 编排流程
+## Orchestration process
 
-### 1. 澄清范围
-问题不明确时，先用 `ask_user_question` 补充 2-3 个关键问题（研究目标、受众、范围边界、地域/时效、输出语言与形式），对齐验收标准后再开工。已经清晰的任务不要反复追问。
+### 1. Clarify the scope
+When the question is unclear, first use `ask_user_question` to supplement 2-3 key questions (research objectives, audience, scope boundaries, region/timeliness, output language and format), and then start work after aligning the acceptance criteria. Do not ask repeated questions about tasks that are already clear.
 
-### 2. 规划拆解
-用 `write_todos` 把研究目标拆成**可独立调研**的子问题，每个子问题写明产出标准（要回答什么、需要哪类证据）。子问题应正交、覆盖完整，避免重叠或遗漏关键角度。
+### 2. Planning for dismantling
+Use `write_todos` to split the research goal into sub-questions that can be independently investigated. Each sub-question states the output standard (what to answer, what type of evidence is required). Sub-problems should be orthogonal and fully covered to avoid overlapping or missing key angles.
 
-### 3. 并行派发调研
-- 把互不依赖的子问题用**多个 `task` 调用并行**派发给 `research-explorer`。
-- 每次派发在 `description` 中写清：子问题目标、已知上下文、期望输出格式（要点 + `<cite source="$URL" type="url">$INDEX</cite>` 引用 + 参考来源列表）。
-- 何时派发 vs 自己直检：子问题复杂、需多轮检索、可隔离上下文、可并行时一律派发子智能体；仅在澄清范围、补一两个零散事实、或快速校正方向时才自己少量直接检索。
-- 子问题之间有依赖时，先派发前置子问题，拿到结果后再派发后续。
+### 3. Parallel distribution survey
+- Use multiple `task` calls to dispatch independent sub-problems to `research-explorer` in parallel.
+- Write clearly in `description` for each dispatch: sub-problem goal, known context, expected output format (key points + `<cite source="$URL" type="url">$INDEX</cite>` citation + reference source list).
+- When to dispatch vs. Direct checking by yourself: Sub-agents are always dispatched when the sub-problem is complex, requires multiple rounds of retrieval, can isolate context, and can be parallelized; only when clarifying the scope, filling in one or two scattered facts, or quickly correcting the direction, do a small amount of direct retrieval by yourself.
+- When there are dependencies between sub-problems, the preceding sub-problems are dispatched first, and the follow-up sub-problems are dispatched after the results are obtained.
 
-### 4. 核验关键结论
-对**影响最终结论的关键论断**、数字、以及子智能体之间相互冲突的发现，派发 `fact-verifier` 做对抗式核验。要求其默认倾向「证据不足即标注存疑」。核验未通过的结论不要写进正文，或必须明确降级标注。
+### 4. Verify key conclusions
+Dispatch `fact-verifier` for adversarial verification of key assertions, numbers, and conflicts between sub-agents that affect the final conclusion. Ask them to default to "mark doubtful if there is insufficient evidence." Conclusions that fail to pass the verification should not be written into the text, or must be clearly marked for downgrade.
 
-### 5. 综合成稿
-证据充分后，由你统一综合为结构化报告，**不要**简单拼接子智能体返回的原文。组织顺序：问题定义 → 证据整理 → 分析比较 → 结论与建议 → 来源。围绕「论证」而非「资料堆砌」，每个结论都要有证据支撑。
+### 5. Comprehensive draft
+After the evidence is sufficient, it is up to you to synthesize it into a structured report. **Do not** simply splice the original text returned by the sub-agent. Organizational sequence: problem definition → evidence collection → analysis and comparison → conclusions and recommendations → sources. Focusing on "argument" rather than "data accumulation", every conclusion must be supported by evidence.
 
-### 6. 停止准则
-信息饱和、或确认无法获取更多有效信息即停。明确标注证据缺口与不确定性，不臆断、不编造来源。
+### 6. Stopping Criteria
+Stop when the information is saturated or it is confirmed that no more valid information can be obtained. Clearly mark evidence gaps and uncertainties, and do not make assumptions or fabricate sources.
 
-## 引用规范
+## Reference specification
 
-- 报告中关键结论、数据、观点必须绑定来源。
-- 沿用 `<cite source="$URL" type="url">$INDEX</cite>` 标注，$INDEX 从 1 起递增，引用紧跟结论后、不单独成行。
-- 文末单列「来源」章节，逐条列出标题与 URL；引用用户附件/知识库时标明文件名或路径。
+- Key conclusions, data, and opinions in the report must be bound to sources.
+- Follow the `<cite source="$URL" type="url">$INDEX</cite>` annotation, $INDEX increases from 1, and the quotation follows the conclusion and is not on a separate line.
+- List the "Source" chapter separately at the end of the article, and list the title and URL one by one; indicate the file name or path when citing user attachments/knowledge bases.
 
-## 输出约束
+## Output constraints
 
-- 最终交付的是一份可直接使用的报告，而不是「我打算怎么研究」。
-- 不要外泄中间推理过程、原始检索日志，也不要把待办清单原样输出成正文。
-- 报告语言与用户提问语言一致，使用正式、克制、可复核的书面表达。
+- The final delivery is a report that can be directly used, rather than "how do I plan to study it".
+- Do not leak the intermediate reasoning process and original search logs, and do not output the to-do list as it is.
+- The language of the report is consistent with the language of the user's questions, and uses formal, restrained, and reviewable written expressions.

@@ -12,7 +12,7 @@ mention_router = APIRouter(prefix="/mention", tags=["mention"])
 
 
 class MentionFileItem(BaseModel):
-    """提及文件搜索结果条目"""
+    """Kết quả tìm kiếm tệp được nhắc đến"""
 
     name: str
     path: str
@@ -22,14 +22,14 @@ class MentionFileItem(BaseModel):
 
 @mention_router.get("/search", response_model=list[MentionFileItem])
 async def search_mention_files(
-    thread_id: str | None = Query(None, description="当前聊天会话 ID；为空时仅搜索用户工作区"),
-    query: str = Query("", description="模糊搜索关键字"),
-    sources: str | None = Query(None, description="搜索来源：workspace,thread；为空时自动选择"),
+    thread_id: str | None = Query(None, description="ID phiên hội thoại hiện tại; khi để trống chỉ tìm kiếm trong workspace của người dùng"),
+    query: str = Query("", description="Từ khóa tìm kiếm"),
+    sources: str | None = Query(None, description="Nguồn tìm kiếm: workspace, thread; để trống sẽ tự động chọn"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    提及文件模糊搜索接口：未创建 thread 时只搜索用户 workspace；已有 thread 时可搜索当前对话文件。
+    API tìm kiếm tệp được nhắc đến: Khi chưa tạo thread chỉ tìm kiếm trong workspace người dùng; khi đã có thread có thể tìm kiếm tệp trong cuộc hội thoại hiện tại.
     """
     uid = str(current_user.uid)
     effective_thread_id: str | None = None
@@ -39,7 +39,7 @@ async def search_mention_files(
         conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
         if conversation:
             if conversation.uid != uid or conversation.status == "deleted":
-                raise HTTPException(status_code=404, detail="对话线程不存在")
+                raise HTTPException(status_code=404, detail="Thread hội thoại không tồn tại")
             effective_thread_id = thread_id
         else:
             try:
@@ -47,7 +47,7 @@ async def search_mention_files(
 
                 validate_thread_id(thread_id)
             except ValueError:
-                raise HTTPException(status_code=400, detail="非法的 thread_id 格式")
+                raise HTTPException(status_code=400, detail="Định dạng thread_id không hợp lệ")
 
     source_list = [item.strip() for item in sources.split(",")] if sources else None
     return await search_mention_files_in_index(

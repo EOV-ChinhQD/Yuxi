@@ -24,12 +24,12 @@ async def process_zip_file(
     image_prefix: str = DEFAULT_IMAGE_PREFIX,
 ) -> dict:
     """
-    处理ZIP文件，提取markdown内容和图片
+    Process ZIPdocument, extract markdowncontentand pictures
 
     Args:
-        zip_path: ZIP文件路径
-        image_bucket: 图片上传的目标 bucket
-        image_prefix: 图片上传对象前缀
+        zip_path: ZIPdocument path
+        image_bucket: picture upload of target bucket
+        image_prefix: picture upload object prefix
 
     Returns:
         dict: {
@@ -41,13 +41,13 @@ async def process_zip_file(
     with zipfile.ZipFile(zip_path, "r") as zf:
         for name in zf.namelist():
             if name.startswith("/") or name.startswith("\\"):
-                raise ValueError(f"ZIP 包含不安全路径: {name}")
+                raise ValueError(f"ZIP chứa đường dẫn không an toàn: {name}")
             if ".." in Path(name).parts:
-                raise ValueError(f"ZIP 路径包含上级引用: {name}")
+                raise ValueError(f"Đường dẫn ZIP chứa tham chiếu đến thư mục cha: {name}")
 
         md_files = [n for n in zf.namelist() if n.lower().endswith(".md")]
         if not md_files:
-            raise ValueError("压缩包中未找到 .md 文件")
+            raise ValueError("Không tìm thấy file .md trong file nén")
 
         md_file = next((n for n in md_files if Path(n).name == "full.md"), md_files[0])
 
@@ -81,7 +81,7 @@ def process_zip_file_sync(
     image_bucket: str = DEFAULT_IMAGE_BUCKET,
     image_prefix: str = DEFAULT_IMAGE_PREFIX,
 ) -> dict:
-    """同步调用 ZIP 处理，供同步解析器使用。"""
+    """Synchronous calls to ZIP processing for use by synchronous parsers."""
     try:
         asyncio.get_running_loop()
     except RuntimeError:
@@ -107,13 +107,13 @@ def process_zip_file_sync(
         raise error
 
     if result is None:
-        raise RuntimeError("ZIP 处理失败: 未返回结果")
+        raise RuntimeError("Xử lý ZIP thất bại: Không có kết quả trả về")
 
     return result
 
 
 def find_images_directory(zip_file: zipfile.ZipFile, md_file_path: str) -> str | None:
-    """查找images目录"""
+    """Find the images directory"""
     md_parent = Path(md_file_path).parent
 
     candidates = []
@@ -135,7 +135,7 @@ async def process_images(
     image_bucket: str,
     image_prefix: str,
 ) -> list[dict]:
-    """处理图片：上传到MinIO并返回信息"""
+    """Process images: upload to MinIO and return information"""
     supported_extensions = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"}
 
     images = []
@@ -170,17 +170,17 @@ async def process_images(
             }
             images.append(img_info)
 
-            logger.debug(f"图片上传成功: {Path(img_name).name} -> {result.url}")
+            logger.debug(f"Image uploaded successfully: {Path(img_name).name} -> {result.url}")
 
         except Exception as e:
-            logger.error(f"上传图片失败 {Path(img_name).name}: {e}")
+            logger.error(f"Failed to upload image {Path(img_name).name}: {e}")
             continue
 
     return images
 
 
 def replace_image_links(markdown_content: str, images: list[dict]) -> str:
-    """替换markdown中的图片链接为MinIO URL"""
+    """Replace image links in markdown with MinIO URLs"""
     if not images:
         return markdown_content
 

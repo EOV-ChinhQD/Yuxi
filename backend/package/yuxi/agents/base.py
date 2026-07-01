@@ -33,9 +33,9 @@ def _json_safe(value: Any) -> Any:
 
 
 def _normalize_tool_event_data(data: Any) -> Any:
-    """规整 tools 流事件：write_todos / task 等返回 Command 的工具，其 tool-finished
-    output 是 Command 对象，_json_safe 只能退化成 repr 字符串，前端无法关联结果。
-    这里从 Command.update["messages"] 取出真正的 ToolMessage，使其与普通工具一致。"""
+    """Regularize tools stream events: write_todos / task Wait to return Command's tool, whose tool-finished
+    output is a Command object, _json_safe can only degenerate into a repr character string, and the front end cannot associate the result.
+    Here from Command.update["messages"] Take out the real ToolMessage and make it consistent with normal tools."""
     if not isinstance(data, dict) or data.get("event") != "tool-finished":
         return data
     output = data.get("output")
@@ -119,13 +119,13 @@ def _recursion_limit_from_context(context: BaseContext, default: int) -> int:
 
 class BaseAgent:
     """
-    定义一个基础 Agent 供 各类 graph 继承
+    Define a basic Agent for various graphs to inherit
     """
 
     name = "base_agent"
     description = "base_agent"
-    capabilities: list[str] = []  # 智能体能力列表，如 ["file_upload", "web_search"] 等
-    context_schema: type[BaseContext] = BaseContext  # 智能体上下文 schema
+    capabilities: list[str] = []  # Agent capability list, such as ["file_upload", "web_search"], etc.
+    context_schema: type[BaseContext] = BaseContext  # Agent context schema
 
     def __init__(self, **kwargs):
         self.graph = None  # will be covered by get_graph
@@ -151,7 +151,7 @@ class BaseAgent:
         db=None,
         user=None,
     ):
-        # metadata 固定在代码中，由各 Agent 的类属性提供
+        # Metadata is fixed in the code and provided by the class attributes of each Agent
         metadata = self.load_metadata()
         configurable_items = {}
         if include_configurable_items:
@@ -174,7 +174,7 @@ class BaseAgent:
             "description": getattr(self, "description", "Unknown"),
             "metadata": metadata,
             "configurable_items": configurable_items,
-            "capabilities": getattr(self, "capabilities", []),  # 智能体能力列表
+            "capabilities": getattr(self, "capabilities", []),  # Agent capability list
         }
 
     async def get_config(self):
@@ -193,7 +193,7 @@ class BaseAgent:
         graph = await self.get_graph(context=context)
         logger.debug(f"stream_messages: {context=}")
 
-        # 构建配置：LangGraph 会自动从 checkpointer 恢复 state
+        # Build configuration: LangGraph will automatically restore state from checkpointer
         input_config = {
             "configurable": {"thread_id": context.thread_id, "uid": context.uid},
             "recursion_limit": _recursion_limit_from_context(context, DEFAULT_MAX_EXECUTION_STEPS),
@@ -297,7 +297,7 @@ class BaseAgent:
         graph = await self.get_graph(context=context)
         logger.debug(f"invoke_messages: {context}")
 
-        # 构建配置
+        # Build configuration
         input_config = {
             "configurable": {"thread_id": context.thread_id, "uid": context.uid},
             "recursion_limit": _recursion_limit_from_context(context, DEFAULT_MAX_EXECUTION_STEPS),
@@ -325,7 +325,7 @@ class BaseAgent:
         return True
 
     async def get_history(self, uid, thread_id) -> list[dict]:
-        """获取历史消息"""
+        """Get historical news"""
         try:
             app = await self.get_graph()
 
@@ -340,7 +340,7 @@ class BaseAgent:
                 messages = state.values.get("messages", [])
                 for msg in messages:
                     if hasattr(msg, "model_dump"):
-                        msg_dict = msg.model_dump()  # 转换成字典
+                        msg_dict = msg.model_dump()  # Convert to dictionary
                     else:
                         msg_dict = dict(msg) if hasattr(msg, "__dict__") else {"content": str(msg)}
                     result.append(msg_dict)
@@ -348,20 +348,20 @@ class BaseAgent:
             return result
 
         except Exception as e:
-            logger.error(f"获取智能体 {self.name} 历史消息出错: {e}")
+            logger.error(f"Get the agent {self.name} History message error: {e}")
             return []
 
     def reload_graph(self):
-        """重置 graph 缓存，强制下次调用 get_graph 时重新构建"""
+        """Reset the graph cache, forcing it to be rebuilt the next time get_graph is called"""
         self.graph = None
-        logger.info(f"{self.name} graph 缓存已清空，将在下次调用时重新构建")
+        logger.info(f"{self.name} graph The cache has been cleared and will be rebuilt on the next call")
 
     @abstractmethod
     async def get_graph(self, **kwargs) -> CompiledStateGraph:
         """
-        获取并编译对话图实例。
-        必须确保在编译时设置 checkpointer，否则将无法获取历史记录。
-        例如: graph = workflow.compile(checkpointer=sqlite_checkpointer)
+        Get and compile a dialog picture instance.
+        You must ensure that checkpointer is set when compiling. If no, history records will not be obtained.
+        For example: graph = workflow.compile(checkpointer=sqlite_checkpointer)
         """
         pass
 
@@ -379,7 +379,7 @@ class BaseAgent:
             try:
                 checkpointer = AsyncSqliteSaver(await self.get_async_conn())
             except Exception as e:
-                logger.error(f"构建 sqlite checkpointer 失败: {e}, 尝试使用内存存储")
+                logger.error(f"Building sqlite checkpointer failed: {e}, Try using memory storage")
                 checkpointer = InMemorySaver()
 
         self.checkpointer = checkpointer
@@ -388,26 +388,26 @@ class BaseAgent:
     async def _create_postgres_checkpointer(self):
         postgres_url = os.getenv("POSTGRES_URL")
         if not postgres_url:
-            logger.warning("POSTGRES_URL 未配置，无法启用 postgres checkpointer，回退 sqlite")
+            logger.warning("POSTGRES_URL Not configured, cannot enable postgres checkpointer, fallback to sqlite")
             return None
 
         try:
             from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver  # type: ignore
         except Exception as e:
-            logger.warning(f"langgraph postgres checkpointer 不可用，回退 sqlite: {e}")
+            logger.warning(f"langgraph postgres checkpointer Not available, fall back to sqlite: {e}")
             return None
 
         try:
             saver = AsyncPostgresSaver(pg_manager.langgraph_pool)
 
-            logger.info(f"{self.name} 使用 postgres checkpointer")
+            logger.info(f"{self.name} Using postgres checkpointer")
             return saver
         except Exception as e:
-            logger.warning(f"初始化 postgres checkpointer 失败，回退 sqlite: {e}")
+            logger.warning(f"Failed to initialize postgres checkpointer, fallback to sqlite: {e}")
             return None
 
     async def get_async_conn(self) -> aiosqlite.Connection:
-        """获取异步数据库连接"""
+        """Get an asynchronous database connection"""
         if self._async_conn is not None:
             return self._async_conn
 
@@ -419,7 +419,7 @@ class BaseAgent:
         return self._async_conn
 
     async def get_aio_memory(self) -> AsyncSqliteSaver:
-        """获取异步存储实例"""
+        """Get an asynchronous storage instance"""
         return AsyncSqliteSaver(await self.get_async_conn())
 
     def load_metadata(self) -> dict:

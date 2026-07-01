@@ -328,7 +328,7 @@ async def test_agent_chat_sync_returns_finished_even_when_state_has_interrupt(mo
             return SimpleNamespace(
                 values={
                     "messages": [AIMessage(content="Need input later")],
-                    "__interrupt__": [{"questions": [{"question": "继续吗？"}]}],
+                    "__interrupt__": [{"questions": [{"question": "Continue?"}]}],
                 }
             )
 
@@ -390,17 +390,17 @@ async def test_agent_chat_sync_returns_finished_even_when_state_has_interrupt(mo
 @pytest.mark.asyncio
 async def test_build_agent_input_context_merges_workspace_agents_prompt(monkeypatch: pytest.MonkeyPatch):
     def fake_agents_prompt(_thread_id: str, _uid: str) -> str:
-        return "回答前先读取 AGENTS.md"
+        return "Read AGENTS before answering.md"
 
     monkeypatch.setattr(agent_context, "_load_workspace_agents_prompt", fake_agents_prompt)
 
     context = await agent_context.build_agent_input_context(
-        {"system_prompt": "原始系统提示词", "temperature": 0.1},
+        {"system_prompt": "Original system prompt word", "temperature": 0.1},
         thread_id="thread-1",
         uid="user-1",
     )
 
-    assert context["system_prompt"] == "原始系统提示词\n\n用户工作区 agents/AGENTS.md 内容：\n回答前先读取 AGENTS.md"
+    assert context["system_prompt"] == "Original system prompt word\n\nuser workspace agents/AGENTS.md content:\nRead AGENTS before answering.md"
     assert context["temperature"] == 0.1
     assert context["thread_id"] == "thread-1"
     assert context["uid"] == "user-1"
@@ -501,9 +501,9 @@ async def test_build_agent_input_context_keeps_prompt_when_workspace_agents_prom
     monkeypatch.setattr(agent_context, "_load_workspace_agents_prompt", _empty_agents_prompt)
 
     context = await agent_context.build_agent_input_context(
-        {"system_prompt": "原始系统提示词"},
+        {"system_prompt": "Original system prompt word"},
         thread_id="thread-1",
         uid="user-1",
     )
 
-    assert context["system_prompt"] == "原始系统提示词"
+    assert context["system_prompt"] == "Original system prompt word"

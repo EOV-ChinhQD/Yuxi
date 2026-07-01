@@ -1,4 +1,4 @@
-"""用户级配置与凭据路由"""
+"""User-level configuration and credential routing"""
 
 import re
 from typing import Any
@@ -71,7 +71,7 @@ async def upload_user_image(file: UploadFile = File(...), current_user: User = D
             file,
             object_prefix=f"images/{current_user.uid}",
             max_size_bytes=MAX_USER_IMAGE_SIZE_BYTES,
-            too_large_message="图片大小不能超过 5MB",
+            too_large_message="Kích thước hình ảnh không được vượt quá 5MB",
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
@@ -81,39 +81,39 @@ async def upload_user_image(file: UploadFile = File(...), current_user: User = D
 
 def validate_agent_env(env: dict[str, Any]) -> dict[str, str]:
     if len(env) > MAX_ENV_COUNT:
-        raise HTTPException(status_code=400, detail=f"环境变量数量不能超过 {MAX_ENV_COUNT} 个")
+        raise HTTPException(status_code=400, detail=f"Số lượng biến môi trường không được vượt quá {MAX_ENV_COUNT}")
 
     normalized: dict[str, str] = {}
     for key, value in env.items():
         if not isinstance(key, str):
-            raise HTTPException(status_code=400, detail="环境变量名必须是字符串")
+            raise HTTPException(status_code=400, detail="Tên biến môi trường phải là chuỗi")
         name = key.strip()
         if not name:
-            raise HTTPException(status_code=400, detail="环境变量名不能为空")
+            raise HTTPException(status_code=400, detail="Tên biến môi trường không được để trống")
         if len(name) > MAX_ENV_KEY_LENGTH:
-            raise HTTPException(status_code=400, detail=f"环境变量名长度不能超过 {MAX_ENV_KEY_LENGTH}")
+            raise HTTPException(status_code=400, detail=f"Độ dài tên biến môi trường không được vượt quá {MAX_ENV_KEY_LENGTH}")
         if not ENV_KEY_PATTERN.match(name):
-            raise HTTPException(status_code=400, detail=f"环境变量名 {name} 格式不正确")
+            raise HTTPException(status_code=400, detail=f"Định dạng tên biến môi trường {name} không chính xác")
         if name in normalized:
-            raise HTTPException(status_code=400, detail=f"环境变量名 {name} 重复")
+            raise HTTPException(status_code=400, detail=f"Tên biến môi trường {name} bị trùng lặp")
         if not isinstance(value, str):
-            raise HTTPException(status_code=400, detail=f"环境变量 {name} 的值必须是字符串")
+            raise HTTPException(status_code=400, detail=f"Giá trị của biến môi trường {name} phải là chuỗi")
         if len(value) > MAX_ENV_VALUE_LENGTH:
-            raise HTTPException(status_code=400, detail=f"环境变量 {name} 的值过长")
+            raise HTTPException(status_code=400, detail=f"Giá trị của biến môi trường {name} quá dài")
         normalized[name] = value
     return normalized
 
 
 def ensure_api_key_owner(api_key: APIKey, current_user: User) -> None:
     if api_key.user_id != current_user.id and current_user.role != "superadmin":
-        raise HTTPException(status_code=403, detail="无权操作此 API Key")
+        raise HTTPException(status_code=403, detail="Không có quyền thao tác trên API Key này")
 
 
 async def get_accessible_api_key(db: AsyncSession, api_key_id: int, current_user: User) -> APIKey:
     result = await db.execute(select(APIKey).filter(APIKey.id == api_key_id))
     api_key = result.scalar_one_or_none()
     if not api_key:
-        raise HTTPException(status_code=404, detail="API Key 不存在")
+        raise HTTPException(status_code=404, detail="API Key không tồn tại")
     ensure_api_key_owner(api_key, current_user)
     return api_key
 
@@ -148,18 +148,18 @@ async def create_api_key(
     db: AsyncSession = Depends(get_db),
 ):
     if data.user_id and data.user_id != current_user.id and current_user.role != "superadmin":
-        raise HTTPException(status_code=403, detail="无权为其他用户创建 API Key")
+        raise HTTPException(status_code=403, detail="Không có quyền tạo API Key cho người dùng khác")
 
     target_user = current_user
     if data.user_id:
         result = await db.execute(select(User).filter(User.id == data.user_id))
         user = result.scalar_one_or_none()
         if not user or user.is_deleted:
-            raise HTTPException(status_code=404, detail="关联的用户不存在")
+            raise HTTPException(status_code=404, detail="Người dùng liên kết không tồn tại")
         target_user = user
 
     if data.department_id is not None and data.department_id != target_user.department_id:
-        raise HTTPException(status_code=403, detail="API Key 部门必须与关联用户部门一致")
+        raise HTTPException(status_code=403, detail="Bộ phận của API Key phải trùng khớp với bộ phận của người dùng liên kết")
 
     full_key, key_hash, key_prefix = AuthUtils.generate_api_key()
     expires_at = None
@@ -293,5 +293,5 @@ async def update_agent_env(
     )
     await db.execute(stmt)
     await db.commit()
-    # 直接返回刚写入的 env/now，避免身份映射中的旧实例属性导致返回陈旧值
+    # Directly return the newly written env/now to avoid returning stale values ​​due to old instance attributes in the identity map
     return AgentEnvResponse(env=env, updated_at=format_utc_datetime(now))

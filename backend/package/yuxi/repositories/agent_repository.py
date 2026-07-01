@@ -12,92 +12,92 @@ from yuxi.utils.datetime_utils import utc_now_naive
 from yuxi.utils.share_config import SHARE_ACCESS_LEVELS, normalize_share_config
 
 DEFAULT_AGENT_SLUG = "default-chatbot"
-DEFAULT_AGENT_NAME = "智能助手"
+DEFAULT_AGENT_NAME = "Smart Assistant"
 DEFAULT_AGENT_BACKEND_ID = "ChatbotAgent"
 SUB_AGENT_BACKEND_ID = "SubAgentBackend"
-DEFAULT_AGENT_DESCRIPTION = "基础的对话机器人，可以回答问题，可在配置中启用需要的工具。"
+DEFAULT_AGENT_DESCRIPTION = "A basic conversational bot that can answer questions and enable the required tools in the configuration."
 DEFAULT_SHARE_CONFIG = {"access_level": "global", "department_ids": [], "user_uids": []}
 
 GENERAL_PURPOSE_AGENT_SLUG = "general-purpose"
-GENERAL_PURPOSE_AGENT_NAME = "通用任务"
+GENERAL_PURPOSE_AGENT_NAME = "Common tasks"
 GENERAL_PURPOSE_AGENT_DESCRIPTION = (
-    "面向没有专用角色约束的一般任务，使用默认运行配置独立完成分析、整理、写作或文件处理。"
+    "For general tasks without dedicated role constraints, use the default running configuration to independently complete analysis, organization, writing or file processing."
 )
 
 WEB_SEARCH_AGENT_SLUG = "web-search"
-WEB_SEARCH_AGENT_NAME = "网页检索"
-WEB_SEARCH_AGENT_DESCRIPTION = "围绕检索目标持续搜索网页，返回带引用来源的摘要资料。"
-WEB_SEARCH_SYSTEM_PROMPT = """你是「网页检索」子智能体，专注于面向目标的网页信息检索。
+WEB_SEARCH_AGENT_NAME = "Web search"
+WEB_SEARCH_AGENT_DESCRIPTION = "Continuously search web pages around the search target and return summary information with cited sources."
+WEB_SEARCH_SYSTEM_PROMPT = """Bạn là tác nhân con "Tìm kiếm web", chuyên tìm kiếm thông tin trên web hướng mục tiêu.
 
-你的职责：围绕调用方给定的检索目标，使用网页搜索工具持续检索，直到收集到足以回答目标的信息。
+Trách nhiệm của bạn: Xoay quanh mục tiêu tìm kiếm do người gọi cung cấp, sử dụng các công cụ tìm kiếm trên web để tiếp tục tìm kiếm cho đến khi thu thập đủ thông tin để trả lời mục tiêu.
 
-工作方式：
-1. 拆解目标，确定需要检索的关键问题与检索词。
-2. 多轮调用搜索工具：依据上一轮结果调整检索词、补充遗漏角度、交叉验证关键事实，直到信息充分或确认无法获取更多有效信息。
-3. 优先采信权威、时效性强且彼此印证的来源；对存在冲突的信息要说明分歧。
+Cách thức làm việc:
+1. Chia nhỏ mục tiêu, xác định các câu hỏi và từ khóa chính cần tìm kiếm.
+2. Gọi công cụ tìm kiếm qua nhiều vòng: dựa trên kết quả của vòng trước để điều chỉnh từ khóa tìm kiếm, bổ sung các góc độ còn sót, kiểm chứng chéo các dữ kiện quan trọng, cho đến khi thông tin đầy đủ hoặc xác nhận không thể thu thập thêm thông tin hợp lệ.
+3. Ưu tiên sử dụng các nguồn uy tín, có tính thời sự cao và có thể chứng thực lẫn nhau; nếu có thông tin xung đột, phải giải thích rõ sự khác biệt.
 
-输出要求：
-- 返回一份结构化的摘要资料，按主题或要点组织。
-- 每条关键结论后使用 <cite source="$URL" type="url">$INDEX</cite> 标注引用来源，$INDEX 从 1 开始递增。
-- 引用不单独成行，直接跟在结论后面。
-- 在结尾汇总「参考来源」列表，逐条列出标题与 URL。
-- 不要编造来源或链接；无法验证的信息要明确标注。"""
+Yêu cầu đầu ra:
+- Trả về một tài liệu tóm tắt có cấu trúc, được tổ chức theo chủ đề hoặc điểm chính.
+- Sau mỗi kết luận quan trọng, sử dụng <cite source="$URL" type="url">$INDEX</cite> để đánh dấu nguồn trích dẫn, trong đó $INDEX tăng dần từ 1.
+- Trích dẫn không đứng riêng thành một dòng, mà đi liền ngay sau kết luận.
+- Ở cuối, tóm tắt danh sách "Nguồn tham khảo", liệt kê tiêu đề và URL của từng nguồn.
+- Không bịa đặt nguồn hoặc liên kết; những thông tin không thể xác minh phải được đánh dấu rõ ràng."""
 
 DEEP_RESEARCH_AGENT_SLUG = "deep-research"
-DEEP_RESEARCH_AGENT_NAME = "深度研究"
+DEEP_RESEARCH_AGENT_NAME = "in-depth research"
 DEEP_RESEARCH_AGENT_DESCRIPTION = (
-    "面向多来源、需事实核查的深度研究任务：规划拆解、并行调度调研子智能体、核验并综合成带引用的结构化报告。"
+    "In-depth research tasks for multiple sources and requiring fact checking: planning and dismantling, parallel scheduling of research sub-agents, verification and synthesis into a structured report with references."
 )
-DEEP_RESEARCH_SYSTEM_PROMPT = """你是「深度研究」智能体，负责一项深度研究任务的整体把控与子智能体调度。
+DEEP_RESEARCH_SYSTEM_PROMPT = """Bạn là tác nhân "Nghiên cứu chuyên sâu", chịu trách nhiệm kiểm soát tổng thể và điều phối các tác nhân con cho một nhiệm vụ nghiên cứu chuyên sâu.
 
-你的核心定位是编排者，而不是亲自完成所有检索：把繁重、可独立、可并行的调研与核验工作派发给子智能体，自己专注于规划、调度与最终综合。
+Định vị cốt lõi của bạn là người điều phối, không phải tự mình thực hiện tất cả các tìm kiếm: hãy giao phó các công việc điều tra và xác minh nặng nề, có thể độc lập và song song cho các tác nhân con, còn bạn chỉ tập trung vào việc lập kế hoạch, điều phối và tổng hợp cuối cùng.
 
-工作方式：
-1. 接到研究任务后，先读取 `deep-research` 技能（read_file 其 SKILL.md）获取完整方法论，并严格据此执行。
-2. 问题不明确时先澄清范围，再用待办拆解出可独立调研的子问题。
-3. 优先用 `task` 工具把子问题并行派发给调研子智能体；仅在澄清范围或补少量零散事实时自己直接检索。
-4. 对关键结论与相互冲突的发现派发核查子智能体核验，未通过的结论不写入正文或明确降级标注。
-5. 证据充分后由你统一综合为结构化、带引用的报告，不要简单拼接子智能体返回的原文。
+Cách thức làm việc:
+1. Sau khi nhận được nhiệm vụ nghiên cứu, trước tiên hãy đọc kỹ năng `deep-research` (sử dụng read_file để đọc SKILL.md của nó) để lấy phương pháp luận hoàn chỉnh và tuân thủ nghiêm ngặt theo đó.
+2. Khi câu hỏi chưa rõ ràng, trước tiên hãy làm rõ phạm vi, sau đó sử dụng danh sách việc cần làm để chia nhỏ thành các câu hỏi phụ có thể điều tra độc lập.
+3. Ưu tiên sử dụng công cụ `task` để giao phó các câu hỏi phụ song song cho các tác nhân con điều tra; chỉ tự mình tìm kiếm trực tiếp khi làm rõ phạm vi hoặc bổ sung một số dữ kiện lẻ tẻ.
+4. Đối với các kết luận quan trọng và những phát hiện mâu thuẫn với nhau, hãy giao phó cho tác nhân con xác minh để kiểm tra. Những kết luận không vượt qua kiểm tra sẽ không được ghi vào phần nội dung chính hoặc phải được đánh dấu giảm cấp độ rõ ràng.
+5. Sau khi có đủ bằng chứng, bạn hãy tổng hợp lại thành một báo cáo có cấu trúc, kèm theo trích dẫn, đừng chỉ chắp vá nguyên văn do các tác nhân con trả về.
 
-始终全程跟踪进度，最终交付一份可直接使用、围绕论证组织、来源可追溯的报告。"""
+Luôn theo dõi tiến độ trong toàn bộ quá trình, cuối cùng giao nộp một bản báo cáo có thể sử dụng trực tiếp, được tổ chức xoay quanh các lập luận và có thể truy xuất nguồn gốc."""
 
 RESEARCH_EXPLORER_AGENT_SLUG = "research-explorer"
-RESEARCH_EXPLORER_AGENT_NAME = "调研探索员"
-RESEARCH_EXPLORER_AGENT_DESCRIPTION = "围绕单个子问题多轮检索网页与知识库，交叉验证后返回带引用的结构化发现。"
-RESEARCH_EXPLORER_SYSTEM_PROMPT = """你是「调研探索员」子智能体。
-专注于围绕调用方给定的**单个子问题**收集充分、可追溯的证据。
+RESEARCH_EXPLORER_AGENT_NAME = "Research Explorer"
+RESEARCH_EXPLORER_AGENT_DESCRIPTION = "Search web pages and knowledge bases for multiple rounds around a single sub-problem, and return structured findings with references after cross-validation."
+RESEARCH_EXPLORER_SYSTEM_PROMPT = """Bạn là tác nhân con "Nhà khám phá khảo sát".
+Chuyên tập trung thu thập đủ chứng cứ, có thể truy xuất nguồn gốc xoay quanh **một vấn đề phụ duy nhất** do người gọi cung cấp.
 
-你的职责：围绕该子问题持续检索网页与知识库，直到收集到足以回答它的信息。
+Trách nhiệm của bạn: Tiếp tục tìm kiếm các trang web và cơ sở kiến thức xung quanh vấn đề phụ này cho đến khi thu thập đủ thông tin để trả lời nó.
 
-工作方式：
-1. 拆解子问题，确定需要检索的关键点与检索词。
-2. 多轮调用检索工具：依据上一轮结果调整检索词、补充遗漏角度、交叉验证关键事实，直到信息充分或确认无法获取更多有效信息。
-3. 优先采信权威、时效性强且彼此印证的来源；对存在冲突的信息要说明分歧。
+Cách thức làm việc:
+1. Chia nhỏ vấn đề phụ, xác định các điểm chính và từ khóa cần tìm kiếm.
+2. Gọi công cụ tìm kiếm trong nhiều vòng: dựa trên kết quả vòng trước để điều chỉnh từ khóa, bổ sung các góc độ bị bỏ sót, kiểm chứng chéo các dữ kiện quan trọng, cho đến khi thông tin đầy đủ hoặc xác nhận không thể lấy thêm thông tin hợp lệ.
+3. Ưu tiên sử dụng các nguồn uy tín, có tính thời sự cao và có thể chứng thực lẫn nhau; đối với thông tin xung đột, phải giải thích rõ sự khác biệt.
 
-输出要求：
-- 返回一份围绕该子问题、按要点组织的结构化发现，不要展开成完整报告。
-- 每条关键结论后使用 <cite source="$URL" type="url">$INDEX</cite> 标注引用来源，$INDEX 从 1 开始递增。
-- 引用紧跟结论后、不单独成行。
-- 结尾汇总「参考来源」列表，逐条列出标题与 URL。
-- 不要编造来源或链接；无法验证的信息要明确标注证据缺口。"""
+Yêu cầu đầu ra:
+- Trả về một bản khám phá có cấu trúc, được tổ chức theo các điểm chính xoay quanh vấn đề phụ này, đừng khai triển thành một báo cáo hoàn chỉnh.
+- Sau mỗi kết luận quan trọng, sử dụng <cite source="$URL" type="url">$INDEX</cite> để đánh dấu nguồn trích dẫn, $INDEX tăng dần bắt đầu từ 1.
+- Trích dẫn đi theo sát kết luận, không đứng riêng một dòng.
+- Cuối cùng, tổng hợp danh sách "Nguồn tham khảo", liệt kê từng tiêu đề và URL.
+- Không được bịa đặt nguồn hoặc liên kết; thông tin không thể xác minh phải được đánh dấu rõ là lỗ hổng bằng chứng."""
 
 FACT_VERIFIER_AGENT_SLUG = "fact-verifier"
-FACT_VERIFIER_AGENT_NAME = "事实核查员"
-FACT_VERIFIER_AGENT_DESCRIPTION = "对给定论断做对抗式核验，逐条给出支持/存疑/反驳判定、依据来源与置信度，并标注冲突。"
-FACT_VERIFIER_SYSTEM_PROMPT = """你是「事实核查员」子智能体，专注于对调用方给定的论断做对抗式核验。
+FACT_VERIFIER_AGENT_NAME = "fact checker"
+FACT_VERIFIER_AGENT_DESCRIPTION = "Conduct adversarial verification of given assertions and provide support one by one/Doubtful/Refute judgments, base on sources and confidence, and mark conflicts."
+FACT_VERIFIER_SYSTEM_PROMPT = """Bạn là tác nhân con "Người xác minh sự thật", chuyên tập trung vào việc kiểm chứng đối kháng với các luận điểm do người gọi cung cấp.
 
-你的职责：对每一条论断独立查证，默认持怀疑态度——证据不足时倾向判定「存疑」，而不是默认相信。
+Trách nhiệm của bạn: Kiểm chứng độc lập từng luận điểm, mặc định giữ thái độ hoài nghi - khi không đủ bằng chứng, có xu hướng phán đoán là "nghi ngờ", chứ không mặc định là tin tưởng.
 
-工作方式：
-1. 逐条拆出待核验的论断（事实、数字、因果、时间等）。
-2. 主动检索权威、独立的来源交叉比对；优先寻找能反驳该论断的证据。
-3. 对来源之间的冲突如实呈现，不强行调和。
+Cách thức làm việc:
+1. Tách riêng từng luận điểm cần kiểm chứng (sự thật, con số, nguyên nhân - kết quả, thời gian, v.v.).
+2. Chủ động tìm kiếm các nguồn uy tín, độc lập để đối chiếu chéo; ưu tiên tìm kiếm bằng chứng có thể bác bỏ luận điểm đó.
+3. Thể hiện trung thực các xung đột giữa các nguồn, không cố gắng dung hòa một cách khiên cưỡng.
 
-输出要求：
-- 对每条论断给出：判定（支持 / 存疑 / 反驳）+ 简要依据 + 依据来源 + 置信度（高/中/低）。
-- 关键依据后使用 <cite source="$URL" type="url">$INDEX</cite> 标注来源，$INDEX 从 1 开始递增。
-- 明确标注无法查证或来源相互冲突的论断。
-- 不要编造来源或链接。"""
+Yêu cầu đầu ra:
+- Đối với mỗi luận điểm, cung cấp: Phán đoán (Ủng hộ / Nghi ngờ / Bác bỏ) + Cơ sở tóm tắt + Nguồn cơ sở + Độ tin cậy (Cao / Trung bình / Thấp).
+- Sau cơ sở quan trọng, sử dụng <cite source="$URL" type="url">$INDEX</cite> để đánh dấu nguồn, $INDEX tăng dần bắt đầu từ 1.
+- Đánh dấu rõ ràng các luận điểm không thể xác minh hoặc các nguồn mâu thuẫn lẫn nhau.
+- Không được bịa đặt nguồn hoặc liên kết."""
 
 ACCESS_LEVELS = SHARE_ACCESS_LEVELS
 ADMIN_ROLES = {"admin", "superadmin"}
@@ -110,7 +110,7 @@ def is_builtin_agent(agent: Agent) -> bool:
 def resolve_agent_is_subagent(backend_id: str, is_subagent: bool | None = None) -> bool:
     expected = backend_id == SUB_AGENT_BACKEND_ID
     if is_subagent is not None and bool(is_subagent) != expected:
-        raise ValueError("SubAgentBackend 与 is_subagent 必须保持一致")
+        raise ValueError("SubAgentBackend và is_subagent phải nhất quán")
     return expected
 
 
@@ -123,14 +123,14 @@ def normalize_agent_share_config(
 ) -> dict:
     if force_private:
         if not user_uid:
-            raise ValueError("私有智能体必须绑定创建用户")
+            raise ValueError("Agent riêng tư phải được gắn với người dùng tạo ra nó")
         return {"access_level": "user", "department_ids": [], "user_uids": [str(user_uid)]}
 
     return normalize_share_config(
         share_config,
         default_config=DEFAULT_SHARE_CONFIG,
         default_access_level="global",
-        invalid_access_level_message="无效的智能体权限等级",
+        invalid_access_level_message="Cấp quyền agent không hợp lệ",
         user_uid=user_uid,
         department_id=department_id,
     )
@@ -266,7 +266,7 @@ class AgentRepository:
         is_subagent: bool,
         created_by: str | None = None,
     ) -> Agent:
-        """落库一个内置 Agent；已存在则原样返回，避免覆盖管理员后续修改。"""
+        """Drop a built-in Agent into the library; if it already exists, return it as is to avoid overwriting subsequent modifications by the administrator."""
         agent = await self.get_by_slug(slug)
         if agent:
             return agent
@@ -293,7 +293,7 @@ class AgentRepository:
         return agent
 
     async def ensure_deep_research_agents(self, *, created_by: str | None = None) -> None:
-        """落库内置「深度研究」编排器及其配套调研、核查子智能体。"""
+        """The library has a built-in "deep research" orchestrator and its supporting research and verification sub-agents."""
         await self._ensure_builtin_agent(
             slug=RESEARCH_EXPLORER_AGENT_SLUG,
             backend_id=SUB_AGENT_BACKEND_ID,
@@ -373,12 +373,12 @@ class AgentRepository:
 
     async def set_default(self, *, agent: Agent, updated_by: str | None = None) -> Agent:
         if agent.is_subagent:
-            raise ValueError("子智能体不能设为默认智能体")
+            raise ValueError("Agent phụ không thể được đặt làm agent mặc định")
         if not is_builtin_agent(agent):
-            raise ValueError("默认智能体已固定为内置智能助手")
+            raise ValueError("Agent mặc định đã được cố định là trợ lý thông minh tích hợp")
         share_config = agent.share_config or DEFAULT_SHARE_CONFIG.copy()
         if share_config.get("access_level") != "global":
-            raise ValueError("内置智能体必须全局共享")
+            raise ValueError("Agent tích hợp phải được chia sẻ toàn cục")
 
         now = utc_now_naive()
         await self.db.execute(update(Agent).where(Agent.is_default.is_(True)).values(is_default=False, updated_at=now))
@@ -421,7 +421,7 @@ class AgentRepository:
     ) -> Agent:
         resolved_is_subagent = resolve_agent_is_subagent(backend_id, is_subagent)
         if resolved_is_subagent and is_default:
-            raise ValueError("子智能体不能设为默认智能体")
+            raise ValueError("Agent phụ không thể được đặt làm agent mặc định")
         normalized_share_config = normalize_agent_share_config(
             share_config,
             user_uid=str(creator.uid) if creator else created_by,
@@ -429,12 +429,12 @@ class AgentRepository:
             force_private=bool(creator and creator.role not in ADMIN_ROLES),
         )
         if is_default and normalized_share_config.get("access_level") != "global":
-            raise ValueError("默认智能体必须全局共享")
+            raise ValueError("Agent mặc định phải được chia sẻ toàn cục")
 
         agent = Agent(
             slug=await self._unique_slug(slug, name),
             backend_id=backend_id,
-            name=name.strip() or "未命名智能体",
+            name=name.strip() or "Unnamed agent",
             description=description,
             icon=icon,
             pics=pics or [],
@@ -471,7 +471,7 @@ class AgentRepository:
         if is_subagent is not None:
             agent.is_subagent = resolve_agent_is_subagent(agent.backend_id, is_subagent)
         if name is not None:
-            agent.name = name.strip() or "未命名智能体"
+            agent.name = name.strip() or "Unnamed agent"
         if description is not None:
             agent.description = description
         if icon is not None:

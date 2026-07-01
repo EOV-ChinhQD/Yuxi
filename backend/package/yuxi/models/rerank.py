@@ -109,8 +109,8 @@ class BaseReranker(ABC):
         try:
             scores = await self._batch_rerank("test query", ["test document"], max_length=128)
             if scores:
-                return True, "连接正常"
-            return False, "响应无效"
+                return True, "The connection is normal"
+            return False, "Invalid response"
         except Exception as e:
             error_msg = str(e)
             logger.error(f"Rerank connection test failed: {error_msg}")

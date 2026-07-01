@@ -1,8 +1,8 @@
-"""测试分块 token 上限保护：general parser 对超长 chunk 的硬切分。
+"""Testpoint block token upper limit protection: general parser hard cuts points of over-long chunks.
 
-nlp.py / general.py 只依赖 re 和标准库，用 sys.modules 占位绕过 yuxi 包的
-重依赖链（langchain / pydantic / .env 配置等），实现纯单元测试。
-跑完后清理 sys.modules，避免污染其他测试。
+nlp.py / general.py Only relies on re and the standard library, use sys.modules to bypass yuxi Bagof
+Heavy dependency chain (langchain / pydantic / .env Configuration, etc.) to achieve pure unit testing.
+Clean up sys.modules after running to avoid polluting other tests.
 """
 
 import importlib.util
@@ -24,14 +24,14 @@ _STUB_NAMES = [
     "yuxi.knowledge.chunking.ragflow_like.parsers.general",
 ]
 
-# 由 _isolated_modules fixture 在运行时注入
+# Injected at runtime by the _isolated_modules fixture
 nlp = None  # type: ignore[assignment]
 general = None  # type: ignore[assignment]
 
 
 @pytest.fixture(autouse=True, scope="module")
 def _isolated_modules():
-    """在模块级加载 nlp/general，跑完后清理 sys.modules 避免污染其他测试。"""
+    """Loading nlp at the module level/general, clean up sys after running.modules Avoid contaminating other tests."""
     saved = {name: sys.modules.get(name) for name in _STUB_NAMES}
 
     for name in _STUB_NAMES[:5]:
@@ -55,14 +55,14 @@ def _isolated_modules():
         "yuxi/knowledge/chunking/ragflow_like/parsers/general.py",
     )
 
-    # 注入模块级变量供测试用例访问
+    # Inject module-level variables for test case access
     global nlp, general  # noqa: PLW0603
     nlp = _nlp
     general = _general
 
     yield
 
-    # 清理：恢复原始状态
+    # Cleanup: restore original state
     for name in _STUB_NAMES:
         if saved[name] is None:
             sys.modules.pop(name, None)
@@ -75,30 +75,30 @@ def _isolated_modules():
 
 class TestHardSplitByTokenLimit:
     def test_short_text_unchanged(self):
-        text = "这是一段短文本"
+        text = "This is a short text"
         result = nlp.hard_split_by_token_limit(text, 512)
         assert result == [text]
 
     def test_splits_long_chinese_text(self):
-        text = "测试内容" * 300  # ~600 CJK tokens
+        text = ("Test content " * 1000).strip()  # ~2000 tokens
         result = nlp.hard_split_by_token_limit(text, 512)
         assert len(result) > 1
         for chunk in result:
             assert nlp.count_tokens(chunk) <= 512
 
     def test_optional_hard_limit_keeps_slightly_oversized_text(self):
-        text = "内容" * 300  # 600 CJK tokens
+        text = ("content " * 600).strip()  # ~600 tokens
         result = nlp.hard_split_by_token_limit(text, 512, hard_limit_token_num=768)
         assert result == [text]
 
     def test_optional_hard_limit_merges_short_tail(self):
-        text = "内容" * 635  # 1270 CJK tokens -> 512 + 512 + 246
+        text = ("content " * 1270).strip()  # ~1270 tokens -> 512 + 758
         result = nlp.hard_split_by_token_limit(text, 512, hard_limit_token_num=768)
         assert len(result) == 2
         assert [nlp.count_tokens(chunk) for chunk in result] == [512, 758]
 
     def test_splits_long_english_text(self):
-        text = "hello world " * 1000  # ~2000 word tokens
+        text = ("hello world " * 1000).strip()  # ~2000 word tokens
         result = nlp.hard_split_by_token_limit(text, 512)
         assert len(result) > 1
         for chunk in result:
@@ -111,9 +111,9 @@ class TestHardSplitByTokenLimit:
         assert nlp.hard_split_by_token_limit("   \n\t  ", 512) == []
 
     def test_zero_limit_floors_to_one(self):
-        text = "a b c"  # 3 个独立 token（单词）
+        text = "a b c"  # 3 independent tokens (words)
         result = nlp.hard_split_by_token_limit(text, 0)
-        # max_tokens = max(0, 1) = 1, 每个 token 单独一个 chunk
+        # max_tokens = max(0, 1) = 1, each token is a separate chunk
         assert len(result) == 3
 
     def test_punctuation_only_text(self):
@@ -127,51 +127,51 @@ class TestHardSplitByTokenLimit:
 
 class TestEnsureChunkTokenLimit:
     def test_all_chunks_within_limit_pass_through(self):
-        chunks = ["短文本一", "短文本二", "短文本三"]
+        chunks = ["Short text one", "Short text two", "Short text three"]
         result = general._ensure_chunk_token_limit(chunks, 512)
-        assert result == ["短文本一", "短文本二", "短文本三"]
+        assert result == ["Short text one", "Short text two", "Short text three"]
 
     def test_slightly_oversized_chunk_passes_through(self):
-        long_text = "内容" * 300  # ~600 CJK tokens
-        chunks = ["短文本", long_text, "短文本二"]
+        long_text = ("content " * 600).strip()  # ~600 tokens
+        chunks = ["short text", long_text, "Short text two"]
         result = general._ensure_chunk_token_limit(chunks, 512)
-        assert result == ["短文本", long_text, "短文本二"]
+        assert result == ["short text", long_text, "Short text two"]
 
     def test_oversized_chunk_gets_split_with_merged_tail(self):
-        long_text = "内容" * 635  # 1270 CJK tokens -> 512 + 758
-        chunks = ["短文本", long_text, "短文本二"]
+        long_text = ("content " * 1270).strip()  # ~1270 tokens -> 512 + 758
+        chunks = ["short text", long_text, "Short text two"]
         result = general._ensure_chunk_token_limit(chunks, 512)
-        assert result[0] == "短文本"
-        assert result[-1] == "短文本二"
+        assert result[0] == "short text"
+        assert result[-1] == "Short text two"
         middle_chunks = result[1:-1]
         assert len(middle_chunks) == 2
         assert [nlp.count_tokens(chunk) for chunk in middle_chunks] == [512, 758]
 
     def test_empty_chunks_filtered(self):
-        chunks = ["有效文本", "", "   ", "另一段"]
+        chunks = ["valid text", "", "   ", "another paragraph"]
         result = general._ensure_chunk_token_limit(chunks, 512)
-        assert result == ["有效文本", "另一段"]
+        assert result == ["valid text", "another paragraph"]
 
     def test_zero_limit_returns_stripped(self):
-        chunks = ["  文本一  ", "文本二"]
+        chunks = ["  Text one  ", "Text 2"]
         result = general._ensure_chunk_token_limit(chunks, 0)
-        assert result == ["文本一", "文本二"]
+        assert result == ["Text one", "Text 2"]
 
 
-# ── general.chunk_markdown 集成 ────────────────────────────────────
+# ── general.chunk_markdown integration ──────────────────────────────────
 
 
 class TestGeneralChunkMarkdown:
     def test_normal_document_chunks_within_limit(self):
-        doc = "# 标题\n\n第一段内容\n\n第二段内容\n\n第三段内容"
+        doc = "# Title\n\nFirst paragraph content\n\nSecond paragraph content\n\nThird paragraph content"
         chunks = general.chunk_markdown(doc, {"chunk_token_num": 512})
         assert len(chunks) > 0
         for chunk in chunks:
             assert nlp.count_tokens(chunk) <= 512
 
     def test_oversized_single_line_gets_split(self):
-        long_line = "运维知识" * 800  # ~3200 CJK tokens
-        doc = f"# 运维知识库\n\n{long_line}"
+        long_line = ("Operation and maintenance knowledge " * 800).strip()  # ~3200 tokens
+        doc = f"# Operation and maintenance knowledge base\n\n{long_line}"
         chunks = general.chunk_markdown(doc, {"chunk_token_num": 512})
         assert len(chunks) > 1
         for chunk in chunks:
@@ -181,20 +181,20 @@ class TestGeneralChunkMarkdown:
         assert general.chunk_markdown("", {"chunk_token_num": 512}) == []
 
     def test_default_config_uses_512(self):
-        doc = "测试\n" * 200
+        doc = "test\n" * 200
         chunks = general.chunk_markdown(doc)
         for chunk in chunks:
             assert nlp.count_tokens(chunk) <= 512
 
 
-# ── laws parser 回归 ──────────────────────────────────────────────
+# ── laws parser return ──────────────────────────────────────────
 
 
 class TestLawsParserRegression:
-    """验证 nlp.hard_split_by_token_limit 可被 laws parser 正常调用。"""
+    """Verify nlp.hard_split_by_token_limit Can be called normally by laws parser."""
 
     def test_hard_split_produces_same_result(self):
-        text = "法规内容" * 300
+        text = ("Regulatory content " * 1000).strip()
         result = nlp.hard_split_by_token_limit(text, 512)
         assert len(result) > 1
         for chunk in result:

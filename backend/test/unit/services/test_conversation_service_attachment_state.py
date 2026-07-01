@@ -144,7 +144,7 @@ async def test_convert_upload_to_markdown_truncates_content(
     result = await svc._convert_upload_to_markdown(upload)
 
     assert result.truncated is True
-    assert f"超出 {svc.MAX_ATTACHMENT_MARKDOWN_CHARS} 字符限制" in result.markdown
+    assert f"beyond {svc.MAX_ATTACHMENT_MARKDOWN_CHARS} character limit" in result.markdown
 
 
 @pytest.mark.asyncio
@@ -152,5 +152,5 @@ async def test_convert_upload_to_markdown_rejects_unsupported_extension(monkeypa
     monkeypatch.setattr(svc, "ATTACHMENT_ALLOWED_EXTENSIONS", (".md",))
     upload = _DummyUpload(filename="note.pdf", content_type="application/pdf", data=b"pdf")
 
-    with pytest.raises(ValueError, match="不支持的文件类型"):
+    with pytest.raises(ValueError, match="Loại file không được hỗ trợ"):
         await svc._convert_upload_to_markdown(upload)

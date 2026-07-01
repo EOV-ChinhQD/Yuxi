@@ -125,11 +125,11 @@ def normalize_skill_share_config(
         share_config,
         default_config=DEFAULT_SKILL_SHARE_CONFIG,
         default_access_level="user",
-        invalid_access_level_message="无效的 Skill 权限等级",
+        invalid_access_level_message="Invalid skill permission level",
         user_uid=operator_uid,
         department_id=operator_department_id,
         allowed_access_levels=allowed_access_levels,
-        unauthorized_access_level_message="当前用户无权使用该 Skill 共享范围",
+        unauthorized_access_level_message="Current user does not have permission to use this skill shared range",
     )
 
 
@@ -193,7 +193,7 @@ def can_skill_depend_on(parent: Skill, dependency: Skill) -> bool:
 
 def _ensure_non_builtin(item: Skill) -> None:
     if is_builtin_skill(item):
-        raise ValueError("内置 skill 不允许执行该操作")
+        raise ValueError("Built-in skill does not allow this operation")
 
 
 def get_skills_root_dir() -> Path:
@@ -228,19 +228,19 @@ def _cleanup_expired_skill_drafts() -> None:
 
 def _load_skill_draft(draft_id: str) -> tuple[Path, dict]:
     if not re.fullmatch(r"[0-9a-fA-F-]{32,36}", str(draft_id or "")):
-        raise ValueError("无效的安装草稿")
+        raise ValueError("Invalid installation draft")
     draft_dir = (get_skill_drafts_root_dir() / draft_id).resolve()
     try:
         draft_dir.relative_to(get_skill_drafts_root_dir().resolve())
     except ValueError:
-        raise ValueError("无效的安装草稿") from None
+        raise ValueError("Invalid installation draft") from None
     metadata_path = draft_dir / "metadata.json"
     if not metadata_path.exists():
-        raise ValueError("安装草稿不存在或已过期")
+        raise ValueError("Installation draft does not exist or has expired")
     data = json.loads(metadata_path.read_text(encoding="utf-8"))
     if data.get("expires_at", 0) < time.time():
         shutil.rmtree(draft_dir, ignore_errors=True)
-        raise ValueError("安装草稿已过期")
+        raise ValueError("Installation draft has expired")
     return draft_dir, data
 
 
@@ -318,7 +318,7 @@ def _build_builtin_skill_dir_path(slug: str) -> str:
 
 
 def _dirs_equal(dir1: Path, dir2: Path) -> bool:
-    """检查两个目录内容是否相同（通过文件列表比较）"""
+    """Check if two directories contain the same files"""
     if not dir1.exists() or not dir2.exists():
         return False
     list1 = sorted([f.relative_to(dir1) for f in dir1.rglob("*") if f.is_file()])
@@ -430,7 +430,9 @@ async def get_skill_dependency_options(
 
 
 def _get_all_tool_names() -> list[str]:
-    """获取所有工具名称（包括 buildin 和其他来源）"""
+    """
+    Get all tool names (including buildin and other sources)
+    """
     from yuxi.agents.toolkits.service import get_tool_metadata
 
     all_tools = get_tool_metadata()
@@ -449,27 +451,26 @@ async def _validate_dependencies(
     mcps = normalize_string_list(mcp_dependencies)
     skills = normalize_string_list(skill_dependencies)
 
-    # 验证所有工具（不仅仅是 buildin）
     available_tools = set(_get_all_tool_names())
     invalid_tools = [name for name in tools if name not in available_tools]
     if invalid_tools:
-        raise ValueError(f"存在无效工具依赖: {', '.join(invalid_tools)}")
+        raise ValueError(f"Invalid tool dependencies: {', '.join(invalid_tools)}")
 
     available_mcps = set(await get_enabled_mcp_server_slugs(db=None))
     invalid_mcps = [name for name in mcps if name not in available_mcps]
     if invalid_mcps:
-        raise ValueError(f"存在无效 MCP 依赖: {', '.join(invalid_mcps)}")
+        raise ValueError(f"Invalid MCP dependencies: {', '.join(invalid_mcps)}")
 
     invalid_skills = [name for name in skills if name not in available_skills]
     if invalid_skills:
-        raise ValueError(f"存在无效 skill 依赖: {', '.join(invalid_skills)}")
+        raise ValueError(f"Invalid skill dependencies: {', '.join(invalid_skills)}")
 
     if parent.slug in skills:
-        raise ValueError("skill_dependencies 不允许包含自身")
+        raise ValueError("skill_dependencies does not allow self-references")
 
     forbidden_skills = [name for name in skills if not can_skill_depend_on(parent, available_skills[name])]
     if forbidden_skills:
-        raise ValueError(f"存在权限范围不匹配的 skill 依赖: {', '.join(forbidden_skills)}")
+        raise ValueError(f"Permission scope mismatch for skill dependencies: {', '.join(forbidden_skills)}")
 
     return tools, mcps, skills
 
@@ -508,30 +509,30 @@ async def update_skill_dependencies(
 def _validate_skill_slug_value(slug: str, *, field_name: str) -> str:
     slug = slug.strip()
     if not slug:
-        raise ValueError(f"SKILL.md frontmatter 缺少 {field_name}")
+        raise ValueError(f"SKILL.md frontmatter {field_name}")
     if len(slug) > 128:
-        raise ValueError(f"SKILL.md frontmatter.{field_name} 长度不能超过 128")
+        raise ValueError(f"SKILL.md frontmatter.{field_name} length cannot exceed 128")
     if not SKILL_NAME_PATTERN.match(slug):
-        raise ValueError(f"SKILL.md frontmatter.{field_name} 必须是小写字母/数字/短横线，且不能连续短横线")
+        raise ValueError(f"SKILL.md frontmatter.{field_name} must be lowercase letters/numbers/hyphens, and cannot contain consecutive hyphens")
     return slug
 
 
 def _validate_skill_display_name(name: str) -> str:
     name = name.strip()
     if not name:
-        raise ValueError("SKILL.md frontmatter 缺少 name")
+        raise ValueError("SKILL.md frontmatter missing name")
     if len(name) > 128:
-        raise ValueError("SKILL.md frontmatter.name 长度不能超过 128")
+        raise ValueError("SKILL.md frontmatter.name length cannot exceed 128")
     return name
 
 
 def _split_frontmatter(content: str) -> tuple[str, str]:
     if not content.startswith("---"):
-        raise ValueError("SKILL.md 缺少有效 frontmatter（--- ... ---）")
+        raise ValueError("SKILL.md missing valid frontmatter (--- ... ---)")
 
     lines = content.splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
-        raise ValueError("SKILL.md 缺少有效 frontmatter（--- ... ---）")
+        raise ValueError("SKILL.md missing valid frontmatter (--- ... ---)")
 
     frontmatter_lines: list[str] = []
     body_start = 0
@@ -541,7 +542,7 @@ def _split_frontmatter(content: str) -> tuple[str, str]:
             break
         frontmatter_lines.append(line)
     else:
-        raise ValueError("SKILL.md 缺少有效 frontmatter（--- ... ---）")
+        raise ValueError("SKILL.md missing valid frontmatter (--- ... ---)")
 
     frontmatter_raw = "".join(frontmatter_lines)
     body = "".join(lines[body_start:])
@@ -553,10 +554,10 @@ def _parse_skill_markdown(content: str) -> tuple[str, str, str, dict[str, Any]]:
     try:
         data = yaml.safe_load(frontmatter_raw)
     except yaml.YAMLError as e:
-        raise ValueError(f"SKILL.md frontmatter YAML 解析失败: {e}") from e
+        raise ValueError(f"SKILL.md frontmatter YAML parsing failed: {e}") from e
 
     if not isinstance(data, dict):
-        raise ValueError("SKILL.md frontmatter 必须是对象")
+        raise ValueError("SKILL.md frontmatter must be an object")
 
     name = _validate_skill_display_name(str(data.get("name", "")))
     raw_slug = str(data.get("slug", "")).strip()
@@ -567,7 +568,7 @@ def _parse_skill_markdown(content: str) -> tuple[str, str, str, dict[str, Any]]:
     )
     description = str(data.get("description", "")).strip()
     if not description:
-        raise ValueError("SKILL.md frontmatter 缺少 description")
+        raise ValueError("SKILL.md frontmatter missing description")
 
     return slug, name, description, data
 
@@ -576,7 +577,7 @@ def _rewrite_frontmatter_slug(content: str, new_slug: str) -> str:
     frontmatter_raw, body = _split_frontmatter(content)
     data = yaml.safe_load(frontmatter_raw)
     if not isinstance(data, dict):
-        raise ValueError("SKILL.md frontmatter 必须是对象")
+        raise ValueError("SKILL.md frontmatter must be an object")
     if data.get("slug"):
         data["slug"] = new_slug
     else:
@@ -589,9 +590,9 @@ def _validate_zip_paths(zip_file: zipfile.ZipFile) -> None:
     for name in zip_file.namelist():
         pure = PurePosixPath(name)
         if pure.is_absolute():
-            raise ValueError(f"ZIP 包含不安全绝对路径: {name}")
+            raise ValueError(f"ZIP contains unsafe absolute paths: {name}")
         if ".." in pure.parts:
-            raise ValueError(f"ZIP 包含路径穿越片段: {name}")
+            raise ValueError(f"ZIP contains path traversal fragments: {name}")
 
 
 async def _generate_available_slug(repo: SkillRepository, base_slug: str) -> str:
@@ -610,7 +611,7 @@ async def _generate_available_slug(repo: SkillRepository, base_slug: str) -> str
 def _parse_skill_dir_metadata(source_skill_dir: Path) -> dict[str, Any]:
     skill_md_path = source_skill_dir / "SKILL.md"
     if not skill_md_path.exists() or not skill_md_path.is_file():
-        raise ValueError("技能目录缺少根级 SKILL.md")
+        raise ValueError("skill directory missing root-level SKILL.md")
 
     content = skill_md_path.read_text(encoding="utf-8")
     parsed_slug, parsed_name, parsed_desc, meta = _parse_skill_markdown(content)
@@ -645,7 +646,7 @@ async def _stage_skill_draft_item(
         "tool_dependencies": parsed["tool_dependencies"],
         "mcp_dependencies": parsed["mcp_dependencies"],
         "skill_dependencies": parsed["skill_dependencies"],
-        "warnings": [f"原始 slug {parsed['slug']} 已存在，将安装为 {final_slug}"]
+        "warnings": [f"Original slug {parsed['slug']} already exists, will be installed as {final_slug}"]
         if final_slug != parsed["slug"]
         else [],
         "success": True,
@@ -693,7 +694,7 @@ async def _import_skill_dir_impl(
         final_dir = skills_root / final_slug
         if final_dir.exists():
             await asyncio.to_thread(shutil.rmtree, temp_target, ignore_errors=True)
-            raise ValueError(f"技能目录冲突，请重试: {final_slug}")
+            raise ValueError(f"skill directory conflict, please try again: {final_slug}")
         temp_target.rename(final_dir)
 
         try:
@@ -728,16 +729,16 @@ def _resolve_relative_path(skill_dir: Path, relative_path: str, *, allow_root: b
     rel = (relative_path or "").strip().replace("\\", "/")
     rel = rel.lstrip("/")
     if not rel and not allow_root:
-        raise ValueError("path 不能为空")
+        raise ValueError("Đường dẫn không được để trống")
     pure = PurePosixPath(rel) if rel else PurePosixPath(".")
     if ".." in pure.parts:
-        raise ValueError("非法路径：不允许上级路径引用")
+        raise ValueError("Đường dẫn không hợp lệ: Không cho phép tham chiếu đường dẫn cấp trên")
 
     target = (skill_dir / pure).resolve()
     try:
         target.relative_to(skill_dir)
     except ValueError:
-        raise ValueError("非法路径：越界访问被拒绝") from None
+        raise ValueError("Đường dẫn không hợp lệ: Từ chối truy cập vượt quá giới hạn") from None
 
     return target, rel
 
@@ -784,7 +785,7 @@ async def prepare_skill_upload(
     is_zip_upload = normalized_filename.endswith(".zip")
     is_skill_md_upload = normalized_filename.endswith("skill.md")
     if not is_zip_upload and not is_skill_md_upload:
-        raise ValueError("仅支持上传 .zip 或 SKILL.md 文件")
+        raise ValueError("Chỉ hỗ trợ tải lên file .zip hoặc SKILL.md")
 
     repo = SkillRepository(db)
     draft_dir = get_skill_drafts_root_dir() / str(uuid.uuid4())
@@ -804,7 +805,7 @@ async def prepare_skill_upload(
                     zf.extractall(extract_dir)
                 skill_md_files = list(extract_dir.rglob("SKILL.md"))
                 if len(skill_md_files) != 1:
-                    raise ValueError("ZIP 必须且只能包含一个技能（检测到一个 SKILL.md）")
+                    raise ValueError("ZIP phải và chỉ được chứa một kỹ năng (phát hiện một SKILL.md)")
                 source_skill_dir = skill_md_files[0].parent
             else:
                 source_skill_dir = extract_dir
@@ -851,7 +852,7 @@ async def prepare_remote_skill_install(
         for result in preparation.results:
             if not result.get("success"):
                 items.append(
-                    {"slug": result.get("slug", ""), "success": False, "error": result.get("error", "安装失败")}
+                    {"slug": result.get("slug", ""), "success": False, "error": result.get("error", "Installation failed")}
                 )
                 continue
             item = await _stage_skill_draft_item(
@@ -890,11 +891,11 @@ async def confirm_skill_install_draft(
 ) -> list[dict[str, Any]]:
     draft_dir, data = _load_skill_draft(draft_id)
     if data.get("created_by") != operator.uid and operator.role not in ADMIN_ROLES:
-        raise ValueError("无权确认该安装草稿")
+        raise ValueError("Không có quyền xác nhận bản nháp cài đặt này")
 
     source_type = data.get("source_type")
     if source_type not in {"upload", "remote"}:
-        raise ValueError("无效的安装草稿来源")
+        raise ValueError("Nguồn bản nháp cài đặt không hợp lệ")
 
     normalized_share_config = normalize_skill_share_config(
         share_config,
@@ -911,23 +912,23 @@ async def confirm_skill_install_draft(
     for draft_item in data.get("items") or []:
         if not draft_item.get("success", True):
             results.append(
-                {"slug": draft_item.get("slug", ""), "success": False, "error": draft_item.get("error", "安装失败")}
+                {"slug": draft_item.get("slug", ""), "success": False, "error": draft_item.get("error", "Installation failed")}
             )
             continue
 
         slug = str(draft_item.get("slug") or "").strip()
         if not is_valid_skill_slug(slug):
-            results.append({"slug": slug, "success": False, "error": "无效 skill slug"})
+            results.append({"slug": slug, "success": False, "error": "Skill slug không hợp lệ"})
             continue
         if await repo.exists_slug(slug) or (skills_root / slug).exists():
-            results.append({"slug": slug, "success": False, "error": "Skill slug 已被占用，请重新解析安装"})
+            results.append({"slug": slug, "success": False, "error": "Skill slug Already occupied, please re-parse and install"})
             continue
 
         source_dir = (draft_dir / str(draft_item.get("source_dir", ""))).resolve()
         try:
             source_dir.relative_to(draft_dir.resolve())
         except ValueError:
-            results.append({"slug": slug, "success": False, "error": "安装草稿路径非法"})
+            results.append({"slug": slug, "success": False, "error": "The installation draft path is illegal"})
             continue
 
         try:
@@ -944,7 +945,7 @@ async def confirm_skill_install_draft(
                 final_dir = skills_root / slug
                 if final_dir.exists():
                     shutil.rmtree(temp_target, ignore_errors=True)
-                    results.append({"slug": slug, "success": False, "error": "Skill slug 已被占用，请重新解析安装"})
+                    results.append({"slug": slug, "success": False, "error": "Skill slug Already occupied, please re-parse and install"})
                     continue
                 temp_target.rename(final_dir)
 
@@ -979,7 +980,7 @@ async def confirm_skill_install_draft(
 async def discard_skill_install_draft(*, draft_id: str, operator: User) -> None:
     draft_dir, data = _load_skill_draft(draft_id)
     if data.get("created_by") != operator.uid and operator.role not in ADMIN_ROLES:
-        raise ValueError("无权删除该安装草稿")
+        raise ValueError("Không có quyền xóa bản nháp cài đặt này")
     shutil.rmtree(draft_dir, ignore_errors=True)
 
 
@@ -994,9 +995,9 @@ async def import_skill_dir(
     source_skill_dir = Path(source_dir).resolve()
     tmp_root = Path(tempfile.gettempdir()).resolve()
     if not source_skill_dir.is_relative_to(tmp_root):
-        raise ValueError("技能目录路径不合法")
+        raise ValueError("Đường dẫn thư mục kỹ năng không hợp lệ")
     if not source_skill_dir.exists() or not source_skill_dir.is_dir():
-        raise ValueError("技能目录不存在")
+        raise ValueError("Thư mục kỹ năng không tồn tại")
     return await _import_skill_dir_impl(
         db,
         source_skill_dir=source_skill_dir,
@@ -1009,33 +1010,33 @@ async def import_skill_dir(
 async def get_skill_or_raise(db: AsyncSession, slug: str) -> Skill:
     slug = slug.strip() if isinstance(slug, str) else ""
     if not is_valid_skill_slug(slug):
-        raise ValueError("无效 skill slug")
+        raise ValueError("Skill slug không hợp lệ")
 
     repo = SkillRepository(db)
     item = await repo.get_by_slug(slug)
     if not item:
-        raise ValueError(f"技能 '{slug}' 不存在")
+        raise ValueError(f"Kỹ năng '{slug}' không tồn tại")
     return item
 
 
 async def get_accessible_skill_or_raise(db: AsyncSession, user: User, slug: str) -> Skill:
     item = await get_skill_or_raise(db, slug)
     if not user_can_access_skill(user, item):
-        raise ValueError(f"技能 '{slug}' 不存在或无权访问")
+        raise ValueError(f"Kỹ năng '{slug}' không tồn tại hoặc không có quyền truy cập")
     return item
 
 
 async def get_management_readable_skill_or_raise(db: AsyncSession, user: User, slug: str) -> Skill:
     item = await get_skill_or_raise(db, slug)
     if not user_can_manage_skill(user, item) and not user_can_access_skill(user, item):
-        raise ValueError(f"技能 '{slug}' 不存在或无权访问")
+        raise ValueError(f"Kỹ năng '{slug}' không tồn tại hoặc không có quyền truy cập")
     return item
 
 
 async def get_manageable_skill_or_raise(db: AsyncSession, user: User, slug: str) -> Skill:
     item = await get_skill_or_raise(db, slug)
     if not user_can_manage_skill(user, item):
-        raise ValueError(f"技能 '{slug}' 不存在或无权管理")
+        raise ValueError(f"Kỹ năng '{slug}' không tồn tại hoặc không có quyền quản lý")
     return item
 
 
@@ -1043,7 +1044,7 @@ async def get_skill_tree(db: AsyncSession, slug: str) -> list[dict[str, Any]]:
     item = await get_skill_or_raise(db, slug)
     skill_dir = _resolve_skill_dir(item)
     if not skill_dir.exists() or not skill_dir.is_dir():
-        raise ValueError(f"技能目录不存在: {item.dir_path}")
+        raise ValueError(f"Thư mục kỹ năng không tồn tại: {item.dir_path}")
     return _build_tree(skill_dir, skill_dir)
 
 
@@ -1052,13 +1053,13 @@ async def read_skill_file(db: AsyncSession, slug: str, relative_path: str) -> di
     skill_dir = _resolve_skill_dir(item)
     target, rel = _resolve_relative_path(skill_dir, relative_path)
     if not target.exists() or not target.is_file():
-        raise ValueError(f"文件不存在: {relative_path}")
+        raise ValueError(f"Tệp không tồn tại: {relative_path}")
     if not _is_text_path(target):
-        raise ValueError("仅支持读取文本文件")
+        raise ValueError("Chỉ hỗ trợ đọc file văn bản")
     try:
         content = target.read_text(encoding="utf-8")
     except UnicodeDecodeError as e:
-        raise ValueError(f"文件编码不支持（仅支持 UTF-8）: {e}") from e
+        raise ValueError(f"Định dạng tệp không được hỗ trợ (chỉ hỗ trợ UTF-8): {e}") from e
 
     return {"path": rel, "content": content}
 
@@ -1074,22 +1075,22 @@ async def create_skill_node(
 ) -> None:
     item = await get_skill_or_raise(db, slug)
     if is_builtin_skill(item):
-        raise ValueError("内置 skill 不允许直接修改文件")
+        raise ValueError("Không cho phép sửa đổi trực tiếp file của skill tích hợp")
     skill_dir = _resolve_skill_dir(item)
     target, _ = _resolve_relative_path(skill_dir, relative_path)
     if target.exists():
-        raise ValueError("目标已存在")
+        raise ValueError("Mục tiêu đã tồn tại")
 
     if is_dir:
         target.mkdir(parents=True, exist_ok=False)
         return
 
     if not _is_text_path(target):
-        raise ValueError("仅支持创建文本文件")
+        raise ValueError("Chỉ hỗ trợ tạo file văn bản")
 
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    # 先写入文件，再更新元数据
+    # Write to file first, then update metadata
     target.write_text(content or "", encoding="utf-8")
 
     await _update_skill_metadata_if_skills_md(db, item, content or "", skill_dir, target, updated_by)
@@ -1105,13 +1106,13 @@ async def update_skill_file(
 ) -> None:
     item = await get_skill_or_raise(db, slug)
     if is_builtin_skill(item):
-        raise ValueError("内置 skill 不允许直接修改文件")
+        raise ValueError("Không cho phép sửa đổi trực tiếp file của skill tích hợp")
     skill_dir = _resolve_skill_dir(item)
     target, _ = _resolve_relative_path(skill_dir, relative_path)
     if not target.exists() or not target.is_file():
-        raise ValueError("文件不存在")
+        raise ValueError("File không tồn tại")
     if not _is_text_path(target):
-        raise ValueError("仅支持编辑文本文件")
+        raise ValueError("Chỉ hỗ trợ chỉnh sửa file văn bản")
 
     await _update_skill_metadata_if_skills_md(db, item, content, skill_dir, target, updated_by)
 
@@ -1126,11 +1127,11 @@ async def _update_skill_metadata_if_skills_md(
     target: Path,
     updated_by: str | None,
 ) -> None:
-    """如果目标文件是 SKILL.md，则解析并更新元数据"""
+    """If the target file is SKILL.md, then parse and update the metadata"""
     if target.name == "SKILL.md" and target.parent == skill_dir:
         parsed_slug, parsed_name, parsed_desc, _ = _parse_skill_markdown(content)
         if parsed_slug != item.slug:
-            raise ValueError("SKILL.md frontmatter.slug 必须与 skill slug 一致")
+            raise ValueError("SKILL.md frontmatter.slug phải khớp với skill slug")
         repo = SkillRepository(db)
         await repo.update_metadata(item, name=parsed_name, description=parsed_desc, updated_by=updated_by)
 
@@ -1138,14 +1139,14 @@ async def _update_skill_metadata_if_skills_md(
 async def delete_skill_node(db: AsyncSession, *, slug: str, relative_path: str) -> None:
     item = await get_skill_or_raise(db, slug)
     if is_builtin_skill(item):
-        raise ValueError("内置 skill 不允许直接修改文件")
+        raise ValueError("Không cho phép sửa đổi trực tiếp file của skill tích hợp")
     skill_dir = _resolve_skill_dir(item)
     target, rel = _resolve_relative_path(skill_dir, relative_path, allow_root=False)
     if not target.exists():
-        raise ValueError("目标不存在")
+        raise ValueError("Mục tiêu không tồn tại")
 
     if rel == "SKILL.md":
-        raise ValueError("不允许删除根目录 SKILL.md")
+        raise ValueError("Không được phép xóa thư mục gốc SKILL.md")
 
     if target.is_dir():
         await asyncio.to_thread(shutil.rmtree, target)
@@ -1157,7 +1158,7 @@ async def export_skill_zip(db: AsyncSession, slug: str) -> tuple[str, str]:
     item = await get_skill_or_raise(db, slug)
     skill_dir = _resolve_skill_dir(item)
     if not skill_dir.exists() or not skill_dir.is_dir():
-        raise ValueError("技能目录不存在")
+        raise ValueError("Thư mục kỹ năng không tồn tại")
 
     fd, export_path = tempfile.mkstemp(prefix=f"skill-{slug}-", suffix=".zip")
     Path(export_path).unlink(missing_ok=True)
@@ -1177,7 +1178,7 @@ async def delete_skill(db: AsyncSession, *, slug: str) -> None:
     repo = SkillRepository(db)
     item = await repo.get_by_slug(slug, for_update=True)
     if not item:
-        raise ValueError(f"技能 '{slug}' 不存在")
+        raise ValueError(f"Kỹ năng '{slug}' không tồn tại")
     _ensure_non_builtin(item)
 
     skill_dir = _resolve_skill_dir(item)
@@ -1199,9 +1200,9 @@ async def delete_skill(db: AsyncSession, *, slug: str) -> None:
 
 
 async def delete_skills_batch(db: AsyncSession, *, slugs: list[str]) -> list[dict]:
-    """批量删除多个 skills（单技能独立的子事务与回滚）。"""
+    """Deleting multiple skills in batches (independent sub-transactions and rollbacks for a single skill)."""
     if len(slugs) > 50:
-        raise ValueError("批量删除的技能数量不能超过 50 个")
+        raise ValueError("Số lượng kỹ năng xóa hàng loạt không được vượt quá 50")
     results = []
     for slug in slugs:
         try:
@@ -1250,19 +1251,19 @@ def list_builtin_skill_specs() -> list[dict[str, Any]]:
         configured_skills = normalize_string_list(getattr(raw_spec, "skill_dependencies", None))
 
         if not is_valid_skill_slug(slug):
-            raise ValueError(f"内置 skill slug 非法: {slug}")
+            raise ValueError(f"Skill slug tích hợp không hợp lệ: {slug}")
         if not source_dir.exists() or not source_dir.is_dir():
-            logger.warning(f"跳过不存在的内置 skill 目录: {source_dir}")
+            logger.warning(f"Skip non-existent built-in skill directories: {source_dir}")
             continue
 
         skill_md = source_dir / "SKILL.md"
         if not skill_md.exists():
-            raise ValueError(f"内置 skill 缺少 SKILL.md: {source_dir}")
+            raise ValueError(f"Skill tích hợp thiếu SKILL.md: {source_dir}")
 
         content = skill_md.read_text(encoding="utf-8")
         parsed_slug, parsed_name, parsed_desc, meta = _parse_skill_markdown(content)
         if parsed_slug != slug:
-            raise ValueError(f"内置 skill frontmatter.slug 必须等于 slug: {slug}")
+            raise ValueError(f"frontmatter.slug của skill tích hợp phải bằng slug: {slug}")
 
         specs.append(
             {
@@ -1289,7 +1290,7 @@ async def init_builtin_skills(db: AsyncSession, *, created_by: str = "system") -
         slug = spec["slug"]
         existing = await repo.get_by_slug(slug)
         if existing and not is_builtin_skill(existing):
-            raise ValueError(f"内置 skill '{slug}' 与已存在的非内置 skill 冲突")
+            raise ValueError(f"Skill tích hợp '{slug}' xung đột với skill không tích hợp đã tồn tại")
 
         target_dir = get_skills_root_dir() / slug
         _replace_skill_target(target_dir, Path(spec["source_dir"]))

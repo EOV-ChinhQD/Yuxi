@@ -103,8 +103,8 @@ class BaseEmbeddingModel(ABC):
                 actual_dimension = len(embeddings[0]) if embeddings else 0
                 expected_dimension = int(self.dimension)
                 if actual_dimension != expected_dimension:
-                    return False, f"Embedding 维度不一致：配置 {expected_dimension}，实际 {actual_dimension}"
-            return True, "连接正常"
+                    return False, f"Embedding Inconsistent dimensions: Configuration {expected_dimension},actual {actual_dimension}"
+            return True, "The connection is normal"
         except Exception as e:
             error_msg = str(e)
             error_msg += f", maybe you can check the `{self.base_url}` end with /embeddings as examples."
@@ -272,8 +272,8 @@ async def test_embedding_model_status_by_spec(spec: str) -> dict:
         return {
             "spec": spec,
             "status": "available" if success else "unavailable",
-            "message": "连接正常" if success else message,
+            "message": "The connection is normal" if success else message,
         }
     except Exception as e:
-        logger.warning(f"测试 Embedding 模型状态失败 {spec}: {e}")
+        logger.warning(f"Testing Embedding model status failed {spec}: {e}")
         return {"spec": spec, "status": "error", "message": str(e)}

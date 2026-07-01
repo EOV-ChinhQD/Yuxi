@@ -16,7 +16,7 @@ class GraphExtractorFactory:
         normalized_type = (extractor_type or "").lower()
         extractor_class = cls._registry.get(normalized_type)
         if not extractor_class:
-            raise ValueError(f"不支持的图谱抽取器类型: {extractor_type}")
+            raise ValueError(f"Loại bộ trích xuất đồ thị không được hỗ trợ: {extractor_type}")
         extractor = extractor_class(options or {})
         extractor.validate_options()
         return extractor

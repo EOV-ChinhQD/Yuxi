@@ -78,7 +78,7 @@ def _handle_image_caption(tokens, i, result, current_content, title_stack, max_l
 
     content = inline_token.content.strip()
     image_pattern = r"^!\[.*?\]\(.*?\)\s*$"
-    caption_pattern = r"^(?:Figure|图|Fig\.|表|Table)\s*[\d\w\.]+"
+    caption_pattern = r"^(?:Figure|picture|Fig\.|surface|Table)\s*[\d\w\.]+"
 
     img_match = re.search(r"^(!\[.*?\]\(.*?\))", content)
     if img_match:
@@ -122,30 +122,30 @@ def chunk_markdown(
     markdown_content: str, parser_config: dict[str, Any] | None = None, embed_fn: Any | None = None
 ) -> list[str]:
     """
-    语义化切分 Markdown 内容。
+    Semantically cut point Markdown content.
 
     Args:
-        markdown_content: 待切分的 Markdown 文本
-        parser_config: 切分参数，如 chunk_token_num
-        embed_fn: 可选。传入用于生成向量的函数。如果不传，将从系统配置中加载模型。
-                  通过注入此参数可以避免在单元测试中加载重型资源。
+        markdown_content: pointof Markdown text to be cut
+        parser_config: cut point parameters, like chunk_token_num
+        embed_fn: optional. Pass in the of function for generate vector. If not passed, the Model will be loaded from the system Configuration.
+                  Loading heavy resources in unit tests can be avoided by injecting this parameter.
     """
     parser_config = parser_config or {}
     max_length = int(parser_config.get("chunk_token_num", 512))
-    logger.info(f"语义切分开始: max_length={max_length}, content_length={len(markdown_content)}")
+    logger.info(f"Semantic segmentation begins: max_length={max_length}, content_length={len(markdown_content)}")
 
-    # 延迟加载重型资源，仅在没有注入 embed_fn 时触发
+    # Lazy loading of heavy resources, only triggered when embed_fn is not injected
     if embed_fn is None:
         try:
             from yuxi.config.app import config
             from yuxi.models.embed import select_embedding_model
 
             embed_model_id = parser_config.get("embed_model_id") or config.embed_model
-            logger.info(f"语义切分加载Embedding模型: {embed_model_id}")
+            logger.info(f"Semantic segmentation loading Embedding model: {embed_model_id}")
             embed_model = select_embedding_model(embed_model_id)
             embed_fn = embed_model.encode
         except Exception as e:
-            logger.error(f"加载 Embedding 模型失败: {e}。将退化为简单切分。")
+            logger.error(f"Failed to load Embedding model: {e}. Will degenerate into simple segmentation.")
             embed_fn = None
 
     md = MarkdownIt("commonmark").enable("table")
@@ -250,7 +250,7 @@ def chunk_markdown(
                         content = "\n".join([f"- {item}" for item in kv_list])
                         is_converted_table = True
                 except Exception as e:
-                    logger.warning(f"HTML表格转KV失败: {e}")
+                    logger.warning(f"is a list of cluster labels for each sentence (e.g.: {e}")
 
             current_content.append(content)
             if is_converted_table:
@@ -294,5 +294,5 @@ def chunk_markdown(
     if current_chunk_parts:
         chunks.append("\n".join(current_chunk_parts).strip())
 
-    logger.info(f"语义切分完成: chunks={len(chunks)}")
+    logger.info(f"Semantic segmentation completed: chunks={len(chunks)}")
     return chunks

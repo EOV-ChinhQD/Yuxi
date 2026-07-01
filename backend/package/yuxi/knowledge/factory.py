@@ -3,18 +3,18 @@ from yuxi.utils import logger
 
 
 class KnowledgeBaseFactory:
-    """知识库工厂类，负责创建不同类型的知识库实例"""
+    """Knowledge base factory class, responsible for creating different types of knowledge base instances"""
 
-    # 注册的知识库类型映射 {kb_type: kb_class}
+    # Registered knowledge base type mapping {kb_type: kb_class}
     _kb_types: dict[str, type[KnowledgeBase]] = {}
 
     @classmethod
     def register(cls, kb_class: type[KnowledgeBase]):
         """
-        注册知识库类型
+        Register knowledge base type
 
         Args:
-            kb_class: 知识库类
+            kb_class: Knowledge base class
         """
         if not issubclass(kb_class, KnowledgeBase):
             raise ValueError("Knowledge base class must inherit from KnowledgeBase")
@@ -27,18 +27,18 @@ class KnowledgeBaseFactory:
     @classmethod
     def create(cls, kb_type: str, work_dir: str, **kwargs) -> KnowledgeBase:
         """
-        创建知识库实例
+        Create a knowledge base instance
 
         Args:
-            kb_type: 知识库类型
-            work_dir: 工作目录
-            **kwargs: 其他初始化参数
+            kb_type: Knowledge base type
+            work_dir: working directory
+            **kwargs: other initialization parameters
 
         Returns:
-            知识库实例
+            Knowledge Base Example
 
         Raises:
-            KBNotFoundError: 未知的知识库类型
+            KBNotFoundError: Unknown knowledge base type
         """
         if kb_type not in cls._kb_types:
             available_types = list(cls._kb_types.keys())
@@ -47,7 +47,7 @@ class KnowledgeBaseFactory:
         kb_class = cls._kb_types[kb_type]
 
         try:
-            # 创建实例
+            # Create instance
             instance = kb_class(work_dir, **kwargs)
             logger.info(f"Created {kb_type} knowledge base instance at {work_dir}")
             return instance
@@ -58,10 +58,10 @@ class KnowledgeBaseFactory:
     @classmethod
     def get_available_types(cls) -> dict[str, dict]:
         """
-        获取所有可用的知识库类型
+        Get all available ofKnowledge base types
 
         Returns:
-            知识库类型信息字典
+            Knowledge base type information dictionary
         """
         result = {}
         for kb_type, kb_class in cls._kb_types.items():
@@ -77,13 +77,13 @@ class KnowledgeBaseFactory:
     @classmethod
     def get_kb_class(cls, kb_type: str) -> type[KnowledgeBase]:
         """
-        获取指定类型的知识库类。
+        Get the specified type ofKnowledge base class.
 
         Args:
-            kb_type: 知识库类型
+            kb_type: Knowledge base type
 
         Returns:
-            知识库类
+            Knowledge base class
         """
         if kb_type not in cls._kb_types:
             available_types = list(cls._kb_types.keys())
@@ -93,12 +93,12 @@ class KnowledgeBaseFactory:
     @classmethod
     def is_type_supported(cls, kb_type: str) -> bool:
         """
-        检查是否支持指定的知识库类型
+        examineWhether to support specified ofKnowledge base class type
 
         Args:
-            kb_type: 知识库类型
+            kb_type: Knowledge base type
 
         Returns:
-            是否支持
+            Whether to support
         """
         return kb_type in cls._kb_types

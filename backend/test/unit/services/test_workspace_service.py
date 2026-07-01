@@ -41,12 +41,12 @@ def test_workspace_root_keeps_existing_agents_prompt_file(tmp_path: Path, monkey
     agents_dir = tmp_path / "threads" / "shared" / "user-1" / "workspace" / "agents"
     agents_dir.mkdir(parents=True)
     agents_file = agents_dir / "AGENTS.md"
-    agents_file.write_text("保留已有内容", encoding="utf-8")
+    agents_file.write_text("Keep existing content", encoding="utf-8")
 
     root = svc._workspace_root(_user())
 
     assert root == tmp_path / "threads" / "shared" / "user-1" / "workspace"
-    assert agents_file.read_text(encoding="utf-8") == "保留已有内容"
+    assert agents_file.read_text(encoding="utf-8") == "Keep existing content"
 
 
 def test_workspace_root_rejects_symlink_root(tmp_path: Path, monkeypatch) -> None:
@@ -226,14 +226,14 @@ async def test_write_workspace_file_content_updates_markdown_file(tmp_path: Path
     user = _user()
     root = svc._workspace_root(user)
     target = root / "note.md"
-    target.write_text("旧内容", encoding="utf-8")
+    target.write_text("old content", encoding="utf-8")
 
-    result = await svc.write_workspace_file_content(path="/note.md", content="# 新内容", current_user=user)
+    result = await svc.write_workspace_file_content(path="/note.md", content="# New content", current_user=user)
 
     assert result["success"] is True
     assert result["path"] == "/note.md"
     assert result["entry"]["path"] == "/note.md"
-    assert target.read_text(encoding="utf-8") == "# 新内容"
+    assert target.read_text(encoding="utf-8") == "# New content"
 
 
 @pytest.mark.asyncio
@@ -348,4 +348,4 @@ async def test_upload_workspace_files_rejects_more_than_limit(tmp_path: Path, mo
         await svc.upload_workspace_files(parent_path="/", files=uploads, current_user=user)
 
     assert exc_info.value.status_code == 400
-    assert f"一次最多上传 {svc.MAX_WORKSPACE_UPLOAD_FILES} 个文件" in exc_info.value.detail
+    assert f"Upload at most at one time {svc.MAX_WORKSPACE_UPLOAD_FILES} files" in exc_info.value.detail

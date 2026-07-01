@@ -7,9 +7,9 @@ import httpx
 from yuxi.knowledge.utils.url_validator import is_url_parsing_enabled, validate_url
 from yuxi.utils import logger
 
-# 最大允许下载大小 (例如 10MB)
+# Maximum allowed download size (e.g. 10MB)
 MAX_DOWNLOAD_SIZE = 10 * 1024 * 1024
-# 允许的 Content-Type
+# Allowed Content-Types
 ALLOWED_CONTENT_TYPES = ["text/html", "application/xhtml+xml"]
 
 

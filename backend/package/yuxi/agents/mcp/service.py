@@ -28,8 +28,8 @@ from yuxi.utils import logger
 # Global Lock for MCP state
 _mcp_lock = asyncio.Lock()
 
-# 本地仅缓存工具对象。配置始终以数据库为准，每次按 server_slug 现查。
-# cache key 使用 server_slug:config_hash，当配置变化时会自然失效。
+# Only tool objects are cached locally. The configuration is always based on the database, and you can check it by pressing server_slug every time.
+# The cache key uses server_slug:config_hash, which will naturally become invalid when the configuration changes.
 _mcp_tools_cache: dict[str, list[Callable[..., Any]]] = {}
 
 # MCP tools statistics (for reporting enabled/disabled counts)
@@ -42,9 +42,9 @@ _DEFAULT_MCP_SERVERS = {
         "command": "npx",
         "args": ["-y", "@antv/mcp-server-chart"],
         "transport": "stdio",
-        "description": "图表生成工具，支持生成各类图表（柱状图、折线图、饼图等）",
+        "description": "Chart generation tool that supports generating various charts (bar charts, line charts, pie charts, etc.)",
         "icon": "📊",
-        "tags": ["内置", "图表"],
+        "tags": ["built-in", "chart"],
     },
 }
 
@@ -224,8 +224,8 @@ async def get_mcp_tools(
         logger.warning(f"MCP server '{server_slug}' not found in database or disabled")
         return []
 
-    # 配置 hash 直接基于完整配置生成。只要数据库中的配置发生变化，
-    # 本地工具缓存 key 就会变化，从而自然触发重建。
+    # The configuration hash is generated directly from the full configuration. Whenever the configuration in the database changes,
+    # The local tool cache key will change, thus naturally triggering a rebuild.
     config_payload = json.dumps(server_config, sort_keys=True, ensure_ascii=True, separators=(",", ":"))
     config_hash = hashlib.sha256(config_payload.encode("utf-8")).hexdigest()[:16]
     cache_key = f"{server_slug}:{config_hash}"
@@ -238,7 +238,7 @@ async def get_mcp_tools(
 
     if not all_processed_tools:
         try:
-            # disabled_tools 只影响返回值过滤，不参与 MCP client 建连参数。
+            # disabled_tools only affects return value filtering and does not participate in MCP client connection establishment parameters.
             client_config = {k: v for k, v in server_config.items() if k not in ("disabled_tools",)}
 
             client = await get_mcp_client({server_slug: client_config})
@@ -256,7 +256,7 @@ async def get_mcp_tools(
                 if tool.metadata is None:
                     tool.metadata = {}
                 tool.metadata["id"] = unique_id
-                # 开启错误处理，防止工具调用抛出 ToolException 时击穿服务
+                # Enable error handling to prevent service breakdown when tool calls throw ToolException
                 tool.handle_tool_error = True
                 all_processed_tools.append(tool)
 

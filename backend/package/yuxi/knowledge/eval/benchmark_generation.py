@@ -177,12 +177,12 @@ async def select_graph_enhanced_chunks(
 
 
 def build_benchmark_generation_prompt(ctx_items: list[tuple[str, str]]) -> str:
-    context_text = "\n\n".join([f"片段ID={cid}\n{content}" for cid, content in ctx_items])
+    context_text = "\n\n".join([f"Fragment ID={cid}\n{content}" for cid, content in ctx_items])
     return (
-        "你将基于以下上下文生成一个可由上下文准确回答的问题与标准答案。"
-        "仅返回一个JSON对象，不要包含其他文字。"
-        "键为 query、gold_answer、gold_chunk_ids。gold_chunk_ids 必须是上述上下文片段的ID子集。\n\n"
-        "上下文：\n" + context_text + "\n"
+        "Based on the following context, you will generate a question and model answer that can be accurately answered by the context."
+        "Return only a JSON object, no other text."
+        "The keys are query, gold_answer, gold_chunk_ids. gold_chunk_ids must be a subset of the IDs of the above context fragments.\n\n"
+        "Context:\n" + context_text + "\n"
     )
 
 
@@ -260,7 +260,7 @@ async def iter_generated_benchmark_items(
     cancel_cb: Callable[[], Any] | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     if progress_cb:
-        await progress_cb(5, "加载chunks")
+        await progress_cb(5, "Load chunks")
 
     all_chunks = await collect_kb_chunks(kb_instance, kb_id)
     if not all_chunks:
@@ -272,10 +272,10 @@ async def iter_generated_benchmark_items(
     graph_expand_top_k = normalize_graph_expand_top_k(graph_expand_top_k)
 
     if progress_cb:
-        await progress_cb(15, "准备生成样本")
+        await progress_cb(15, "Prepare to generate samples")
 
     if not llm_model_spec:
-        raise ValueError("llm_model_spec 不能为空")
+        raise ValueError("llm_model_spec không được để trống")
 
     llm = select_model(model_spec=llm_model_spec)
     context_count = max(clamp_neighbors_count(neighbors_count), 1)
@@ -324,7 +324,7 @@ async def iter_generated_benchmark_items(
                     results.append((attempt_no, item))
                     if progress_cb:
                         progress = int(99 * generated / max(count, 1))
-                        message = f"已生成 {generated}/{count}"
+                        message = f"Generated {generated}/{count}"
                 if progress_cb:
                     await progress_cb(progress, message)
             finally:

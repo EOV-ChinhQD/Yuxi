@@ -171,7 +171,7 @@ def test_submit_user_feedback_score_creates_boolean_score(monkeypatch):
         conversation_id=56,
         uid="user-1",
         rating="dislike",
-        reason="答案不准确",
+        reason="The answer is inaccurate",
     )
 
     client = _FakeLangfuseClient.instances[-1]
@@ -183,7 +183,7 @@ def test_submit_user_feedback_score_creates_boolean_score(monkeypatch):
             "name": "user-feedback",
             "value": 0,
             "data_type": "BOOLEAN",
-            "comment": "答案不准确",
+            "comment": "The answer is inaccurate",
             "metadata": {
                 "source": "yuxi",
                 "feedback_id": 12,

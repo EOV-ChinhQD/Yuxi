@@ -64,7 +64,7 @@ def test_save_writes_runtime_snapshot_after_base_toml(tmp_path, monkeypatch: pyt
     assert payload["sandbox_provider"] == "provisioner"
     assert "enable_reranker" not in payload
     assert "default_agent_id" not in payload
-    # 快照只含公开配置字段，不夹带元数据
+    # Snapshots only contain public configuration fields and do not carry metadata
     assert "schema_version" not in payload
     assert "saved_at" not in payload
     assert all(not key.startswith("_") for key in payload)
@@ -130,7 +130,7 @@ def test_refresh_loads_public_config_from_redis(tmp_path, monkeypatch: pytest.Mo
     assert cfg.save_dir == str(tmp_path)
     assert cfg.sandbox_virtual_path_prefix == "/redis/user-data"
     assert str(cfg._config_file) == str(tmp_path / "config" / "base.toml")
-    # 快照里的非运行时字段和未知键不会被写回
+    # Non-runtime fields and unknown keys in the snapshot will not be written back
     assert not hasattr(cfg, "enable_reranker")
     assert redis.get_keys == [RUNTIME_CONFIG_REDIS_KEY]
 

@@ -11,13 +11,13 @@ _LITE_MODE = os.environ.get("LITE_MODE", "").lower() in ("true", "1")
 _SKIP_APP_INIT = os.environ.get("YUXI_SKIP_APP_INIT") == "1"
 
 if not _LITE_MODE:
-    # 注册知识库类型
+    # Register knowledge base type
     KnowledgeBaseFactory.register(MilvusKB)
 
 KnowledgeBaseFactory.register(DifyKB)
 KnowledgeBaseFactory.register(NotionKB)
 
-# 创建知识库管理器
+# Create a knowledge base manager
 work_dir = os.path.join(config.save_dir, "knowledge_base_data")
 knowledge_base = KnowledgeBaseManager(work_dir)
 

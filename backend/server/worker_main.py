@@ -4,9 +4,9 @@ import asyncio
 import os
 import sys
 
-# 必须放在最顶层！
+# Must be placed at the top!
 if sys.platform == "win32":
-    # 把当前文件 (main.py) 的上一级的上一级 (即根目录 Yuxi) 加入到 sys.path
+    # Add the previous level of the current file (main.py) (i.e. the root directory Yuxi) to sys.path
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 

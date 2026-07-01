@@ -54,30 +54,30 @@ class AgentUpdate(BaseModel):
 
 
 class AgentRunCreate(BaseModel):
-    query: str | None = Field(None, description="用户输入的问题")
-    agent_id: str = Field(..., description="智能体 ID")
-    thread_id: str = Field(..., description="会话线程 ID")
-    meta: dict = Field(default_factory=dict, description="可选，请求追踪信息，例如 request_id")
-    image_content: str | None = Field(None, description="可选，base64 图片内容")
-    model_spec: str | None = Field(None, description="可选，对话级模型覆盖，优先级高于智能体配置")
-    resume: Any | None = Field(None, description="可选，恢复 interrupted run 的输入")
-    parent_run_id: str | None = Field(None, description="可选，被恢复的 run ID")
-    resume_request_id: str | None = Field(None, description="可选，resume 幂等键")
+    query: str | None = Field(None, description="Câu hỏi của người dùng")
+    agent_id: str = Field(..., description="ID Agent")
+    thread_id: str = Field(..., description="ID thread hội thoại")
+    meta: dict = Field(default_factory=dict, description="Tùy chọn, thông tin theo dõi yêu cầu, ví dụ request_id")
+    image_content: str | None = Field(None, description="Tùy chọn, nội dung hình ảnh base64")
+    model_spec: str | None = Field(None, description="Tùy chọn, ghi đè mô hình ở cấp độ hội thoại, độ ưu tiên cao hơn cấu hình agent")
+    resume: Any | None = Field(None, description="Tùy chọn, khôi phục đầu vào của run bị gián đoạn")
+    parent_run_id: str | None = Field(None, description="Tùy chọn, ID run được khôi phục")
+    resume_request_id: str | None = Field(None, description="Tùy chọn, khóa lũy đẳng resume")
 
 
 class AgentEvaluationContext(BaseModel):
-    dataset_name: str | None = Field(None, description="Langfuse dataset 名称")
+    dataset_name: str | None = Field(None, description="Tên dataset Langfuse")
     dataset_item_id: str | None = Field(None, description="Langfuse dataset item ID")
-    experiment_name: str | None = Field(None, description="Langfuse experiment/run 名称")
+    experiment_name: str | None = Field(None, description="Tên experiment/run Langfuse")
 
 
 class AgentEvalRunCreate(BaseModel):
-    query: str = Field(..., description="评估样例输入")
-    agent_slug: str = Field(..., description="要运行的智能体 slug")
-    evaluation: AgentEvaluationContext = Field(default_factory=AgentEvaluationContext, description="评估上下文")
-    meta: dict = Field(default_factory=dict, description="可选，请求追踪信息，例如 request_id、attachment_file_ids")
-    image_content: str | None = Field(None, description="可选，base64 图片内容")
-    model_spec: str | None = Field(None, description="可选，对话级模型覆盖，优先级高于智能体配置")
+    query: str = Field(..., description="Đầu vào mẫu đánh giá")
+    agent_slug: str = Field(..., description="Slug của agent cần chạy")
+    evaluation: AgentEvaluationContext = Field(default_factory=AgentEvaluationContext, description="Ngữ cảnh đánh giá")
+    meta: dict = Field(default_factory=dict, description="Tùy chọn, thông tin theo dõi yêu cầu, ví dụ request_id, attachment_file_ids")
+    image_content: str | None = Field(None, description="Tùy chọn, nội dung hình ảnh base64")
+    model_spec: str | None = Field(None, description="Tùy chọn, ghi đè mô hình ở cấp độ hội thoại, độ ưu tiên cao hơn cấu hình agent")
 
 
 def _backend_info(info: dict) -> dict:
@@ -125,7 +125,7 @@ async def get_agent_backend(
 ):
     backend = agent_manager.get_agent(backend_id)
     if not backend:
-        raise HTTPException(status_code=404, detail=f"智能体后端 {backend_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Backend agent {backend_id} không tồn tại")
     return _backend_info(await backend.get_info(user_role=current_user.role, db=db, user=current_user))
 
 
@@ -148,7 +148,7 @@ async def get_default_agent(current_user: User = Depends(get_required_user), db:
     repo = AgentRepository(db)
     item = await repo.ensure_default_agent()
     if not item or not user_can_access_agent(current_user, item):
-        raise HTTPException(status_code=404, detail="默认智能体不可访问")
+        raise HTTPException(status_code=404, detail="Agent mặc định không thể truy cập")
     return {"agent": await _serialize_agent(repo, item, current_user, include_configurable_items=True)}
 
 
@@ -157,9 +157,9 @@ async def create_agent(
     payload: AgentCreate, current_user: User = Depends(get_required_user), db: AsyncSession = Depends(get_db)
 ):
     if not agent_manager.get_agent(payload.backend_id):
-        raise HTTPException(status_code=404, detail=f"智能体后端 {payload.backend_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Backend agent {payload.backend_id} không tồn tại")
     if payload.set_default:
-        raise HTTPException(status_code=422, detail="默认智能体已固定为内置智能助手")
+        raise HTTPException(status_code=422, detail="Agent mặc định đã được cố định là trợ lý ảo tích hợp")
 
     repo = AgentRepository(db)
     try:
@@ -187,7 +187,7 @@ async def get_agent(agent_id: str, current_user: User = Depends(get_required_use
     repo = AgentRepository(db)
     item = await repo.get_visible_by_slug(slug=agent_id, user=current_user, include_subagents=True)
     if not item:
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent không tồn tại")
     return {"agent": await _serialize_agent(repo, item, current_user, include_configurable_items=True)}
 
 
@@ -201,9 +201,9 @@ async def update_agent(
     repo = AgentRepository(db)
     item = await repo.get_visible_by_slug(slug=agent_id, user=current_user, include_subagents=True)
     if not item:
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent không tồn tại")
     if not user_can_manage_agent(current_user, item):
-        raise HTTPException(status_code=403, detail="不能编辑非自己创建的智能体")
+        raise HTTPException(status_code=403, detail="Không thể chỉnh sửa agent do người khác tạo")
 
     try:
         fields_set = payload.model_fields_set
@@ -238,11 +238,11 @@ async def delete_agent(
     repo = AgentRepository(db)
     item = await repo.get_visible_by_slug(slug=agent_id, user=current_user, include_subagents=True)
     if not item:
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent không tồn tại")
     if not user_can_manage_agent(current_user, item):
-        raise HTTPException(status_code=403, detail="不能删除非自己创建的智能体")
+        raise HTTPException(status_code=403, detail="Không thể xóa agent do người khác tạo")
     if is_builtin_agent(item):
-        raise HTTPException(status_code=409, detail="内置智能体不能删除")
+        raise HTTPException(status_code=409, detail="Không thể xóa agent tích hợp")
     await repo.delete(agent=item)
     return {"success": True}
 
@@ -256,7 +256,7 @@ async def set_agent_default(
     repo = AgentRepository(db)
     item = await repo.get_by_slug(agent_id)
     if not item:
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent không tồn tại")
     try:
         updated = await repo.set_default(agent=item, updated_by=str(current_user.uid))
     except ValueError as exc:
@@ -328,7 +328,7 @@ async def cancel_agent_run(
 async def stream_run_events(
     run_id: str,
     after_seq: str = "0-0",
-    verbose: bool = Query(default=True, description="是否返回完整事件载荷；false 时仅返回 UI/客户端消费所需字段"),
+    verbose: bool = Query(default=True, description="Có trả về toàn bộ payload sự kiện hay không; nếu là false thì chỉ trả về các trường cần thiết cho UI/Client"),
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
     current_user: User = Depends(get_required_user),
 ):

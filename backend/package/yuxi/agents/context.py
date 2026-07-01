@@ -14,37 +14,37 @@ DEFAULT_SUMMARY_KEEP_MESSAGES = 10
 DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT = 500
 DEFAULT_MAX_EXECUTION_STEPS = 300
 DEFAULT_TOOL_RESULT_EVICTION_K_TOKENS = 3
-DEFAULT_YUXI_SUMMARY_PROMPT = """你是对话上下文压缩助手。
-你的任务是把下面的对话历史压缩成后续智能体继续工作所需的高价值上下文。
+DEFAULT_YUXI_SUMMARY_PROMPT = """Bạn là trợ lý nén ngữ cảnh hội thoại.
+Nhiệm vụ của bạn là nén lịch sử trò chuyện dưới đây thành ngữ cảnh có giá trị cao cần thiết để agent tiếp theo tiếp tục làm việc.
 
-请特别保留并清晰记录：
+Vui lòng đặc biệt giữ lại và ghi nhận rõ ràng:
 
 ## SESSION INTENT
-用户当前的主要目标、任务范围和最终交付物。
+Mục tiêu chính, phạm vi nhiệm vụ và sản phẩm bàn giao cuối cùng hiện tại của người dùng.
 
 ## USER REQUIREMENTS AND PREFERENCES
-用户明确提出的要求、偏好、禁忌、输出格式、语言风格、技术约束、验收标准，以及对实现方式的取舍意见。只记录仍然可能影响后续回答或执行的内容。
+Các yêu cầu, sở thích, điều tối kỵ, định dạng đầu ra, phong cách ngôn ngữ, ràng buộc kỹ thuật, tiêu chí chấp nhận được người dùng nêu rõ, cũng như ý kiến lựa chọn phương án thực hiện. Chỉ ghi lại những nội dung vẫn có thể ảnh hưởng đến các câu trả lời hoặc việc thực thi tiếp theo.
 
 ## PROGRESS AND DECISIONS
-已经完成的步骤、关键结论、已确认的方案、被否定的方案及原因。
+Các bước đã hoàn thành, kết luận chính, phương án đã xác nhận, phương án bị từ chối và lý do.
 
 ## ARTIFACTS AND REFERENCES
-已经创建、修改、读取或需要继续关注的文件、路径、工具输出路径、线程或运行标识。保留具体路径和关键标识符。
+Các tệp, đường dẫn, đường dẫn đầu ra của công cụ, thread hoặc định danh chạy đã được tạo, sửa đổi, đọc hoặc cần tiếp tục theo dõi. Giữ lại đường dẫn cụ thể và các định danh chính.
 
 ## NEXT STEPS
-为了完成用户目标，后续最应该继续做的具体步骤。没有待办时写 None。
+For the purpose of Finishuser, the most specific steps should be continued. Write None when there is no to-do.
 
-要求：
-- 不要逐字复述冗长工具输出；保留结论、路径和必要证据。
-- 不要编造没有出现在对话中的事实。
-- 如果存在未解决的问题或风险，明确记录。
-- 使用与用户主要对话一致的语言。
+Require:
+- Do not recite lengthy tool output verbatim; retain conclusions, paths, and necessary evidence.
+- Don’t make up facts that don’t appear in the conversation.
+- If there are unresolved issues or risks, clearly document them.
+- Use language that is consistent with the user's primary conversation.
 
 <messages>
 {messages}
 </messages>
 
-只输出压缩后的上下文，不要添加额外说明。"""
+Output only the compressed context without adding additional descriptions."""
 
 
 def _role_can_access(auth: str | None, role: str | None) -> bool:
@@ -65,17 +65,17 @@ def _load_workspace_agents_prompt(thread_id: str, uid: str) -> str:
     except FileNotFoundError:
         return ""
     except IsADirectoryError:
-        logger.warning("读取工作区 AGENTS.md 失败: 路径是目录")
+        logger.warning("Read workspace AGENTS.md fail: path is directory")
         return ""
     except OSError as exc:
-        logger.warning(f"读取工作区 AGENTS.md 失败: {exc}")
+        logger.warning(f"Read workspace AGENTS.md fail: {exc}")
         return ""
 
     prompt = content[:WORKSPACE_AGENTS_PROMPT_MAX_BYTES].decode("utf-8", errors="replace").strip()
     if not prompt:
         return ""
     if len(content) > WORKSPACE_AGENTS_PROMPT_MAX_BYTES:
-        return f"{prompt}\n\n[AGENTS.md 内容已截断]"
+        return f"{prompt}\n\n[AGENTS.md Content has been truncated]"
     return prompt
 
 
@@ -91,7 +91,7 @@ async def build_agent_input_context(
     agents_prompt = await asyncio.to_thread(_load_workspace_agents_prompt, thread_id, uid)
 
     if agents_prompt:
-        agents_section = f"用户工作区 agents/AGENTS.md 内容：\n{agents_prompt}"
+        agents_section = f"User workspace agents/AGENTS.md content:\n{agents_prompt}"
         base_prompt = str(input_context.get("system_prompt") or "").rstrip()
         input_context["system_prompt"] = f"{base_prompt}\n\n{agents_section}" if base_prompt else agents_section
 
@@ -104,7 +104,7 @@ def filter_config_by_role(
     role: str | None,
     context_schema: type["BaseContext"] | None = None,
 ) -> dict:
-    """按 Context 字段 metadata.auth 过滤 config_json.context。"""
+    """By Context field metadata.auth filter config_json.context。"""
     if not isinstance(config_json, dict):
         return {}
 
@@ -127,50 +127,50 @@ def filter_config_by_role(
 @dataclass(kw_only=True)
 class BaseContext:
     """
-    定义一个基础 Context 供 各类 graph 继承
+    Define oneindivual basic Context for inheritance by various graphs
 
-    配置优先级:
-    1. 运行时配置(RunnableConfig)：最高优先级，直接从函数参数传入
-    2. 类默认配置：最低优先级，类中定义的默认值
+    Configuration priority:
+    1. Runtime configuration(RunnableConfig): Highest priority, passed directly from function arguments
+    2. Class default configuration: lowest priority, default value defined in the class
     """
 
     def update(self, data: dict):
-        """更新配置字段"""
+        """Update configuration fields"""
         for key, value in data.items():
             if hasattr(self, key):
                 setattr(self, key, value)
 
     thread_id: str = field(
         default_factory=lambda: str(uuid.uuid4()),
-        metadata={"name": "线程ID", "configurable": False, "description": "用来唯一标识一个对话线程"},
+        metadata={"name": "Thread ID", "configurable": False, "description": "Used to uniquely identify a conversation thread"},
     )
 
     uid: str = field(
         default_factory=lambda: str(uuid.uuid4()),
-        metadata={"name": "UID", "configurable": False, "description": "用来唯一标识一个用户"},
+        metadata={"name": "UID", "configurable": False, "description": "Used to uniquely identify a user"},
     )
 
     run_id: str | None = field(
         default=None,
-        metadata={"name": "运行 ID", "configurable": False, "hide": True},
+        metadata={"name": "Run ID", "configurable": False, "hide": True},
     )
 
     request_id: str | None = field(
         default=None,
-        metadata={"name": "请求 ID", "configurable": False, "hide": True},
+        metadata={"name": "Request ID", "configurable": False, "hide": True},
     )
 
     system_prompt: str = field(
         default="You are a helpful assistant.",
-        metadata={"name": "系统提示词", "description": "用来描述智能体的角色和行为", "kind": "prompt"},
+        metadata={"name": "System Prompt", "description": "Mô tả vai trò và hành vi của Agent", "kind": "prompt"},
     )
 
     model: str = field(
         default="",
         metadata={
-            "name": "智能体模型",
+            "name": "Model của Agent",
             "options": [],
-            "description": "智能体的驱动模型，留空时使用系统默认模型。",
+            "description": "Model thúc đẩy Agent, để trống sẽ sử dụng model mặc định của hệ thống.",
             "kind": "llm",
         },
     )
@@ -178,8 +178,8 @@ class BaseContext:
     tools: list[str] | None = field(
         default=None,
         metadata={
-            "name": "工具",
-            "description": "内置的工具。默认选择当前用户可用的全部工具。",
+            "name": "Công cụ",
+            "description": "Các công cụ tích hợp. Mặc định chọn tất cả công cụ khả dụng cho người dùng hiện tại.",
             "type": "list",
             "kind": "tools",
         },
@@ -188,8 +188,8 @@ class BaseContext:
     knowledges: list[str] | None = field(
         default=None,
         metadata={
-            "name": "知识库",
-            "description": "知识库列表，可以在左侧知识库页面中创建知识库。默认选择当前用户可访问的全部知识库。",
+            "name": "Kho kiến thức",
+            "description": "Danh sách kho kiến thức, có thể tạo ở trang Kho kiến thức bên trái. Mặc định chọn tất cả kho kiến thức người dùng hiện tại có thể truy cập.",
             "type": "list",
             "kind": "knowledges",
         },
@@ -198,11 +198,11 @@ class BaseContext:
     mcps: list[str] | None = field(
         default=None,
         metadata={
-            "name": "MCP服务器",
+            "name": "MCP Server",
             "options": [],
             "description": (
-                "MCP服务器列表，默认选择当前用户可用的全部 MCP 服务器。建议使用支持 SSE 的 MCP 服务器，"
-                "如果需要使用 uvx 或 npx 运行的服务器，也请在项目外部启动 MCP 服务器，并在项目中配置 MCP 服务器。"
+                "Danh sách MCP server, mặc định chọn tất cả MCP server khả dụng cho người dùng hiện tại. Khuyên dùng MCP server hỗ trợ SSE. "
+                "Nếu cần dùng server chạy qua uvx hoặc npx, vui lòng khởi động MCP server bên ngoài dự án và cấu hình MCP server trong dự án."
             ),
             "type": "list",
             "kind": "mcps",
@@ -214,8 +214,8 @@ class BaseContext:
         metadata={
             "name": "Skills",
             "options": [],
-            "description": "可选 Skill 拓展列表，默认选择当前用户可用的全部 Skill 拓展。"
-            "Skill 拓展依赖的工具和 MCP 服务器也会被自动挂载。",
+            "description": "Danh sách tiện ích mở rộng Skill tùy chọn, mặc định chọn tất cả Skill khả dụng cho người dùng hiện tại. "
+            "Các công cụ và MCP server mà tiện ích Skill phụ thuộc vào cũng sẽ được tự động gắn kèm.",
             "type": "list",
             "kind": "skills",
         },
@@ -224,10 +224,10 @@ class BaseContext:
     summary_threshold: int = field(
         default=DEFAULT_SUMMARY_THRESHOLD_K,
         metadata={
-            "name": "上下文摘要触发阈值 (K)",
+            "name": "Ngưỡng kích hoạt tóm tắt ngữ cảnh (K)",
             "description": (
-                f"当上下文大小超过该值时，启用摘要功能以优化上下文使用。单位为 K，默认值为 "
-                f"{DEFAULT_SUMMARY_THRESHOLD_K}K。"
+                f"Khi kích thước ngữ cảnh vượt quá giá trị này, tính năng tóm tắt sẽ được bật để tối ưu hóa việc sử dụng ngữ cảnh. Đơn vị là K, giá trị mặc định là "
+                f"{DEFAULT_SUMMARY_THRESHOLD_K}K."
             ),
             "type": "number",
             "auth": "admin",
@@ -237,9 +237,9 @@ class BaseContext:
     summary_keep_messages: int = field(
         default=DEFAULT_SUMMARY_KEEP_MESSAGES,
         metadata={
-            "name": "摘要后保留消息数",
+            "name": "Số tin nhắn giữ lại sau tóm tắt",
             "description": (
-                f"上下文摘要触发后，除摘要消息外保留最近的消息数量，默认 {DEFAULT_SUMMARY_KEEP_MESSAGES} 条。"
+                f"Sau khi kích hoạt tóm tắt ngữ cảnh, số lượng tin nhắn gần đây nhất được giữ lại (ngoài tin nhắn tóm tắt), mặc định là {DEFAULT_SUMMARY_KEEP_MESSAGES} tin nhắn."
             ),
             "type": "number",
             "auth": "admin",
@@ -249,8 +249,8 @@ class BaseContext:
     summary_prompt: str = field(
         default=DEFAULT_YUXI_SUMMARY_PROMPT,
         metadata={
-            "name": "上下文摘要提示词",
-            "description": "触发上下文摘要时使用的提示词，必须能接收 {messages} 作为待摘要消息占位符。",
+            "name": "Prompt tóm tắt ngữ cảnh",
+            "description": "Prompt được sử dụng khi kích hoạt tóm tắt ngữ cảnh, phải nhận được {messages} làm vị trí giữ chỗ cho các tin nhắn cần tóm tắt.",
             "type": "string",
             "kind": "prompt",
             "auth": "admin",
@@ -260,10 +260,10 @@ class BaseContext:
     summary_tool_result_token_limit: int = field(
         default=DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT,
         metadata={
-            "name": "摘要工具结果预览上限",
+            "name": "Giới hạn xem trước kết quả công cụ tóm tắt",
             "description": (
-                "上下文摘要清洗历史工具结果时，会将完整结果写入 outputs，并用路径和不超过该 token "
-                f"数的预览替换 ToolMessage 内容，默认 {DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT}。"
+                "Khi tóm tắt ngữ cảnh làm sạch lịch sử kết quả công cụ, kết quả đầy đủ sẽ được ghi vào outputs, và nội dung ToolMessage sẽ được thay thế bằng đường dẫn và phần xem trước không quá số token "
+                f"này, mặc định là {DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT}."
             ),
             "type": "number",
             "auth": "admin",
@@ -273,10 +273,10 @@ class BaseContext:
     max_execution_steps: int = field(
         default=DEFAULT_MAX_EXECUTION_STEPS,
         metadata={
-            "name": "最大执行步数",
+            "name": "Số bước thực thi tối đa",
             "description": (
-                "单次 Agent 运行允许的最大 LangGraph 执行步数，对应 recursion_limit，默认 "
-                f"{DEFAULT_MAX_EXECUTION_STEPS}。"
+                "Số bước thực thi LangGraph tối đa cho phép trong một lần chạy Agent, tương ứng với recursion_limit, mặc định là "
+                f"{DEFAULT_MAX_EXECUTION_STEPS}."
             ),
             "type": "number",
             "auth": "admin",
@@ -286,8 +286,8 @@ class BaseContext:
     model_retry_times: int = field(
         default=2,
         metadata={
-            "name": "模型重试次数",
-            "description": "模型调用失败时的最大重试次数，默认值为 2。",
+            "name": "Số lần thử lại model",
+            "description": "Số lần thử lại tối đa khi gọi model thất bại, mặc định là 2.",
             "type": "number",
             "auth": "admin",
         },
@@ -295,7 +295,7 @@ class BaseContext:
 
     @classmethod
     def get_configurable_items(cls, user_role: str | None = None):
-        """实现一个可配置的参数列表，在 UI 上配置时使用"""
+        """Triển khai danh sách tham số có thể cấu hình, được sử dụng khi cấu hình trên giao diện người dùng (UI)"""
         configurable_items = {}
         for f in fields(cls):
             if f.init and not f.metadata.get("hide", False):
@@ -325,7 +325,7 @@ class BaseContext:
 
     @classmethod
     def _get_type_name(cls, field_type) -> str:
-        """获取类型名称"""
+        """Get type name"""
         origin = get_origin(field_type)
         if origin is not None:
             if hasattr(origin, "__name__"):
@@ -337,7 +337,7 @@ class BaseContext:
             return str(field_type)
 
     def update_from_dict(self, data: dict):
-        """从字典更新配置字段"""
+        """Update configuration fields from dictionary"""
         for key, value in data.items():
             if hasattr(self, key):
                 setattr(self, key, value)
@@ -491,7 +491,7 @@ async def prepare_agent_runtime_context(
     *,
     context_schema: type[BaseContext] | None = None,
 ) -> BaseContext:
-    """准备 Agent 运行时上下文，主要是根据 context 中的 uid 加载用户可访问的资源列表，并进行规范化处理。"""
+    """Preparing the Agent runtime context mainly involves loading the user-accessible resource list based on the uid in the context and normalizing it."""
     schema = context_schema or type(context)
     uid = str(getattr(context, "uid", "") or "").strip()
     if not uid:

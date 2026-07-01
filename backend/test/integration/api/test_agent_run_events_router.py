@@ -61,7 +61,7 @@ async def test_run_events_verbose_false_returns_compact_payload(test_client, sta
             "deep-research",
             uid,
             request_id,
-            json.dumps({"query": "写一个冒泡排序"}, ensure_ascii=False),
+            json.dumps({"query": "Write a bubble sort"}, ensure_ascii=False),
             "completed",
             "chat",
         )
@@ -114,7 +114,7 @@ async def test_run_events_verbose_false_returns_compact_payload(test_client, sta
                 "items": [
                     {
                         "request_id": request_id,
-                        "response": "你",
+                        "response": "you",
                         "thread_id": thread_id,
                         "status": "loading",
                         "stream_event": {

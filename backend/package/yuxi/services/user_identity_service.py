@@ -10,13 +10,13 @@ def to_pinyin(text: str) -> str:
 
 def validate_username(username: str) -> tuple[bool, str]:
     if not username:
-        return False, "用户名不能为空"
+        return False, "Username cannot be empty"
     if len(username) < 2:
-        return False, "用户名长度不能少于2个字符"
+        return False, "Username length cannot be less than 2 characters"
     if len(username) > 20:
-        return False, "用户名长度不能超过20个字符"
-    if not re.match(r"^[一-龥a-zA-Z0-9_]+$", username):
-        return False, "用户名只能包含中文、英文、数字和下划线"
+        return False, "Username length cannot exceed 20 characters"
+    if not re.match(r"^[\u4e00-\u9fa5a-zA-Z0-9_]+$", username):
+        return False, "Username can only contain Chinese, English, numbers and underscores"
     return True, ""
 
 

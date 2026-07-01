@@ -50,16 +50,16 @@ async def _ensure_knowledge_read_access(current_user: User, kb_id: str) -> None:
 async def _ensure_knowledge_supports_documents(kb_id: str) -> None:
     db_info = await knowledge_base.get_database_info(kb_id)
     if not db_info:
-        raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Kho kiến thức {kb_id} không tồn tại")
     kb_type = (db_info.get("kb_type") or "").lower()
     kb_class = KnowledgeBaseFactory.get_kb_class(kb_type)
     if not kb_class.supports_documents:
-        raise HTTPException(status_code=501, detail=f"{db_info.get('name') or kb_type} 不支持文件浏览")
+        raise HTTPException(status_code=501, detail=f"{db_info.get('name') or kb_type} không hỗ trợ duyệt tệp")
 
 
 def _raise_knowledge_read_error(error: ValueError) -> None:
-    message = str(error) or "知识库文件读取失败"
-    if message.startswith("Dify 知识库不支持"):
+    message = str(error) or "Đọc tệp kho kiến thức thất bại"
+    if message.startswith("Kho kiến thức Dify không hỗ trợ"):
         raise HTTPException(status_code=501, detail=message) from error
     raise HTTPException(status_code=400, detail=message) from error
 
@@ -98,9 +98,9 @@ def _workspace_knowledge_entry(kb_id: str, item: dict) -> dict:
 
 @workspace.get("/tree", response_model=dict)
 async def get_workspace_tree(
-    path: str = Query("/", description="工作区目录路径"),
-    recursive: bool = Query(False, description="是否递归返回子目录文件"),
-    files_only: bool = Query(False, description="是否仅返回文件"),
+    path: str = Query("/", description="Đường dẫn thư mục workspace"),
+    recursive: bool = Query(False, description="Có đệ quy trả về các tệp thư mục con hay không"),
+    files_only: bool = Query(False, description="Có chỉ trả về tệp tin hay không"),
     current_user: User = Depends(get_required_user),
 ):
     return await list_workspace_tree(
@@ -133,7 +133,7 @@ def _preview_response(data):
 
 @workspace.get("/file")
 async def get_workspace_file(
-    path: str = Query(..., description="工作区文件路径"),
+    path: str = Query(..., description="Đường dẫn tệp workspace"),
     current_user: User = Depends(get_required_user),
 ):
     return await read_workspace_file_content(path=path, current_user=current_user)
@@ -141,13 +141,13 @@ async def get_workspace_file(
 
 @workspace.get("/knowledge/tree", response_model=dict)
 async def get_workspace_knowledge_tree(
-    kb_id: str = Query(..., description="知识库 ID"),
-    parent_id: str | None = Query(None, description="父文件夹 ID"),
-    path_prefix: str | None = Query(None, description="虚拟目录路径前缀"),
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(100, ge=1, le=500, description="每页数量"),
-    recursive: bool = Query(False, description="是否递归返回子目录文件"),
-    files_only: bool = Query(False, description="是否仅返回文件"),
+    kb_id: str = Query(..., description="ID kho kiến thức"),
+    parent_id: str | None = Query(None, description="ID thư mục cha"),
+    path_prefix: str | None = Query(None, description="Tiền tố đường dẫn thư mục ảo"),
+    page: int = Query(1, ge=1, description="Số trang"),
+    page_size: int = Query(100, ge=1, le=500, description="Số lượng phần tử trên mỗi trang"),
+    recursive: bool = Query(False, description="Có đệ quy trả về các tệp thư mục con hay không"),
+    files_only: bool = Query(False, description="Có chỉ trả về tệp tin hay không"),
     current_user: User = Depends(get_required_user),
 ):
     await _ensure_knowledge_read_access(current_user, kb_id)
@@ -179,8 +179,8 @@ async def get_workspace_knowledge_tree(
 
 @workspace.get("/knowledge/file")
 async def get_workspace_knowledge_file(
-    kb_id: str = Query(..., description="知识库 ID"),
-    file_id: str = Query(..., description="知识库文件 ID"),
+    kb_id: str = Query(..., description="ID kho kiến thức"),
+    file_id: str = Query(..., description="ID tệp kho kiến thức"),
     current_user: User = Depends(get_required_user),
 ):
     await _ensure_knowledge_read_access(current_user, kb_id)
@@ -192,9 +192,9 @@ async def get_workspace_knowledge_file(
 
 @workspace.get("/knowledge/download")
 async def download_workspace_knowledge_file(
-    kb_id: str = Query(..., description="知识库 ID"),
-    file_id: str = Query(..., description="知识库文件 ID"),
-    variant: str = Query("original", description="下载模式：original 或 parsed"),
+    kb_id: str = Query(..., description="ID kho kiến thức"),
+    file_id: str = Query(..., description="ID tệp kho kiến thức"),
+    variant: str = Query("original", description="Chế độ tải xuống: original hoặc parsed"),
     current_user: User = Depends(get_required_user),
 ):
     await _ensure_knowledge_read_access(current_user, kb_id)
@@ -225,7 +225,7 @@ async def update_workspace_file(
 
 @workspace.delete("/file", response_model=dict)
 async def delete_workspace_file_route(
-    path: str = Query(..., description="工作区文件或目录路径"),
+    path: str = Query(..., description="Đường dẫn tệp hoặc thư mục workspace"),
     current_user: User = Depends(get_required_user),
 ):
     return await delete_workspace_path(path=path, current_user=current_user)
@@ -245,8 +245,8 @@ async def create_workspace_directory_route(
 
 @workspace.post("/upload", response_model=dict)
 async def upload_workspace_files_route(
-    parent_path: str = Form(..., description="父目录路径"),
-    files: list[UploadFile] = File(..., description="上传文件列表"),
+    parent_path: str = Form(..., description="Đường dẫn thư mục cha"),
+    files: list[UploadFile] = File(..., description="Danh sách tệp tải lên"),
     current_user: User = Depends(get_required_user),
 ):
     return await upload_workspace_files(parent_path=parent_path, files=files, current_user=current_user)
@@ -254,7 +254,7 @@ async def upload_workspace_files_route(
 
 @workspace.get("/download")
 async def download_workspace(
-    path: str = Query(..., description="工作区文件路径"),
+    path: str = Query(..., description="Đường dẫn tệp workspace"),
     current_user: User = Depends(get_required_user),
 ):
     return await download_workspace_file(path=path, current_user=current_user)

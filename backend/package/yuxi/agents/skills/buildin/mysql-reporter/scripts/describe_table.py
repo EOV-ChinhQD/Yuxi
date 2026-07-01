@@ -19,15 +19,15 @@ from pymysql.cursors import DictCursor
 
 
 class MySQLConnectionError(Exception):
-    """MySQL 连接异常"""
+    """MySQL Connection abnormality"""
 
 
 class MySQLSecurityChecker:
-    """MySQL 安全检查器"""
+    """MySQL security checker"""
 
     @classmethod
     def validate_table_name(cls, table_name: str) -> bool:
-        """验证表名的安全性"""
+        """Verify the security of table names"""
         if not table_name:
             return False
 
@@ -42,7 +42,7 @@ def load_mysql_config() -> dict[str, Any]:
         "database": os.getenv("MYSQL_DATABASE"),
         "port": int(os.getenv("MYSQL_PORT") or "3306"),
         "charset": "utf8mb4",
-        "description": os.getenv("MYSQL_DATABASE_DESCRIPTION") or "默认 MySQL 数据库",
+        "description": os.getenv("MYSQL_DATABASE_DESCRIPTION") or "Default MySQL database",
     }
 
     required_keys = ["host", "user", "password", "database"]
@@ -83,7 +83,7 @@ def create_connection(config: dict[str, Any]) -> pymysql.Connection:
 
 def describe_table(table_name: str) -> str:
     if not MySQLSecurityChecker.validate_table_name(table_name):
-        raise ValueError("表名包含非法字符，请检查表名")
+        raise ValueError("Tên bảng chứa ký tự không hợp lệ, vui lòng kiểm tra tên bảng")
 
     config = load_mysql_config()
     connection = create_connection(config)
@@ -93,7 +93,7 @@ def describe_table(table_name: str) -> str:
             columns = cursor.fetchall()
 
             if not columns:
-                return f"表 {table_name} 不存在或没有字段"
+                return f"Bảng {table_name} không tồn tại hoặc không có trường nào"
 
             column_comments: dict[str, str] = {}
             try:
@@ -113,8 +113,8 @@ def describe_table(table_name: str) -> str:
             except Exception:
                 pass
 
-            result = f"表 `{table_name}` 的结构:\n\n"
-            result += "字段名\t\t类型\t\tNULL\t键\t默认值\t\t额外\t备注\n"
+            result = f"Cấu trúc của bảng `{table_name}`:\n\n"
+            result += "Tên trường\t\tKiểu dữ liệu\t\tNULL\tKhóa\tMặc định\t\tKhác\tGhi chú\n"
             result += "-" * 80 + "\n"
 
             for col in columns:
@@ -136,7 +136,7 @@ def describe_table(table_name: str) -> str:
                 indexes = cursor.fetchall()
 
                 if indexes:
-                    result += "\n索引信息:\n"
+                    result += "\nThông tin Index:\n"
                     index_dict: dict[str, list[str]] = {}
                     for idx in indexes:
                         key_name = idx["Key_name"]
@@ -155,8 +155,8 @@ def describe_table(table_name: str) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="描述 MySQL 表结构")
-    parser.add_argument("--table", required=True, help="要查询结构的表名")
+    parser = argparse.ArgumentParser(description="Mô tả cấu trúc bảng MySQL")
+    parser.add_argument("--table", required=True, help="The table name of the structure to be queried")
     return parser.parse_args()
 
 
@@ -169,7 +169,7 @@ def main() -> int:
         print(str(exc), file=sys.stderr)
         return 1
     except Exception as exc:
-        print(f"获取表 {args.table} 结构失败: {exc}", file=sys.stderr)
+        print(f"Lấy cấu trúc bảng {args.table} thất bại: {exc}", file=sys.stderr)
         return 1
 
 

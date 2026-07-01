@@ -22,32 +22,32 @@ _LITE_MODE = os.environ.get("LITE_MODE", "").lower() in ("true", "1")
 
 router = APIRouter()
 
-# 基础系统接口：健康检查、配置、认证与聊天主链路。
-router.include_router(system)  # /api/system/* 系统状态与全局配置
-router.include_router(auth)  # /api/auth/* 登录、用户信息与 CLI 浏览器登录授权
-router.include_router(agent_router)  # /api/agent/* 智能体管理与运行态
-router.include_router(chat)  # /api/chat/* 对话线程、消息历史与附件
+# Basic system interface: health check, configuration, authentication and chat main link.
+router.include_router(system)  # /api/system/* System status and global configuration
+router.include_router(auth)  # /api/auth/* Login, user information and CLI browser login authorization
+router.include_router(agent_router)  # /api/agent/* Agent management and running state
+router.include_router(chat)  # /api/chat/* Conversation threads, message history and attachments
 
-# 管理与工作台接口：后台任务、权限域以及工具体系配置。
-router.include_router(dashboard)  # /api/dashboard/* 仪表盘聚合数据
-router.include_router(department)  # /api/departments/* 部门与权限相关数据
-router.include_router(tasks)  # /api/tasks/* 后台任务查询与管理
-router.include_router(mcp)  # /api/system/mcp-servers/* MCP 服务管理
-router.include_router(model_providers)  # /api/system/model-providers/* 独立模型配置
-router.include_router(skills)  # /api/system/skills/* Skills 管理
-router.include_router(user_skills)  # /api/skills/* 用户可用 Skills
-router.include_router(tools)  # /api/system/tools/* 工具列表与配置
-router.include_router(user_router)  # /api/user/* 用户级配置与凭据
-router.include_router(filesystem_router)  # /api/viewer/filesystem/* 工作台文件系统视图
-router.include_router(workspace)  # /api/workspace/* 用户个人工作区
-router.include_router(mention_router)  # /api/mention/* 提及文件搜索接口
+# Management and workbench interface: background tasks, authority domains, and tool system configuration.
+router.include_router(dashboard)  # /api/dashboard/* Dashboard aggregated data
+router.include_router(department)  # /api/departments/* Department and authority related data
+router.include_router(tasks)  # /api/tasks/* Background task query and management
+router.include_router(mcp)  # /api/system/mcp-servers/* MCP service management
+router.include_router(model_providers)  # /api/system/model-providers/* Independent model configuration
+router.include_router(skills)  # /api/system/skills/* Skills management
+router.include_router(user_skills)  # /api/skills/* User-available Skills
+router.include_router(tools)  # /api/system/tools/* Tool list and configuration
+router.include_router(user_router)  # /api/user/* User-level configuration and credentials
+router.include_router(filesystem_router)  # /api/viewer/filesystem/* Workbench file system view
+router.include_router(workspace)  # /api/workspace/* User personal workspace
+router.include_router(mention_router)  # /api/mention/* Mention file search interface
 
 if not _LITE_MODE:
     from server.routers.graph_router import graph
     from server.routers.knowledge_router import knowledge
     from server.routers.knowledge_eval_router import evaluation
 
-    # 知识库与图谱能力依赖较重，LITE 模式下跳过这组接口。
-    router.include_router(knowledge)  # /api/knowledge/* 知识库管理与检索
-    router.include_router(evaluation)  # /api/evaluation/* 知识库评估
-    router.include_router(graph)  # /api/graph/* 图谱查询与管理
+    # The knowledge base and graph capabilities are heavily dependent, so this set of interfaces is skipped in LITE mode.
+    router.include_router(knowledge)  # /api/knowledge/* Knowledge base management and retrieval
+    router.include_router(evaluation)  # /api/evaluation/* Knowledge base evaluation
+    router.include_router(graph)  # /api/graph/* Graph query and management

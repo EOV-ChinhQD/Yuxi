@@ -1,9 +1,9 @@
-"""知识库具体实现模块
+"""knowledge base specific implementation module
 
-包含各种知识库的具体实现：
-- MilvusKB: 基于 Milvus 的向量知识库
-- DifyKB: 基于 Dify 检索 API 的只读知识库
-- NotionKB: 基于 Notion Data Source 的只读知识库
+Bag contains various knowledge baseof specific implementations:
+- MilvusKB: Vector knowledge base based on Milvus
+- DifyKB: Read-only knowledge base based on Dify search API
+- NotionKB: Read-only knowledge base based on Notion Data Source
 """
 
 from .dify import DifyKB

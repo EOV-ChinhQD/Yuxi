@@ -25,7 +25,7 @@ def test_detect_preview_type_does_not_treat_docx_as_markdown_preview():
 
     assert preview_type == "unsupported"
     assert supported is False
-    assert message == "当前文件是二进制文件，暂不支持预览"
+    assert message == "The current file is a binary file and preview is not currently supported."
 
 
 def test_render_preview_payload_rejects_docx_without_parsed_markdown():

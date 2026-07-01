@@ -47,7 +47,7 @@ def test_normalize_payload_accepts_anthropic_provider_type():
 
 
 def test_normalize_payload_rejects_unknown_enabled_model_type():
-    with pytest.raises(ValueError, match="type 必须是"):
+    with pytest.raises(ValueError, match="type phải là"):
         _normalize_payload(
             {
                 "provider_id": "openrouter-local",
@@ -59,7 +59,7 @@ def test_normalize_payload_rejects_unknown_enabled_model_type():
 
 
 def test_normalize_payload_allows_embedding_without_dimension():
-    """embedding 模型的 dimension 是可选字段，不提供也不会报错。"""
+    """embedding The dimension of the model is an optional field, and no error will be reported if it is not provided."""
     payload = _normalize_payload(
         {
             "provider_id": "embedding-local",
@@ -131,7 +131,7 @@ async def test_fetch_remote_models_loads_embedding_only_when_capability_enabled(
 
 
 def test_normalize_payload_rejects_ollama_provider_type():
-    with pytest.raises(ValueError, match="provider_type 必须是"):
+    with pytest.raises(ValueError, match="provider_type phải là"):
         _normalize_payload(
             {
                 "provider_id": "ollama-local",
@@ -188,7 +188,7 @@ def test_builtin_dashscope_provider_includes_default_embedding_and_rerank_models
 
 
 def testcheck_credential_status_disabled_provider_always_ok():
-    """未启用的 provider 无论凭证如何配置，状态始终为 ok。"""
+    """The status of a non-enabled provider is always ok regardless of how the credentials are configured."""
 
     class Provider:
         is_enabled = False
@@ -199,7 +199,7 @@ def testcheck_credential_status_disabled_provider_always_ok():
 
 
 def testcheck_credential_status_direct_api_key_ok():
-    """直接配置了 api_key 的启用 provider 状态为 ok。"""
+    """The enabled provider status of directly configured api_key is ok."""
 
     class Provider:
         is_enabled = True
@@ -210,7 +210,7 @@ def testcheck_credential_status_direct_api_key_ok():
 
 
 def testcheck_credential_status_env_key_exists_ok(monkeypatch):
-    """api_key_env 对应的环境变量存在时状态为 ok。"""
+    """api_key_env The status is ok when the corresponding environment variable exists."""
     monkeypatch.setenv("TEST_API_KEY", "exists")
 
     class Provider:
@@ -222,7 +222,7 @@ def testcheck_credential_status_env_key_exists_ok(monkeypatch):
 
 
 def testcheck_credential_status_env_key_missing_warning(monkeypatch):
-    """api_key_env 对应的环境变量不存在时状态为 warning。"""
+    """api_key_env When the corresponding environment variable does not exist, the status is warning."""
     monkeypatch.delenv("MISSING_KEY", raising=False)
 
     class Provider:
@@ -234,7 +234,7 @@ def testcheck_credential_status_env_key_missing_warning(monkeypatch):
 
 
 def testcheck_credential_status_both_empty_warning():
-    """api_key 和 api_key_env 都未配置时状态为 warning。"""
+    """api_key When neither api_key_env nor api_key_env is configured, the status is warning."""
 
     class Provider:
         is_enabled = True
@@ -244,11 +244,11 @@ def testcheck_credential_status_both_empty_warning():
     assert check_credential_status(Provider()) == "warning"
 
 
-# ==================== 手动添加模型 / source 字段 ====================
+# ==================== Manually add model/source fields ====================
 
 
 def test_normalize_payload_default_model_source_is_remote():
-    """未显式指定 source 时，规范化后默认填入 remote，向后兼容旧数据。"""
+    """When source is not explicitly specified, remote is filled in by default after normalization, which is backward compatible with old data."""
     payload = _normalize_payload(
         {
             "provider_id": "openrouter-local",
@@ -262,7 +262,7 @@ def test_normalize_payload_default_model_source_is_remote():
 
 
 def test_normalize_payload_accepts_manual_source():
-    """source=manual 表示管理员手动添加的模型，规范化保留该标签。"""
+    """source=manual Indicates a model manually added by the administrator, and normalization retains this label."""
     payload = _normalize_payload(
         {
             "provider_id": "custom-local",
@@ -277,8 +277,8 @@ def test_normalize_payload_accepts_manual_source():
 
 
 def test_normalize_payload_rejects_invalid_source():
-    """source 仅允许 manual 或 remote，其他取值视为非法。"""
-    with pytest.raises(ValueError, match="source 必须是"):
+    """source Only manual or remote are allowed, other values ​​are considered illegal."""
+    with pytest.raises(ValueError, match="source phải là"):
         _normalize_payload(
             {
                 "provider_id": "custom-local",
@@ -290,8 +290,8 @@ def test_normalize_payload_rejects_invalid_source():
 
 
 def test_normalize_payload_rejects_model_type_not_in_capabilities():
-    """provider 仅声明 chat 能力时，不允许写入 embedding 类型的模型。"""
-    with pytest.raises(ValueError, match="不在 provider 能力"):
+    """provider When only chat capability is declared, embedding type models are not allowed to be written."""
+    with pytest.raises(ValueError, match="không nằm trong khả năng của provider"):
         _normalize_payload(
             {
                 "provider_id": "chat-only",
@@ -304,7 +304,7 @@ def test_normalize_payload_rejects_model_type_not_in_capabilities():
 
 
 def test_normalize_payload_allows_model_type_within_capabilities():
-    """provider 同时声明 chat + embedding 时，两类模型均可正常写入。"""
+    """provider Also declare chat + embedding When , both types of models can be written normally."""
     payload = _normalize_payload(
         {
             "provider_id": "multi-cap",

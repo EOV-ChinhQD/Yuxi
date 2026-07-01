@@ -1,4 +1,4 @@
-"""认证服务。"""
+"""Authentication services."""
 
 import hashlib
 import secrets
@@ -49,7 +49,7 @@ async def _generate_unique_user_code(db: AsyncSession) -> str:
         result = await db.execute(select(CLIAuthSession.id).filter(CLIAuthSession.user_code == user_code))
         if result.scalar_one_or_none() is None:
             return user_code
-    raise RuntimeError("无法生成唯一 CLI 授权码")
+    raise RuntimeError("Không thể tạo mã ủy quyền CLI duy nhất")
 
 
 def _expire_if_needed(session: CLIAuthSession, now=None) -> bool:
@@ -86,21 +86,21 @@ async def get_cli_auth_session_for_user(
     result = await db.execute(stmt)
     session = result.scalar_one_or_none()
     if session is None:
-        raise CLIAuthError("not_found", "授权会话不存在", status_code=404)
+        raise CLIAuthError("not_found", "Phiên ủy quyền không tồn tại", status_code=404)
     if _expire_if_needed(session):
         await db.commit()
-        raise CLIAuthError("expired_token", "授权会话已过期", status_code=410)
+        raise CLIAuthError("expired_token", "Phiên ủy quyền đã hết hạn", status_code=410)
     return session
 
 
 async def approve_cli_auth_session(db: AsyncSession, user_code: str, user: User) -> CLIAuthSession:
     session = await get_cli_auth_session_for_user(db, user_code, for_update=True)
     if session.status == CLI_AUTH_STATUS_CONSUMED:
-        raise CLIAuthError("already_consumed", "授权会话已完成", status_code=409)
+        raise CLIAuthError("already_consumed", "Phiên ủy quyền đã hoàn thành", status_code=409)
     if session.status == CLI_AUTH_STATUS_APPROVED:
-        raise CLIAuthError("already_approved", "授权会话已批准", status_code=409)
+        raise CLIAuthError("already_approved", "Phiên ủy quyền đã được chấp thuận", status_code=409)
     if session.status != CLI_AUTH_STATUS_PENDING:
-        raise CLIAuthError("invalid_state", "授权会话状态无效", status_code=409)
+        raise CLIAuthError("invalid_state", "Trạng thái phiên ủy quyền không hợp lệ", status_code=409)
 
     session.status = CLI_AUTH_STATUS_APPROVED
     session.approved_user_id = user.id
@@ -116,16 +116,16 @@ async def exchange_cli_auth_token(db: AsyncSession, device_code: str) -> dict:
     )
     session = result.scalar_one_or_none()
     if session is None:
-        raise CLIAuthError("invalid_request", "授权会话不存在", status_code=404)
+        raise CLIAuthError("invalid_request", "Phiên ủy quyền không tồn tại", status_code=404)
     if _expire_if_needed(session):
         await db.commit()
-        raise CLIAuthError("expired_token", "授权会话已过期", status_code=410)
+        raise CLIAuthError("expired_token", "Phiên ủy quyền đã hết hạn", status_code=410)
     if session.status == CLI_AUTH_STATUS_PENDING:
-        raise CLIAuthError("authorization_pending", "等待浏览器授权", status_code=400)
+        raise CLIAuthError("authorization_pending", "Đang chờ trình duyệt ủy quyền", status_code=400)
     if session.status == CLI_AUTH_STATUS_CONSUMED:
-        raise CLIAuthError("already_consumed", "授权会话已完成", status_code=409)
+        raise CLIAuthError("already_consumed", "Phiên ủy quyền đã hoàn thành", status_code=409)
     if session.status != CLI_AUTH_STATUS_APPROVED or not session.approved_user_id:
-        raise CLIAuthError("invalid_state", "授权会话状态无效", status_code=409)
+        raise CLIAuthError("invalid_state", "Trạng thái phiên ủy quyền không hợp lệ", status_code=409)
 
     user_result = await db.execute(
         select(User, Department.name)
@@ -134,7 +134,7 @@ async def exchange_cli_auth_token(db: AsyncSession, device_code: str) -> dict:
     )
     row = user_result.one_or_none()
     if row is None:
-        raise CLIAuthError("invalid_user", "授权用户不存在", status_code=409)
+        raise CLIAuthError("invalid_user", "Người dùng ủy quyền không tồn tại", status_code=409)
     user, department_name = row
 
     full_key, key_hash, key_prefix = AuthUtils.generate_api_key()

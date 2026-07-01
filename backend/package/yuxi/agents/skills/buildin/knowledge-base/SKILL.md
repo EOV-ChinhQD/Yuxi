@@ -1,33 +1,33 @@
 ---
 name: knowledge-base
 slug: knowledge-base
-description: "使用 Yuxi 知识库进行检索、打开文档、文档内定位和查看思维导图。当用户需要基于已配置知识库回答问题、核验资料或引用文档内容时使用此技能。"
+description: "Use the Yuxi knowledge base to search, open documents, locate within documents, and view mind maps. Use this skill when users need to answer questions, verify information, or quote document content based on the configured knowledge base."
 ---
 
-# 知识库技能
+#Knowledge base skills
 
-当用户要求基于项目知识库、内部资料、上传入库文档或知识图谱相关内容回答问题时，使用此技能。
+Use this skill when users require answers to questions based on content related to the project knowledge base, internal data, uploaded documents, or knowledge graphs.
 
-## 可用工具
+## Available tools
 
-- `list_kbs`：列出当前会话可访问且已启用的知识库。
-- `query_kb`：按 `kb_id` 在指定知识库中检索内容，返回 `file_id` 和相关片段。
-- `open_kb_document`：按 `kb_id` 和 `file_id` 打开文档原文窗口，适合查看更完整上下文。
-- `find_kb_document`：在已知文档内用关键词或正则定位段落。
-- `get_mindmap`：查看知识库思维导图结构。
-- `search_file`：按文件名关键词搜索知识库中的文件，支持指定知识库或跨知识库，返回文件列表与分页信息。
+- `list_kbs`: Lists the enabled knowledge bases accessible to the current session.
+- `query_kb`: Retrieve content in the specified knowledge base by `kb_id`, returning `file_id` and related fragments.
+- `open_kb_document`: Press `kb_id` and `file_id` to open the original document window, suitable for viewing more complete context.
+- `find_kb_document`: Use keywords or regular expressions to locate paragraphs in known documents.
+- `get_mindmap`: View the knowledge base mind map structure.
+- `search_file`: Search files in the knowledge base based on file name keywords, support specified knowledge bases or cross-knowledge bases, and return file lists and paging information.
 
-## 操作流程
+## Operation process
 
-1. 需要先确认当前会话有哪些知识库可用；不确定时调用 `list_kbs`。
-2. 针对用户问题选择最相关的知识库，使用 `query_kb` 检索。
-3. 如果检索片段不足以回答，使用返回的 `file_id` 调用 `open_kb_document` 查看上下文。
-4. 如果用户要求定位术语、指标、章节或原文证据，使用 `find_kb_document` 在候选文档内查找。
-5. 当用户关心知识库结构、文件分类或知识框架时，使用 `get_mindmap`。
+1. You need to first confirm which knowledge bases are available for the current session; call `list_kbs` when you are not sure.
+2. Select the most relevant knowledge base for user questions and use `query_kb` to search.
+3. If retrieving the fragment is not enough to answer, call `open_kb_document` with the returned `file_id` to see the context.
+4. If the user requires locating a term, index, chapter or original text evidence, use `find_kb_document` to search within the candidate document.
+5. Use `get_mindmap` when the user cares about the knowledge base structure, document classification or knowledge framework.
 
-## 关键约束
+## Key constraints
 
-- 只能访问当前会话配置和用户权限允许的知识库。
-- 不要编造 `kb_id` 或 `file_id`；优先从 `list_kbs` 和 `query_kb` 的返回结果中获取。
-- 回答需要可追溯时，应说明依据来自哪个知识库、文件或检索片段。
-- Dify 等外部只读知识库可能只支持检索，不一定支持打开全文或文档内查找；遇到工具返回限制说明时，应如实告知用户。
+- Only knowledge bases allowed by the current session configuration and user permissions can be accessed.
+- Don't make up `kb_id` or `file_id`; get them from the results returned by `list_kbs` and `query_kb` instead.
+- When the answer needs to be traceable, it should indicate which knowledge base, file or retrieval fragment the basis comes from.
+- External read-only knowledge bases such as Dify may only support retrieval, and may not necessarily support opening full text or searching within documents; when encountering restrictions returned by tools, users should be truthfully informed.

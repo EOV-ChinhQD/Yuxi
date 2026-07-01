@@ -78,10 +78,10 @@ async def test_subagent_get_info_hides_disabled_tool_options(monkeypatch):
             "configurable_items": {
                 "tools": {
                     "options": [
-                        {"key": "present_artifacts", "name": "展示交付物"},
+                        {"key": "present_artifacts", "name": "Show deliverables"},
                         {"key": "allowed_tool", "name": "Allowed"},
-                        {"key": "ask_user_question", "name": "向用户提问"},
-                        {"key": "install_skill", "name": "安装技能"},
+                        {"key": "ask_user_question", "name": "Ask user questions"},
+                        {"key": "install_skill", "name": "Installation skills"},
                     ]
                 }
             },

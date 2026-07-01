@@ -1,6 +1,6 @@
 """
-RAG评估指标计算工具
-简化版：只保留Recall/F1（检索）和 LLM Judge（答案准确性）
+RAG assessment indicator calculation tool
+# Simplified version: Keep only Recall/F1 (retrieval) and LLM Judge (answer accuracy)
 """
 
 import textwrap
@@ -12,11 +12,11 @@ from yuxi.utils import logger
 
 
 class RetrievalMetrics:
-    """检索评估指标计算"""
+    """Search evaluation index calculation"""
 
     @staticmethod
     def precision_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> float:
-        """计算Precision@K"""
+        """Calculate Precision@K"""
         if not retrieved_ids[:k]:
             return 0.0
         retrieved_set = set(retrieved_ids[:k])
@@ -25,7 +25,7 @@ class RetrievalMetrics:
 
     @staticmethod
     def recall_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> float:
-        """计算Recall@K"""
+        """Calculate Recall@K"""
         if not relevant_ids:
             return 0.0
         retrieved_set = set(retrieved_ids[:k])
@@ -34,7 +34,7 @@ class RetrievalMetrics:
 
     @staticmethod
     def f1_score_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> float:
-        """计算F1@K"""
+        """Calculate F1@K"""
         precision = RetrievalMetrics.precision_at_k(retrieved_ids, relevant_ids, k)
         recall = RetrievalMetrics.recall_at_k(retrieved_ids, relevant_ids, k)
         if precision + recall == 0:
@@ -43,44 +43,44 @@ class RetrievalMetrics:
 
 
 class AnswerMetrics:
-    """答案评估指标计算"""
+    """Answer evaluation index calculation"""
 
     @staticmethod
     async def judge_correctness(query: str, generated_answer: str, gold_answer: str, judge_llm: Any) -> dict[str, Any]:
         """
-        使用LLM判断生成的答案是否正确
+        Use LLM to determine whether the generated answer is correct
         """
         if not generated_answer:
-            return {"score": 0.0, "reasoning": "未生成答案"}
+            return {"score": 0.0, "reasoning": "No answer generated"}
         if not gold_answer:
-            return {"score": 0.0, "reasoning": "无参考答案"}
+            return {"score": 0.0, "reasoning": "No reference answer"}
 
-        prompt = textwrap.dedent(f"""你是一个公正的评判者，请评估AI生成的答案相对于标准答案的准确性。
+        prompt = textwrap.dedent(f"""You are a fair judge. Please evaluate the accuracy of the AI generated answer relative to the standard answer.
 
-            问题：{query}
+            question:{query}
 
-            标准答案：
+            Standard answer:
             {gold_answer}
 
-            AI生成的答案：
+            AI generated answer:
             {generated_answer}
 
-            请判断AI生成的答案是否在事实层面与标准答案一致。
-            忽略措辞、标点符号或格式上的细微差异。
-            只关注核心事实是否准确包含。
+            Please determine whether AIgenerateofAnswer is not factually consistent with the standard Answerone.
+            Ignore subtle differences in wording, punctuation or format.
+            Focusing only on core facts is not accurate.
 
-            请返回以下JSON格式的结果（不要包含其他文本、Markdown 或注释）：
+            Please return the following JSONFormatof results (do not bag other text, Markdown or comments):
             {{
                 "score": 1.0,
-                "reasoning": "简要说明判定理由"
+                "reasoning": "Briefly explain the reasons for the judgment"
             }}
-            score 只能是 1.0 或 0.0。
+            score can only be 1.0 or 0.0。
             """)
         try:
             response = await judge_llm.call(prompt, stream=False)
             content = response.content.strip()
 
-            # 尝试清理可能的 markdown 代码块
+            # Try to clean up possible markdown code blocks
             if content.startswith("```json"):
                 content = content[7:]
             if content.endswith("```"):
@@ -90,22 +90,22 @@ class AnswerMetrics:
             result = json_repair.loads(content)
             return {"score": float(result.get("score", 0.0)), "reasoning": result.get("reasoning", "")}
         except Exception as e:
-            logger.error(f"LLM 评判失败: {e}")
-            return {"score": 0.0, "reasoning": f"评判出错: {str(e)}"}
+            logger.error(f"LLM failure to judge: {e}")
+            return {"score": 0.0, "reasoning": f"Error in judgment: {str(e)}"}
 
 
 class EvaluationMetricsCalculator:
-    """综合评估指标计算器"""
+    """Comprehensive evaluation index calculator"""
 
     @staticmethod
     def calculate_retrieval_metrics(
         retrieved_chunks: list[dict[str, Any]], gold_chunk_ids: list[str], k_values: list[int] = [1, 3, 5, 10]
     ) -> dict[str, float]:
-        """计算检索指标 (Recall, F1)"""
+        """Calculate search index (Recall, F1)"""
         if not retrieved_chunks or not gold_chunk_ids:
             return {}
 
-        # 提取 ID
+        # Extract ID
         retrieved_ids = []
         for chunk in retrieved_chunks:
             chunk_id = chunk.get("chunk_id") or chunk.get("metadata", {}).get("chunk_id")
@@ -122,7 +122,7 @@ class EvaluationMetricsCalculator:
     async def calculate_answer_metrics(
         query: str, generated_answer: str, gold_answer: str, judge_llm: Any = None
     ) -> dict[str, Any]:
-        """计算答案指标 (LLM Judge)"""
+        """Calculate answer index (LLM Judge)"""
         if not judge_llm:
             return {}
 
@@ -132,7 +132,7 @@ class EvaluationMetricsCalculator:
     def calculate_overall_score(
         retrieval_metrics_list: list[dict[str, float]], answer_metrics_list: list[dict[str, Any]]
     ) -> float | None:
-        """综合得分：有答案准确率则用准确率，否则用 recall@10。"""
+        """Comprehensive score: If there is an answer accuracy rate, use accuracy rate, otherwise use recall rate.@10。"""
         if answer_metrics_list:
             scores = [m.get("score", 0.0) for m in answer_metrics_list]
             return sum(scores) / len(scores) if scores else None

@@ -7,27 +7,27 @@ from yuxi.utils import logger
 
 # region guard_prompt
 PROMPT_TEMPLATE = """
-# 指令
-你是一个内容合规性检测助手。请根据提供的规则集，判断以下内容是否符合合规性要求。
+# instruction
+You are oneindivualcontentCompliance detection assistant. Please judge whether the following content meets the compliance requirements based on the provided of rule set.
 
-# 合规性规则
-1. 内容不得包含任何违法中华人民共和国法律的信息（例如暴力、恐怖主义、仇恨言论）。
-2. 内容不得侵犯个人隐私或泄露敏感信息。
-3. 内容不得有煽动性或者任何敏感性问题
+# Compliance rules
+1. Content must not contain any information that violates the laws of the People's Republic of China (For example, violence, terrorism, hate speech).
+2. Content must not infringe individual privacy or disclose sensitive information.
+3. Content must not be inflammatory or sensitive in any way
 
-# 输出内容
-合规/不合规（不要包含其他内容）
+# Output content
+Compliance/Not compliant (do not include other content)
 
-# 示例
-输入内容：我要自杀/贩毒，如何制作武器
-输出结果：不合规
+# Example
+Enter content: I want to commit suicide/drug trafficking, like how to make weapons
+output result:Non-compliance
 
-输入内容：今天天气不错
-输出结果：合规
+Enter content: The weather is good today
+output result: Compliance
 
 
-输入内容：{content}
-输出内容："""
+Enter content:{content}
+Output content:"""
 # endregion guard_prompt
 
 
@@ -47,9 +47,9 @@ class ContentGuard:
             keywords_file = Path(__file__).parent.parent / "config" / "static" / "bad_keywords.txt"
         self.keywords = load_keywords(keywords_file)
         if not self.keywords:
-            self.keywords = ["贩毒"]
+            self.keywords = ["drug trafficking"]
 
-        # 从配置读取LLM模型设置
+        # Read LLM model settings from configuration
         self.enable_llm = config.enable_content_guard_llm
         if self.enable_llm and config.content_guard_llm_model:
             self.llm_model = select_model(model_spec=config.content_guard_llm_model)
@@ -60,8 +60,8 @@ class ContentGuard:
         """
         Checks if the text contains any sensitive keywords.
         Returns True if sensitive content is found, False otherwise.
-        True: 不合规
-        False: 合规
+        True: Non-compliance
+        False: Compliance
         """
         if keywords_result := await self.check_with_keywords(text):
             return keywords_result
@@ -75,8 +75,8 @@ class ContentGuard:
         """
         Checks if the text contains any sensitive keywords from the predefined list.
         Returns True if sensitive content is found, False otherwise.
-        True: 不合规
-        False: 合规
+        True: Non-compliance
+        False: Compliance
         """
         if not text:
             return False
@@ -91,8 +91,8 @@ class ContentGuard:
         """
         Checks if the text contains any sensitive keywords using an LLM.
         Returns True if sensitive content is found, False otherwise.
-        True: 不合规
-        False: 合规
+        True: Non-compliance
+        False: Compliance
         """
         if not text:
             return False
@@ -106,7 +106,7 @@ class ContentGuard:
         prompt = PROMPT_TEMPLATE.format(content=text_lower)
         response = await self.llm_model.call(prompt)
         logger.debug(f"LLM response: {response.content}")
-        return True if "不合规" in response.content else False
+        return True if "Non-compliance" in response.content else False
 
 
 # Global instance

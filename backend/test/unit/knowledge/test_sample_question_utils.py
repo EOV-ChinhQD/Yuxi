@@ -7,13 +7,13 @@ from yuxi.knowledge.utils import sample_question_utils as sq
 
 
 def test_parse_sample_questions_content_strips_json_fence():
-    questions = sq.parse_sample_questions_content('```json\n{"questions": ["什么是测试？"]}\n```')
+    questions = sq.parse_sample_questions_content('```json\n{"questions": ["What is a test?"]}\n```')
 
-    assert questions == ["什么是测试？"]
+    assert questions == ["What is a test?"]
 
 
 def test_parse_sample_questions_content_rejects_invalid_payload():
-    with pytest.raises(ValueError, match="问题格式"):
+    with pytest.raises(ValueError, match="Định dạng câu hỏi"):
         sq.parse_sample_questions_content('{"items": []}')
 
 
@@ -21,7 +21,7 @@ def test_parse_sample_questions_content_rejects_invalid_payload():
 async def test_generate_database_sample_questions_rejects_empty_files(monkeypatch):
     class FakeKnowledgeBase:
         async def get_database_info(self, kb_id: str, include_files: bool = False) -> dict:
-            return {"name": "空知识库", "kb_type": "milvus", "files": {}}
+            return {"name": "empty knowledge base", "kb_type": "milvus", "files": {}}
 
     monkeypatch.setattr(sq, "knowledge_base", FakeKnowledgeBase())
     monkeypatch.setattr(
@@ -34,7 +34,7 @@ async def test_generate_database_sample_questions_rejects_empty_files(monkeypatc
         await sq.generate_database_sample_questions("kb_1")
 
     assert exc_info.value.status_code == 400
-    assert "没有文件" in exc_info.value.detail
+    assert "no file" in exc_info.value.detail
 
 
 @pytest.mark.asyncio
@@ -44,7 +44,7 @@ async def test_generate_database_sample_questions_saves_and_returns_questions(mo
     class FakeKnowledgeBase:
         async def get_database_info(self, kb_id: str, include_files: bool = False) -> dict:
             return {
-                "name": "测试知识库",
+                "name": "Test knowledge base",
                 "kb_type": "milvus",
                 "files": {"file_1": {"filename": "demo.md", "file_type": "md"}},
             }
@@ -53,14 +53,14 @@ async def test_generate_database_sample_questions_saves_and_returns_questions(mo
         async def call(self, messages, stream: bool = False):
             assert messages[0]["role"] == "system"
             assert "demo.md" in messages[1]["content"]
-            return SimpleNamespace(content='{"questions": ["如何使用 demo？"]}')
+            return SimpleNamespace(content='{"questions": ["How to use demo?"]}')
 
     class FakeRepository:
         async def update(self, kb_id: str, data: dict) -> None:
             saved[kb_id] = data["sample_questions"]
 
         async def get_by_kb_id(self, kb_id: str):
-            return SimpleNamespace(name="测试知识库", sample_questions=saved.get(kb_id))
+            return SimpleNamespace(name="Test knowledge base", sample_questions=saved.get(kb_id))
 
     monkeypatch.setattr(sq, "knowledge_base", FakeKnowledgeBase())
     monkeypatch.setattr(
@@ -74,9 +74,9 @@ async def test_generate_database_sample_questions_saves_and_returns_questions(mo
     generated = await sq.generate_database_sample_questions("kb_1", count=1)
     stored = await sq.get_database_sample_questions("kb_1")
 
-    assert generated["questions"] == ["如何使用 demo？"]
+    assert generated["questions"] == ["How to use demo?"]
     assert generated["count"] == 1
-    assert stored["questions"] == ["如何使用 demo？"]
+    assert stored["questions"] == ["How to use demo?"]
 
 
 @pytest.mark.asyncio
@@ -84,7 +84,7 @@ async def test_generate_database_sample_questions_maps_invalid_json(monkeypatch)
     class FakeKnowledgeBase:
         async def get_database_info(self, kb_id: str, include_files: bool = False) -> dict:
             return {
-                "name": "测试知识库",
+                "name": "Test knowledge base",
                 "kb_type": "milvus",
                 "files": {"file_1": {"filename": "demo.md", "file_type": "md"}},
             }
@@ -105,4 +105,4 @@ async def test_generate_database_sample_questions_maps_invalid_json(monkeypatch)
         await sq.generate_database_sample_questions("kb_1")
 
     assert exc_info.value.status_code == 500
-    assert "AI返回格式错误" in exc_info.value.detail
+    assert "AI returns format error" in exc_info.value.detail

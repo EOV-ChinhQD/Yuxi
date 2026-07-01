@@ -4,9 +4,9 @@ from yuxi.knowledge.base import KnowledgeBase
 
 
 class ReadOnlyConnectors(KnowledgeBase):
-    """只读外部检索连接器基类。
+    """Read-only external retrieval connector base class.
 
-    这类知识库只负责保存连接参数和执行 Query，不承载文档上传、解析、索引和文件预览能力。
+    This type of knowledge base is only responsible for saving connection parameters and executing Query, but does not carry Document upload, parse, indexing and document preview capabilities.
     """
 
     requires_embedding_model = False
@@ -15,7 +15,7 @@ class ReadOnlyConnectors(KnowledgeBase):
 
     @staticmethod
     def _readonly_error() -> ValueError:
-        return ValueError("只读检索连接器不支持该操作")
+        return ValueError("Trình kết nối truy xuất chỉ đọc không hỗ trợ thao tác này")
 
     async def _create_kb_instance(self, kb_id: str, config: dict) -> Any:
         del kb_id, config
@@ -95,12 +95,12 @@ class ReadOnlyConnectors(KnowledgeBase):
         files_only: bool = False,
     ) -> dict:
         del kb_id, parent_id, recursive, files_only
-        raise ValueError("只读检索连接器不支持文件树预览")
+        raise ValueError("Trình kết nối truy xuất chỉ đọc không hỗ trợ xem trước cây thư mục tệp")
 
     async def read_file_preview(self, kb_id: str, file_id: str) -> dict:
         del kb_id, file_id
-        raise ValueError("只读检索连接器不支持文件预览")
+        raise ValueError("Trình kết nối truy xuất chỉ đọc không hỗ trợ xem trước tệp")
 
     async def get_file_download(self, kb_id: str, file_id: str, variant: str = "original") -> dict:
         del kb_id, file_id, variant
-        raise ValueError("只读检索连接器不支持文件下载")
+        raise ValueError("Trình kết nối truy xuất chỉ đọc không hỗ trợ tải xuống tệp")

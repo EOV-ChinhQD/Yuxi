@@ -4,67 +4,67 @@ from pydantic import BaseModel, Field
 
 
 class SearchInputSchema(BaseModel):
-    kb_id: str = Field(description="知识库资源 ID，也就是 kb_id")
-    query_text: str = Field(description="检索关键词，应提炼为有助于召回答案的关键词或短语")
-    file_name: str | None = Field(default=None, description="可选文件名关键词过滤，非必要不要使用")
+    kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
+    query_text: str = Field(description="Từ khóa tìm kiếm, nên được trích xuất thành từ khóa hoặc cụm từ giúp truy xuất câu trả lời")
+    file_name: str | None = Field(default=None, description="Lọc từ khóa tên file tùy chọn, không sử dụng nếu không cần thiết")
 
 
 class SearchResultSchema(BaseModel):
-    id: str = Field(description="检索结果 ID，通常对应 chunk_id")
-    kb_id: str = Field(description="知识库资源 ID，也就是 kb_id")
-    file_id: str = Field(default="", description="结果所属文件 ID，可用于 Find/Open")
-    content: str = Field(description="chunk 内容")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="来源、分数、chunk_index 等附加信息")
+    id: str = Field(description="ID kết quả tìm kiếm, thường tương ứng với chunk_id")
+    kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
+    file_id: str = Field(default="", description="ID file thuộc về kết quả, có thể dùng cho Find/Open")
+    content: str = Field(description="nội dung chunk")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Thông tin bổ sung như nguồn, điểm số, chunk_index, v.v.")
 
 
 class SearchOutputSchema(BaseModel):
-    kb_id: str = Field(description="知识库资源 ID，也就是 kb_id")
-    results: list[SearchResultSchema] = Field(default_factory=list, description="检索结果列表")
+    kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
+    results: list[SearchResultSchema] = Field(default_factory=list, description="Danh sách kết quả tìm kiếm")
 
 
 class FindInputSchema(BaseModel):
-    kb_id: str = Field(description="知识库资源 ID，也就是 kb_id")
-    file_id: str = Field(description="要检索的文件 ID")
-    patterns: list[str] = Field(description="关键词或正则模式列表，至少提供一个")
-    use_regex: bool = Field(default=False, description="是否将 patterns 作为正则表达式处理")
-    case_sensitive: bool = Field(default=False, description="是否区分大小写")
-    max_windows: int = Field(default=5, ge=1, le=20, description="最多返回的上下文窗口数量")
-    window_size: int = Field(default=80, ge=1, le=200, description="每个上下文窗口的行数")
+    kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
+    file_id: str = Field(description="ID file cần tìm kiếm")
+    patterns: list[str] = Field(description="Danh sách từ khóa hoặc regex, cung cấp ít nhất một")
+    use_regex: bool = Field(default=False, description="Có xử lý patterns dưới dạng regex không")
+    case_sensitive: bool = Field(default=False, description="Có phân biệt chữ hoa chữ thường không")
+    max_windows: int = Field(default=5, ge=1, le=20, description="Số lượng cửa sổ ngữ cảnh tối đa trả về")
+    window_size: int = Field(default=80, ge=1, le=200, description="Số dòng của mỗi cửa sổ ngữ cảnh")
 
 
 class FindWindowSchema(BaseModel):
-    start_line: int = Field(description="窗口起始行号，1-based")
-    end_line: int = Field(description="窗口结束行号，1-based")
-    matched_lines: list[int] = Field(default_factory=list, description="该窗口内匹配到的行号")
-    content: str = Field(description="带行号的窗口内容")
+    start_line: int = Field(description="Số dòng bắt đầu cửa sổ, bắt đầu từ 1")
+    end_line: int = Field(description="Số dòng kết thúc cửa sổ, bắt đầu từ 1")
+    matched_lines: list[int] = Field(default_factory=list, description="Số dòng khớp trong cửa sổ này")
+    content: str = Field(description="Nội dung cửa sổ có số dòng")
 
 
 class FindOutputSchema(BaseModel):
-    kb_id: str = Field(description="知识库资源 ID，也就是 kb_id")
-    file_id: str = Field(description="文件 ID")
-    semantic: bool = Field(default=False, description="是否为语义查找")
-    match_mode: Literal["keyword", "regex"] = Field(description="匹配模式")
-    total_matches: int = Field(description="匹配到的行数")
-    windows: list[FindWindowSchema] = Field(default_factory=list, description="上下文窗口")
+    kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
+    file_id: str = Field(description="ID file")
+    semantic: bool = Field(default=False, description="Có phải tìm kiếm ngữ nghĩa không")
+    match_mode: Literal["keyword", "regex"] = Field(description="Chế độ khớp")
+    total_matches: int = Field(description="Số dòng khớp")
+    windows: list[FindWindowSchema] = Field(default_factory=list, description="Cửa sổ ngữ cảnh")
 
 
 class OpenInputSchema(BaseModel):
-    kb_id: str = Field(description="知识库资源 ID，也就是 kb_id")
-    file_id: str = Field(description="要打开的文件 ID")
-    line: int | None = Field(default=None, ge=1, description="可选，1-based 起始行号")
-    offset: int | None = Field(default=None, ge=0, description="可选，0-based 起始偏移；line 优先于 offset")
-    window_size: int = Field(default=1800, ge=1, le=2000, description="读取窗口行数")
+    kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
+    file_id: str = Field(description="ID file cần mở")
+    line: int | None = Field(default=None, ge=1, description="Tùy chọn, số dòng bắt đầu, bắt đầu từ 1")
+    offset: int | None = Field(default=None, ge=0, description="Tùy chọn, độ lệch bắt đầu, bắt đầu từ 0; line ưu tiên hơn offset")
+    window_size: int = Field(default=1800, ge=1, le=2000, description="Đọc số dòng cửa sổ")
 
 
 class OpenOutputSchema(BaseModel):
-    kb_id: str = Field(description="知识库资源 ID，也就是 kb_id")
-    file_id: str = Field(description="文件 ID")
-    start_line: int = Field(description="窗口起始行号，1-based；空结果为 0")
-    end_line: int = Field(description="窗口结束行号，1-based；空结果为 0")
-    total_lines: int = Field(description="文件总行数")
-    offset: int = Field(description="窗口起始偏移，0-based")
-    window_size: int = Field(description="本次请求的窗口行数")
-    has_more_before: bool = Field(description="窗口前是否还有内容")
-    has_more_after: bool = Field(description="窗口后是否还有内容")
-    next_offset: int | None = Field(default=None, description="下一窗口 offset；没有更多内容时为 null")
-    content: str = Field(description="带行号的窗口内容")
+    kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
+    file_id: str = Field(description="ID file")
+    start_line: int = Field(description="Số dòng bắt đầu cửa sổ, bắt đầu từ 1; kết quả rỗng là 0")
+    end_line: int = Field(description="Số dòng kết thúc cửa sổ, bắt đầu từ 1; kết quả rỗng là 0")
+    total_lines: int = Field(description="Tổng số dòng của file")
+    offset: int = Field(description="Độ lệch bắt đầu cửa sổ, bắt đầu từ 0")
+    window_size: int = Field(description="Số dòng cửa sổ được yêu cầu lần này")
+    has_more_before: bool = Field(description="Cửa sổ trước có nội dung không")
+    has_more_after: bool = Field(description="Cửa sổ sau có nội dung không")
+    next_offset: int | None = Field(default=None, description="offset của cửa sổ tiếp theo; null khi không còn nội dung")
+    content: str = Field(description="Nội dung cửa sổ có số dòng")

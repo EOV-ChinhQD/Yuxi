@@ -1,6 +1,6 @@
-"""Tasker 行为单元测试：payload 暴露、进度节流、终态保留与重启恢复。
+"""Tasker behavior unit test: payload exposure, progress festival flow, final state retention and restart recovery.
 
-使用内存 fake repo，不依赖真实数据库与 Docker。
+Use memory fake repo, do not rely on real database and Docker.
 """
 
 import asyncio
@@ -20,7 +20,7 @@ class FakeRecord:
 
 
 class FakeRepo:
-    """记录 upsert/delete 调用的内存仓库替身。"""
+    """record upsert/delete The memory warehouse double to call."""
 
     def __init__(self, preset: list[FakeRecord] | None = None):
         self.preset = preset or []
@@ -55,7 +55,7 @@ async def _wait_status(tasker: Tasker, task_id: str, statuses: set[str], timeout
         if task and task["status"] in statuses:
             return task
         if loop.time() > deadline:
-            raise AssertionError(f"任务 {task_id} 未在超时内进入 {statuses}")
+            raise AssertionError(f"Nhiệm vụ {task_id} không vào được {statuses} trong thời gian chờ")
         await asyncio.sleep(0.01)
 
 
@@ -87,9 +87,9 @@ async def test_progress_updates_are_throttled():
     task = await tasker.enqueue(name="x", task_type="demo", coroutine=coro)
     final = await _wait_status(tasker, task.id, {"success"})
 
-    # 101 次进度推进经节流后落库次数应远小于 101（含 enqueue/running/success 也仅个位数额外写入）
+    # After 101 progress advances, the number of dropouts after throttling should be much less than 101 (including enqueue/running/success, only single-digit additional writes)
     assert repo.upsert_calls < 60
-    # 内存中进度仍为完整的 100
+    # The progress in memory is still full 100
     assert final["progress"] == 100
     await tasker.shutdown()
 
@@ -105,7 +105,7 @@ async def test_explicit_none_result_is_persisted():
     task = await tasker.enqueue(name="x", task_type="demo", coroutine=coro)
     final = await _wait_status(tasker, task.id, {"success"})
 
-    # 协程最终返回 None 应覆盖中途结果（sentinel 区分「未传」与「显式 None」）
+    # The coroutine eventually returns None and should overwrite the intermediate results (sentinel distinguishes between "untransmitted" and "explicit None")
     assert final["result"] is None
     await tasker.shutdown()
 
@@ -144,10 +144,10 @@ async def test_load_state_marks_interrupted_and_prunes(monkeypatch):
     )
     tasker = await _make_tasker(repo)
 
-    # 中断的 running 任务被标记为 failed
+    # Interrupted running tasks are marked as failed
     interrupted = await tasker.get_task("a")
     assert interrupted["status"] == "failed"
-    # 仅保留最近 MAX_TERMINAL_TASKS 条终态任务，最旧的被清理
+    # Only the most recent MAX_TERMINAL_TASKS final tasks are retained, and the oldest ones are cleared.
     listing = await tasker.list_tasks(limit=100)
     assert listing["summary"]["total"] == 2
     assert "c" in repo.deleted and "d" in repo.deleted

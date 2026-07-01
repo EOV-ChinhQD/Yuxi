@@ -444,7 +444,7 @@ async def test_viewer_delete_rejects_readonly_namespace_directory(test_client, s
         headers=headers,
     )
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] == "当前路径不支持删除"
+    assert response.json()["detail"] == "Đường dẫn hiện tại không hỗ trợ xóa"
 
 
 @pytest.mark.parametrize(
@@ -471,7 +471,7 @@ async def test_viewer_delete_rejects_protected_user_data_root_directories(
         headers=headers,
     )
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] == "当前目录不允许删除"
+    assert response.json()["detail"] == "Thư mục hiện tại không cho phép xóa"
 
 
 async def test_delete_viewer_file_rejects_user_data_root_without_removing(monkeypatch):
@@ -495,7 +495,7 @@ async def test_delete_viewer_file_rejects_user_data_root_without_removing(monkey
         )
 
     assert exc_info.value.status_code == 400
-    assert exc_info.value.detail == "当前目录不允许删除"
+    assert exc_info.value.detail == "Thư mục hiện tại không cho phép xóa"
 
 
 async def test_viewer_create_directory_adds_workspace_folder(test_client, standard_user):
@@ -577,7 +577,7 @@ async def test_viewer_create_directory_rejects_conflict(test_client, standard_us
         headers=headers,
     )
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] == "同名文件或文件夹已存在"
+    assert response.json()["detail"] == "File hoặc thư mục cùng tên đã tồn tại"
 
 
 async def test_viewer_upload_file_rejects_conflict_without_overwrite(test_client, standard_user):
@@ -596,7 +596,7 @@ async def test_viewer_upload_file_rejects_conflict_without_overwrite(test_client
         headers=headers,
     )
     assert response.status_code == 400, response.text
-    assert response.json()["detail"] == "同名文件或文件夹已存在"
+    assert response.json()["detail"] == "File hoặc thư mục cùng tên đã tồn tại"
     assert existing_file.read_text(encoding="utf-8") == "keep me\n"
 
 
@@ -618,7 +618,7 @@ async def test_viewer_write_rejects_non_workspace_paths(test_client, standard_us
         headers=headers,
     )
     assert directory_response.status_code == 400, directory_response.text
-    assert directory_response.json()["detail"] == "当前路径不支持写入"
+    assert directory_response.json()["detail"] == "Đường dẫn hiện tại không hỗ trợ ghi"
 
     upload_response = await test_client.post(
         "/api/viewer/filesystem/upload",
@@ -627,7 +627,7 @@ async def test_viewer_write_rejects_non_workspace_paths(test_client, standard_us
         headers=headers,
     )
     assert upload_response.status_code == 400, upload_response.text
-    assert upload_response.json()["detail"] == "当前路径不支持写入"
+    assert upload_response.json()["detail"] == "Đường dẫn hiện tại không hỗ trợ ghi"
 
 
 @pytest.mark.parametrize("folder_name", ["", "../escape", "nested/folder"])

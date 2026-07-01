@@ -1,1 +1,1 @@
-"""知识库评估核心能力。"""
+"""Knowledge base assesses core competencies."""

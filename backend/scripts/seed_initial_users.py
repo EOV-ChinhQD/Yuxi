@@ -16,7 +16,7 @@ for import_path in (APP_ROOT, APP_ROOT / "package"):
         sys.path.insert(0, import_path_str)
 
 SUPERADMIN_UID = "zwj"
-SUPERADMIN_NAME = "张文杰"
+SUPERADMIN_NAME = "Zhang Wenjie"
 SUPERADMIN_PHONE_NUMBER = "15251638888"
 SUPERADMIN_PASSWORD = "zwj12138"
 DEFAULT_USER_PASSWORD = "yuxi123456"
@@ -28,13 +28,11 @@ class DepartmentSeed(TypedDict):
     prefix: str
     normal_count: int
 
-
 DEPARTMENTS: list[DepartmentSeed] = [
-    {"name": "研发部", "description": "负责产品研发与技术平台建设", "prefix": "dev", "normal_count": 5},
-    {"name": "产品部", "description": "负责产品规划、需求分析与项目推进", "prefix": "prod", "normal_count": 5},
-    {"name": "运营部", "description": "负责业务运营、用户支持与内容维护", "prefix": "ops", "normal_count": 4},
+    {"name": "R&D Department", "description": "Responsible for product research and development and technical platform construction", "prefix": "dev", "normal_count": 5},
+    {"name": "Product Department", "description": "Responsible for product planning, requirement analysis, and project advancement", "prefix": "prod", "normal_count": 5},
+    {"name": "Operations Department", "description": "Responsible for business operations, user support, and content maintenance", "prefix": "ops", "normal_count": 4},
 ]
-
 
 class SeedError(Exception):
     pass
@@ -51,11 +49,11 @@ async def ensure_uninitialized(session) -> None:
 
     user_count = await session.scalar(select(func.count(User.id)))
     if user_count:
-        raise SeedError(f"系统已初始化：users 表已有 {user_count} 个用户，脚本已退出。")
+        raise SeedError(f"Hệ thống đã được khởi tạo: bảng users đã có {user_count} người dùng, tập lệnh đã thoát.")
 
     superadmin_count = await session.scalar(select(func.count(User.id)).where(User.role == "superadmin"))
     if superadmin_count:
-        raise SeedError("系统已初始化：已存在超级管理员，脚本已退出。")
+        raise SeedError("Hệ thống đã được khởi tạo: Đã tồn tại siêu quản trị viên, kịch bản đã thoát.")
 
 
 async def seed_initial_users() -> None:
@@ -100,7 +98,7 @@ async def seed_initial_users() -> None:
                 for index in range(1, 3):
                     users.append(
                         User(
-                            username=f"{department_seed['name']}管理员{index}",
+                            username=f"{department_seed['name']} Admin {index}",
                             uid=f"{department_seed['prefix']}_admin_{index}",
                             password_hash=AuthUtils.hash_password(DEFAULT_USER_PASSWORD),
                             role="admin",
@@ -110,7 +108,7 @@ async def seed_initial_users() -> None:
                 for index in range(1, department_seed["normal_count"] + 1):
                     users.append(
                         User(
-                            username=f"{department_seed['name']}用户{index}",
+                            username=f"{department_seed['name']} User {index}",
                             uid=f"{department_seed['prefix']}_user_{index:02d}",
                             password_hash=AuthUtils.hash_password(DEFAULT_USER_PASSWORD),
                             role="user",
@@ -131,15 +129,15 @@ def main() -> int:
         print(str(exc), file=sys.stderr)
         return 1
     except Exception as exc:
-        print(f"初始化种子用户失败：{exc}", file=sys.stderr)
+        print(f"Failed to initialize seed users: {exc}", file=sys.stderr)
         return 1
 
     print(
-        f"初始化完成：已创建超级管理员 {SUPERADMIN_NAME}（{SUPERADMIN_UID}）、"
-        "3 个部门、6 个部门管理员和 14 个普通用户。"
+        f"Initialization completed: Created superadmin {SUPERADMIN_NAME} ({SUPERADMIN_UID}), "
+        "3 departments, 6 department admins, and 14 normal users."
     )
-    print("超级管理员密码：zwj12138")
-    print("部门管理员和普通用户默认密码：yuxi123456")
+    print("Superadmin password: zwj12138")
+    print("Default password for department admins and normal users: yuxi123456")
     return 0
 
 

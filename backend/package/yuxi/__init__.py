@@ -26,7 +26,10 @@ def __getattr__(name: str):
     if name == "knowledge_base":
         knowledge = import_module("yuxi.knowledge")
         return getattr(knowledge, name)
-    raise AttributeError(f"module 'yuxi' has no attribute {name!r}")
+    try:
+        return import_module(f"yuxi.{name}")
+    except ModuleNotFoundError:
+        raise AttributeError(f"module 'yuxi' has no attribute {name!r}")
 
 
 def __dir__():

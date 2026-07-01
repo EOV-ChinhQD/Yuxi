@@ -13,19 +13,19 @@ from server.utils.auth_middleware import get_admin_user
 system = APIRouter(prefix="/system", tags=["system"])
 
 # =============================================================================
-# === 健康检查分组 ===
+# === Health Check Grouping ===
 # =============================================================================
 
 
 @system.get("/health")
 async def health_check():
-    """系统健康检查接口（公开接口）"""
-    return {"status": "ok", "message": "服务正常运行", "version": get_version()}
+    """System health check interface (public interface)"""
+    return {"status": "ok", "message": "Dịch vụ đang hoạt động bình thường", "version": get_version()}
 
 
 @system.get("/discovery")
 async def discovery():
-    """系统能力发现接口（公开接口）"""
+    """System capability discovery interface (public interface)"""
     return {
         "name": "Yuxi",
         "version": get_version(),
@@ -49,23 +49,23 @@ async def discovery():
 
 
 # =============================================================================
-# === 配置管理分组 ===
+# === Configuration Management Group ===
 # =============================================================================
 
 
 @system.get("/config")
 async def get_config(current_user: User = Depends(get_admin_user)):
-    """获取系统配置"""
+    """Get system configuration"""
     return config.dump_config()
 
 
 @system.post("/config")
 async def update_config_single(key=Body(...), value=Body(...), current_user: User = Depends(get_admin_user)) -> dict:
-    """更新单个配置项"""
+    """Update a single configuration item"""
     if not isinstance(key, str) or key not in type(config).model_fields:
-        raise HTTPException(status_code=400, detail=f"未知配置项: {key}")
+        raise HTTPException(status_code=400, detail=f"Mục cấu hình không xác định: {key}")
     if not config.can_update(key):
-        raise HTTPException(status_code=400, detail=f"配置项不可修改: {key}")
+        raise HTTPException(status_code=400, detail=f"Mục cấu hình không thể sửa đổi: {key}")
     setattr(config, key, value)
     config.save()
     return config.dump_config()
@@ -73,7 +73,7 @@ async def update_config_single(key=Body(...), value=Body(...), current_user: Use
 
 @system.post("/config/update")
 async def update_config_batch(items: dict = Body(...), current_user: User = Depends(get_admin_user)) -> dict:
-    """批量更新配置项"""
+    """Update configuration items in batches"""
     config.update(items)
     config.save()
     return config.dump_config()
@@ -81,33 +81,33 @@ async def update_config_batch(items: dict = Body(...), current_user: User = Depe
 
 @system.get("/logs")
 async def get_system_logs(levels: str | None = None, current_user: User = Depends(get_admin_user)):
-    """获取系统日志
+    """Get system log
 
     Args:
-        levels: 可选的日志级别过滤，多个级别用逗号分隔，如 "INFO,ERROR,DEBUG,WARNING"
+        levels: Optional log level filtering, multiple levels separated by commas, such as "INFO,ERROR,DEBUG,WARNING"
     """
     try:
         from yuxi.utils.logging_config import LOG_FILE
 
-        # 解析日志级别过滤条件
+        # Parse log level filter conditions
         level_filter = None
         if levels:
             level_filter = set(level.strip().upper() for level in levels.split(",") if level.strip())
 
-        #  修复 GBK 编码报错：强制 utf-8 读取，忽略错误
+        # Fix GBK encoding error: force utf-8 reading, ignore errors
         async with aiofiles.open(LOG_FILE, encoding="utf-8", errors="ignore") as f:
-            # 读取最后1000行
+            # Read last 1000 lines
             lines = []
             async for line in f:
                 filtered_line = line.rstrip("\n\r")
-                # 如果指定了日志级别过滤，则按级别过滤
+                # If log level filtering is specified, filter by level
                 if level_filter:
-                    # 日志格式: 2025-03-10 08:26:37,269 - INFO - module - message
-                    # 提取日志级别
+                    # Log format: 2025-03-10 08:26:37,269 - INFO - module - message
+                    # Extract log level
                     parts = filtered_line.split(" - ")
                     if len(parts) >= 2 and parts[1].strip() in level_filter:
                         lines.append(filtered_line + "\n")
-                    # 继续读取以保持行数统计准确
+                    # Continue reading to keep row count accurate
                     if len(lines) > 1000:
                         lines.pop(0)
                 else:
@@ -118,32 +118,32 @@ async def get_system_logs(levels: str | None = None, current_user: User = Depend
         log = "".join(lines)
         return {"log": log, "message": "success", "log_file": LOG_FILE}
     except Exception as e:
-        logger.error(f"获取系统日志失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取系统日志失败: {str(e)}")
+        logger.error(f"Failed to obtain system log: {e}")
+        raise HTTPException(status_code=500, detail=f"Lấy nhật ký hệ thống thất bại: {str(e)}")
 
 
 # =============================================================================
-# === 信息管理分组 ===
+# === Information Management Group ===
 # =============================================================================
 
 
 async def load_info_config():
-    """加载信息配置文件"""
+    """Load information configuration file"""
     try:
-        # 配置文件路径
+        # Configuration file path
         brand_file_path = os.environ.get("YUXI_BRAND_FILE_PATH", "package/yuxi/config/static/info.local.yaml")
         config_path = Path(brand_file_path)
 
-        # 检查文件是否存在
+        # Check if the file exists
         if not config_path.exists():
             logger.debug(f"The config file {config_path} does not exist, using default config")
             config_path = Path("package/yuxi/config/static/info.template.yaml")
 
-        # 异步读取配置文件
+        # Read configuration file asynchronously
         async with aiofiles.open(config_path, encoding="utf-8") as file:
             content = await file.read()
 
-        # 注入版本号占位符
+        # Inject version number placeholder
         content = content.replace("{{YUXI_VERSION}}", get_version())
 
         config = yaml.safe_load(content)
@@ -157,44 +157,44 @@ async def load_info_config():
 
 @system.get("/info")
 async def get_info_config():
-    """获取系统信息配置（公开接口，无需认证）"""
+    """Obtain system information configuration (public interface, no authentication required)"""
     try:
         config = await load_info_config()
         return {"success": True, "data": config}
     except Exception as e:
-        logger.error(f"获取信息配置失败: {e}")
-        raise HTTPException(status_code=500, detail="获取信息配置失败")
+        logger.error(f"Failed to obtain information configuration: {e}")
+        raise HTTPException(status_code=500, detail="Lấy cấu hình thông tin thất bại")
 
 
 @system.post("/info/reload")
 async def reload_info_config(current_user: User = Depends(get_admin_user)):
-    """重新加载信息配置"""
+    """Reload information configuration"""
     try:
         config = await load_info_config()
-        return {"success": True, "message": "配置重新加载成功", "data": config}
+        return {"success": True, "message": "Tải lại cấu hình thành công", "data": config}
     except Exception as e:
-        logger.error(f"重新加载信息配置失败: {e}")
-        raise HTTPException(status_code=500, detail="重新加载信息配置失败")
+        logger.error(f"Failed to reload information configuration: {e}")
+        raise HTTPException(status_code=500, detail="Tải lại cấu hình thông tin thất bại")
 
 
 # =============================================================================
-# === OCR服务分组 ===
+# === OCR service group ===
 # =============================================================================
 
 
 @system.get("/ocr/health")
 async def check_ocr_services_health(current_user: User = Depends(get_admin_user)):
     """
-    检查所有OCR服务的健康状态
-    返回各个OCR服务的可用性信息
+    examine the health status of all OCR services
+    Returns the availability information of each individualOCR service
     """
     from yuxi.knowledge.parser.factory import DocumentProcessorFactory
 
     try:
-        # 使用统一的健康检查接口
+        # Use a unified health check interface
         health_status = await DocumentProcessorFactory.check_all_health_async()
 
-        # 格式化健康检查响应
+        # Format health check response
         formatted_status = {}
         for service_name, health_info in health_status.items():
             formatted_status[service_name] = {
@@ -203,7 +203,7 @@ async def check_ocr_services_health(current_user: User = Depends(get_admin_user)
                 "details": health_info.get("details", {}),
             }
 
-        # 计算整体健康状态
+        # Calculate overall health status
         overall_status = (
             "healthy" if any(svc["status"] == "healthy" for svc in formatted_status.values()) else "unhealthy"
         )
@@ -211,13 +211,13 @@ async def check_ocr_services_health(current_user: User = Depends(get_admin_user)
         return {
             "overall_status": overall_status,
             "services": formatted_status,
-            "message": "OCR服务健康检查完成",
+            "message": "Kiểm tra sức khỏe dịch vụ OCR hoàn tất",
         }
 
     except Exception as e:
-        logger.error(f"OCR健康检查失败: {str(e)}")
+        logger.error(f"OCR health check failed: {str(e)}")
         return {
             "overall_status": "error",
             "services": {},
-            "message": f"OCR健康检查失败: {str(e)}",
+            "message": f"Kiểm tra sức khỏe OCR thất bại: {str(e)}",
         }

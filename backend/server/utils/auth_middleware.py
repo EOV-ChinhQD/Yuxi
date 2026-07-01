@@ -10,18 +10,19 @@ from yuxi.utils.datetime_utils import utc_now_naive
 
 from yuxi.utils.auth_utils import AuthUtils
 
-# 定义OAuth2密码承载器，指定token URL
+# Định nghĩa OAuth2 password bearer scheme, chỉ định token URL
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
 
 
-# 获取数据库会话（异步版本）
+# Get database session (asynchronous version)
+# Lấy phiên cơ sở dữ liệu (phiên bản bất đồng bộ)
 async def get_db():
     async with pg_manager.get_async_session_context() as db:
         yield db
 
 
 async def _verify_api_key(key: str, db: AsyncSession) -> tuple[User | None, APIKey | None]:
-    """验证 API Key 并返回关联用户和 APIKey 对象"""
+    """Xác thực API Key và trả về đối tượng User và APIKey liên kết"""
     key_hash = hashlib.sha256(key.encode()).hexdigest()
 
     result = await db.execute(select(APIKey).filter(APIKey.key_hash == key_hash))
@@ -61,14 +62,14 @@ async def _verify_api_key(key: str, db: AsyncSession) -> tuple[User | None, APIK
     return None, None
 
 
-# 获取当前用户（异步版本）
+# Get the current user (async version)
 async def get_current_user(
     authorization: str | None = Header(None),
     db: AsyncSession = Depends(get_db),
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="无效的凭证",
+        detail="Chứng chỉ không hợp lệ",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
@@ -82,16 +83,16 @@ async def get_current_user(
     if not token:
         return None
 
-    # 根据 token 前缀判断认证方式
+    # Determine the authentication method based on the token prefix
     if token.startswith("yxkey_"):
-        # API Key 认证
+        # Xác thực API Key
         user, api_key_obj = await _verify_api_key(token, db)
         if user is not None and api_key_obj is not None:
             api_key_obj.last_used_at = utc_now_naive()
             await db.commit()
         return user
 
-    # JWT Token 认证
+    # Xác thực JWT Token
     try:
         payload = AuthUtils.verify_access_token(token)
         user_id = payload.get("sub")
@@ -111,44 +112,44 @@ async def get_current_user(
     if user.is_login_locked():
         raise HTTPException(
             status_code=status.HTTP_423_LOCKED,
-            detail="登录被锁定，请稍后重试",
+            detail="Tài khoản đã bị khóa, vui lòng thử lại sau",
             headers={"X-Lock-Remaining": str(user.get_remaining_lock_time())},
         )
 
     return user
 
 
-# 获取已登录用户（抛出401如果未登录）
+# Lấy thông tin user đã đăng nhập (trả về 401 nếu chưa đăng nhập)
 async def get_required_user(user: User | None = Depends(get_current_user)):
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="请登录后再访问",
+            detail="Vui lòng đăng nhập trước khi truy cập",
             headers={"WWW-Authenticate": "Bearer"},
         )
     if not user.department_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="当前用户未绑定部门",
+            detail="Người dùng hiện tại chưa liên kết bộ phận",
         )
     return user
 
 
-# 获取管理员用户
+# Quyền admin
 async def get_admin_user(current_user: User = Depends(get_required_user)):
     if current_user.role not in ["admin", "superadmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="需要管理员权限",
+            detail="Yêu cầu quyền admin",
         )
     return current_user
 
 
-# 获取超级管理员用户
+# Quyền superadmin
 async def get_superadmin_user(current_user: User = Depends(get_required_user)):
     if current_user.role != "superadmin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="需要超级管理员权限",
+            detail="Yêu cầu quyền superadmin",
         )
     return current_user

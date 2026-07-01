@@ -85,7 +85,7 @@ def _entry_for_path(root: Path, path: Path) -> dict:
     return {
         "path": display_path,
         "virtual_path": virtual_path,
-        "name": path.name or "工作区",
+        "name": path.name or "workspace",
         "is_dir": is_dir,
         "size": 0 if is_dir else stat.st_size,
         "modified_at": utc_isoformat_from_timestamp(stat.st_mtime) or "",
@@ -99,20 +99,20 @@ def _sort_entries(entries: list[dict]) -> list[dict]:
 def _validate_child_name(name: str, *, field_name: str) -> str:
     clean_name = str(name or "").strip()
     if not clean_name:
-        raise HTTPException(status_code=422, detail=f"{field_name} 不能为空")
+        raise HTTPException(status_code=422, detail=f"{field_name} không được để trống")
     if clean_name in {".", ".."} or "/" in clean_name or "\\" in clean_name:
-        raise HTTPException(status_code=422, detail=f"{field_name} 不能包含路径分隔符")
+        raise HTTPException(status_code=422, detail=f"{field_name} không được chứa dấu phân cách đường dẫn")
     if PurePosixPath(clean_name).name != clean_name:
-        raise HTTPException(status_code=422, detail=f"{field_name} 不能包含路径分隔符")
+        raise HTTPException(status_code=422, detail=f"{field_name} không được chứa dấu phân cách đường dẫn")
     return clean_name
 
 
 def _resolve_parent_directory(user: User, parent_path: str) -> Path:
     parent = _resolve_workspace_path(user, parent_path)
     if not parent.exists():
-        raise HTTPException(status_code=404, detail="目标目录不存在")
+        raise HTTPException(status_code=404, detail="Thư mục mục tiêu không tồn tại")
     if not parent.is_dir():
-        raise HTTPException(status_code=400, detail="目标路径不是目录")
+        raise HTTPException(status_code=400, detail="Đường dẫn mục tiêu không phải là thư mục")
     return parent
 
 
@@ -123,7 +123,7 @@ def _resolve_new_child(root: Path, parent: Path, name: str) -> Path:
     except ValueError as exc:
         raise HTTPException(status_code=403, detail="Access denied") from exc
     if target.exists():
-        raise HTTPException(status_code=400, detail="同名文件或文件夹已存在")
+        raise HTTPException(status_code=400, detail="File hoặc thư mục cùng tên đã tồn tại")
     return target
 
 
@@ -145,7 +145,7 @@ async def list_workspace_tree(
     if not target.exists():
         return {"entries": []}
     if not target.is_dir():
-        raise HTTPException(status_code=400, detail="当前路径不是目录")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại không phải là thư mục")
     entries = await asyncio.to_thread(_list_directory, root, target, recursive=recursive, files_only=files_only)
     return {"entries": entries}
 
@@ -153,18 +153,18 @@ async def list_workspace_tree(
 def resolve_workspace_file_path(*, path: str, current_user: User) -> Path:
     target = _resolve_workspace_path(current_user, path)
     if not target.exists():
-        raise HTTPException(status_code=404, detail=f"工作区文件不存在: {path}")
+        raise HTTPException(status_code=404, detail=f"Tệp không gian làm việc không tồn tại: {path}")
     if not target.is_file():
-        raise HTTPException(status_code=400, detail=f"当前路径不是文件: {path}")
+        raise HTTPException(status_code=400, detail=f"Đường dẫn hiện tại không phải là một tệp: {path}")
     return target
 
 
 async def read_workspace_file_content(*, path: str, current_user: User) -> dict | StreamingResponse:
     target = _resolve_workspace_path(current_user, path)
     if not target.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise HTTPException(status_code=404, detail="File không tồn tại")
     if not target.is_file():
-        raise HTTPException(status_code=400, detail="当前路径是目录")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại là thư mục")
 
     stat = await asyncio.to_thread(target.stat)
     if stat.st_size > MAX_BINARY_PREVIEW_SIZE_BYTES:
@@ -213,20 +213,20 @@ async def write_workspace_file_content(*, path: str, content: str, current_user:
     root = _workspace_root(current_user)
     target = _resolve_workspace_path(current_user, path)
     if not target.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise HTTPException(status_code=404, detail="File không tồn tại")
     if not target.is_file():
-        raise HTTPException(status_code=400, detail="当前路径是目录")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại là thư mục")
     if target.suffix.lower() not in EDITABLE_WORKSPACE_SUFFIXES:
-        raise HTTPException(status_code=400, detail="当前文件类型不支持编辑")
+        raise HTTPException(status_code=400, detail="Loại file hiện tại không hỗ trợ chỉnh sửa")
 
     raw_content = await asyncio.to_thread(target.read_bytes)
     preview_type, supported, _message = detect_preview_type(path, raw_content)
     if preview_type not in {"markdown", "text"} or not supported:
-        raise HTTPException(status_code=400, detail="当前文件类型不支持编辑")
+        raise HTTPException(status_code=400, detail="Loại file hiện tại không hỗ trợ chỉnh sửa")
     try:
         raw_content.decode("utf-8")
     except UnicodeDecodeError as exc:
-        raise HTTPException(status_code=400, detail="当前文件不是 UTF-8 文本") from exc
+        raise HTTPException(status_code=400, detail="File hiện tại không phải là văn bản UTF-8") from exc
 
     try:
         await asyncio.to_thread(target.write_text, content, encoding="utf-8")
@@ -244,9 +244,9 @@ async def delete_workspace_path(*, path: str, current_user: User) -> dict:
     root = _workspace_root(current_user)
     target = _resolve_workspace_path(current_user, path)
     if target == root:
-        raise HTTPException(status_code=400, detail="工作区根目录不允许删除")
+        raise HTTPException(status_code=400, detail="Không được phép xóa thư mục gốc không gian làm việc")
     if not target.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise HTTPException(status_code=404, detail="File không tồn tại")
 
     try:
         if target.is_dir():
@@ -262,14 +262,14 @@ async def delete_workspace_path(*, path: str, current_user: User) -> dict:
 
 async def create_workspace_directory(*, parent_path: str, name: str, current_user: User) -> dict:
     root = _workspace_root(current_user)
-    directory_name = _validate_child_name(name, field_name="文件夹名")
+    directory_name = _validate_child_name(name, field_name="folder name")
     parent = _resolve_parent_directory(current_user, parent_path)
     target = _resolve_new_child(root, parent, directory_name)
 
     try:
         await asyncio.to_thread(target.mkdir)
     except FileExistsError as exc:
-        raise HTTPException(status_code=400, detail="同名文件或文件夹已存在") from exc
+        raise HTTPException(status_code=400, detail="File hoặc thư mục cùng tên đã tồn tại") from exc
     except PermissionError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -288,11 +288,11 @@ async def _write_workspace_upload(file: UploadFile, target: Path) -> None:
                 file,
                 buffer,
                 max_size_bytes=MAX_WORKSPACE_UPLOAD_SIZE_BYTES,
-                too_large_message="文件过大，当前仅支持 100 MB 以内的文件",
+                too_large_message="Tệp quá lớn, hiện tại chỉ hỗ trợ các tệp dưới 100 MB",
             )
         upload_completed = True
     except FileExistsError as exc:
-        raise HTTPException(status_code=400, detail="同名文件或文件夹已存在") from exc
+        raise HTTPException(status_code=400, detail="File hoặc thư mục cùng tên đã tồn tại") from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except PermissionError as exc:
@@ -305,9 +305,9 @@ async def _write_workspace_upload(file: UploadFile, target: Path) -> None:
 
 async def upload_workspace_files(*, parent_path: str, files: list[UploadFile], current_user: User) -> dict:
     if not files:
-        raise HTTPException(status_code=400, detail="请选择至少一个文件")
+        raise HTTPException(status_code=400, detail="Vui lòng chọn ít nhất một file")
     if len(files) > MAX_WORKSPACE_UPLOAD_FILES:
-        raise HTTPException(status_code=400, detail=f"一次最多上传 {MAX_WORKSPACE_UPLOAD_FILES} 个文件")
+        raise HTTPException(status_code=400, detail=f"Có thể tải lên tối đa {MAX_WORKSPACE_UPLOAD_FILES} tệp mỗi lần")
 
     root = _workspace_root(current_user)
     parent = _resolve_parent_directory(current_user, parent_path)
@@ -315,9 +315,9 @@ async def upload_workspace_files(*, parent_path: str, files: list[UploadFile], c
     upload_targets: list[tuple[UploadFile, Path]] = []
 
     for file in files:
-        file_name = _validate_child_name(Path(file.filename or "").name, field_name="文件名")
+        file_name = _validate_child_name(Path(file.filename or "").name, field_name="file name")
         if file_name in seen_names:
-            raise HTTPException(status_code=400, detail=f"选择的文件中存在重复文件名: {file_name}")
+            raise HTTPException(status_code=400, detail=f"Có tên tệp trùng lặp trong các tệp đã chọn: {file_name}")
         seen_names.add(file_name)
         upload_targets.append((file, _resolve_new_child(root, parent, file_name)))
 
@@ -368,9 +368,9 @@ def _store_office_pdf_cache(cache_dir: Path, digest: str, cache_path: Path, pdf_
 async def download_workspace_file(*, path: str, current_user: User) -> StreamingResponse | FileResponse:
     target = _resolve_workspace_path(current_user, path)
     if not target.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
+        raise HTTPException(status_code=404, detail="File không tồn tại")
     if not target.is_file():
-        raise HTTPException(status_code=400, detail="当前路径是目录")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại là thư mục")
 
     file_name = target.name or "download"
     media_type = detect_media_type(file_name)

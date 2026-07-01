@@ -1,4 +1,4 @@
-"""内置模型供应商定义。"""
+"""Built-in model vendor definition."""
 
 from typing import Any
 

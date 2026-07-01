@@ -9,7 +9,7 @@ import pytest
 pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 
 API_KEYS_PATH = "/api/user/apikey/"
-# 受登录保护的轻量端点，用于验证 Bearer 鉴权（API Key / JWT）是否生效，无需执行智能体
+# Login-protected lightweight endpoint used to verify whether Bearer authentication (API Key / JWT) is valid without executing the agent
 PROTECTED_PATH = "/api/agent"
 
 

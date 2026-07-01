@@ -1,4 +1,4 @@
-"""知识库工具模块。"""
+"""Knowledge base tool module."""
 
 from .kb_utils import (
     calculate_content_hash,

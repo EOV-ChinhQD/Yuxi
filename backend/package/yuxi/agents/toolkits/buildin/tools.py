@@ -32,21 +32,21 @@ def _create_tavily_search():
     return _tavily_search_instance
 
 
-# 注册 TavilySearch 工具（延迟初始化）
+# Đăng ký công cụ TavilySearch (khởi tạo trễ)
 def _register_tavily_tool():
     """Register TavilySearch tool with extra metadata."""
     tavily_instance = _create_tavily_search()
-    # 手动注册到全局注册表
+    # Đăng ký thủ công vào registry toàn cục
     _extra_registry["tavily_search"] = ToolExtraMetadata(
         category="buildin",
-        tags=["搜索"],
-        display_name="Tavily 网页搜索",
+        tags=["search"],
+        display_name="Tavily Web Search",
     )
-    # 添加到工具实例列表
+    # Add to tool instance list
     _all_tool_instances.append(tavily_instance)
 
 
-# 模块加载时注册
+# Register when module is loaded
 if os.getenv("TAVILY_API_KEY"):
     try:
         _register_tavily_tool()
@@ -58,7 +58,7 @@ class PresentArtifactsInput(BaseModel):
     """Expose artifact files to the frontend after the agent finishes."""
 
     filepaths: list[str] = Field(
-        description=f"需要展示给用户的文件绝对路径列表，只允许位于 {VIRTUAL_PATH_OUTPUTS} 下，且不能是内部运行文件"
+        description=f"Danh sách đường dẫn tuyệt đối của các tệp cần hiển thị cho người dùng, chỉ được nằm dưới {VIRTUAL_PATH_OUTPUTS} và không được là tệp chạy nội bộ"
     )
 
 
@@ -74,16 +74,16 @@ def _normalize_presented_artifact_path(filepath: str, runtime: ToolRuntime) -> s
     runtime_context = runtime.context
     thread_id = getattr(runtime_context, "file_thread_id", None) or getattr(runtime_context, "thread_id", None)
     if not thread_id:
-        raise ValueError("当前运行时缺少 thread_id")
+        raise ValueError("Thiếu thread_id trong runtime hiện tại")
     uid = getattr(runtime_context, "uid", None)
     if not uid:
-        raise ValueError("当前运行时缺少 uid")
+        raise ValueError("Thiếu uid trong runtime hiện tại")
 
     ensure_thread_dirs(thread_id, str(uid))
     outputs_dir = sandbox_outputs_dir(thread_id).resolve()
     normalized_input = str(filepath or "").strip()
     if not normalized_input:
-        raise ValueError("文件路径不能为空")
+        raise ValueError("Đường dẫn tệp không được để trống")
 
     stripped = normalized_input.lstrip("/")
     virtual_prefix = VIRTUAL_PATH_PREFIX.lstrip("/")
@@ -93,41 +93,41 @@ def _normalize_presented_artifact_path(filepath: str, runtime: ToolRuntime) -> s
         actual_path = Path(normalized_input).expanduser().resolve()
 
     if not actual_path.exists() or not actual_path.is_file():
-        raise ValueError(f"文件不存在或不是普通文件: {normalized_input}")
+        raise ValueError(f"Tệp không tồn tại hoặc không phải là tệp thông thường: {normalized_input}")
 
     try:
         relative_path = actual_path.relative_to(outputs_dir)
     except ValueError as exc:
-        raise ValueError(f"只允许展示 {outputs_virtual_prefix}/ 下的文件: {normalized_input}") from exc
+        raise ValueError(f"Chỉ cho phép hiển thị các tệp dưới {outputs_virtual_prefix}/: {normalized_input}") from exc
 
     if relative_path.parts and relative_path.parts[0] in _PRESENT_ARTIFACTS_INTERNAL_DIR_NAMES:
-        raise ValueError(f"不允许展示工具调用阶段文件: {outputs_virtual_prefix}/{relative_path.as_posix()}")
+        raise ValueError(f"Không cho phép hiển thị tệp giai đoạn gọi công cụ: {outputs_virtual_prefix}/{relative_path.as_posix()}")
 
     return f"{outputs_virtual_prefix}/{relative_path.as_posix()}"
 
 
 PRESENT_ARTIFACTS_DESCRIPTION = f"""
-将已经生成好的结果文件展示给用户。
+Hiển thị tệp kết quả đã được tạo cho người dùng.
 
-使用场景：
-1. 你已经在 `{VIRTUAL_PATH_OUTPUTS}` 下写好了最终结果文件
-2. 你希望前端在对话结束后显示这些结果文件卡片
-3. 这些文件需要支持下载或预览
+Trường hợp sử dụng:
+1. Bạn đã ghi tệp kết quả cuối cùng dưới `{VIRTUAL_PATH_OUTPUTS}`
+2. Bạn muốn frontend hiển thị thẻ tệp kết quả này sau khi kết thúc cuộc trò chuyện
+3. Các tệp này cần hỗ trợ tải xuống hoặc xem trước
 
-注意事项：
-1. 只能传入 `{VIRTUAL_PATH_OUTPUTS}` 下的文件
-2. 不要传入中间过程文件，只有真正需要给用户看的结果文件才调用
-3. 不要传入工具调用阶段文件，例如：
+Lưu ý:
+1. Chỉ có thể truyền vào các tệp dưới `{VIRTUAL_PATH_OUTPUTS}`
+2. Không truyền vào các tệp quá trình trung gian, chỉ gọi cho các tệp kết quả thực sự cần cho người dùng xem
+3. Không truyền các tệp giai đoạn gọi công cụ, ví dụ:
    - `{VIRTUAL_PATH_OUTPUTS}/{LARGE_TOOL_RESULTS_DIR_NAME}`
    - `{VIRTUAL_PATH_OUTPUTS}/{CONVERSATION_HISTORY_DIR_NAME}`
-4. 可以一次传多个文件
+4. Có thể truyền nhiều tệp cùng lúc
 """
 
 
 @tool(
     category="buildin",
-    tags=["文件", "交付物"],
-    display_name="展示交付物",
+    tags=["file", "deliverable"],
+    display_name="Hiển thị sản phẩm giao nộp",
     description=PRESENT_ARTIFACTS_DESCRIPTION,
     args_schema=PresentArtifactsInput,
 )
@@ -136,7 +136,7 @@ def present_artifacts(
     runtime: ToolRuntime,
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """登记当前线程 outputs 目录下的交付物文件，使前端在对话结束后展示给用户。"""
+    """Đăng ký tệp sản phẩm giao nộp trong thư mục outputs của luồng hiện tại để hiển thị cho người dùng khi kết thúc hội thoại."""
     try:
         normalized_paths = [_normalize_presented_artifact_path(filepath, runtime) for filepath in filepaths]
     except ValueError as exc:
@@ -145,52 +145,52 @@ def present_artifacts(
     return Command(
         update={
             "artifacts": normalized_paths,
-            "messages": [ToolMessage(content="已将交付物展示给用户", tool_call_id=tool_call_id)],
+            "messages": [ToolMessage(content="Đã hiển thị sản phẩm giao nộp cho người dùng", tool_call_id=tool_call_id)],
         }
     )
 
 
 ASK_USER_QUESTION_DESCRIPTION = """
-在执行过程中，当你需要用户做决定或补充需求时，使用这个工具向用户提问。
+Trong quá trình thực thi, khi bạn cần người dùng đưa ra quyết định hoặc bổ sung yêu cầu, hãy sử dụng công cụ này để hỏi người dùng.
 
-适用场景：
-1. 收集用户偏好或需求（例如风格、范围、优先级）
-2. 澄清模糊指令（存在多种合理解释时）
-3. 在实现过程中让用户选择方案方向
-4. 在有明显权衡时让用户做取舍
+Kịch bản áp dụng:
+1. Thu thập sở thích hoặc yêu cầu của người dùng (ví dụ: phong cách, phạm vi, mức độ ưu tiên)
+2. Làm rõ các chỉ thị mơ hồ (khi có nhiều cách hiểu hợp lý)
+3. Cho phép người dùng chọn hướng giải pháp trong quá trình triển khai
+4. Cho phép người dùng thực hiện đánh đổi khi có sự cân nhắc rõ ràng
 
-使用规范：
-1. questions 提供 1-5 个问题，每项包含：question、options、multi_select、allow_other
-2. 每个问题的 options 提供 2-5 个有区分度的选项，每项包含 label 和 value
-3. 若有推荐选项：把推荐项放在第一位，并在 label 末尾加 "(Recommended)"
-4. 若需要多选：将该问题的 multi_select 设为 true
-5. allow_other 通常保持 true，用户可通过 Other 输入自定义答案
+Quy chuẩn sử dụng:
+1. questions cung cấp từ 1-5 câu hỏi, mỗi mục bao gồm: question, options, multi_select, allow_other
+2. options của mỗi câu hỏi cung cấp từ 2-5 tùy chọn có tính phân biệt, mỗi mục bao gồm label và value
+3. Nếu có tùy chọn được đề xuất: đặt tùy chọn đề xuất ở vị trí đầu tiên và thêm "(Recommended)" vào cuối label
+4. Nếu cần chọn nhiều: đặt multi_select của câu hỏi đó thành true
+5. allow_other thường giữ là true, người dùng có thể nhập câu trả lời tùy chỉnh qua Other
 
-注意事项：
-1. 不要用这个工具询问“是否继续执行”“计划是否准备好”这类流程控制问题
-2. 不要在信息已充分、无需用户决策时滥用该工具
-3. 先基于现有上下文自行决策，只有关键不确定性时才提问
+Lưu ý:
+1. Không sử dụng công cụ này để hỏi các câu hỏi kiểm soát luồng như "có tiếp tục thực thi không" hoặc "kế hoạch đã sẵn sàng chưa"
+2. Không lạm dụng công cụ này khi thông tin đã đầy đủ và người dùng không cần đưa ra quyết định
+3. Tự đưa ra quyết định dựa trên ngữ cảnh hiện tại trước, chỉ hỏi khi có sự không chắc chắn quan trọng
 
-返回结果：
-answer 为 object，格式为 {question_id: answer}。
-其中 answer 可能是 string（单选）、list（多选）或 object（Other 文本）。
+Kết quả trả về:
+answer là object, có định dạng {question_id: answer}.
+Trong đó answer có thể là string (chọn một), list (chọn nhiều) hoặc object (văn bản nhập ở Other).
 """
 
 
 @tool(
     category="buildin",
-    tags=["交互"],
-    display_name="向用户提问",
+    tags=["interaction"],
+    display_name="Hỏi người dùng",
     description=ASK_USER_QUESTION_DESCRIPTION,
 )
 def ask_user_question(
     questions: Annotated[
         list[dict] | str | None,
-        "问题列表，每项格式 {question, options, multi_select, allow_other, question_id(optional)}",
+        "Danh sách câu hỏi, định dạng mỗi mục {question, options, multi_select, allow_other, question_id(optional)}",
     ] = None,
 ) -> dict:
-    """向用户发起问题并等待回答。"""
-    # 解析 questions 参数：如果是字符串，尝试解析为 JSON
+    """Gửi câu hỏi tới người dùng và đợi câu trả lời."""
+    # Parse the questions parameter: if it is a string, try to parse it as JSON
     if isinstance(questions, str):
         try:
             import json
@@ -204,7 +204,7 @@ def ask_user_question(
     normalized_questions = normalize_questions(questions or [])
 
     if not normalized_questions:
-        raise ValueError("questions 至少需要包含一个有效问题")
+        raise ValueError("questions phải chứa ít nhất một câu hỏi hợp lệ")
 
     interrupt_payload = {
         "questions": normalized_questions,

@@ -206,7 +206,7 @@ async def test_awrap_model_call_mounts_knowledge_base_skill_tools():
 
 
 def test_resolve_skill_gated_tools_collects_readable_dependency_tools():
-    """门控工具必须能从可见 Skill 的依赖解析出真实工具实例，供构建期注册进 ToolNode。"""
+    """The gated tool must be able to parse the real tool instance from the dependencies of the visible Skill for registration into the ToolNode during the build period."""
     context = SimpleNamespace(
         _readable_skills=["knowledge-base"],
         _runtime_skill_dependency_map={"knowledge-base": {"tools": sorted(_KB_TOOL_NAMES), "mcps": [], "skills": []}},
@@ -219,7 +219,7 @@ def test_resolve_skill_gated_tools_collects_readable_dependency_tools():
 
 @pytest.mark.asyncio
 async def test_resolve_configured_runtime_tools_registers_skill_gated_tools():
-    """门控工具必须随基础工具一起进入 create_agent 工具列表（即注册进 ToolNode），否则激活后仍报 not a valid tool。"""
+    """The gating tool must be entered into the create_agent tool list along with the basic tool (that is, registered in the ToolNode), otherwise it will still report not a valid tool after activation."""
     context = SimpleNamespace(
         tools=None,
         mcps=None,
@@ -256,13 +256,13 @@ def _make_gated_request(activated):
             new_request.state = self.state
             return new_request
 
-    # ToolNode 默认绑定 = 基础工具 + 门控工具
+    # ToolNode default binding = basic tool + gate control tool
     return FakeRequest([base, *gated])
 
 
 @pytest.mark.asyncio
 async def test_awrap_model_call_hides_gated_tools_until_activated():
-    """未激活 Skill 时门控工具对模型不可见（懒加载），激活后才放出。"""
+    """When the Skill is not activated, the gating tool is invisible to the model (lazy loading) and will be released after activation."""
     request = _make_gated_request(activated=[])
     captured = {}
 

@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 
 
 def _assert_forbidden_response(response):
-    """验证 403 禁止访问响应的格式"""
+    """Verify the format of the 403 Forbidden response"""
     assert response.status_code == 403
     payload = response.json()
     assert "detail" in payload
@@ -225,9 +225,9 @@ async def test_knowledge_routes_enforce_permissions(test_client, standard_user, 
 
 
 async def test_admin_can_create_vector_db_with_reranker(test_client, admin_headers):
-    """测试创建向量库并配置 reranker 参数（通过 query_params.options）
+    """Test create vector library and configure reranker parameters (via query_params.options）
 
-    注意：数据库清理由 conftest.py 中的 session fixture 自动处理。
+    Note: database cleanup is performed by conftest.py The session fixture in .
     """
     db_name = f"pytest_rerank_{uuid.uuid4().hex[:6]}"
     payload = {
@@ -244,7 +244,7 @@ async def test_admin_can_create_vector_db_with_reranker(test_client, admin_heade
     db_payload = create_response.json()
     kb_id = db_payload["kb_id"]
 
-    # 获取查询参数配置
+    # Get query parameter configuration
     params_response = await test_client.get(f"/api/knowledge/databases/{kb_id}/query-params", headers=admin_headers)
     assert params_response.status_code == 200, params_response.text
 
@@ -252,13 +252,13 @@ async def test_admin_can_create_vector_db_with_reranker(test_client, admin_heade
     options = params_payload.get("params", {}).get("options", [])
     option_keys = {option.get("key") for option in options}
 
-    # 验证新的参数名称
+    # Verify new parameter names
     assert "final_top_k" in option_keys
     assert "use_reranker" in option_keys
     assert "recall_top_k" in option_keys
     assert "reranker_model" in option_keys
 
-    # 验证参数配置
+    # Verify parameter configuration
     final_top_k_option = next((opt for opt in options if opt.get("key") == "final_top_k"), None)
     assert final_top_k_option is not None
     assert final_top_k_option.get("default") == 10
@@ -267,7 +267,7 @@ async def test_admin_can_create_vector_db_with_reranker(test_client, admin_heade
     assert use_reranker_option is not None
     assert use_reranker_option.get("default") is False
 
-    # 保存查询参数（模拟前端配置）
+    # Save query parameters (simulated front-end configuration)
     update_params = {
         "final_top_k": 5,
         "use_reranker": True,
@@ -278,21 +278,21 @@ async def test_admin_can_create_vector_db_with_reranker(test_client, admin_heade
     )
     assert update_response.status_code == 200, update_response.text
 
-    # 再次获取参数，验证保存成功
+    # Get the parameters again and verify that the save is successful.
     params_response2 = await test_client.get(f"/api/knowledge/databases/{kb_id}/query-params", headers=admin_headers)
     assert params_response2.status_code == 200, params_response2.text
 
     params_payload2 = params_response2.json()
     options2 = params_payload2.get("params", {}).get("options", [])
 
-    # 验证保存的值
+    # Verify saved value
     final_top_k_option2 = next((opt for opt in options2 if opt.get("key") == "final_top_k"), None)
     assert final_top_k_option2 is not None
-    assert final_top_k_option2.get("default") == 5  # 保存的值
+    assert final_top_k_option2.get("default") == 5  # saved value
 
     use_reranker_option2 = next((opt for opt in options2 if opt.get("key") == "use_reranker"), None)
     assert use_reranker_option2 is not None
-    assert use_reranker_option2.get("default") is True  # 保存的值
+    assert use_reranker_option2.get("default") is True  # saved value
 
 
 async def test_create_dify_database_success(test_client, admin_headers):
@@ -337,7 +337,7 @@ async def test_create_dify_database_missing_params_failed(test_client, admin_hea
 
     response = await test_client.post("/api/knowledge/databases", json=payload, headers=admin_headers)
     assert response.status_code == 400, response.text
-    assert "Dify 参数缺失" in response.json()["detail"]
+    assert "Thiếu tham số Dify" in response.json()["detail"]
 
 
 async def test_create_dify_database_invalid_api_url_failed(test_client, admin_headers):
@@ -385,7 +385,7 @@ async def test_dify_query_params_and_documents_readonly(test_client, admin_heade
         headers=admin_headers,
     )
     assert add_response.status_code == 400, add_response.text
-    assert "只支持检索" in add_response.json()["detail"]
+    assert "chỉ hỗ trợ tìm kiếm" in add_response.json()["detail"]
 
     parse_response = await test_client.post(
         f"/api/knowledge/databases/{kb_id}/documents/parse",
@@ -393,7 +393,7 @@ async def test_dify_query_params_and_documents_readonly(test_client, admin_heade
         headers=admin_headers,
     )
     assert parse_response.status_code == 400, parse_response.text
-    assert "只支持检索" in parse_response.json()["detail"]
+    assert "chỉ hỗ trợ tìm kiếm" in parse_response.json()["detail"]
 
     index_response = await test_client.post(
         f"/api/knowledge/databases/{kb_id}/documents/index",
@@ -401,7 +401,7 @@ async def test_dify_query_params_and_documents_readonly(test_client, admin_heade
         headers=admin_headers,
     )
     assert index_response.status_code == 400, index_response.text
-    assert "只支持检索" in index_response.json()["detail"]
+    assert "chỉ hỗ trợ tìm kiếm" in index_response.json()["detail"]
 
 
 # =============================================================================
@@ -410,7 +410,7 @@ async def test_dify_query_params_and_documents_readonly(test_client, admin_heade
 
 
 async def test_get_databases_overview(test_client, admin_headers, knowledge_database):
-    """测试获取所有知识库概览"""
+    """Test Get an overview of all knowledge bases"""
     response = await test_client.get("/api/knowledge/mindmap/databases", headers=admin_headers)
     assert response.status_code == 200, response.text
     payload = response.json()
@@ -418,13 +418,13 @@ async def test_get_databases_overview(test_client, admin_headers, knowledge_data
     assert "databases" in payload
     assert "total" in payload
 
-    # 验证知识库在列表中
+    # Verify that the knowledge base is in the list
     kb_ids = [db["kb_id"] for db in payload["databases"]]
     assert knowledge_database["kb_id"] in kb_ids
 
 
 async def test_get_database_files(test_client, admin_headers, knowledge_database):
-    """测试获取知识库文件列表"""
+    """Test to obtain the knowledge base file list"""
     kb_id = knowledge_database["kb_id"]
     response = await test_client.get(f"/api/knowledge/databases/{kb_id}/mindmap/files", headers=admin_headers)
     assert response.status_code == 200, response.text
@@ -437,54 +437,54 @@ async def test_get_database_files(test_client, admin_headers, knowledge_database
 
 
 async def test_get_database_files_not_found(test_client, admin_headers):
-    """测试获取不存在的知识库文件列表"""
+    """Test to obtain a list of non-existent knowledge base files"""
     response = await test_client.get("/api/knowledge/databases/nonexistent_kb_id/mindmap/files", headers=admin_headers)
     assert response.status_code == 404
 
 
 async def test_generate_mindmap_empty_files(test_client, admin_headers, knowledge_database):
-    """测试空文件列表生成思维导图"""
+    """Test empty file list to generate mind map"""
     kb_id = knowledge_database["kb_id"]
     response = await test_client.post(
         f"/api/knowledge/databases/{kb_id}/mindmap/generate",
         json={"file_ids": [], "user_prompt": ""},
         headers=admin_headers,
     )
-    # 空文件应该返回400错误
+    # Empty files should return a 400 error
     assert response.status_code == 400
-    assert "中没有文件" in response.json()["detail"]
+    assert "Không có file trong kho kiến thức" in response.json()["detail"]
 
 
 async def test_get_database_mindmap_not_exists(test_client, admin_headers, knowledge_database):
-    """测试获取不存在的思维导图"""
+    """Test to obtain a mind map that does not exist"""
     kb_id = knowledge_database["kb_id"]
     response = await test_client.get(f"/api/knowledge/databases/{kb_id}/mindmap", headers=admin_headers)
     assert response.status_code == 200, response.text
     payload = response.json()
     assert payload["kb_id"] == kb_id
-    assert payload["mindmap"] is None  # 尚未生成思维导图
+    assert payload["mindmap"] is None  # No mind map has been generated yet
 
 
 async def test_generate_and_get_mindmap(test_client, admin_headers, knowledge_database):
-    """测试生成并获取思维导图
+    """testgenerate and get the mind guide picture
 
-    注意：此测试需要知识库中有文件才能完整测试核心功能。
-    由于没有前置的文件上传 fixture，测试会先验证空文件场景（预期400），
-    然后使用 xfail 标记等待后续完善。
+    Note: This test requires a document in the knowledge base to fully testCore functions.
+    Since there is no pre-ofdocument upload fixture, the test will first verify the Empty file scenario (expected 400).
+    Then use xfail mark to wait for subsequent improvement.
     """
     kb_id = knowledge_database["kb_id"]
 
-    # 空文件场景 - 预期返回400错误
+    # Empty file scenario - expected return of 400 error
     generate_response = await test_client.post(
         f"/api/knowledge/databases/{kb_id}/mindmap/generate",
         json={"file_ids": [], "user_prompt": ""},
         headers=admin_headers,
     )
     assert generate_response.status_code == 400
-    assert "中没有文件" in generate_response.json()["detail"]
+    assert "Không có file trong kho kiến thức" in generate_response.json()["detail"]
 
-    # 标记此测试需要文件上传支持才能完整执行
-    pytest.skip("需要先上传文件才能完整测试思维导图生成功能")
+    # Flag this test requires file upload support for full execution
+    pytest.skip("You need to upload the file first to fully test the mind map generation function")
 
 
 # =============================================================================
@@ -493,13 +493,13 @@ async def test_generate_and_get_mindmap(test_client, admin_headers, knowledge_da
 
 
 async def test_get_accessible_databases(test_client, admin_headers, knowledge_database):
-    """测试获取可访问的知识库列表"""
+    """Test to get the list of accessible knowledge bases"""
     response = await test_client.get("/api/knowledge/databases/accessible", headers=admin_headers)
     assert response.status_code == 200, response.text
     payload = response.json()
     assert "databases" in payload
 
-    # 验证知识库在列表中
+    # Verify that the knowledge base is in the list
     kb_ids = [db["kb_id"] for db in payload["databases"]]
     assert knowledge_database["kb_id"] in kb_ids
 
@@ -595,7 +595,7 @@ async def test_user_access_options_include_all_departments_for_admin(test_client
 
 
 async def test_get_knowledge_base_types(test_client, admin_headers):
-    """测试获取支持的知识库类型"""
+    """Test to obtain supported knowledge base types"""
     response = await test_client.get("/api/knowledge/types", headers=admin_headers)
     assert response.status_code == 200, response.text
     payload = response.json()
@@ -603,7 +603,7 @@ async def test_get_knowledge_base_types(test_client, admin_headers):
     assert "kb_types" in payload
     assert "default_config" not in payload["kb_types"]["dify"]
     assert payload["kb_types"]["dify"]["name"] == "Dify"
-    assert payload["kb_types"]["dify"]["description"] == "连接 Dify Dataset 的只读检索知识库"
+    assert payload["kb_types"]["dify"]["description"] == "Connect to Dify Dataset's read-only search knowledge base"
     assert payload["kb_types"]["dify"]["requires_embedding_model"] is False
     assert payload["kb_types"]["dify"]["supports_documents"] is False
     assert [option["key"] for option in payload["kb_types"]["dify"]["create_params"]["options"]] == [
@@ -615,7 +615,7 @@ async def test_get_knowledge_base_types(test_client, admin_headers):
     assert payload["kb_types"]["notion"]["name"] == "Notion"
     assert (
         payload["kb_types"]["notion"]["description"]
-        == "连接 Notion Data Source 的只读知识库，支持检索、打开页面和页内查找"
+        == "Read-only knowledge base connected to Notion Data Source, supporting retrieval, page opening and in-page search"
     )
     assert payload["kb_types"]["notion"]["requires_embedding_model"] is False
     assert payload["kb_types"]["notion"]["supports_documents"] is False
@@ -627,7 +627,7 @@ async def test_get_knowledge_base_types(test_client, admin_headers):
 
 
 async def test_get_knowledge_base_statistics(test_client, admin_headers):
-    """测试获取知识库统计信息"""
+    """Test to obtain knowledge base statistics"""
     response = await test_client.get("/api/knowledge/stats", headers=admin_headers)
     assert response.status_code == 200, response.text
     payload = response.json()
@@ -636,7 +636,7 @@ async def test_get_knowledge_base_statistics(test_client, admin_headers):
 
 
 async def test_get_supported_file_types(test_client, admin_headers):
-    """测试获取支持的文件类型"""
+    """Test to obtain supported file types"""
     response = await test_client.get("/api/knowledge/files/supported-types", headers=admin_headers)
     assert response.status_code == 200, response.text
     payload = response.json()
@@ -646,11 +646,11 @@ async def test_get_supported_file_types(test_client, admin_headers):
 
 
 async def test_markdown_endpoint_parses_uploaded_text_file(test_client, admin_headers):
-    """测试 /files/markdown 能解析上传文件并返回 markdown。"""
+    """test /files/markdown Can parse uploaded files and return markdown."""
     data_dir = Path(__file__).resolve().parents[2] / "data"
     test_file = data_dir / "A_Dream_of_Red_Mansions_10hui.txt"
 
-    assert test_file.exists(), f"测试文件不存在: {test_file}"
+    assert test_file.exists(), f"Test file does not exist: {test_file}"
 
     with test_file.open("rb") as f:
         response = await test_client.post(
@@ -667,7 +667,7 @@ async def test_markdown_endpoint_parses_uploaded_text_file(test_client, admin_he
 
 
 async def test_duplicate_database_name(test_client, admin_headers, knowledge_database):
-    """测试重复创建同名知识库"""
+    """Test repeatedly creates a knowledge base with the same name"""
     db_name = knowledge_database["name"]
     response = await test_client.post(
         "/api/knowledge/databases",
@@ -681,7 +681,7 @@ async def test_duplicate_database_name(test_client, admin_headers, knowledge_dat
         headers=admin_headers,
     )
     assert response.status_code == 409
-    assert "已存在" in response.json()["detail"]
+    assert "đã tồn tại" in response.json()["detail"]
 
 
 async def test_create_lightrag_knowledge_base_is_unsupported(test_client, admin_headers):
@@ -702,9 +702,9 @@ async def test_create_lightrag_knowledge_base_is_unsupported(test_client, admin_
 
 
 async def test_create_milvus_knowledge_base(test_client, admin_headers):
-    """测试创建 Milvus 知识库
+    """test creates Milvus knowledge base
 
-    注意：数据库清理由 conftest.py 中的 session fixture 自动处理。
+    Note: database cleanup is performed by conftest.py The session fixture in .
     """
     db_name = f"pytest_milvus_{uuid.uuid4().hex[:6]}"
     payload = {
@@ -723,32 +723,32 @@ async def test_create_milvus_knowledge_base(test_client, admin_headers):
 
 
 async def test_sample_questions_endpoints(test_client, admin_headers, knowledge_database):
-    """测试示例问题接口（空文件时预期返回400）"""
+    """Test sample problem interface (expected return of 400 when empty file)"""
     kb_id = knowledge_database["kb_id"]
 
-    # 获取示例问题（空知识库应该返回空列表）
+    # Get sample questions (an empty knowledge base should return an empty list)
     get_response = await test_client.get(f"/api/knowledge/databases/{kb_id}/sample-questions", headers=admin_headers)
     assert get_response.status_code == 200, get_response.text
     get_payload = get_response.json()
     assert get_payload["kb_id"] == kb_id
     assert "questions" in get_payload
-    assert get_payload["count"] == 0  # 空知识库没有问题
+    assert get_payload["count"] == 0  # There is no problem with an empty knowledge base
 
-    # 生成示例问题（空知识库应该返回400）
+    # Generate example questions (an empty knowledge base should return 400)
     generate_response = await test_client.post(
         f"/api/knowledge/databases/{kb_id}/sample-questions",
         json={"count": 5},
         headers=admin_headers,
     )
     assert generate_response.status_code == 400
-    assert "中没有文件" in generate_response.json()["detail"]
+    assert "Không có file trong kho kiến thức" in generate_response.json()["detail"]
 
 
 async def test_mindmap_permissions(test_client, standard_user, knowledge_database):
-    """测试思维导图接口的权限控制"""
+    """Test permission control of mind map interface"""
     kb_id = knowledge_database["kb_id"]
 
-    # 普通用户应该无法访问
+    # Ordinary users should not be able to access
     forbidden_list = await test_client.get("/api/knowledge/mindmap/databases", headers=standard_user["headers"])
     _assert_forbidden_response(forbidden_list)
 

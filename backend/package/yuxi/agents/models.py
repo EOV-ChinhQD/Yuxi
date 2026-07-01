@@ -9,13 +9,13 @@ from yuxi.utils.logging_config import logger
 
 
 def _normalize_tool_call_chunks(message) -> None:
-    """把工具调用续片里空字符串的 name/id 归一化为 None。
+    """Call the tool with the name of the empty string in the sequel/id normalized to None.
 
-    LangGraph v3 流式累积对 tool_call 字段是“后值覆盖”：部分 OpenAI 兼容提供商
-    （siliconflow、阿里云百炼等）在续片里把 name/id 下发为空字符串 ""，会覆盖首片
-    的真实值（siliconflow 丢 name、百炼丢 id），导致工具结果无法按 tool_call_id
-    关联、工具状态停留在“进行中”。OpenAI 官方在续片里发 None 不会触发覆盖，这里
-    把空串归一化为 None 对齐该行为。待上游修复 v3 协议后可移除。
+    LangGraph v3 streaming accumulation pair tool_call Field is "post value coverage": part OpenAI compatible provider
+    (siliconflow, Alibaba Cloud Bailian, etc.) If you issue name/id as an empty string "" in the sequel, it will overwrite the first film.
+    of real value (siliconflow loses name, Bailian loses id), causing the tool results to fail to be based on tool_call_id
+    The status of association and tool stays at "in progress". OpenAI officially releases None in the sequel and will not trigger coverage, here
+    Normalizing the empty string to None aligns this behavior. You can remove it after the upstream fixes the v3 protocol.
     """
     for chunk in message.tool_call_chunks:
         if chunk.get("name") == "":
@@ -25,7 +25,7 @@ def _normalize_tool_call_chunks(message) -> None:
 
 
 class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
-    """归一化流式 tool_call 续片中的空串 name/id，规避 v3 流式累积缺陷。"""
+    """Empty string name in normalized streaming tool_call continuation/id, circumventing v3 streaming cumulative flaws."""
 
     async def _astream(self, *args, **kwargs):
         async for chunk in super()._astream(*args, **kwargs):
@@ -39,15 +39,15 @@ class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
 
 
 def resolve_chat_model_spec(model_spec: str | None, *, fallback: str | None = None) -> str:
-    """解析空模型配置，不吞掉已经配置但无效的模型值。
+    """Parse empty ModelConfiguration, do not swallow the existing Configuration but invalid ofModel value.
 
-    这里仅处理模型为空时的优先级：请求或配置值、调用方 fallback、系统默认模型；
-    具体模型是否存在、是否为聊天模型仍由 model_cache 校验。
+    This only handles the priority of when the Model is empty: request orConfiguration value, caller fallback, system defaultModel;
+    Whether the specific Model exists, whether it is chatModel or not, it is still checked by model_cache.
     """
     for candidate in (model_spec, fallback, sys_config.default_model):
         if isinstance(candidate, str) and candidate.strip():
             return candidate.strip()
-    raise ValueError("model spec 不能为空")
+    raise ValueError("model spec không được để trống")
 
 
 def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel:

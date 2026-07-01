@@ -16,14 +16,14 @@ def test_normalize_query_result_supports_dict_and_list():
 
 
 def test_build_answer_prompt_uses_first_five_non_empty_chunks():
-    chunks = [{"content": f"内容{i}"} for i in range(6)] + [{"content": ""}]
+    chunks = [{"content": f"content{i}"} for i in range(6)] + [{"content": ""}]
 
-    prompt = build_answer_prompt("问题", chunks)
+    prompt = build_answer_prompt("question", chunks)
 
-    assert "用户问题：问题" in prompt
-    assert "内容0" in prompt
-    assert "内容4" in prompt
-    assert "内容5" not in prompt
+    assert "User Question: Question" in prompt
+    assert "Content 0" in prompt
+    assert "Content 4" in prompt
+    assert "Content 5" not in prompt
 
 
 def test_aggregate_metrics_matches_service_output_shape():

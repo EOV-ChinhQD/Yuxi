@@ -1,7 +1,7 @@
 [project]
 name = "yuxi-workspace"
 version = "0.7.1.dev0"
-description = "基于大模型的智能知识库与知识图谱智能体开发平台，融合了 RAG 技术与知识图谱技术，基于 LangGraph v1 + Vue.js + FastAPI + LightRAG 架构构建"
+description = "A large language model based intelligent knowledge base and knowledge graph agent development platform, integrating RAG and knowledge graph technologies, built on LangGraph v1 + Vue.js + FastAPI + LightRAG architecture"
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
 dependencies = [
@@ -11,8 +11,8 @@ dependencies = [
     "yuxi",
 ]
 [tool.ruff]
-line-length = 120  # 代码最大行宽
-lint.select = [         # 选择的规则
+line-length = 120  # Max line length
+lint.select = [         # Selected rules
     "F",
     "E",
     "W",
@@ -32,10 +32,7 @@ constraint-dependencies = [
     "torch>=2.12.1",
 ]
 
-[[tool.uv.index]]
-name = "tsinghua"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
-default = true
+
 
 
 [[tool.uv.index]]

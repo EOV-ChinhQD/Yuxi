@@ -52,13 +52,13 @@ def _langchain_kwargs(provider_type: str, kwargs: dict) -> dict:
 
 def select_model(model_spec: str, **kwargs) -> LangChainChatAdapter:
     if not model_spec:
-        raise ValueError("model_spec 不能为空")
+        raise ValueError("model_spec không được để trống")
 
     info = model_cache.get_model_info(model_spec)
     if not info:
         available = model_cache.get_all_specs("chat")
         available_ids = [item.spec for item in available[:10]]
-        raise ValueError(f"未找到模型: '{model_spec}'。可用聊天模型 ({len(available)}): {available_ids}")
+        raise ValueError(f"Không tìm thấy model: '{model_spec}'. Các model chat khả dụng ({len(available)}): {available_ids}")
 
     if info.model_type != "chat":
         raise ValueError(f"Model {model_spec} is not a chat model (type={info.model_type})")
@@ -86,11 +86,11 @@ async def test_chat_model_status_by_spec(spec: str) -> dict:
         response = await model.call(test_messages, stream=False)
 
         if response and response.content:
-            return {"spec": spec, "status": "available", "message": "连接正常"}
-        return {"spec": spec, "status": "unavailable", "message": "响应无效"}
+            return {"spec": spec, "status": "available", "message": "The connection is normal"}
+        return {"spec": spec, "status": "unavailable", "message": "Invalid response"}
 
     except Exception as e:
-        logger.error(f"测试模型状态失败 {spec}: {e}")
+        logger.error(f"Test model status failed {spec}: {e}")
         return {"spec": spec, "status": "error", "message": str(e)}
 
 

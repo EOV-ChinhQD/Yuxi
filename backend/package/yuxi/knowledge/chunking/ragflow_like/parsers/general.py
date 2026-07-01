@@ -33,7 +33,7 @@ def _iter_sections(markdown_content: str, delimiter: str) -> list[tuple[str, str
 
 
 def _ensure_chunk_token_limit(chunks: list[str], chunk_token_num: int) -> list[str]:
-    """对输出 chunk 做 token 上限保护：默认 512 token 时允许到 768 再硬切。"""
+    """Implement token upper limit protection for the output chunk: the default value is 512 tokens, and hard cutting is allowed up to 768."""
     max_tokens = int(chunk_token_num or 0)
     if max_tokens <= 0:
         return [c.strip() for c in chunks if c and c.strip()]

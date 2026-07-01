@@ -18,15 +18,15 @@ def build_answer_prompt(query: str, retrieved_chunks: list[dict[str, Any]], max_
     for idx, chunk in enumerate(retrieved_chunks[:max_docs]):
         content = chunk.get("content", "")
         if content:
-            context_docs.append(f"文档 {idx + 1}:\n{content}")
+            context_docs.append(f"document {idx + 1}:\n{content}")
 
     context_text = "\\n\\n".join(context_docs)
     return (
-        f"基于以下上下文信息，请回答用户的问题。\n\n"
-        f"上下文信息：{context_text}\n\n"
-        f"用户问题：{query}\n\n"
-        "请根据上下文信息准确回答问题。\n\n"
-        "如果上下文中缺少相关信息，请回答“信息不足，无法回答”。\n\n"
+        f"Based on the following contextual information, please answer the user's question.\n\n"
+        f"Contextual information:{context_text}\n\n"
+        f"User questions:{query}\n\n"
+        "Please answer the question accurately based on contextual information.\n\n"
+        "If relevant information is missing from the context please answer“Not enough information to answer”。\n\n"
     )
 
 
@@ -43,15 +43,15 @@ async def generate_answer_if_needed(
     if not retrieved_chunks or not retrieval_config.get("answer_llm"):
         return ""
 
-    logger.debug(f"使用 LLM {retrieval_config.get('answer_llm')} 生成答案...")
+    logger.debug(f"Use LLM {retrieval_config.get('answer_llm')} generate answer...")
     try:
         llm = select_model_fn(model_spec=retrieval_config["answer_llm"])
         response = await llm.call(build_answer_prompt(query, retrieved_chunks), stream=False)
         generated_answer = response.content if response else ""
-        logger.debug(f"LLM 生成的答案长度: {len(generated_answer) if generated_answer else 0}")
+        logger.debug(f"LLM generated answer length: {len(generated_answer) if generated_answer else 0}")
         return generated_answer
     except Exception as e:
-        logger.error(f"LLM 生成答案失败: {e}")
+        logger.error(f"LLM Failed to generate answer: {e}")
         return ""
 
 
@@ -97,7 +97,7 @@ async def evaluate_question(
             )
             current_metrics.update(answer_scores)
         else:
-            logger.warning("需要计算答案指标但未配置 Judge LLM")
+            logger.warning("Need to calculate answer metrics but Judge LLM is not configured")
 
     return {
         "detail": {

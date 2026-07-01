@@ -27,9 +27,9 @@ from .state import ChatBotState
 
 
 async def _build_middlewares(context):
-    """构建中间件列表"""
-    # summary middleware
-    # 主 Agent 上下文优化：默认 100k tokens 触发压缩，压缩后保留最近 10 条消息
+    """
+    Build a list of middlewares.
+    """
     summary_trigger_tokens = getattr(context, "summary_threshold", DEFAULT_SUMMARY_THRESHOLD_K) * 1024
     summary_keep_messages = getattr(context, "summary_keep_messages", DEFAULT_SUMMARY_KEEP_MESSAGES)
     summary_prompt = getattr(context, "summary_prompt", None) or DEFAULT_YUXI_SUMMARY_PROMPT
@@ -72,9 +72,9 @@ async def _build_middlewares(context):
 
 
 class ChatbotAgent(BaseAgent):
-    name = "智能助手"
-    description = "基础的对话机器人，可以回答问题，可在配置中启用需要的工具。"
-    capabilities = ["file_upload", "files"]  # 支持文件上传功能
+    name = "Chatbot"
+    description = "Basic dialogue robot, can answer questions, can enable required tools in the configuration."
+    capabilities = ["file_upload", "files"]
     context_schema = ChatBotContext
 
     def __init__(self, **kwargs):
@@ -87,7 +87,6 @@ class ChatbotAgent(BaseAgent):
             context_schema=self.context_schema,
         )
 
-        # 使用 create_agent 创建智能体
         model_spec = resolve_chat_model_spec(context.model)
         graph = create_agent(
             model=load_chat_model(fully_specified_name=model_spec),

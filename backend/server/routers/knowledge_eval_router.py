@@ -18,7 +18,7 @@ evaluation = APIRouter(prefix="/evaluation", tags=["evaluation"])
 
 
 class GenerateDatasetRequest(BaseModel):
-    name: str = Field(default="自动生成评估数据集", min_length=1, max_length=100)
+    name: str = Field(default="Tự động tạo bộ dữ liệu đánh giá", min_length=1, max_length=100)
     description: str = ""
     count: int = Field(default=10, ge=1, le=100)
     neighbors_count: int = Field(default=1, ge=0, le=10)
@@ -46,10 +46,10 @@ async def upload_evaluation_dataset(
     description: str = Form(""),
     current_user: User = Depends(get_admin_user),
 ):
-    """上传评估数据集"""
+    """Tải lên bộ dữ liệu đánh giá"""
     try:
         if not file.filename.endswith(".jsonl"):
-            raise HTTPException(status_code=400, detail="仅支持JSONL格式文件")
+            raise HTTPException(status_code=400, detail="Chỉ hỗ trợ tệp định dạng JSONL")
 
         service = EvaluationService()
         result = await service.upload_dataset(
@@ -64,32 +64,32 @@ async def upload_evaluation_dataset(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f"上传评估数据集失败: {e}")
-        raise HTTPException(status_code=500, detail=f"上传评估数据集失败: {str(e)}")
+        logger.exception(f"Tải lên bộ dữ liệu đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Tải lên bộ dữ liệu đánh giá thất bại: {str(e)}")
 
 
 @evaluation.get("/databases/{kb_id}/datasets")
 async def list_evaluation_datasets(kb_id: str, current_user: User = Depends(get_admin_user)):
-    """获取知识库的评估数据集列表"""
+    """Lấy danh sách bộ dữ liệu đánh giá của kho kiến thức"""
     try:
         service = EvaluationService()
         datasets = await service.list_datasets(kb_id)
         return {"message": "success", "data": datasets}
     except Exception as e:
-        logger.exception(f"获取评估数据集列表失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取评估数据集列表失败: {str(e)}")
+        logger.exception(f"Lấy danh sách bộ dữ liệu đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Lấy danh sách bộ dữ liệu đánh giá thất bại: {str(e)}")
 
 
 @evaluation.get("/databases/{kb_id}/datasets/{dataset_id}")
 async def get_evaluation_dataset(
     kb_id: str, dataset_id: str, page: int = 1, page_size: int = 10, current_user: User = Depends(get_admin_user)
 ):
-    """获取评估数据集详情"""
+    """Lấy chi tiết bộ dữ liệu đánh giá"""
     try:
         if page < 1:
-            raise HTTPException(status_code=400, detail="页码必须大于0")
+            raise HTTPException(status_code=400, detail="Số trang phải lớn hơn 0")
         if page_size < 1 or page_size > 100:
-            raise HTTPException(status_code=400, detail="每页大小必须在1-100之间")
+            raise HTTPException(status_code=400, detail="Kích thước mỗi trang phải nằm trong khoảng 1-100")
 
         service = EvaluationService()
         dataset = await service.get_dataset_detail(kb_id, dataset_id, page, page_size)
@@ -101,13 +101,13 @@ async def get_evaluation_dataset(
             raise HTTPException(status_code=404, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"获取评估数据集详情失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取评估数据集详情失败: {str(e)}")
+        logger.exception(f"Lấy chi tiết bộ dữ liệu đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Lấy chi tiết bộ dữ liệu đánh giá thất bại: {str(e)}")
 
 
 @evaluation.get("/datasets/{dataset_id}/download")
 async def download_evaluation_dataset(dataset_id: str, current_user: User = Depends(get_admin_user)):
-    """导出评估数据集 JSONL"""
+    """Xuất bộ dữ liệu đánh giá dưới dạng JSONL"""
     try:
         service = EvaluationService()
         export_info = await service.export_dataset_jsonl(dataset_id)
@@ -122,13 +122,13 @@ async def download_evaluation_dataset(dataset_id: str, current_user: User = Depe
             raise HTTPException(status_code=404, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"导出评估数据集失败: {e}")
-        raise HTTPException(status_code=500, detail=f"导出评估数据集失败: {str(e)}")
+        logger.exception(f"Xuất bộ dữ liệu đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Xuất bộ dữ liệu đánh giá thất bại: {str(e)}")
 
 
 @evaluation.delete("/datasets/{dataset_id}")
 async def delete_evaluation_dataset(dataset_id: str, current_user: User = Depends(get_admin_user)):
-    """删除评估数据集"""
+    """Xóa bộ dữ liệu đánh giá"""
     try:
         service = EvaluationService()
         await service.delete_dataset(dataset_id)
@@ -138,15 +138,15 @@ async def delete_evaluation_dataset(dataset_id: str, current_user: User = Depend
             raise HTTPException(status_code=404, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"删除评估数据集失败: {e}")
-        raise HTTPException(status_code=500, detail=f"删除评估数据集失败: {str(e)}")
+        logger.exception(f"Xóa bộ dữ liệu đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Xóa bộ dữ liệu đánh giá thất bại: {str(e)}")
 
 
 @evaluation.post("/databases/{kb_id}/datasets/generate")
 async def generate_evaluation_dataset(
     kb_id: str, request: GenerateDatasetRequest, current_user: User = Depends(get_admin_user)
 ):
-    """自动生成评估数据集"""
+    """Tự động tạo bộ dữ liệu đánh giá"""
     try:
         service = EvaluationService()
         result = await service.generate_dataset(
@@ -165,13 +165,13 @@ async def generate_evaluation_dataset(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"生成评估数据集失败: {e}")
-        raise HTTPException(status_code=500, detail=f"生成评估数据集失败: {str(e)}")
+        logger.exception(f"Tạo bộ dữ liệu đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Tạo bộ dữ liệu đánh giá thất bại: {str(e)}")
 
 
 @evaluation.post("/databases/{kb_id}/runs")
 async def run_evaluation(kb_id: str, request: RunEvaluationRequest, current_user: User = Depends(get_admin_user)):
-    """运行RAG评估"""
+    """Chạy đánh giá RAG"""
     try:
         service = EvaluationService()
         run_id = await service.run_evaluation(
@@ -187,20 +187,20 @@ async def run_evaluation(kb_id: str, request: RunEvaluationRequest, current_user
             raise HTTPException(status_code=404, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"启动评估失败: {e}")
-        raise HTTPException(status_code=500, detail=f"启动评估失败: {str(e)}")
+        logger.exception(f"Khởi động đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Khởi động đánh giá thất bại: {str(e)}")
 
 
 @evaluation.get("/databases/{kb_id}/runs")
 async def list_evaluation_runs(kb_id: str, current_user: User = Depends(get_admin_user)):
-    """获取知识库评估运行历史"""
+    """Lấy lịch sử chạy đánh giá kho kiến thức"""
     try:
         service = EvaluationService()
         runs = await service.list_runs(kb_id)
         return {"message": "success", "data": runs}
     except Exception as e:
-        logger.exception(f"获取评估运行历史失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取评估运行历史失败: {str(e)}")
+        logger.exception(f"Lấy lịch sử chạy đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Lấy lịch sử chạy đánh giá thất bại: {str(e)}")
 
 
 @evaluation.get("/databases/{kb_id}/runs/{run_id}")
@@ -212,12 +212,12 @@ async def get_evaluation_run_results(
     error_only: bool = False,
     current_user: User = Depends(get_admin_user),
 ):
-    """获取评估运行结果"""
+    """Lấy kết quả chạy đánh giá"""
     try:
         if page < 1:
-            raise HTTPException(status_code=400, detail="页码必须大于0")
+            raise HTTPException(status_code=400, detail="Số trang phải lớn hơn 0")
         if page_size < 1 or page_size > 100:
-            raise HTTPException(status_code=400, detail="每页大小必须在1-100之间")
+            raise HTTPException(status_code=400, detail="Kích thước mỗi trang phải nằm trong khoảng 1-100")
 
         service = EvaluationService()
         results = await service.get_run_results(kb_id, run_id, page=page, page_size=page_size, error_only=error_only)
@@ -229,13 +229,13 @@ async def get_evaluation_run_results(
             raise HTTPException(status_code=404, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"获取评估运行结果失败: {e}")
-        raise HTTPException(status_code=500, detail=f"获取评估运行结果失败: {str(e)}")
+        logger.exception(f"Lấy kết quả chạy đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Lấy kết quả chạy đánh giá thất bại: {str(e)}")
 
 
 @evaluation.delete("/databases/{kb_id}/runs/{run_id}")
 async def delete_evaluation_run(kb_id: str, run_id: str, current_user: User = Depends(get_admin_user)):
-    """删除评估运行"""
+    """Xóa lượt chạy đánh giá"""
     try:
         service = EvaluationService()
         await service.delete_run(kb_id, run_id)
@@ -245,5 +245,5 @@ async def delete_evaluation_run(kb_id: str, run_id: str, current_user: User = De
             raise HTTPException(status_code=404, detail=str(e))
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"删除评估运行失败: {e}")
-        raise HTTPException(status_code=500, detail=f"删除评估运行失败: {str(e)}")
+        logger.exception(f"Xóa lượt chạy đánh giá thất bại: {e}")
+        raise HTTPException(status_code=500, detail=f"Xóa lượt chạy đánh giá thất bại: {str(e)}")

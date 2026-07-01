@@ -60,9 +60,9 @@ def _expected_tool_result_path(content: str, tool_name: str = "query_kb") -> str
 
 def _tool_messages() -> list:
     return [
-        HumanMessage(content="请查询一下项目资料"),
+        HumanMessage(content="Please check the project information"),
         AIMessage(
-            content="我先查资料",
+            content="I'll check the information first",
             tool_calls=[
                 {
                     "id": "call-1",
@@ -83,7 +83,7 @@ def _tool_messages() -> list:
             response_metadata={"finish_reason": "tool_calls"},
         ),
         ToolMessage(content="TOOL_RESULT_SHOULD_NOT_BE_SUMMARIZED", tool_call_id="call-1", name="query_kb"),
-        AIMessage(content="最终答案保留"),
+        AIMessage(content="Final answer reserved"),
     ]
 
 
@@ -138,7 +138,7 @@ def test_create_summary_middleware_passes_custom_summary_prompt() -> None:
         model=model,
         trigger=("messages", 3),
         keep=("messages", 1),
-        summary_prompt="CUSTOM SUMMARY PROMPT\n用户要求和偏好必须记录\n{messages}",
+        summary_prompt="CUSTOM SUMMARY PROMPT\nUser requirements and preferences must be recorded\n{messages}",
         trim_tokens_to_summarize=None,
     )
 
@@ -146,8 +146,8 @@ def test_create_summary_middleware_passes_custom_summary_prompt() -> None:
 
     prompt = model.prompts[0]
     assert prompt.startswith("CUSTOM SUMMARY PROMPT")
-    assert "用户要求和偏好必须记录" in prompt
-    assert "最终答案保留" in prompt
+    assert "User requirements and preferences must be recorded" in prompt
+    assert "Final answer reserved" in prompt
 
 
 @pytest.mark.unit
@@ -212,7 +212,7 @@ def test_sanitize_messages_for_summary_only_replaces_tool_message_content() -> N
     assert "Tool call id" not in formatted
     assert f"Full output path: {_expected_tool_result_path(messages[2].content)}" in formatted
     assert "TOOL_RESULT_SHOULD_NOT_BE_SUMMARIZED" in formatted
-    assert "最终答案保留" in formatted
+    assert "Final answer reserved" in formatted
 
 
 @pytest.mark.unit
@@ -220,7 +220,7 @@ def test_sanitize_messages_for_summary_writes_large_tool_result_and_limits_previ
     backend = _MemoryBackend()
     large_result = "BEGIN\n" + ("middle\n" * 2000) + "END"
     messages = [
-        HumanMessage(content="查资料"),
+        HumanMessage(content="Check information"),
         AIMessage(content="", tool_calls=[{"id": "call-1", "name": "query_kb", "args": {}}]),
         ToolMessage(content=large_result, tool_call_id="call-1", name="query_kb"),
     ]
@@ -263,11 +263,11 @@ def test_wrap_model_call_keeps_summary_keep_messages_inline_when_summary_trigger
     model = _RecordingModel()
     large_result = "BEGIN\n" + ("raw result payload\n" * 200)
     messages = [
-        HumanMessage(content="查资料"),
+        HumanMessage(content="Check information"),
         AIMessage(content="", tool_calls=[{"id": "call-1", "name": "query_kb", "args": {}}]),
         ToolMessage(content=large_result, tool_call_id="call-1", name="query_kb"),
-        AIMessage(content="资料已整理"),
-        HumanMessage(content="继续"),
+        AIMessage(content="Information has been organized"),
+        HumanMessage(content="continue"),
     ]
     middleware = YuxiSummarizationMiddleware(
         model=model,
@@ -304,7 +304,7 @@ def test_wrap_model_call_does_not_sanitize_without_summary_trigger() -> None:
     backend = _MemoryBackend()
     messages = [
         *_tool_messages(),
-        HumanMessage(content="新的问题"),
+        HumanMessage(content="new question"),
     ]
     middleware = create_summary_middleware(
         model=_DummyModel(),
@@ -336,13 +336,13 @@ def test_wrap_model_call_offloads_tool_messages_outside_keep_window_when_summary
     model = _RecordingModel()
     old_result = "BEGIN\n" + ("raw result payload\n" * 200)
     messages = [
-        HumanMessage(content="查资料"),
+        HumanMessage(content="Check information"),
         AIMessage(content="", tool_calls=[{"id": "call-1", "name": "query_kb", "args": {}}]),
         ToolMessage(content=old_result, tool_call_id="call-1", name="query_kb"),
-        AIMessage(content="资料已整理"),
-        HumanMessage(content="继续"),
-        AIMessage(content="可以继续"),
-        HumanMessage(content="新问题"),
+        AIMessage(content="Information has been organized"),
+        HumanMessage(content="continue"),
+        AIMessage(content="can continue"),
+        HumanMessage(content="new question"),
     ]
     middleware = YuxiSummarizationMiddleware(
         model=model,
@@ -382,11 +382,11 @@ def test_summary_event_reuses_original_preserved_window_on_later_calls() -> None
     old_result = "SAFE\nPRESERVED_TOOL_RESULT_SHOULD_STAY_INLINE"
     new_result = "NEW_TOOL_RESULT_MUST_STAY_INLINE"
     messages = [
-        HumanMessage(content="查资料"),
+        HumanMessage(content="Check information"),
         AIMessage(content="", tool_calls=[{"id": "call-old", "name": "query_kb", "args": {}}]),
         ToolMessage(content=old_result, tool_call_id="call-old", name="query_kb"),
-        AIMessage(content="资料已整理"),
-        HumanMessage(content="继续"),
+        AIMessage(content="Information has been organized"),
+        HumanMessage(content="continue"),
     ]
     middleware = YuxiSummarizationMiddleware(
         model=_RecordingModel(),
@@ -415,7 +415,7 @@ def test_summary_event_reuses_original_preserved_window_on_later_calls() -> None
     state_messages = [
         *messages,
         AIMessage(content="ok"),
-        HumanMessage(content="继续使用新工具"),
+        HumanMessage(content="Keep using new tools"),
         AIMessage(content="", tool_calls=[{"id": "call-new", "name": "query_kb", "args": {}}]),
         ToolMessage(content=new_result, tool_call_id="call-new", name="query_kb"),
     ]
@@ -452,7 +452,7 @@ def test_create_summary_uses_sanitized_messages() -> None:
     prompt = model.prompts[0]
     assert "Tool calls omitted from summary input" not in prompt
     assert "[Tool result saved]" in prompt
-    assert "最终答案保留" in prompt
+    assert "Final answer reserved" in prompt
 
 
 @pytest.mark.unit
@@ -474,5 +474,5 @@ def test_offload_history_uses_tool_messages_with_replaced_content() -> None:
     history_content = next(content for write_path, content in backend.writes if write_path != tool_result_path)
     assert "Tool calls omitted from summary input" not in history_content
     assert "[Tool result saved]" in history_content
-    assert "最终答案保留" in history_content
+    assert "Final answer reserved" in history_content
     assert "TOOL_RESULT_SHOULD_NOT_BE_SUMMARIZED" in history_content

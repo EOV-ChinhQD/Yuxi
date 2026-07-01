@@ -1,4 +1,4 @@
-"""知识库工具模块"""
+"""Module công cụ kho kiến thức"""
 
 import inspect
 from typing import Any
@@ -18,7 +18,7 @@ from yuxi.knowledge.schemas import (
 )
 from yuxi.utils import logger
 
-# ========== 通用知识库工具函数 ==========
+# ========== Các hàm công cụ kho kiến thức chung ==========
 
 
 def _get_knowledge_base():
@@ -28,29 +28,29 @@ def _get_knowledge_base():
 
 
 class ListKBsInput(BaseModel):
-    """列出用户可访问的知识库输入模型"""
+    """Model input danh sách kho kiến thức người dùng có thể truy cập"""
 
-    # Langchain 的 runtime 注入机制要求必须有参数
+    # Cơ chế inject runtime của Langchain yêu cầu phải có tham số
     dummy: str = Field(default="", description="Dummy parameter - ignore")  # Add this
 
 
-@tool(category="knowledge", tags=["知识库"], args_schema=ListKBsInput)
+@tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=ListKBsInput)
 async def list_kbs(dummy: str, runtime: ToolRuntime) -> str:  # Now has 2 params
-    """列出当前用户可访问的知识库列表
+    """Liệt kê danh sách các kho kiến thức mà người dùng hiện tại có thể truy cập.
 
-    返回用户基于权限可访问的知识库名称列表。这个列表是根据用户的角色和部门信息过滤后的结果，
-    但不包括用户在当前对话中未启用的知识库。
+    Trả về danh sách tên các kho kiến thức mà người dùng có quyền truy cập dựa trên vai trò và phòng ban,
+    nhưng không bao gồm các kho kiến thức chưa được bật trong cuộc trò chuyện hiện tại.
 
     Returns:
-        用户可访问的知识库名称列表（字符串格式）
+        Danh sách tên các kho kiến thức có thể truy cập (dạng chuỗi)
     """
-    # 从 runtime.context 获取用户信息
+    # Lấy thông tin người dùng từ runtime.context
     runtime_context = runtime.context
     uid = getattr(runtime_context, "uid", None)
     if not uid:
-        return "无法获取用户信息"
+        return "Không thể lấy thông tin người dùng"
 
-    # 打印 runtime—context 中的所有信息以进行调试
+    # In toàn bộ thông tin trong runtime.context để debug
     logger.debug(f"Runtime context: {runtime_context.__dict__}")
 
     enabled_kb_names = getattr(runtime_context, "knowledges", None)
@@ -60,54 +60,54 @@ async def list_kbs(dummy: str, runtime: ToolRuntime) -> str:  # Now has 2 params
 
         available_kbs = await resolve_visible_knowledge_bases_for_context(runtime_context)
     except Exception as e:
-        logger.error(f"获取用户知识库列表失败: {e}")
-        return f"获取知识库列表失败: {str(e)}"
+        logger.error(f"Lấy danh sách kho kiến thức người dùng thất bại: {e}")
+        return f"Lấy danh sách kho kiến thức thất bại: {str(e)}"
 
     all_kb_names = [kb["name"] for kb in available_kbs]
 
-    logger.debug(f"用户 {uid} 可访问的知识库列表: {all_kb_names}")
-    logger.debug(f"用户 {uid} 当前对话启用的知识库列表: {enabled_kb_names}")
+    logger.debug(f"Danh sách kho kiến thức người dùng {uid} có thể truy cập: {all_kb_names}")
+    logger.debug(f"Danh sách kho kiến thức người dùng {uid} đã bật trong cuộc trò chuyện hiện tại: {enabled_kb_names}")
 
     if not available_kbs:
-        return "当前没有可访问的知识库"
+        return "Hiện tại không có kho kiến thức nào có thể truy cập"
 
-    # 格式化输出（包含名称和描述）
+    # Định dạng đầu ra (bao gồm tên và mô tả)
     kb_list = []
     for kb in available_kbs:
         name = kb.get("name", "")
-        desc = kb.get("description") or "无描述"
+        desc = kb.get("description") or "Không có mô tả"
         kb_list.append({"kb_id": kb.get("kb_id"), "name": name, "description": desc})
 
     return kb_list
 
 
 class GetMindmapInput(BaseModel):
-    """获取思维导图输入模型"""
+    """Model input lấy mindmap"""
 
-    kb_name: str = Field(description="知识库名称，用于指定要获取思维导图的知识库")
+    kb_name: str = Field(description="Tên kho kiến thức dùng để lấy sơ đồ tư duy")
 
 
-@tool(category="knowledge", tags=["知识库"], args_schema=GetMindmapInput)
+@tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=GetMindmapInput)
 async def get_mindmap(kb_name: str, runtime: ToolRuntime) -> str:
-    """获取指定知识库的思维导图结构
+    """Lấy cấu trúc sơ đồ tư duy của kho kiến thức được chỉ định.
 
-    当用户想要了解知识库的整体结构、文件分类、知识架构时使用此工具。
-    返回知识库的思维导图层级结构。
+    Sử dụng công cụ này khi người dùng muốn hiểu cấu trúc tổng thể, phân loại tệp, hoặc kiến trúc tri thức của kho kiến thức.
+    Trả về cấu trúc sơ đồ tư duy phân cấp của kho kiến thức.
 
     Args:
-        kb_name: 知识库名称
+        kb_name: Tên kho kiến thức
 
     Returns:
-        知识库的思维导图结构（文本格式）
+        Cấu trúc sơ đồ tư duy của kho kiến thức (dạng văn bản)
     """
     if not kb_name:
-        return "请提供知识库名称"
+        return "Vui lòng cung cấp tên kho kiến thức"
 
-    # 获取所有检索器
+    # Lấy tất cả các retriever
     knowledge_base = _get_knowledge_base()
     retrievers = knowledge_base.get_retrievers()
 
-    # 查找对应的知识库
+    # Tìm kho kiến thức tương ứng
     target_kb_id = None
     target_info = None
     for kb_id, info in retrievers.items():
@@ -117,7 +117,7 @@ async def get_mindmap(kb_name: str, runtime: ToolRuntime) -> str:
             break
 
     if not target_kb_id:
-        return f"知识库 '{kb_name}' 不存在"
+        return f"Kho kiến thức '{kb_name}' không tồn tại"
 
     try:
         from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
@@ -126,30 +126,29 @@ async def get_mindmap(kb_name: str, runtime: ToolRuntime) -> str:
         kb = await kb_repo.get_by_kb_id(target_kb_id)
 
         if kb is None:
-            return f"知识库 {target_info['name']} 不存在"
+            return f"Kho kiến thức {target_info['name']} không tồn tại"
 
         mindmap_data = kb.mindmap
 
         if not mindmap_data:
-            return f"知识库 {target_info['name']} 还没有生成思维导图。"
+            return f"Kho kiến thức {target_info['name']} chưa tạo sơ đồ tư duy."
 
-        # 将思维导图数据转换为文本格式
         def mindmap_to_text(node, level=0):
-            """递归将思维导图JSON转换为层级文本"""
+            """Đệ quy chuyển đổi JSON sơ đồ tư duy thành văn bản phân cấp"""
             indent = "  " * level
             text = f"{indent}- {node.get('content', '')}\n"
             for child in node.get("children", []):
                 text += mindmap_to_text(child, level + 1)
             return text
 
-        mindmap_text = f"知识库 {target_info['name']} 的思维导图结构：\n\n"
+        mindmap_text = f"Cấu trúc sơ đồ tư duy của kho kiến thức {target_info['name']}:\n\n"
         mindmap_text += mindmap_to_text(mindmap_data)
 
         return mindmap_text
 
     except Exception as e:
-        logger.error(f"获取思维导图失败: {e}")
-        return f"获取思维导图失败: {str(e)}"
+        logger.error(f"Lấy sơ đồ tư duy thất bại: {e}")
+        return f"Lấy sơ đồ tư duy thất bại: {str(e)}"
 
 
 QueryKBInput = SearchInputSchema
@@ -174,7 +173,7 @@ async def _resolve_visible_knowledge_bases_for_query(runtime: ToolRuntime | None
 
         return await resolve_visible_knowledge_bases_for_context(context)
     except Exception as exc:  # noqa: BLE001
-        logger.warning(f"解析会话可见知识库失败: {exc}")
+        logger.warning(f"Phân tích kho kiến thức hiển thị cho phiên thất bại: {exc}")
         return []
 
 
@@ -185,16 +184,16 @@ def _find_query_target(
     visible_kbs: list[dict[str, Any]],
 ) -> tuple[dict[str, Any] | None, str | None, str | None]:
     if not visible_kbs:
-        return None, None, "无法获取当前会话可访问的知识库"
+        return None, None, "Không thể lấy danh sách kho kiến thức có thể truy cập của phiên hội thoại hiện tại"
 
     normalized_kb_id = str(kb_id or "").strip()
     visible_kb_ids = {str(kb.get("kb_id") or "").strip() for kb in visible_kbs}
     if normalized_kb_id not in visible_kb_ids:
-        return None, None, f"知识库资源 '{normalized_kb_id}' 不存在或当前会话未启用"
+        return None, None, f"Tài nguyên kho kiến thức '{normalized_kb_id}' không tồn tại hoặc chưa được bật trong phiên hội thoại hiện tại"
 
     target_info = retrievers.get(normalized_kb_id)
     if target_info is None:
-        return None, None, f"知识库资源 '{normalized_kb_id}' 不存在"
+        return None, None, f"Tài nguyên kho kiến thức '{normalized_kb_id}' không tồn tại"
     return target_info, normalized_kb_id, None
 
 
@@ -204,17 +203,17 @@ async def _build_query_output(target_kb_id: str, result: Any) -> Any:
     return KnowledgeBase.build_search_output(target_kb_id, result)
 
 
-@tool(category="knowledge", tags=["知识库"], args_schema=QueryKBInput)
+@tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=QueryKBInput)
 async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, runtime: ToolRuntime = None) -> Any:
-    """在指定知识库中检索内容
+    """Tìm kiếm nội dung trong kho kiến thức được chỉ định.
 
-    当用户需要查询具体内容时使用此工具。kb_id 是知识库资源 ID，也就是 kb_id；返回结果中的
-    file_id 可继续用于 find_kb_document 或 open_kb_document。
+    Sử dụng công cụ này khi người dùng cần truy vấn nội dung cụ thể. kb_id là ID tài nguyên kho kiến thức; 
+    file_id trong kết quả trả về có thể tiếp tục được sử dụng cho find_kb_document hoặc open_kb_document.
     """
     if not kb_id:
-        return "请提供 kb_id"
+        return "Vui lòng cung cấp kb_id"
     if not query_text:
-        return "请提供查询内容"
+        return "Vui lòng cung cấp nội dung truy vấn"
 
     knowledge_base = _get_knowledge_base()
     retrievers = knowledge_base.get_retrievers()
@@ -241,11 +240,11 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
         return await _build_query_output(target_kb_id, result)
 
     except Exception as e:
-        logger.error(f"检索失败: {e}")
-        return f"检索失败: {str(e)}"
+        logger.error(f"Truy xuất thất bại: {e}")
+        return f"Truy xuất thất bại: {str(e)}"
 
 
-@tool(category="knowledge", tags=["知识库"], args_schema=OpenKBDocumentInput)
+@tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=OpenKBDocumentInput)
 async def open_kb_document(
     kb_id: str,
     file_id: str,
@@ -254,36 +253,36 @@ async def open_kb_document(
     window_size: int = 1800,
     runtime: ToolRuntime = None,
 ) -> dict[str, Any] | str:
-    """按行窗口打开知识库文档原文
+    """Mở văn bản gốc của tài liệu kho kiến thức theo cửa sổ dòng.
 
-    当 query_kb 返回的片段不足以回答问题，或需要查看某个文档的上下文时使用。
-    kb_id 是知识库资源 ID，也就是 kb_id；file_id 是知识库文件 ID。
+    Sử dụng khi các đoạn trích trả về từ query_kb không đủ để trả lời câu hỏi, hoặc cần xem ngữ cảnh của một tài liệu nào đó.
+    kb_id là ID tài nguyên kho kiến thức; file_id là ID tệp kho kiến thức.
     """
     normalized_kb_id = str(kb_id or "").strip()
     normalized_file_id = str(file_id or "").strip()
     if not normalized_kb_id:
-        return "请提供 kb_id"
+        return "Vui lòng cung cấp kb_id"
     if not normalized_file_id:
-        return "请提供 file_id"
+        return "Vui lòng cung cấp file_id"
 
     visible_kbs = await _resolve_visible_knowledge_bases_for_query(runtime)
     if not visible_kbs:
-        return "无法获取当前会话可访问的知识库"
+        return "Không thể lấy danh sách kho kiến thức có thể truy cập của phiên hội thoại hiện tại"
 
     visible_kb_ids = {str(kb.get("kb_id") or "").strip() for kb in visible_kbs}
     if normalized_kb_id not in visible_kb_ids:
-        return f"知识库资源 '{normalized_kb_id}' 不存在或当前会话未启用"
+        return f"Tài nguyên kho kiến thức '{normalized_kb_id}' không tồn tại hoặc chưa được bật trong phiên hội thoại hiện tại"
 
     knowledge_base = _get_knowledge_base()
     retrievers = knowledge_base.get_retrievers()
     target_info = retrievers.get(normalized_kb_id)
     if target_info is None:
-        return f"知识库资源 '{normalized_kb_id}' 不存在"
+        return f"Tài nguyên kho kiến thức '{normalized_kb_id}' không tồn tại"
 
     metadata = target_info.get("metadata") if isinstance(target_info, dict) else None
     kb_type = str((metadata or {}).get("kb_type") or "").strip().lower()
     if kb_type == "dify":
-        return "Dify 知识库为外部只读检索源，当前不支持通过 Open 打开全文"
+        return "Kho kiến thức Dify là nguồn truy xuất ngoài chỉ đọc, hiện tại không hỗ trợ mở toàn văn qua Open"
 
     try:
         start_offset = int(line) - 1 if line is not None else int(offset or 0)
@@ -296,11 +295,11 @@ async def open_kb_document(
         return OpenOutputSchema(kb_id=normalized_kb_id, file_id=normalized_file_id, **window).model_dump()
 
     except Exception as e:
-        logger.error(f"打开知识库文档失败: {e}")
-        return f"打开知识库文档失败: {str(e)}"
+        logger.error(f"Mở tài liệu kho kiến thức thất bại: {e}")
+        return f"Mở tài liệu kho kiến thức thất bại: {str(e)}"
 
 
-@tool(category="knowledge", tags=["知识库"], args_schema=FindKBDocumentInput)
+@tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=FindKBDocumentInput)
 async def find_kb_document(
     kb_id: str,
     file_id: str,
@@ -311,37 +310,37 @@ async def find_kb_document(
     window_size: int = 80,
     runtime: ToolRuntime = None,
 ) -> dict[str, Any] | str:
-    """在已知知识库文件内做关键词或正则定位。
+    """Định vị từ khóa hoặc regex trong tệp kho kiến thức đã biết.
 
-    当 query_kb 已找到候选文件，但需要在该文件内定位术语、指标、章节或实体时使用。
+    Sử dụng khi query_kb đã tìm thấy tệp ứng viên, nhưng cần định vị thuật ngữ, chỉ số, chương mục hoặc thực thể trong tệp đó.
     """
     normalized_kb_id = str(kb_id or "").strip()
     normalized_file_id = str(file_id or "").strip()
     if not normalized_kb_id:
-        return "请提供 kb_id"
+        return "Vui lòng cung cấp kb_id"
     if not normalized_file_id:
-        return "请提供 file_id"
+        return "Vui lòng cung cấp file_id"
     if not patterns:
-        return "请提供 patterns"
+        return "Vui lòng cung cấp patterns"
 
     visible_kbs = await _resolve_visible_knowledge_bases_for_query(runtime)
     if not visible_kbs:
-        return "无法获取当前会话可访问的知识库"
+        return "Không thể lấy danh sách kho kiến thức có thể truy cập của phiên hội thoại hiện tại"
 
     visible_kb_ids = {str(kb.get("kb_id") or "").strip() for kb in visible_kbs}
     if normalized_kb_id not in visible_kb_ids:
-        return f"知识库资源 '{normalized_kb_id}' 不存在或当前会话未启用"
+        return f"Tài nguyên kho kiến thức '{normalized_kb_id}' không tồn tại hoặc chưa được bật trong phiên hội thoại hiện tại"
 
     knowledge_base = _get_knowledge_base()
     retrievers = knowledge_base.get_retrievers()
     target_info = retrievers.get(normalized_kb_id)
     if target_info is None:
-        return f"知识库资源 '{normalized_kb_id}' 不存在"
+        return f"Tài nguyên kho kiến thức '{normalized_kb_id}' không tồn tại"
 
     metadata = target_info.get("metadata") if isinstance(target_info, dict) else None
     kb_type = str((metadata or {}).get("kb_type") or "").strip().lower()
     if kb_type == "dify":
-        return "Dify 知识库为外部只读检索源，当前不支持通过 Find 检索全文"
+        return "Kho kiến thức Dify là nguồn truy xuất ngoài chỉ đọc, hiện tại không hỗ trợ tìm kiếm toàn văn qua Find"
 
     try:
         result = await knowledge_base.find_file_content(
@@ -355,25 +354,25 @@ async def find_kb_document(
         )
         return FindOutputSchema(kb_id=normalized_kb_id, file_id=normalized_file_id, **result).model_dump()
     except Exception as e:
-        logger.error(f"知识库文档内检索失败: {e}")
-        return f"知识库文档内检索失败: {str(e)}"
+        logger.error(f"Tìm kiếm trong tài liệu kho kiến thức thất bại: {e}")
+        return f"Tìm kiếm trong tài liệu kho kiến thức thất bại: {str(e)}"
 
 
-# 单个知识库一次最多扫描的文件数（与仓储层 list_by_kb_id_after 的硬上限保持一致），
-# 用于在内存中做文件名过滤与准确计数，避免按 limit+offset 截断导致 total/has_more 失真。
+# Số lượng tệp tối đa quét một lần cho mỗi kho kiến thức (giữ nguyên giới hạn cứng với list_by_kb_id_after ở tầng lưu trữ),
+# Dùng để lọc tên tệp và đếm chính xác trong bộ nhớ, tránh cắt ngắn theo limit+offset làm sai lệch total/has_more.
 _KB_FILE_SCAN_LIMIT = 5000
 
 
 class SearchFileInput(BaseModel):
-    """搜索文件输入模型"""
+    """Model input tìm kiếm tệp"""
 
-    kb_name: str | None = Field(default=None, description="知识库名称，为空时搜索所有知识库")
-    query: str | None = Field(default=None, description="搜索关键词，为空时返回所有文件")
-    offset: int = Field(default=0, ge=0, description="偏移量，从 0 开始")
-    limit: int = Field(default=300, ge=1, le=5000, description="返回数量限制，默认 300")
+    kb_name: str | None = Field(default=None, description="Tên kho kiến thức, để trống để tìm kiếm tất cả kho kiến thức")
+    query: str | None = Field(default=None, description="Từ khóa tìm kiếm, để trống để trả về tất cả các tệp")
+    offset: int = Field(default=0, ge=0, description="Độ lệch offset, bắt đầu từ 0")
+    limit: int = Field(default=300, ge=1, le=5000, description="Giới hạn số lượng trả về, mặc định 300")
 
 
-@tool(category="knowledge", tags=["知识库"], args_schema=SearchFileInput)
+@tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=SearchFileInput)
 async def search_file(
     kb_name: str | None = None,
     query: str | None = None,
@@ -381,32 +380,32 @@ async def search_file(
     limit: int = 300,
     runtime: ToolRuntime = None,
 ) -> dict[str, Any] | str:
-    """搜索知识库中的文件
+    """Tìm kiếm tệp trong kho kiến thức.
 
-    当用户需要查找特定文件时使用此工具。可以指定知识库名称和搜索关键词。
-    如果不指定知识库，将搜索所有可访问的知识库。
-    如果不指定搜索关键词，将返回所有文件。
+    Sử dụng công cụ này khi người dùng cần tìm kiếm tệp cụ thể. Có thể chỉ định tên kho kiến thức và từ khóa tìm kiếm.
+    Nếu không chỉ định kho kiến thức, hệ thống sẽ tìm kiếm trong tất cả kho kiến thức có quyền truy cập.
+    Nếu không chỉ định từ khóa tìm kiếm, hệ thống sẽ trả về tất cả các tệp.
 
     Args:
-        kb_name: 知识库名称，为空时搜索所有知识库
-        query: 搜索关键词，为空时返回所有文件
-        offset: 偏移量，从 0 开始
-        limit: 返回数量限制，默认 300
+        kb_name: Tên kho kiến thức, để trống để tìm kiếm trong tất cả các kho kiến thức
+        query: Từ khóa tìm kiếm, để trống để trả về tất cả các tệp
+        offset: Độ lệch offset, bắt đầu từ 0
+        limit: Giới hạn số lượng trả về, mặc định 300
 
     Returns:
-        匹配的文件列表和分页信息
+        Danh sách các tệp khớp và thông tin phân trang
     """
     if not kb_name and not query:
-        return "请提供知识库名称或搜索关键词，不能同时为空"
+        return "Vui lòng cung cấp tên kho kiến thức hoặc từ khóa tìm kiếm, không được để trống cả hai"
 
     visible_kbs = await _resolve_visible_knowledge_bases_for_query(runtime)
     if not visible_kbs:
-        return "无法获取当前会话可访问的知识库"
+        return "Không thể lấy danh sách kho kiến thức có thể truy cập của phiên hội thoại hiện tại"
 
     if kb_name:
         target_kbs = [kb for kb in visible_kbs if kb.get("name") == kb_name]
         if not target_kbs:
-            return f"知识库 '{kb_name}' 不存在或当前会话未启用"
+            return f"Kho kiến thức '{kb_name}' không tồn tại hoặc chưa được bật trong phiên hội thoại hiện tại"
     else:
         target_kbs = visible_kbs
 
@@ -460,14 +459,14 @@ async def search_file(
 
 
 def get_common_kb_tools() -> list:
-    """获取通用知识库工具列表
+    """Lấy danh sách các công cụ kho kiến thức chung.
 
-    返回 6 个通用工具：
-    - list_kbs: 列出用户可访问的知识库
-    - get_mindmap: 获取指定知识库的思维导图
-    - query_kb: 在指定知识库中检索
-    - find_kb_document: 在指定文件内定位关键词或正则模式
-    - open_kb_document: 按 file_id 分段打开知识库文档
-    - search_file: 搜索知识库中的文件
+    Trả về 6 công cụ chung:
+    - list_kbs: Liệt kê danh sách kho kiến thức người dùng có thể truy cập
+    - get_mindmap: Lấy sơ đồ tư duy của kho kiến thức được chỉ định
+    - query_kb: Truy xuất thông tin trong kho kiến thức được chỉ định
+    - find_kb_document: Định vị từ khóa hoặc regex trong tệp được chỉ định
+    - open_kb_document: Mở một phần tài liệu kho kiến thức theo file_id
+    - search_file: Tìm kiếm tệp trong kho kiến thức
     """
     return [list_kbs, get_mindmap, query_kb, find_kb_document, open_kb_document, search_file]

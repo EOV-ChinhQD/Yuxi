@@ -29,7 +29,7 @@ class _FakeRedis:
 
 @pytest.fixture
 def mock_sandbox_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    # 创建模拟的工作区、上传、输出目录
+    # Create simulated workspace, upload, and output directories
     workspace_dir = tmp_path / "shared" / "user_1" / "workspace"
     uploads_dir = tmp_path / "threads" / "thread_1" / "user-data" / "uploads"
     outputs_dir = tmp_path / "threads" / "thread_1" / "user-data" / "outputs"
@@ -38,7 +38,7 @@ def mock_sandbox_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     uploads_dir.mkdir(parents=True, exist_ok=True)
     outputs_dir.mkdir(parents=True, exist_ok=True)
 
-    # Mock sandbox_paths 的函数
+    # Mock sandbox_paths function
     monkeypatch.setattr(mention_service, "sandbox_workspace_dir", lambda t, u: workspace_dir)
     monkeypatch.setattr(mention_service, "sandbox_uploads_dir", lambda t: uploads_dir)
     monkeypatch.setattr(mention_service, "sandbox_outputs_dir", lambda t: outputs_dir)
@@ -65,11 +65,11 @@ def fake_redis(monkeypatch: pytest.MonkeyPatch) -> _FakeRedis:
 async def test_scan_pruned_files_and_exclude_dirs(mock_sandbox_paths):
     workspace = mock_sandbox_paths["workspace"]
 
-    # 创建常规文件
+    # Create regular file
     (workspace / "main.py").write_text("print('hello')")
     (workspace / "utils.py").write_text("def run(): pass")
 
-    # 创建被排除的目录和文件
+    # Create excluded directories and files
     git_dir = workspace / ".git"
     git_dir.mkdir()
     (git_dir / "config").write_text("[core]")
@@ -78,10 +78,10 @@ async def test_scan_pruned_files_and_exclude_dirs(mock_sandbox_paths):
     node_modules.mkdir()
     (node_modules / "express.js").write_text("module.exports = {}")
 
-    # 扫描
+    # scanning
     results = mention_service._scan_pruned_files(workspace, 100)
 
-    # 校验
+    # check
     files = {name for name, _ in results}
     assert "main.py" in files
     assert "utils.py" in files
@@ -93,7 +93,7 @@ async def test_scan_pruned_files_and_exclude_dirs(mock_sandbox_paths):
 async def test_scan_depth_protection(mock_sandbox_paths):
     workspace = mock_sandbox_paths["workspace"]
 
-    # 创建超深的文件树路径：超过 15 层
+    # Create extremely deep file tree paths: more than 15 levels
     deep_dir = workspace
     for i in range(18):
         deep_dir = deep_dir / f"dir_{i}"
@@ -101,11 +101,11 @@ async def test_scan_depth_protection(mock_sandbox_paths):
     deep_dir.mkdir(parents=True, exist_ok=True)
     (deep_dir / "deep_file.py").write_text("deep")
 
-    # 扫描
+    # scanning
     results = mention_service._scan_pruned_files(workspace, 100)
     files = {name for name, _ in results}
 
-    # 深度限制应成功剪枝拦截该超深文件
+    # Depth limit should successfully prune and intercept the ultra-deep file
     assert "deep_file.py" not in files
 
 
@@ -113,14 +113,14 @@ async def test_scan_depth_protection(mock_sandbox_paths):
 async def test_scan_width_limit(mock_sandbox_paths):
     workspace = mock_sandbox_paths["workspace"]
 
-    # 创建 600 个扁平的小文件
+    # Create 600 small flat files
     for i in range(600):
         (workspace / f"file_{i}.py").write_text(str(i))
 
-    # 扫描，设置 max_entries = 1000（看看单目录 500 的宽度限额是否起作用）
+    # Scan, set max_entries = 1000 (see if the single directory width limit of 500 works)
     results = mention_service._scan_pruned_files(workspace, 1000)
 
-    # 限制单目录 MAX_ENTRIES_PER_DIR = 500 熔断
+    # Limit single directory MAX_ENTRIES_PER_DIR = 500 fuse
     assert len(results) == 500
 
 
@@ -132,11 +132,11 @@ async def test_mention_cache_lifecycle_with_ormsgpack(mock_sandbox_paths, fake_r
     (workspace / "main.py").write_text("main")
     (uploads / "data.csv").write_text("csv")
 
-    # 1. 首次查询：构建缓存并存入 Redis
+    # 1. First query: build cache and store it in Redis
     index_1 = await mention_service.get_or_build_file_index("thread_1", "user_1")
     assert len(index_1) == 2
 
-    # 验证 Redis 中已按 workspace/thread 分别缓存
+    # Verify that Redis has been cached separately by workspace/thread
     workspace_redis_key = f"{mention_service.WORKSPACE_CACHE_PREFIX}user_1"
     thread_redis_key = f"{mention_service.THREAD_CACHE_PREFIX}thread_1"
     cached_workspace = fake_redis.data.get(workspace_redis_key)
@@ -144,18 +144,18 @@ async def test_mention_cache_lifecycle_with_ormsgpack(mock_sandbox_paths, fake_r
     assert cached_workspace is not None
     assert cached_thread is not None
 
-    # 反序列化校验
+    # Deserialization verification
     workspace_entries = ormsgpack.unpackb(base64.b64decode(cached_workspace))
     thread_entries = ormsgpack.unpackb(base64.b64decode(cached_thread))
     assert len(workspace_entries) == 1
     assert len(thread_entries) == 1
 
-    # 2. 修改磁盘文件，但在 TTL 内应仍然走 Redis 缓存，内容不更新
+    # 2. Modify the disk file, but the Redis cache should still be used within the TTL, and the content will not be updated.
     (workspace / "new_file.py").write_text("new")
     index_2 = await mention_service.get_or_build_file_index("thread_1", "user_1")
-    assert len(index_2) == 2  # 仍然命中缓存，没有扫描出 new_file.py
+    assert len(index_2) == 2  # Still hitting the cache and not scanning out new_file.py
 
-    # 3. 清理 workspace 缓存后重新读取，应成功更新磁盘扫描内容
+    # 3. Clear the workspace cache and read it again. The disk scan content should be successfully updated.
     await mention_service.invalidate_workspace_mention_cache("user_1")
     assert fake_redis.data.get(workspace_redis_key) is None
 
@@ -201,7 +201,7 @@ async def test_search_mention_files_in_index(mock_sandbox_paths, fake_redis):
     (workspace / "agent_config.json").write_text("config")
     (workspace / "main.py").write_text("main")
 
-    # 搜索匹配测试
+    # Search match test
     results = await mention_service.search_mention_files_in_index("thread_1", "user_1", "config")
     assert len(results) == 1
     assert results[0]["name"] == "agent_config.json"
@@ -209,7 +209,7 @@ async def test_search_mention_files_in_index(mock_sandbox_paths, fake_redis):
     assert results[0]["is_dir"] is False
     assert results[0]["source"] == "workspace"
 
-    # 大小写不敏感匹配
+    # Case-insensitive matching
     results_case = await mention_service.search_mention_files_in_index("thread_1", "user_1", "MAIN")
     assert len(results_case) == 1
     assert results_case[0]["name"] == "main.py"
@@ -219,31 +219,31 @@ async def test_search_mention_files_in_index(mock_sandbox_paths, fake_redis):
 async def test_search_mention_directories_and_weighted_ranking(mock_sandbox_paths, fake_redis):
     workspace = mock_sandbox_paths["workspace"]
 
-    # 1. 创建合格的子目录 "test"
+    # 1. Create qualified subdirectory "test"
     test_dir = workspace / "test"
     test_dir.mkdir(exist_ok=True)
 
-    # 2. 在子目录下创建一些包含关键字的文件
+    # 2. Create some files containing keywords in the subdirectory
     (test_dir / "test_auth.py").write_text("auth")
-    (test_dir / "conftest.py").write_text("conf")  # 文件名不含 test，但路径含 test
+    (test_dir / "conftest.py").write_text("conf")  # The file name does not contain test, but the path contains test
 
-    # 3. 搜索 "@test"
+    # 3. Search for "@test"
     results = await mention_service.search_mention_files_in_index("thread_1", "user_1", "test")
 
-    # 4. 校验结果
-    # 必须包含 3 个项：目录 "test/"，文件 "test_auth.py"，文件 "conftest.py" (路径匹配兜底)
+    # 4. Verification results
+    # Must contain 3 items: directory "test/", file "test_auth.py", file "conftest.py" (path matching)
     assert len(results) == 3
 
-    # 5. 校验置顶排序和 is_dir 属性
-    # 由于目录名字 "test" 与搜索词 "test" 100% 完全一致，得分为最高 (1000分)，必须排在第 1 位
+    # 5. Verify top sorting and is_dir attribute
+    # Since the directory name "test" is 100% identical to the search term "test", it has the highest score (1000 points) and must be ranked first.
     assert results[0]["name"] == "test"
     assert results[0]["is_dir"] is True
     assert results[0]["path"] == "/home/gem/user-data/workspace/test/"
 
-    # "test_auth.py" 文件名以 "test" 开头，为前缀匹配 (500分)，必须排在第 2 位
+    # "test_auth.py" file name starts with "test", which is a prefix match (500 points) and must be ranked 2nd
     assert results[1]["name"] == "test_auth.py"
     assert results[1]["is_dir"] is False
 
-    # "conftest.py" 文件名不含 test，为纯路径匹配兜底 (10分)，必须排在最后
+    # The "conftest.py" file name does not contain test, which is a pure path matching guarantee (10 points) and must be ranked last.
     assert results[2]["name"] == "conftest.py"
     assert results[2]["is_dir"] is False

@@ -93,10 +93,10 @@ def ensure_workspace_default_files(workspace_dir: Path) -> None:
         agents_dir.mkdir(parents=True, exist_ok=True)
         _chmod_writable(agents_dir, dir=True)
     except FileExistsError:
-        logger.warning("工作区默认 Agents 目录创建失败：路径已被文件占用")
+        logger.warning("Creation of the default Agents directory in the workspace failed: the path is already occupied by a file")
         return
     except OSError as exc:
-        logger.warning(f"工作区默认 Agents 目录初始化失败: {exc}")
+        logger.warning(f"Workspace default Agents directory initialization failed: {exc}")
         return
 
     try:
@@ -105,9 +105,9 @@ def ensure_workspace_default_files(workspace_dir: Path) -> None:
         _chmod_writable(agents_file)
     except FileExistsError:
         if agents_file.is_dir():
-            logger.warning("工作区默认 AGENTS.md 创建失败：路径已被目录占用")
+            logger.warning("Workspace default AGENTS.md Creation failed: path already occupied by directory")
     except OSError as exc:
-        logger.warning(f"工作区默认 Agents 文件初始化失败: {exc}")
+        logger.warning(f"Workspace default Agents file initialization failed: {exc}")
 
 
 def sandbox_uploads_dir(thread_id: str) -> Path:

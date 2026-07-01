@@ -27,19 +27,19 @@ _CHILD_STATE_INHERIT_KEYS: frozenset[str] = frozenset()
 _TERMINAL_RUN_STATUSES = {"completed", "failed", "cancelled", "interrupted"}
 YUXI_SUBAGENTS_STREAM_KEY = "yuxi_subagents"
 
-TASK_SYSTEM_PROMPT = """## `task`（子智能体任务工具）
+TASK_SYSTEM_PROMPT = """## `task` (Công cụ giao nhiệm vụ cho sub-agent)
 
-你可以使用 `task` 工具把复杂、独立的子任务交给已配置的子智能体处理。子智能体只返回最终结果，你看不到它的中间步骤。
-工具结果会包含子智能体线程 ID，后续需要继续同一个子任务时，把该 ID 作为 `thread_id` 传回 `task`。
+Bạn có thể sử dụng công cụ `task` để giao các nhiệm vụ phụ phức tạp và độc lập cho sub-agent đã được cấu hình xử lý. Sub-agent chỉ trả về kết quả cuối cùng, bạn không thể thấy các bước trung gian của nó.
+Kết quả công cụ sẽ bao gồm ID thread của sub-agent. Khi cần tiếp tục cùng một nhiệm vụ phụ sau này, hãy truyền ID đó làm `thread_id` quay lại `task`.
 
-使用原则：
-- 任务足够复杂、可以独立完成、或需要隔离上下文时使用。
-- 多个互不依赖的子任务可以并行调用多个 `task`。
-- 继续既有子智能体任务时传入之前结果中的 `thread_id`；新任务不要填写 `thread_id`。
-- 不要并行调用同一个 `thread_id`，避免多个续跑请求同时写入同一子线程。
-- 简单问题或少量直接工具调用不要委派。
-- 调用时必须选择下方可用的 `subagent_type`，并在 `description` 中写清目标、上下文和期望输出。
-- 不要通过 shell、curl、HTTP API 或命令行间接调用子智能体；需要子智能体时必须使用 `task` 工具。
+Nguyên tắc sử dụng:
+- Sử dụng khi nhiệm vụ đủ phức tạp, có thể hoàn thành độc lập hoặc cần cô lập ngữ cảnh.
+- Nhiều nhiệm vụ phụ không phụ thuộc lẫn nhau có thể gọi đồng thời nhiều `task`.
+- Truyền `thread_id` từ kết quả trước đó khi tiếp tục một nhiệm vụ sub-agent hiện có; không điền `thread_id` cho nhiệm vụ mới.
+- Không gọi đồng thời cùng một `thread_id` để tránh nhiều yêu cầu tiếp tục ghi vào cùng một thread con cùng lúc.
+- Không ủy thác cho các câu hỏi đơn giản hoặc chỉ cần một lượng nhỏ cuộc gọi công cụ trực tiếp.
+- Khi gọi, phải chọn một `subagent_type` khả dụng bên dưới và viết rõ mục tiêu, ngữ cảnh và kết quả mong muốn trong `description`.
+- Không gọi gián tiếp sub-agent qua shell, curl, HTTP API hoặc dòng lệnh; phải sử dụng công cụ `task` khi cần sub-agent.
 
 Available subagent types:
 
@@ -56,9 +56,9 @@ that prior task result as `thread_id`.
 Do not call subagents through shell, curl, HTTP APIs, or command-line indirection."""
 
 
-TASK_DESCRIPTION_ARG = "需要子智能体独立完成的任务描述，包含必要上下文和期望输出。"
-SUBAGENT_TYPE_ARG = "要调用的子智能体标识，必须是工具描述中列出的可用类型之一。"
-THREAD_ID_ARG = "可选。要继续的既有子智能体线程 ID，必须来自之前 task 工具结果；新任务不要填写。"
+TASK_DESCRIPTION_ARG = "Mô tả nhiệm vụ cần sub-agent hoàn thành độc lập, bao gồm ngữ cảnh cần thiết và kết quả mong muốn."
+SUBAGENT_TYPE_ARG = "Định danh sub-agent cần gọi, phải là một trong những loại khả dụng được liệt kê trong mô tả công cụ."
+THREAD_ID_ARG = "Tùy chọn. ID thread sub-agent hiện có muốn tiếp tục, phải đến từ kết quả công cụ task trước đó; không điền cho nhiệm vụ mới."
 
 
 class YuxiSubagentTransformer(DeepAgentsSubagentTransformer):
@@ -78,7 +78,7 @@ def _final_assistant_text(messages: list[Any]) -> str:
             text = message.text.rstrip() if message.text else ""
             if text:
                 return text
-    return "子智能体已完成任务，但没有返回文本结果。"
+    return "Sub-agent đã hoàn thành nhiệm vụ nhưng không trả về kết quả văn bản."
 
 
 def _result_artifacts(result: dict[str, Any]) -> list[str]:
@@ -91,7 +91,7 @@ def _preview_text(text: str, limit: int = 500) -> str:
 
 
 def _tool_result_with_thread_id(child_thread_id: str, content: str) -> str:
-    return f"> 子智能体线程 ID: {child_thread_id}\n\n---\n\n{content}"
+    return f"> ID thread sub-agent: {child_thread_id}\n\n---\n\n{content}"
 
 
 def _new_child_thread_id(
@@ -140,12 +140,12 @@ def _completed_tool_response(result: dict[str, Any], tool_call_id: str, subagent
 def _reused_run_response(run, tool_call_id: str, subagent_run: dict[str, Any]) -> Command:
     status = str(getattr(run, "status", "") or "unknown")
     if status == "completed":
-        message = "子智能体任务已完成，未重复执行。"
+        message = "Nhiệm vụ sub-agent đã hoàn thành, không thực hiện lại."
     elif status in _TERMINAL_RUN_STATUSES:
         error_message = str(getattr(run, "error_message", "") or "")
-        message = f"子智能体任务已结束，状态：{status}。{error_message}".strip()
+        message = f"Nhiệm vụ sub-agent đã kết thúc, trạng thái: {status}. {error_message}".strip()
     else:
-        message = f"子智能体任务已存在，当前状态：{status}，未重复提交。"
+        message = f"Nhiệm vụ sub-agent đã tồn tại, trạng thái hiện tại: {status}, không gửi lại."
 
     subagent_run = {
         **subagent_run,
@@ -174,7 +174,7 @@ def _agent_run_state_payload(run) -> dict[str, Any]:
 
 def _failed_tool_response(error: Exception, tool_call_id: str, subagent_run: dict[str, Any]) -> Command:
     error_text = str(error)
-    message = f"子智能体 {subagent_run['subagent_type']} 调用失败：{error_text}"
+    message = f"Gọi sub-agent {subagent_run['subagent_type']} thất bại: {error_text}"
     tool_result = _tool_result_with_thread_id(subagent_run["child_thread_id"], message)
     update = {
         "messages": [ToolMessage(tool_result, tool_call_id=tool_call_id)],
@@ -282,23 +282,23 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
     ):
         parent_run_id = str(getattr(self.parent_context, "run_id", "") or "").strip()
         if not parent_run_id:
-            raise ValueError("当前运行时缺少父运行 ID，无法记录子智能体运行")
+            raise ValueError("Thiếu run_id của cha trong runtime hiện tại, không thể ghi nhận chạy sub-agent")
 
         async with pg_manager.get_async_session_context() as db:
             repo = AgentRunRepository(db)
             parent_run = await repo.get_run_for_user(parent_run_id, uid)
             if not parent_run:
-                raise ValueError("父运行任务不存在")
+                raise ValueError("Nhiệm vụ chạy của cha không tồn tại")
 
             if continuing:
                 previous = await repo.get_latest_subagent_run_by_thread_for_user(child_thread_id, uid)
                 if not previous or previous.conversation_id != parent_run.conversation_id:
                     raise ValueError(
-                        f"无法继续子智能体线程 {child_thread_id}：当前对话中没有找到对应的子智能体运行记录"
+                        f"Không thể tiếp tục thread sub-agent {child_thread_id}: Không tìm thấy bản ghi chạy sub-agent tương ứng trong hội thoại hiện tại"
                     )
                 if previous.agent_id != subagent_type:
                     raise ValueError(
-                        f"无法继续子智能体线程 {child_thread_id}：该线程属于子智能体 {previous.agent_id or '未知'}"
+                        f"Không thể tiếp tục thread sub-agent {child_thread_id}: Thread này thuộc về sub-agent {previous.agent_id or 'không xác định'}"
                     )
 
             request_id = _subagent_request_id(parent_run_id, child_thread_id, tool_call_id, agent.slug)
@@ -351,7 +351,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
             runtime: ToolRuntime,
             thread_id: Annotated[str | None, THREAD_ID_ARG] = None,
         ) -> str:
-            return "task 工具仅支持异步调用"
+            return "task The tool only supports asynchronous calls"
 
         async def atask(
             description: Annotated[str, TASK_DESCRIPTION_ARG],
@@ -361,7 +361,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         ) -> str | Command:
             if subagent_type not in self.subagents:
                 allowed = ", ".join(f"`{slug}`" for slug in self.subagents)
-                return f"无法调用子智能体 {subagent_type}，可用子智能体只有：{allowed}"
+                return f"Không thể gọi sub-agent {subagent_type}, các sub-agent khả dụng chỉ gồm: {allowed}"
             if not runtime.tool_call_id:
                 raise ValueError("Tool call ID is required for subagent invocation")
 
@@ -371,12 +371,12 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
             file_thread_id = str(getattr(self.parent_context, "file_thread_id", None) or parent_thread_id)
             uid = str(getattr(self.parent_context, "uid", "") or "").strip()
             if not uid:
-                return "无法调用子智能体：当前运行时缺少 uid"
+                return "Không thể gọi sub-agent: thiếu uid trong runtime hiện tại"
 
             agent = self.subagents[subagent_type]
             backend = _get_agent_backend(agent.backend_id)
             if not backend or agent.backend_id != SUB_AGENT_BACKEND_ID:
-                return f"无法调用子智能体 {subagent_type}：后端配置无效"
+                return f"Không thể gọi sub-agent {subagent_type}: cấu hình backend không hợp lệ"
 
             child_thread_id, continuing = _new_child_thread_id(
                 thread_id,

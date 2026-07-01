@@ -17,8 +17,8 @@ def test_get_tool_metadata_includes_config_guide(monkeypatch):
     fake_extra = SimpleNamespace(
         category="buildin",
         tags=["demo"],
-        display_name="演示工具",
-        config_guide="请先配置 DEMO_API_KEY",
+        display_name="Công cụ Demo",
+        config_guide="Please configure DEMO_API_KEY first",
     )
 
     monkeypatch.setattr(
@@ -35,13 +35,13 @@ def test_get_tool_metadata_includes_config_guide(monkeypatch):
     assert result == [
         {
             "slug": "demo_tool",
-            "name": "演示工具",
+            "name": "Công cụ Demo",
             "description": "demo description",
             "metadata": {},
             "args": [],
             "category": "buildin",
             "tags": ["demo"],
-            "config_guide": "请先配置 DEMO_API_KEY",
+            "config_guide": "Please configure DEMO_API_KEY first",
         }
     ]
 

@@ -52,7 +52,7 @@ def test_parser_parse_docx_file_returns_markdown_text(tmp_path: Path, monkeypatc
     file_path = tmp_path / "parser_test.docx"
     _build_docx(file_path, "Parser DOCX content")
 
-    # 避免测试依赖 docling 行为，直接验证统一 parser 可回退到 python-docx。
+    # Avoid testing relying on docling behavior and directly verify that the unified parser can fall back to python-docx.
     def _raise_docling_error(*args, **kwargs):
         raise RuntimeError("force fallback to python-docx")
 
@@ -139,7 +139,7 @@ def test_convert_with_docling_keeps_image_placeholder_when_upload_fails(
 
     markdown = parser_unified._convert_with_docling(file_path)
 
-    assert markdown == "before\n[图片: image_1000000.png]\nafter"
+    assert markdown == "before\n[picture: image_1000000.png]\nafter"
 
 
 def test_parser_parse_png_file_returns_markdown_text_with_mocked_ocr(
@@ -194,7 +194,7 @@ def test_parse_image_ignores_enable_ocr(tmp_path: Path) -> None:
     file_path = tmp_path / "parser_test.png"
     _build_png(file_path)
 
-    with pytest.raises(ValueError, match="必须启用OCR"):
+    with pytest.raises(ValueError, match="Bắt buộc phải bật OCR"):
         parser_unified.parse_image(str(file_path), params={"enable_ocr": "rapid_ocr"})
 
 
@@ -213,12 +213,12 @@ async def test_parser_aparse_pdf_file_returns_markdown_text(tmp_path: Path):
 
 @pytest.mark.asyncio
 async def test_parser_aparse_image_file_with_mineru_when_available():
-    file_path = DATA_DIR / "测试图片.png"
-    assert file_path.exists(), f"测试文件不存在: {file_path}"
+    file_path = DATA_DIR / "test picture.png"
+    assert file_path.exists(), f"Test file does not exist: {file_path}"
 
     health = await asyncio.to_thread(DocumentProcessorFactory.check_health, "mineru_ocr")
     if health.get("status") != "healthy":
-        pytest.skip(f"mineru_ocr 不可用: {health.get('message', 'unknown')}")
+        pytest.skip(f"mineru_ocr Not available: {health.get('message', 'unknown')}")
 
     markdown = await Parser.aparse(
         str(file_path),

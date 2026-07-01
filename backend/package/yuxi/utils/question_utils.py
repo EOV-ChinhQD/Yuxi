@@ -1,11 +1,11 @@
-"""问题和选项规范化工具"""
+"""Question and option normalization tool"""
 
 import uuid
 from typing import Any
 
 
 def normalize_options(raw_options: Any) -> list[dict[str, str]]:
-    """规范化选项列表"""
+    """Normalized option list"""
     if not isinstance(raw_options, list):
         return []
 
@@ -23,7 +23,7 @@ def normalize_options(raw_options: Any) -> list[dict[str, str]]:
 
 
 def normalize_questions(raw_questions: Any, default_question_id_prefix: str = "q") -> list[dict[str, Any]]:
-    """规范化问题列表"""
+    """Standardized question list"""
     if not isinstance(raw_questions, list):
         return []
 

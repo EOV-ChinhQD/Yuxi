@@ -1,7 +1,7 @@
 """
-RapidOCR 解析器 - 纯OCR文字识别
+RapidOCR parser - Pure OCR text recognition
 
-使用 RapidOCR (PP-OCRv5) 进行文字识别
+use RapidOCR (PP-OCRv5) Perform text recognition
 """
 
 import os
@@ -19,7 +19,7 @@ from yuxi.utils import logger
 
 
 class RapidOCRParser(BaseDocumentProcessor):
-    """RapidOCR 解析器 - 使用 ONNX 模型进行文字识别"""
+    """RapidOCR parser - Text recognition using ONNX model"""
 
     def __init__(self, det_box_thresh: float = 0.3):
         self.ocr = None
@@ -46,92 +46,92 @@ class RapidOCRParser(BaseDocumentProcessor):
         }
 
     def check_health(self) -> dict:
-        """检查 RapidOCR 模型是否可用"""
+        """Check if RapidOCR model is available"""
         try:
             test_ocr = RapidOCR(params=self._get_model_params())
             del test_ocr
             return {
                 "status": "healthy",
-                "message": "RapidOCR PP-OCRv5 模型可用",
+                "message": "RapidOCR PP-OCRv5 Model available",
                 "details": {"ocr_version": "PP-OCRv5", "engine": "onnxruntime"},
             }
         except Exception as e:
-            return {"status": "error", "message": f"模型加载失败: {str(e)}", "details": {"error": str(e)}}
+            return {"status": "error", "message": f"Model loading failed: {str(e)}", "details": {"error": str(e)}}
 
     def _load_model(self):
-        """延迟加载 OCR 模型"""
+        """Lazy loading of OCR models"""
         if self.ocr is not None:
             return
 
-        logger.info("加载 RapidOCR 模型...")
+        logger.info("Load RapidOCR model...")
 
         try:
             self.ocr = RapidOCR(params=self._get_model_params())
-            logger.info(f"RapidOCR PP-OCRv5 模型加载成功 (det_box_thresh={self.det_box_thresh})")
+            logger.info(f"RapidOCR PP-OCRv5 Model loaded successfully (det_box_thresh={self.det_box_thresh})")
         except Exception as e:
-            raise OCRException(f"RapidOCR模型加载失败: {str(e)}", self.get_service_name(), "load_failed")
+            raise OCRException(f"Tải model RapidOCR thất bại: {str(e)}", self.get_service_name(), "load_failed")
 
     def process_image(self, image, params: dict | None = None) -> str:
         """
-        处理单张图像并提取文本
+        Process a single picture and Extract text
 
         Args:
-            image: 图像数据,支持:
-                  - str: 图像文件路径
-                  - PIL.Image: PIL图像对象
-                  - numpy.ndarray: numpy图像数组
-            params: 处理参数 (当前未使用)
+            image: image data,support:
+                  - str: Image file path
+                  - PIL.Image: PIL image object
+                  - numpy.ndarray: numpypicture like array
+            params: Processing parameters (Not currently in use)
 
         Returns:
-            str: 提取的文本内容
+            str: Extracted text content
         """
         self._load_model()
 
         try:
-            # 处理不同类型的输入
+            # Handle different types of input
             if isinstance(image, str):
                 image_path = image
                 cleanup_needed = False
             else:
-                # 创建临时文件
+                # Create temporary files
                 image_path = self._create_temp_image_file(image)
                 cleanup_needed = True
 
             try:
-                # 执行 OCR
+                # Perform OCR
                 start_time = time.time()
                 result = self.ocr(image_path)
                 processing_time = time.time() - start_time
 
-                # 提取文本
+                # Extract text
                 if result.txts:
                     text = "\n".join(result.txts)
                     logger.info(
-                        f"RapidOCR 成功: {os.path.basename(image_path) if isinstance(image, str) else 'temp_image'}"
+                        f"RapidOCR success: {os.path.basename(image_path) if isinstance(image, str) else 'temp_image'}"
                         f" ({processing_time:.2f}s)"
                     )
                     return text
                 else:
-                    logger.warning(f"RapidOCR 未识别到文本: {image_path}")
+                    logger.warning(f"RapidOCR Text not recognized: {image_path}")
                     return ""
 
             finally:
-                # 清理临时文件
+                # Clean temporary files
                 if cleanup_needed and os.path.exists(image_path):
                     try:
                         os.remove(image_path)
                     except Exception as e:
-                        logger.warning(f"临时文件清理失败: {image_path} - {e}")
+                        logger.warning(f"Temporary file cleanup failed: {image_path} - {e}")
 
         except Exception as e:
-            error_msg = f"图像OCR处理失败: {str(e)}"
+            error_msg = f"Image OCR processing failed: {str(e)}"
             logger.error(error_msg)
             raise OCRException(error_msg, self.get_service_name(), "processing_failed")
 
     def _create_temp_image_file(self, image) -> str:
-        """将图像数据保存为临时文件"""
+        """Save image data as temporary file"""
         try:
-            # 使用系统临时目录
+            # Use system temporary directory
             with tempfile.NamedTemporaryFile(mode="wb", suffix=".png", delete=False) as tmp_file:
                 temp_path = tmp_file.name
 
@@ -140,28 +140,28 @@ class RapidOCRParser(BaseDocumentProcessor):
                 elif isinstance(image, np.ndarray):
                     Image.fromarray(image).save(temp_path)
                 else:
-                    raise ValueError("不支持的图像类型,必须是 PIL.Image 或 numpy.ndarray")
+                    raise ValueError("Loại hình ảnh không được hỗ trợ, phải là PIL.Image hoặc numpy.ndarray")
 
                 return temp_path
 
         except Exception as e:
-            raise OCRException(f"临时图像文件创建失败: {str(e)}", self.get_service_name(), "temp_file_error")
+            raise OCRException(f"Tạo tệp hình ảnh tạm thời thất bại: {str(e)}", self.get_service_name(), "temp_file_error")
 
     def process_pdf(self, pdf_path: str, params: dict | None = None) -> str:
         """
-        处理 PDF 文件并提取文本 (流式处理,避免内存占用)
+        Process PDF files and extract text (streaming,Avoid memory usage)
 
         Args:
-            pdf_path: PDF 文件路径
-            params: 处理参数
-                - zoom_x: 横向缩放 (默认 2)
-                - zoom_y: 纵向缩放 (默认 2)
+            pdf_path: PDF document path
+            params: Processing parameters
+                - zoom_x: Horizontal scaling (Default 2)
+                - zoom_y: vertical zoom (Default 2)
 
         Returns:
-            str: 提取的文本
+            str: Extracted text
         """
         if not os.path.exists(pdf_path):
-            raise OCRException(f"PDF 文件不存在: {pdf_path}", self.get_service_name(), "file_not_found")
+            raise OCRException(f"Tệp PDF không tồn tại: {pdf_path}", self.get_service_name(), "file_not_found")
 
         params = params or {}
         zoom_x = params.get("zoom_x", 2)
@@ -172,52 +172,52 @@ class RapidOCRParser(BaseDocumentProcessor):
             pdf_doc = fitz.open(pdf_path)
             total_pages = pdf_doc.page_count
 
-            logger.info(f"开始处理 PDF: {os.path.basename(pdf_path)} ({total_pages} 页)")
+            logger.info(f"Start working with PDFs: {os.path.basename(pdf_path)} ({total_pages} Page)")
 
-            # 流式处理每一页,避免一次性加载所有图片到内存
+            # Stream each page to avoid loading all images into memory at once
             for page_num in range(total_pages):
                 page = pdf_doc[page_num]
 
-                # 转换为图像
+                # Convert to image
                 mat = fitz.Matrix(zoom_x, zoom_y)
                 pix = page.get_pixmap(matrix=mat, alpha=False)
                 img_pil = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
-                # 立即处理,不保存到列表
+                # Process immediately, do not save to list
                 text = self.process_image(img_pil)
                 all_text.append(text)
 
                 if (page_num + 1) % 10 == 0:
-                    logger.info(f"已处理 {page_num + 1}/{total_pages} 页")
+                    logger.info(f"Processed {page_num + 1}/{total_pages} Page")
 
             pdf_doc.close()
 
             result_text = "\n\n".join(all_text)
-            logger.info(f"PDF OCR 完成: {os.path.basename(pdf_path)} - {len(result_text)} 字符")
+            logger.info(f"PDF OCR Finish: {os.path.basename(pdf_path)} - {len(result_text)} character")
             return result_text
 
         except OCRException:
             raise
         except Exception as e:
-            error_msg = f"PDF OCR 处理失败: {str(e)}"
+            error_msg = f"PDF OCR Processing failed: {str(e)}"
             logger.error(error_msg)
             raise OCRException(error_msg, self.get_service_name(), "pdf_processing_failed")
 
     def process_file(self, file_path: str, params: dict | None = None) -> str:
         """
-        处理文件 (PDF 或图像)
+        Process files (PDF or image)
 
         Args:
-            file_path: 文件路径
-            params: 处理参数
+            file_path: document path
+            params: Processing parameters
 
         Returns:
-            str: 提取的文本
+            str: Extracted text
         """
         file_ext = Path(file_path).suffix.lower()
 
         if not self.supports_file_type(file_ext):
-            raise OCRException(f"不支持的文件类型: {file_ext}", self.get_service_name(), "unsupported_file_type")
+            raise OCRException(f"Loại tệp không được hỗ trợ: {file_ext}", self.get_service_name(), "unsupported_file_type")
 
         if file_ext == ".pdf":
             return self.process_pdf(file_path, params)

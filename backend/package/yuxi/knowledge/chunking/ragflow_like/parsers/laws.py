@@ -5,7 +5,7 @@ from typing import Any
 
 from yuxi.knowledge.chunking.ragflow_like import nlp
 
-_ARTICLE_PATTERN = re.compile(r"^(第[零一二三四五六七八九十百千万0-9]+条)[\s　:：]*(.*)$")
+_ARTICLE_PATTERN = re.compile(r"^(No.[zero one two three four five six seven eight nine hundred million 0-9]+strip)[\s　:：]*(.*)$")
 
 
 def _unescape_delimiter(delimiter: str) -> str:
@@ -17,7 +17,7 @@ def _iter_lines(markdown_content: str) -> list[str]:
 
 
 def _normalize_law_line(line: str) -> str:
-    # 法规 markdown 常见的 #、-、** 装饰会干扰层级识别，这里先做轻量归一化。
+    # The common #, -, and ** decorations in markdown will interfere with level recognition. Let’s do lightweight normalization first.
     text = (line or "").strip()
     text = re.sub(r"^#{1,6}\s+", "", text)
     text = re.sub(r"^[-*+]\s+", "", text)
@@ -88,9 +88,9 @@ def _ensure_chunk_token_limit(
     chunks: list[str], chunk_token_num: int, delimiter: str, overlapped_percent: int
 ) -> list[str]:
     """
-    对输出 chunk 做 token 上限保护：
-    1) 先尝试按行用 naive_merge 再切一次；
-    2) 仍超长时才硬切，避免 embeddings 413。
+    Token upper limit protection for output chunk:
+    1) First try to use naive_merge by row and then cut once;
+    2) Cut hard when still extra long to avoid embeddings 413.
     """
     max_tokens = int(chunk_token_num or 0)
     normalized = [chunk.strip() for chunk in chunks if chunk and chunk.strip()]
@@ -142,10 +142,10 @@ def _ensure_chunk_token_limit(
 
 def chunk_markdown(filename: str, markdown_content: str, parser_config: dict[str, Any] | None = None) -> list[str]:
     """
-    法规分块主流程（简化版）：
-    - docx 优先尝试标题树；
-    - 其余格式先做法规文本归一化，再按章/节/条树形切分（depth=3）；
-    - 最后统一执行超长保护。
+    Main process of regulatory block division (simplified version):
+    - docx Try the title tree first;
+    - The rest of the formats are first normalized to the regulatory text, and then divided into chapters./Festival/Strip tree segmentation (depth=3）；
+    - Finally, ultra-long protection is uniformly implemented.
     """
     parser_config = parser_config or {}
 
@@ -168,7 +168,7 @@ def chunk_markdown(filename: str, markdown_content: str, parser_config: dict[str
 
     bull = nlp.bullets_category([s for s, _ in typed_sections])
     if bull == nlp.MARKDOWN_BULLET_GROUP_INDEX:
-        # 归一化后仍命中 markdown 组时，回退到中文法规层级组，避免退化成“按章大块”。
+        # When the markdown group is still hit after normalization, fall back to the Chinese regulations level group to avoid degenerating into "big chunks by chapter".
         bull = 0
 
     merged = nlp.tree_merge(bull, typed_sections, depth=3)

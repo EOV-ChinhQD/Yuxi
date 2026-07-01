@@ -17,18 +17,18 @@ _shared_neo4j_connection_lock = threading.Lock()
 
 def safe_neo4j_label(value: str) -> str:
     if not _SAFE_NEO4J_LABEL_RE.match(value or ""):
-        raise ValueError(f"非法 Neo4j 标签: {value}")
+        raise ValueError(f"Nhãn Neo4j không hợp lệ: {value}")
     return value
 
 
 def neo4j_write(driver, query: Callable) -> Any:
-    """在写事务中执行 Cypher 操作的简写。"""
+    """Shorthand for performing Cypher operations within a write transaction."""
     with driver.session() as session:
         return session.execute_write(query)
 
 
 def neo4j_read(driver, cypher: str, **kwargs) -> list[dict[str, Any]]:
-    """执行只读 Cypher 查询并返回结果列表。"""
+    """Execute a read-only Cypher query and return a list of results."""
     with driver.session() as session:
         result = session.run(cypher, **kwargs)
         return [record.data() for record in result]

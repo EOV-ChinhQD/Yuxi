@@ -16,7 +16,7 @@ async def test_import_workspace_files_uploads_workspace_file_to_minio(tmp_path, 
 
     async def fake_ensure_database_supports_documents(slug: str, operation: str) -> None:
         assert slug == "db_1"
-        assert "文档添加" in operation
+        assert "Documentation added" in operation
 
     async def fake_file_existed_in_db(slug: str, content_hash: str) -> bool:
         assert slug == "db_1"
@@ -66,7 +66,7 @@ async def test_import_workspace_files_rejects_directory(tmp_path, monkeypatch):
         return None
 
     def fake_resolve_workspace_file_path(**_kwargs):
-        raise HTTPException(status_code=400, detail="当前路径不是文件: /folder")
+        raise HTTPException(status_code=400, detail="Đường dẫn hiện tại không phải là một tệp: /folder")
 
     monkeypatch.setattr(
         knowledge_router,
@@ -82,4 +82,4 @@ async def test_import_workspace_files_rejects_directory(tmp_path, monkeypatch):
         )
 
     assert exc_info.value.status_code == 400
-    assert "不是文件" in exc_info.value.detail
+    assert "not a file" in exc_info.value.detail

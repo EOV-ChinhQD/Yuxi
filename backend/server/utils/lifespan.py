@@ -18,8 +18,8 @@ from yuxi.config import config
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """FastAPI lifespan事件管理器"""
-    # 初始化数据库连接
+    """FastAPI lifespan event manager"""
+    # Initialize database connection
     try:
         pg_manager.initialize()
         await pg_manager.create_tables()
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to initialize database during startup: {e}")
 
-    # 确保内置 MCP 服务器定义存在于数据库
+    # Make sure the built-in MCP server definition exists in the database
     try:
         await ensure_builtin_mcp_servers_in_db()
     except Exception as e:
@@ -54,14 +54,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to ensure default agent during startup: {e}")
 
-    # 初始化内置模型供应商配置
+    # Initialize built-in model supplier configuration
     try:
         async with pg_manager.get_async_session_context() as session:
             await ensure_builtin_model_providers_in_db(session)
     except Exception as e:
         logger.error(f"Failed to ensure builtin model providers during startup: {e}")
 
-    # 初始化模型缓存（v2 模型选择使用）
+    # Initialize model cache (used by v2 model selection)
     try:
         from yuxi.models.providers.cache import model_cache
         from yuxi.models.providers.service import get_all_model_providers
@@ -72,7 +72,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to initialize model cache during startup: {e}")
 
-    # 初始化知识库管理器
+    # Initialize the knowledge base manager
     if os.environ.get("LITE_MODE", "").lower() in ("true", "1"):
         logger.info("LITE_MODE enabled, skipping knowledge base initialization")
     else:
@@ -81,14 +81,14 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.error(f"Failed to initialize knowledge base manager: {e}")
 
-    # 预热 Redis（run 队列）
+    # Warm up Redis (run queue)
     try:
         redis = await get_redis_client()
         await redis.ping()
     except Exception as e:
         logger.warning(f"Run queue redis unavailable on startup: {e}")
 
-    # 启动运行时配置同步线程（周期性从 Redis 拉取管理员保存的配置快照）
+    # Start the runtime configuration synchronization thread (which periodically pulls configuration snapshots saved by the administrator from Redis)
     config.start_runtime_sync()
 
     try:
@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to initialize sandbox provider during startup: {e}")
 
     # =========================================================
-    # 2. 核心修复：在这里执行一次 setup()，建完表就拉倒
+    # 2. Core repair: Execute setup() here once, and pull down the table after it is built.
     # =========================================================
     checkpointer = AsyncPostgresSaver(pg_manager.langgraph_pool)
     await checkpointer.setup()

@@ -90,7 +90,7 @@ def test_normalize_presented_artifact_path_rejects_internal_output_files():
         try:
             _normalize_presented_artifact_path(str(output_file), _runtime_with_thread(thread_id))
         except ValueError as exc:
-            assert "工具调用阶段文件" in str(exc)
+            assert "tệp giai đoạn gọi công cụ" in str(exc)
         else:
             raise AssertionError(f"expected ValueError for internal output file under {dir_name}")
 

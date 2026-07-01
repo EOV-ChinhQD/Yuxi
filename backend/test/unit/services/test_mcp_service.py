@@ -74,7 +74,7 @@ async def test_ensure_builtin_mcp_servers_removes_retired_system_server(monkeypa
 async def test_ensure_builtin_mcp_servers_preserves_user_server_with_retired_slug(monkeypatch, mcp_session):
     user_server = MCPServer(
         slug="sequentialthinking",
-        name="用户自定义 MCP",
+        name="User-defined MCP",
         description="user managed",
         transport="streamable_http",
         url="https://example.com/mcp",

@@ -1,4 +1,4 @@
-"""用户数据访问层 - Repository"""
+"""User data access layer - Repository"""
 
 from datetime import UTC
 from datetime import datetime as dt
@@ -12,35 +12,35 @@ from yuxi.storage.postgres.models_business import APIKey, User
 
 
 def _utc_now() -> dt:
-    # 使用 naive datetime 以匹配 PostgreSQL TIMESTAMP WITHOUT TIME ZONE 列
+    # Use naive datetime to match PostgreSQL TIMESTAMP WITHOUT TIME ZONE columns
     return dt.now(UTC).replace(tzinfo=None)
 
 
 class UserRepository:
-    """用户数据访问层"""
+    """User data access layer"""
 
     async def get_by_id(self, id: int) -> User | None:
-        """根据 ID 获取用户"""
+        """Get user based on ID"""
         async with pg_manager.get_async_session_context() as session:
             return await self.get_by_id_with_db(session, id)
 
     async def get_by_id_with_db(self, db: AsyncSession, id: int) -> User | None:
-        """使用指定的 db 根据 ID 获取用户"""
+        """Get users based on ID using specified db"""
         result = await db.execute(select(User).where(User.id == id))
         return result.scalar_one_or_none()
 
     async def get_by_uid(self, uid: str) -> User | None:
-        """根据 uid 获取用户"""
+        """Get user based on uid"""
         async with pg_manager.get_async_session_context() as session:
             return await self.get_by_uid_with_db(session, uid)
 
     async def get_by_uid_with_db(self, db: AsyncSession, uid: str) -> User | None:
-        """使用指定的 db 获取用户"""
+        """Get users using specified db"""
         result = await db.execute(select(User).where(User.uid == uid))
         return result.scalar_one_or_none()
 
     async def get_by_phone(self, phone: str) -> User | None:
-        """根据手机号获取用户"""
+        """Get users based on mobile phone number"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(User).where(User.phone_number == phone))
             return result.scalar_one_or_none()
@@ -48,7 +48,7 @@ class UserRepository:
     async def list_users(
         self, skip: int = 0, limit: int = 100, department_id: int | None = None, role: str | None = None
     ) -> list[User]:
-        """获取用户列表"""
+        """Get user list"""
         async with pg_manager.get_async_session_context() as session:
             query = select(User).where(User.is_deleted == 0)
             if department_id is not None:
@@ -61,8 +61,8 @@ class UserRepository:
 
     async def list_with_department(
         self, skip: int = 0, limit: int = 100, department_id: int | None = None, role: str | None = None
-    ) -> Annotated[list[tuple[User, str | None]], "用户列表，包含部门名称"]:
-        """获取用户列表，包含部门名称"""
+    ) -> Annotated[list[tuple[User, str | None]], "User list, including department names"]:
+        """Get a list of users, including department names"""
         async with pg_manager.get_async_session_context() as session:
             from yuxi.storage.postgres.models_business import Department
 
@@ -80,7 +80,7 @@ class UserRepository:
             return list(result.all())
 
     async def create(self, data: dict[str, Any]) -> User:
-        """创建用户"""
+        """Create user"""
         async with pg_manager.get_async_session_context() as session:
             user = User(**data)
             session.add(user)
@@ -89,7 +89,7 @@ class UserRepository:
         return user
 
     async def update(self, id: int, data: dict[str, Any]) -> User | None:
-        """更新用户"""
+        """Update user"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(User).where(User.id == id, User.is_deleted == 0))
             user = result.scalar_one_or_none()
@@ -101,7 +101,7 @@ class UserRepository:
         return user
 
     async def soft_delete(self, id: int, username: str | None = None, phone_number: str | None = None) -> bool:
-        """软删除用户"""
+        """Soft delete user"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(User).where(User.id == id, User.is_deleted == 0))
             user = result.scalar_one_or_none()
@@ -114,7 +114,7 @@ class UserRepository:
                 import hashlib
 
                 hash_suffix = hashlib.sha256(user.uid.encode()).hexdigest()[:4]
-                user.username = f"已注销用户-{hash_suffix}"
+                user.username = f"Logged out user-{hash_suffix}"
             if phone_number:
                 user.phone_number = None
             api_key_result = await session.execute(select(APIKey).where(APIKey.user_id == user.id))
@@ -123,19 +123,19 @@ class UserRepository:
         return True
 
     async def exists_by_uid(self, uid: str) -> bool:
-        """检查 uid 是否存在"""
+        """Check if uid exists"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(User.id).where(User.uid == uid))
             return result.scalar_one_or_none() is not None
 
     async def exists_by_phone(self, phone: str) -> bool:
-        """检查手机号是否存在"""
+        """Check if mobile phone number exists"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(User.id).where(User.phone_number == phone))
             return result.scalar_one_or_none() is not None
 
     async def count(self, department_id: int | None = None) -> int:
-        """统计用户数量"""
+        """Count the number of users"""
         async with pg_manager.get_async_session_context() as session:
             query = select(func.count(User.id)).where(User.is_deleted == 0)
             if department_id is not None:
@@ -144,13 +144,13 @@ class UserRepository:
             return result.scalar() or 0
 
     async def get_all_uids(self) -> list[str]:
-        """获取所有 uid"""
+        """Get all uids"""
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(User.uid))
             return [uid for (uid,) in result.all()]
 
     async def get_admin_count_in_department(self, department_id: int, exclude_user_id: int | None = None) -> int:
-        """统计部门中管理员数量"""
+        """Number of administrators in the statistics department"""
         async with pg_manager.get_async_session_context() as session:
             query = select(func.count(User.id)).where(
                 User.department_id == department_id, User.role == "admin", User.is_deleted == 0

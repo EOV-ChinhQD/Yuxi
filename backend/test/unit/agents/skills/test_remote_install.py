@@ -137,7 +137,7 @@ async def test_install_remote_skill_rejects_missing_remote_skill(monkeypatch: py
 
     monkeypatch.setattr(svc, "_run_skills_cli", fake_run_skills_cli)
 
-    with pytest.raises(ValueError, match="不存在 skill"):
+    with pytest.raises(ValueError, match="Không tồn tại skill"):
         await svc.install_remote_skill(
             None,
             source="anthropics/skills",
@@ -229,7 +229,7 @@ async def test_install_remote_skills_batch_skips_missing(monkeypatch: pytest.Mon
 
     assert len(results) == 2
     assert results[0] == {"slug": "frontend-design", "success": True}
-    assert results[1] == {"slug": "nonexistent-skill", "success": False, "error": "skills CLI 未生成预期的技能目录"}
+    assert results[1] == {"slug": "nonexistent-skill", "success": False, "error": "skills CLI Expected skills catalog not generated"}
 
 
 @pytest.mark.asyncio
@@ -268,7 +268,7 @@ async def test_install_remote_skills_batch_partial_failure(monkeypatch: pytest.M
 
     assert len(results) == 3
     assert results[0] == {"slug": "skill-a", "success": True}
-    assert results[1] == {"slug": "skill-b", "success": False, "error": "skills CLI 未生成预期的技能目录"}
+    assert results[1] == {"slug": "skill-b", "success": False, "error": "skills CLI Expected skills catalog not generated"}
     assert results[2] == {"slug": "skill-c", "success": True}
 
 
@@ -303,8 +303,8 @@ async def test_install_remote_skills_batch_handles_invalid_names(monkeypatch: py
     assert len(results) == 3
     assert results[0] == {"slug": "valid-skill", "success": True}
     assert results[1]["success"] is False
-    assert "不合法" in results[1]["error"]
-    assert results[2] == {"slug": "another-valid", "success": False, "error": "skills CLI 未生成预期的技能目录"}
+    assert "illegal" in results[1]["error"]
+    assert results[2] == {"slug": "another-valid", "success": False, "error": "skills CLI Expected skills catalog not generated"}
 
     # Only valid skills passed to the CLI
     assert len(calls) == 1

@@ -418,7 +418,7 @@ async def process_agent_run(ctx, run_id: str):
                             run_id,
                             "interrupted",
                             error_type=status,
-                            error_message=first_question or "需要用户回答问题",
+                            error_message=first_question or "Cần người dùng trả lời câu hỏi",
                         )
                         await _append_end_event(run_id, "interrupted", thread_id=thread_id, payload={"chunk": chunk})
                         terminal_set = True
@@ -434,14 +434,14 @@ async def process_agent_run(ctx, run_id: str):
 
     except asyncio.CancelledError:
         await writer.flush()
-        cancel_chunk = {"status": "interrupted", "message": "对话已取消", "request_id": request_id}
+        cancel_chunk = {"status": "interrupted", "message": "Trò chuyện đã bị hủy", "request_id": request_id}
         await append_run_event(
             run_id,
             "interrupt",
             {"reason": "cancelled", "chunk": cancel_chunk},
             thread_id=thread_id,
         )
-        await mark_run_terminal(run_id, "cancelled", error_type="cancelled", error_message="对话已取消")
+        await mark_run_terminal(run_id, "cancelled", error_type="cancelled", error_message="Trò chuyện đã bị hủy")
         await _append_end_event(run_id, "cancelled", thread_id=thread_id, payload={"chunk": cancel_chunk})
         logger.info(f"Run cancelled: {run_id}")
     except Exception as e:

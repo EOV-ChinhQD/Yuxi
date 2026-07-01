@@ -6,25 +6,25 @@ from dataclasses import dataclass, field
 
 BULLET_PATTERN = [
     [
-        r"第[零一二三四五六七八九十百0-9]+(分?编|部分)",
-        r"第[零一二三四五六七八九十百0-9]+章",
-        r"第[零一二三四五六七八九十百0-9]+节",
-        r"第[零一二三四五六七八九十百0-9]+条",
-        r"[\(（][零一二三四五六七八九十百]+[\)）]",
+        r"No.[zero one two three four five six seven eight nine hundred 0-9]+(point?compile|part)",
+        r"No.[zero one two three four five six seven eight nine hundred 0-9]+chapter",
+        r"No.[zero one two three four five six seven eight nine hundred 0-9]+Festival",
+        r"No.[zero one two three four five six seven eight nine hundred 0-9]+strip",
+        r"[\(（][zero one two three four five six seven eight nine hundred]+[\)）]",
     ],
     [
-        r"第[0-9]+章",
-        r"第[0-9]+节",
+        r"No.[0-9]+chapter",
+        r"No.[0-9]+Festival",
         r"[0-9]{,2}[\. 、]",
         r"[0-9]{,2}\.[0-9]{,2}[^a-zA-Z/%~-]",
         r"[0-9]{,2}\.[0-9]{,2}\.[0-9]{,2}",
         r"[0-9]{,2}\.[0-9]{,2}\.[0-9]{,2}\.[0-9]{,2}",
     ],
     [
-        r"第[零一二三四五六七八九十百0-9]+章",
-        r"第[零一二三四五六七八九十百0-9]+节",
-        r"[零一二三四五六七八九十百]+[ 、]",
-        r"[\(（][零一二三四五六七八九十百]+[\)）]",
+        r"No.[zero one two three four five six seven eight nine hundred 0-9]+chapter",
+        r"No.[zero one two three four five six seven eight nine hundred 0-9]+Festival",
+        r"[zero one two three four five six seven eight nine hundred]+[ 、]",
+        r"[\(（][zero one two three four five six seven eight nine hundred]+[\)）]",
         r"[\(（][0-9]{,2}[\)）]",
     ],
     [
@@ -47,21 +47,15 @@ MARKDOWN_BULLET_GROUP_INDEX = 4
 
 
 def count_tokens(text: str) -> int:
-    """近似 token 计数，避免引入额外依赖。"""
     if not text:
         return 0
-    # 英文单词 + 数字 + CJK 单字
     parts = re.findall(r"[A-Za-z0-9_]+|[\u4e00-\u9fff]", text)
     return max(1, len(parts)) if text.strip() else 0
 
 
 def hard_split_by_token_limit(text: str, chunk_token_num: int, hard_limit_token_num: int | None = None) -> list[str]:
-    """将文本按 token 上限硬切，用于 naive_merge 之后的兜底保护。
 
-    hard_limit_token_num 只在调用方显式传入时生效，用于允许略超目标长度的块
-    保持完整；默认保持严格不超过 chunk_token_num 的历史行为。
-    """
-    token_iter = list(re.finditer(r"[A-Za-z0-9_]+|[一-鿿]", text or ""))
+    token_iter = list(re.finditer(r"[A-Za-z0-9_]+|[\u4e00-\u9fa5]", text or ""))
     if not token_iter:
         cleaned = (text or "").strip()
         return [cleaned] if cleaned else []
@@ -130,7 +124,7 @@ def is_english(texts: str | list[str]) -> bool:
 def not_bullet(line: str) -> bool:
     patt = [
         r"0",
-        r"[0-9]+ +[0-9~个只-]",
+        r"[0-9]+ +[0-9~only-]",
         r"[0-9]+\.{2,}",
     ]
     return any(re.match(p, line) for p in patt)
@@ -144,17 +138,17 @@ def is_probable_heading_line(line: str) -> bool:
     if re.match(r"^#{1,6}\s+\S", text):
         return True
 
-    # 表格/HTML 残留通常不是标题。
+    # Table/HTML remnants are usually not headers.
     if re.search(r"</?(table|tr|td|th|caption|tbody|thead)[^>]*>", text, flags=re.IGNORECASE):
         return False
 
-    # 超长行基本是正文或条款，不是章节标题。
+    # Extra long lines are basically text or clauses, not chapter titles.
     if len(text) > 96:
         return False
     if count_tokens(text) > 72:
         return False
 
-    # 标题前段通常不会出现明显句号/逗号；出现则大概率是正文。
+    # There is usually no obvious period/comma in the first paragraph of the title; if it does, it is most likely in the main text.
     if re.search(r"[，。；！？!?:：]", text[:24]):
         return False
 
@@ -173,7 +167,7 @@ def _is_mid_sentence_bullet(line: str) -> bool:
         return False
 
     marker = re.search(
-        r"([一二三四五六七八九十百]+、|[\(（][一二三四五六七八九十百]+[\)）]|[0-9]{1,2}[\.、])",
+        r"([One, two, three, four, five, six, seven, eight, nine hundred]+、|[\(（][One, two, three, four, five, six, seven, eight, nine hundred]+[\)）]|[0-9]{1,2}[\.、])",
         text,
     )
     if not marker:
@@ -190,7 +184,7 @@ def bullets_category(sections: list[str]) -> int:
     hits: list[float] = [0.0] * len(BULLET_PATTERN)
 
     def bullet_weight(group_idx: int, line: str) -> float:
-        # 对 markdown 标题候选增加权重，避免“正文里的 一、/（一）”压过真正的 # 标题层级。
+        # Add weight to markdown title candidates to prevent "one, / (one) in the text" from overpowering the real # title level.
         if group_idx != MARKDOWN_BULLET_GROUP_INDEX:
             return 1.0
 
@@ -237,7 +231,7 @@ def remove_contents_table(sections: list[str] | list[tuple[str, str]], eng: bool
     i = 0
     while i < len(sections):
         line = re.sub(r"( |　|\u3000)+", "", _get_text(sections[i]).split("@@")[0], flags=re.IGNORECASE)
-        if not re.match(r"(contents|目录|目次|tableofcontents|致谢|acknowledge)$", line, flags=re.IGNORECASE):
+        if not re.match(r"(contents|Table of contents|Table of contents|tableofcontents|Acknowledgments|acknowledge)$", line, flags=re.IGNORECASE):
             i += 1
             continue
 
@@ -293,7 +287,7 @@ def make_colon_as_title(sections: list[str] | list[tuple[str, str]]) -> list[str
 
 
 def not_title(text: str) -> bool:
-    if re.match(r"第[零一二三四五六七八九十百0-9]+条", text):
+    if re.match(r"No.[zero one two three four five six seven eight nine hundred 0-9]+strip", text):
         return False
     if len(text.split()) > 12 or (" " not in text and len(text) >= 32):
         return True

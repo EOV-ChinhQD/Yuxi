@@ -19,7 +19,7 @@ class FakeKnowledgeBaseRepository:
             return None
         return SimpleNamespace(
             kb_id="kb_1",
-            name="知识库",
+            name="knowledge base",
             description="desc",
             kb_type="milvus",
             embedding_model_spec="embedding:model",
@@ -44,7 +44,7 @@ class FakeKnowledgeFileRepository:
                 file_id="folder_1",
                 kb_id="kb_1",
                 parent_id=None,
-                filename="资料",
+                filename="material",
                 file_type=None,
                 status="done",
                 is_folder=True,
@@ -180,15 +180,15 @@ async def test_list_document_files_returns_lightweight_paginated_items():
 async def test_list_document_files_keeps_virtual_folder_contract():
     manager = KnowledgeBaseManager("/tmp/yuxi-test")
     virtual_record = SimpleNamespace(
-        file_id="__virtual_folder__:root:资料/",
+        file_id="__virtual_folder__:root:material/",
         kb_id="kb_1",
         parent_id=None,
-        filename="资料",
+        filename="material",
         file_type="folder",
         status="done",
         is_folder=True,
         is_virtual_folder=True,
-        path_prefix="资料/",
+        path_prefix="material/",
         virtual_children_count=3,
         path=None,
         minio_url=None,
@@ -202,7 +202,7 @@ async def test_list_document_files_keeps_virtual_folder_contract():
 
     assert item["is_folder"] is True
     assert item["is_virtual_folder"] is True
-    assert item["path_prefix"] == "资料/"
+    assert item["path_prefix"] == "material/"
     assert item["has_children"] is True
     assert item["children_count"] == 3
 

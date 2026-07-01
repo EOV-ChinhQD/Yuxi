@@ -10,11 +10,11 @@ DIFY_REQUIRED_PARAMS = ("dify_api_url", "dify_token", "dify_dataset_id")
 
 
 class DifyKB(ReadOnlyConnectors):
-    """基于 Dify Dataset Retrieve API 的只读检索知识库实现"""
+    """Implementation of read-only retrieval knowledge base based on Dify Dataset Retrieve API"""
 
     kb_type = "dify"
     name = "Dify"
-    description = "连接 Dify Dataset 的只读检索知识库"
+    description = "Connect to Dify Dataset's read-only search knowledge base"
 
     def __init__(self, work_dir: str, **kwargs):
         del kwargs
@@ -29,22 +29,22 @@ class DifyKB(ReadOnlyConnectors):
                     "label": "Dify API URL",
                     "type": "text",
                     "required": True,
-                    "placeholder": "例如: https://api.dify.ai/v1",
-                    "description": "Dify API 地址，必须以 /v1 结尾",
+                    "placeholder": "For example: https://api.dify.ai/v1",
+                    "description": "Dify API address, must end with /v1 ending",
                 },
                 {
                     "key": "dify_token",
                     "label": "Dify Token",
                     "type": "password",
                     "required": True,
-                    "placeholder": "请输入 Dify API Token",
+                    "placeholder": "Please enter Dify API Token",
                 },
                 {
                     "key": "dify_dataset_id",
                     "label": "Dataset ID",
                     "type": "text",
                     "required": True,
-                    "placeholder": "请输入 Dify dataset_id",
+                    "placeholder": "Please enter Dify dataset_id",
                 },
             ]
         }
@@ -54,13 +54,13 @@ class DifyKB(ReadOnlyConnectors):
         params = dict(additional_params or {})
         missing_fields = [field for field in DIFY_REQUIRED_PARAMS if not str(params.get(field) or "").strip()]
         if missing_fields:
-            raise ValueError(f"Dify 参数缺失: {', '.join(missing_fields)}")
+            raise ValueError(f"Thiếu tham số Dify: {', '.join(missing_fields)}")
 
         params["dify_api_url"] = str(params.get("dify_api_url") or "").strip()
         params["dify_token"] = str(params.get("dify_token") or "").strip()
         params["dify_dataset_id"] = str(params.get("dify_dataset_id") or "").strip()
         if not params["dify_api_url"].endswith("/v1"):
-            raise ValueError("Dify api_url 必须以 /v1 结尾")
+            raise ValueError("Dify api_url phải kết thúc bằng /v1")
         return params
 
     async def aquery(self, query_text: str, kb_id: str, agent_call: bool = False, **kwargs) -> list[dict]:
@@ -95,7 +95,7 @@ class DifyKB(ReadOnlyConnectors):
             "retrieval_model": {
                 "search_method": search_method,
                 "top_k": top_k,
-                # 某些 Dify 部署版本会直接读取该字段，缺失时抛 KeyError
+                # Some Dify deployment versions will directly read this field and throw a KeyError if it is missing.
                 "reranking_enable": False,
                 "score_threshold_enabled": score_threshold_enabled,
             },
@@ -110,7 +110,7 @@ class DifyKB(ReadOnlyConnectors):
             response_json = await self._request_dify(client_payload=payload, request_url=request_url, headers=headers)
         except Exception as e:  # noqa: BLE001
             logger.error(f"Dify query failed for kb_id={kb_id}: {e}, {traceback.format_exc()}")
-            # 一些 Dify 部署版本对 retrieval_model 兼容性较差，失败时降级为仅 query 请求重试一次
+            # Some Dify deployment versions have poor compatibility with retrieval_model and are downgraded to only query requests to retry once upon failure.
             try:
                 response_json = await self._request_dify(
                     client_payload={"query": query_text},
@@ -177,41 +177,41 @@ class DifyKB(ReadOnlyConnectors):
         options = [
             {
                 "key": "search_mode",
-                "label": "检索模式",
+                "label": "Search mode",
                 "type": "select",
                 "default": "vector",
                 "options": [
-                    {"value": "vector", "label": "向量检索", "description": "映射为 semantic_search"},
-                    {"value": "keyword", "label": "关键词检索", "description": "映射为 keyword_search"},
-                    {"value": "hybrid", "label": "混合检索", "description": "映射为 hybrid_search"},
+                    {"value": "vector", "label": "vector search", "description": "Maps to semantic_search"},
+                    {"value": "keyword", "label": "Keyword search", "description": "Maps to keyword_search"},
+                    {"value": "hybrid", "label": "Hybrid search", "description": "Maps to hybrid_search"},
                 ],
-                "description": "Dify 检索方法映射",
+                "description": "Dify Retrieval method mapping",
             },
             {
                 "key": "final_top_k",
-                "label": "最终返回 Chunk 数",
+                "label": "Define collection Schema",
                 "type": "number",
                 "default": 10,
                 "min": 1,
                 "max": 100,
-                "description": "映射为 Dify retrieval_model.top_k",
+                "description": "Map to Dify retrieval_model.top_k",
             },
             {
                 "key": "score_threshold_enabled",
-                "label": "启用分数阈值",
+                "label": "Enable score threshold",
                 "type": "boolean",
                 "default": False,
-                "description": "映射为 Dify retrieval_model.score_threshold_enabled",
+                "description": "Map to Dify retrieval_model.score_threshold_enabled",
             },
             {
                 "key": "similarity_threshold",
-                "label": "分数阈值（0-1）",
+                "label": "score threshold (0-1）",
                 "type": "number",
                 "default": 0.0,
                 "min": 0.0,
                 "max": 1.0,
                 "step": 0.1,
-                "description": "映射为 Dify retrieval_model.score_threshold",
+                "description": "Map to Dify retrieval_model.score_threshold",
             },
         ]
         return {"type": "dify", "options": options}

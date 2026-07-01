@@ -287,7 +287,7 @@ async def test_find_kb_document_rejects_dify(monkeypatch) -> None:
         runtime=runtime,
     )
 
-    assert "Dify 知识库" in result
+    assert "Kho kiến thức Dify" in result
 
 
 @pytest.mark.asyncio
@@ -364,7 +364,7 @@ async def test_open_kb_document_rejects_invisible_resource(monkeypatch) -> None:
     runtime = SimpleNamespace(context=SimpleNamespace())
     result = await _run_open_kb_document(kb_id="db-1", file_id="file-1", runtime=runtime)
 
-    assert "不存在或当前会话未启用" in result
+    assert "không tồn tại hoặc chưa được bật" in result
 
 
 @pytest.mark.asyncio
@@ -374,14 +374,14 @@ async def test_open_kb_document_requires_markdown_content(monkeypatch) -> None:
 
     async def _fake_open_file_content(kb_id: str, file_id: str, offset: int = 0, limit: int = 1800):
         del kb_id, file_id, offset, limit
-        raise Exception("文件 file-1 没有解析后的 Markdown 内容")
+        raise Exception("Tệp file-1 không có nội dung Markdown sau khi phân tích")
 
     monkeypatch.setattr(tools.knowledge_base, "open_file_content", _fake_open_file_content)
 
     runtime = SimpleNamespace(context=SimpleNamespace())
     result = await _run_open_kb_document(kb_id="db-1", file_id="file-1", runtime=runtime)
 
-    assert "没有解析后的 Markdown 内容" in result
+    assert "No parsed Markdown content" in result
 
 
 def _search_file_callable():
@@ -399,7 +399,7 @@ async def test_search_file_requires_kb_name_or_query(monkeypatch) -> None:
     runtime = SimpleNamespace(context=SimpleNamespace())
     result = await _run_search_file(runtime=runtime)
 
-    assert "不能同时为空" in result
+    assert "không được để trống cả hai" in result
 
 
 @pytest.mark.asyncio
@@ -542,12 +542,12 @@ async def test_search_file_rejects_invisible_kb(monkeypatch) -> None:
     runtime = SimpleNamespace(context=SimpleNamespace())
     result = await _run_search_file(kb_name="FAQ", query="test", runtime=runtime)
 
-    assert "不存在或当前会话未启用" in result
+    assert "không tồn tại hoặc chưa được bật" in result
 
 
 @pytest.mark.asyncio
 async def test_search_file_total_reflects_full_set_not_page(monkeypatch) -> None:
-    """total/has_more 必须基于全量文件，而非按 limit/offset 截断的窗口。"""
+    """total/has_more Must be based on the full file, not by limit/offset Truncated window."""
     monkeypatch.setattr(tools, "_resolve_visible_knowledge_bases_for_query", _fake_visible_kbs)
 
     from types import SimpleNamespace as SN
@@ -566,7 +566,7 @@ async def test_search_file_total_reflects_full_set_not_page(monkeypatch) -> None
     ]
 
     async def _fake_list_by_kb_id_after(self, kb_id, *, after_file_id=None, limit=500, files_only=False):
-        # 真实仓储会按 limit 截断；此 mock 同样遵守 limit，以暴露按 limit+offset 取数导致的 total 失真。
+        # The real warehouse will be truncated according to limit; this mock also respects limit to expose the total distortion caused by fetching according to limit+offset.
         return fake_files[:limit]
 
     from yuxi.repositories.knowledge_file_repository import KnowledgeFileRepository

@@ -12,11 +12,11 @@ from yuxi.utils.logging_config import logger
 
 TaskCoroutine = Callable[["TaskContext"], Awaitable[Any]]
 TERMINAL_STATUSES = {"success", "failed", "cancelled"}
-# 纯进度推进时，进度增量小于该阈值则只更新内存、不落库（前端读内存，不受影响）
+# When pure progress is advanced, if the progress increment is less than this threshold, only the memory is updated and the library is not dropped (the front-end reads the memory and is not affected)
 PROGRESS_PERSIST_DELTA = 2.0
-# 内存与数据库各保留最近多少条终态任务，超出的自动清理
+# The memory and database each retain the most recent final tasks, and any excess tasks will be automatically cleared.
 MAX_TERMINAL_TASKS = 200
-# 哨兵：区分「未传参」与「显式传入 None」，使 result/error 可被清空
+# Sentinel: distinguish between "no parameters passed" and "explicitly passed None" so that result/error can be cleared
 _UNSET: Any = object()
 
 
@@ -108,7 +108,7 @@ class Tasker:
         self._workers: list[asyncio.Task[Any]] = []
         self._started = False
         self._repo = TaskRepository()
-        # 记录每个任务上次落库时的进度，用于进度节流
+        # Record the progress of each task when it was last dropped into the library for progress throttling
         self._last_persisted_progress: dict[str, float] = {}
 
     async def start(self) -> None:
@@ -265,7 +265,7 @@ class Tasker:
                         await self._mark_cancelled(task_id, "Task was cancelled before execution")
                         continue
                     await self._update_task(
-                        task_id, status="running", progress=0.0, message="任务开始执行", started_at=utc_isoformat()
+                        task_id, status="running", progress=0.0, message="Nhiệm vụ bắt đầu", started_at=utc_isoformat()
                     )
                     context = TaskContext(self, task_id, task.payload)
                     try:
@@ -277,19 +277,19 @@ class Tasker:
                             task_id,
                             status="success",
                             progress=100.0,
-                            message="任务已完成",
+                            message="Nhiệm vụ đã hoàn thành",
                             result=result,
                             completed_at=utc_isoformat(),
                         )
                     except asyncio.CancelledError:
-                        await self._mark_cancelled(task_id, "任务被取消")
+                        await self._mark_cancelled(task_id, "Task canceled")
                     except Exception as exc:  # noqa: BLE001
                         logger.exception("Task {} failed: {}", task_id, exc)
                         await self._update_task(
                             task_id,
                             status="failed",
                             progress=100.0,
-                            message="任务执行失败",
+                            message="Nhiệm vụ thực thi thất bại",
                             error=str(exc),
                             completed_at=utc_isoformat(),
                         )
@@ -346,7 +346,7 @@ class Tasker:
                 task.completed_at = completed_at
             task.updated_at = utc_isoformat()
 
-            # 仅进度推进的高频更新做节流；状态切换、结果、错误、起止时间一律立即落库
+            # Only high-frequency updates of progress are throttled; status switching, results, errors, and start and end times are all immediately dropped into the library.
             only_progress = (
                 status is None and result is _UNSET and error is _UNSET and started_at is None and completed_at is None
             )
@@ -362,7 +362,7 @@ class Tasker:
         return bool(task and task.cancel_requested)
 
     def _collect_stale_terminal_ids(self) -> list[str]:
-        """从内存中剔除超出保留上限的旧终态任务，返回需要从数据库删除的 id（调用方须持锁）。"""
+        """Remove old final tasks that exceed the retention limit from memory and return the ID that needs to be deleted from the database (the caller must hold the lock)."""
         terminal = [task for task in self._tasks.values() if task.status in TERMINAL_STATUSES]
         if len(terminal) <= MAX_TERMINAL_TASKS:
             return []
@@ -387,8 +387,8 @@ class Tasker:
         for record in records:
             task = Task.from_dict(record.to_dict())
             if task.status not in TERMINAL_STATUSES:
-                # 进程重启后内存队列已丢失，无法续跑，统一标记为失败
-                task.message = "服务重启时任务中断" if task.status == "running" else "服务重启时任务未继续执行"
+                # After the process is restarted, the memory queue has been lost and cannot be continued, and is marked as failed.
+                task.message = "Task interrupted when service restarts" if task.status == "running" else "The task did not continue execution when the service was restarted"
                 task.status = "failed"
                 task.updated_at = utc_isoformat()
                 await self._persist_task(task)

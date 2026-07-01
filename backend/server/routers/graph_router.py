@@ -23,7 +23,7 @@ async def _get_graph_service(kb_id: str) -> MilvusGraphService:
 
 @graph.get("/list")
 async def get_graphs(current_user: User = Depends(get_admin_user)):
-    """获取支持图谱能力的 Milvus 知识库列表"""
+    """Get a list of Milvus knowledge bases that support graph capabilities"""
     try:
         databases = (await knowledge_base.get_databases_by_uid(current_user.uid)).get("databases", [])
         graphs = []
@@ -49,14 +49,14 @@ async def get_graphs(current_user: User = Depends(get_admin_user)):
 
 @graph.get("/subgraph")
 async def get_subgraph(
-    kb_id: str = Query(..., description="Milvus 知识库ID"),
-    node_label: str = Query("*", description="节点标签或查询关键词"),
-    max_depth: int = Query(2, description="最大深度", ge=1, le=5),
-    max_nodes: int = Query(100, description="最大节点数", ge=1, le=1000),
-    exclude_chunk: bool = Query(False, description="是否排除 Chunk 节点"),
+    kb_id: str = Query(..., description="ID kho kiến thức Milvus"),
+    node_label: str = Query("*", description="Nhãn nút hoặc từ khóa truy vấn"),
+    max_depth: int = Query(2, description="Độ sâu tối đa", ge=1, le=5),
+    max_nodes: int = Query(100, description="Số lượng nút tối đa", ge=1, le=1000),
+    exclude_chunk: bool = Query(False, description="Có loại trừ nút Chunk hay không"),
     current_user: User = Depends(get_admin_user),
 ):
-    """查询 Milvus 知识库图谱子图"""
+    """Query Milvus knowledge base graph subgraph"""
     try:
         logger.info(f"Querying subgraph - kb_id: {kb_id}, label: {node_label}")
         service = await _get_graph_service(kb_id)
@@ -76,10 +76,10 @@ async def get_subgraph(
 
 @graph.get("/labels")
 async def get_graph_labels(
-    kb_id: str = Query(..., description="Milvus 知识库ID"),
+    kb_id: str = Query(..., description="ID kho kiến thức Milvus"),
     current_user: User = Depends(get_admin_user),
 ):
-    """获取 Milvus 知识库图谱的所有标签"""
+    """Get all tags of Milvus knowledge base graph"""
     try:
         service = await _get_graph_service(kb_id)
         labels = await service.get_labels()
@@ -93,10 +93,10 @@ async def get_graph_labels(
 
 @graph.get("/stats")
 async def get_graph_stats(
-    kb_id: str = Query(..., description="Milvus 知识库ID"),
+    kb_id: str = Query(..., description="ID kho kiến thức Milvus"),
     current_user: User = Depends(get_admin_user),
 ):
-    """获取 Milvus 知识库图谱统计信息"""
+    """Get Milvus knowledge base graph statistics"""
     try:
         service = await _get_graph_service(kb_id)
         stats_data = await service.get_stats()

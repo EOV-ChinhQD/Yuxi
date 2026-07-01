@@ -1,8 +1,8 @@
-# toolkits 包
-# 触发各模块的 @tool 装饰器执行，自动注册工具
+# toolkits package
+# Trigger the @tool decorator execution of each module and automatically register tools
 from . import buildin, debug
 
-# 工具获取函数
+# Tool get function
 from .kbs import get_common_kb_tools
 from .registry import (
     ToolExtraMetadata,
@@ -19,7 +19,7 @@ __all__ = [
     "ToolExtraMetadata",
     "tool",
     "get_common_kb_tools",
-    # 触发各模块的 @tool 装饰器执行，自动注册工具
+    # Trigger the @tool decorator execution of each module and automatically register tools
     "buildin",
     "debug",
 ]

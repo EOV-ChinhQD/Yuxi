@@ -27,7 +27,9 @@ def _coerce_glob_result(result) -> GlobResult:
 
 
 class CustomCompositeBackend(CompositeBackend):
-    """修复 glob 路由逻辑的 CompositeBackend。"""
+    """
+    CompositeBackend đã sửa lỗi logic định tuyến glob。
+    """
 
     def glob(self, pattern: str, path: str = "/") -> GlobResult:
         backend, backend_path, route_prefix = _route_for_path(

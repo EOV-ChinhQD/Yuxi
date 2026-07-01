@@ -20,7 +20,9 @@ from yuxi.agents.skills.service import get_skills_root_dir, is_valid_skill_slug
 
 
 class SelectedSkillsReadonlyBackend(FilesystemBackend):
-    """只读 skills backend，仅暴露选中的技能目录。"""
+    """
+    Backend chỉ đọc kỹ năng đã chọn, chỉ phơi bày thư mục kỹ năng đã chọn。
+    """
 
     def __init__(self, *, selected_slugs: list[str] | None):
         super().__init__(root_dir=get_skills_root_dir(), virtual_mode=True)

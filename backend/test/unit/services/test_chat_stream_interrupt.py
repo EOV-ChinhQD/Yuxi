@@ -1,4 +1,4 @@
-"""测试 chat_service 中的 interrupt 相关函数"""
+"""Test the interrupt related functions in chat_service"""
 
 import json
 import sys
@@ -20,7 +20,7 @@ from yuxi.utils.question_utils import normalize_options
 
 
 class TestNormalizeInterruptOptions:
-    """测试 _normalize_interrupt_options 函数"""
+    """Test the _normalize_interrupt_options function"""
 
     def test_empty_input(self):
         assert normalize_options(None) == []
@@ -28,32 +28,32 @@ class TestNormalizeInterruptOptions:
 
     def test_dict_options(self):
         raw = [
-            {"label": "选项1", "value": "option1"},
-            {"label": "选项2", "value": "option2"},
+            {"label": "Option 1", "value": "option1"},
+            {"label": "Option 2", "value": "option2"},
         ]
         result = normalize_options(raw)
         assert len(result) == 2
-        assert result[0] == {"label": "选项1", "value": "option1"}
-        assert result[1] == {"label": "选项2", "value": "option2"}
+        assert result[0] == {"label": "Option 1", "value": "option1"}
+        assert result[1] == {"label": "Option 2", "value": "option2"}
 
     def test_string_options(self):
-        raw = ["选项1", "选项2", "选项3"]
+        raw = ["Option 1", "Option 2", "Option 3"]
         result = normalize_options(raw)
         assert len(result) == 3
-        assert result[0] == {"label": "选项1", "value": "选项1"}
+        assert result[0] == {"label": "Option 1", "value": "Option 1"}
 
     def test_mixed_options(self):
-        raw = [{"label": "选项1", "value": "option1"}, "选项2"]
+        raw = [{"label": "Option 1", "value": "option1"}, "Option 2"]
         result = normalize_options(raw)
         assert len(result) == 2
-        assert result[0] == {"label": "选项1", "value": "option1"}
-        assert result[1] == {"label": "选项2", "value": "选项2"}
+        assert result[0] == {"label": "Option 1", "value": "option1"}
+        assert result[1] == {"label": "Option 2", "value": "Option 2"}
 
     def test_invalid_options(self):
-        raw = [{"label": "只有label"}, {}, "  "]
+        raw = [{"label": "only label"}, {}, "  "]
         result = normalize_options(raw)
-        assert len(result) == 1  # 只有有效的选项
-        assert result[0] == {"label": "只有label", "value": "只有label"}
+        assert len(result) == 1  # Only valid options
+        assert result[0] == {"label": "only label", "value": "only label"}
 
     def test_value_only(self):
         raw = [{"value": "only_value"}]
@@ -63,16 +63,16 @@ class TestNormalizeInterruptOptions:
 
 
 class TestBuildAskUserQuestionPayload:
-    """测试 _build_ask_user_question_payload 函数"""
+    """Test the _build_ask_user_question_payload function"""
 
     def test_basic_questions(self):
         info = {
             "questions": [
                 {
-                    "question": "请确认是否继续？",
+                    "question": "Please confirm whether to continue?",
                     "options": [
-                        {"label": "确认", "value": "yes"},
-                        {"label": "取消", "value": "no"},
+                        {"label": "confirm", "value": "yes"},
+                        {"label": "Cancel", "value": "no"},
                     ],
                 }
             ],
@@ -80,16 +80,16 @@ class TestBuildAskUserQuestionPayload:
         result = _build_ask_user_question_payload(info, "thread-123")
 
         assert len(result["questions"]) == 1
-        assert result["questions"][0]["question"] == "请确认是否继续？"
+        assert result["questions"][0]["question"] == "Please confirm whether to continue?"
         assert len(result["questions"][0]["options"]) == 2
-        assert result["questions"][0]["options"][0] == {"label": "确认", "value": "yes"}
-        assert result["questions"][0]["options"][1] == {"label": "取消", "value": "no"}
+        assert result["questions"][0]["options"][0] == {"label": "confirm", "value": "yes"}
+        assert result["questions"][0]["options"][1] == {"label": "Cancel", "value": "no"}
         assert result["source"] == "interrupt"
         assert result["thread_id"] == "thread-123"
 
     def test_questions_with_source(self):
         info = {
-            "questions": [{"question": "选择一个选项", "options": ["A", "B", "C"]}],
+            "questions": [{"question": "Select an option", "options": ["A", "B", "C"]}],
             "source": "ask_user_question",
         }
         result = _build_ask_user_question_payload(info, "thread-456")
@@ -101,7 +101,7 @@ class TestBuildAskUserQuestionPayload:
         info = {
             "questions": [
                 {
-                    "question": "选择多个",
+                    "question": "Select multiple",
                     "options": ["A", "B", "C"],
                     "multi_select": True,
                 }
@@ -113,7 +113,7 @@ class TestBuildAskUserQuestionPayload:
 
     def test_disable_allow_other(self):
         info = {
-            "questions": [{"question": "只能选择", "options": ["A", "B"], "allow_other": False}],
+            "questions": [{"question": "can only choose", "options": ["A", "B"], "allow_other": False}],
         }
         result = _build_ask_user_question_payload(info, "thread-000")
 
@@ -123,31 +123,31 @@ class TestBuildAskUserQuestionPayload:
         info = {
             "questions": [
                 {
-                    "question": "是否执行操作？",
-                    "operation": "删除文件",
+                    "question": "Do you want to perform the operation?",
+                    "operation": "Delete files",
                     "options": [
-                        {"label": "批准", "value": "approve"},
-                        {"label": "拒绝", "value": "reject"},
+                        {"label": "approve", "value": "approve"},
+                        {"label": "reject", "value": "reject"},
                     ],
                 }
             ],
         }
         result = _build_ask_user_question_payload(info, "thread-op")
 
-        assert result["questions"][0]["operation"] == "删除文件"
+        assert result["questions"][0]["operation"] == "Delete files"
 
     def test_default_question_when_questions_missing(self):
         info = {}
         result = _build_ask_user_question_payload(info, "thread-no-opt")
 
         assert len(result["questions"]) == 1
-        assert result["questions"][0]["question"] == "请选择一个选项"
+        assert result["questions"][0]["question"] == "Please select an option"
         assert result["questions"][0]["options"] == []
         assert result["source"] == "interrupt"
 
     def test_question_id_generation(self):
-        """测试 question_id 自动生成"""
-        info = {"questions": [{"question": "测试？"}]}
+        """Test question_id is automatically generated"""
+        info = {"questions": [{"question": "test?"}]}
         result = _build_ask_user_question_payload(info, "thread-id")
 
         assert result["questions"][0]["question_id"] != ""
@@ -155,7 +155,7 @@ class TestBuildAskUserQuestionPayload:
 
 
 class TestNormalizeInterruptQuestions:
-    """测试 _normalize_interrupt_questions 函数"""
+    """Test the _normalize_interrupt_questions function"""
 
     def test_empty_input(self):
         assert _normalize_interrupt_questions(None) == []
@@ -172,11 +172,11 @@ class TestNormalizeInterruptQuestions:
         assert result[0]["allow_other"] is True
 
     def test_invalid_question_filtered(self):
-        raw = [{"question": "  "}, "Q2", {"question": "有效问题"}]
+        raw = [{"question": "  "}, "Q2", {"question": "valid question"}]
         result = _normalize_interrupt_questions(raw)
 
         assert len(result) == 1
-        assert result[0]["question"] == "有效问题"
+        assert result[0]["question"] == "valid question"
 
 
 @pytest.mark.asyncio
@@ -275,7 +275,7 @@ async def test_stream_agent_resume_routes_subagent_chunks(monkeypatch):
 
 
 class TestCoerceInterruptPayload:
-    """测试 _coerce_interrupt_payload 函数"""
+    """Test the _coerce_interrupt_payload function"""
 
     def test_dict_input(self):
         info = {"question": "test?", "options": ["a", "b"]}

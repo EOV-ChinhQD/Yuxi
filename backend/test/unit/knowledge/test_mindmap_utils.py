@@ -9,8 +9,8 @@ from yuxi.knowledge.utils import mindmap_utils as mm
 def make_kb(**overrides):
     data = {
         "kb_id": "kb_1",
-        "name": "知识库",
-        "mindmap": {"content": "知识库", "children": [{"content": "tracked.pdf", "children": []}]},
+        "name": "knowledge base",
+        "mindmap": {"content": "knowledge base", "children": [{"content": "tracked.pdf", "children": []}]},
         "mindmap_file_ids": {"tracked": "tracked.pdf"},
         "mindmap_metadata": {},
     }
@@ -84,7 +84,7 @@ async def test_generate_database_mindmap_loads_selected_file_ids_directly(monkey
     class FakeModel:
         async def call(self, messages, stream):
             assert "outside.pdf" in messages[1]["content"]
-            return SimpleNamespace(content='{"content":"知识库","children":[{"content":"outside.pdf","children":[]}]}')
+            return SimpleNamespace(content='{"content":"knowledge base","children":[{"content":"outside.pdf","children":[]}]}')
 
     monkeypatch.setattr(mm, "KnowledgeBaseRepository", lambda: kb_repo)
     monkeypatch.setattr(
@@ -114,5 +114,5 @@ async def test_generate_database_mindmap_rejects_missing_selected_files(monkeypa
         FakeFileRepository,
     )
 
-    with pytest.raises(HTTPException, match="选择的文件不存在"):
+    with pytest.raises(HTTPException, match="File đã chọn không tồn tại"):
         await mm.generate_database_mindmap("kb_1", file_ids=["missing"])

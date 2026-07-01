@@ -10,7 +10,7 @@ def test_normalize_share_config_defaults_to_global() -> None:
         None,
         default_config={"access_level": "global", "department_ids": [], "user_uids": []},
         default_access_level="global",
-        invalid_access_level_message="无效的权限等级",
+        invalid_access_level_message="Cấp quyền không hợp lệ",
     )
 
     assert result == {"access_level": "global", "department_ids": [], "user_uids": []}
@@ -21,7 +21,7 @@ def test_normalize_share_config_department_adds_actor_department_and_deduplicate
         {"access_level": "department", "department_ids": ["2", 1], "user_uids": ["ignored"]},
         default_config={"access_level": "global", "department_ids": [], "user_uids": []},
         default_access_level="global",
-        invalid_access_level_message="无效的权限等级",
+        invalid_access_level_message="Cấp quyền không hợp lệ",
         department_id="2",
     )
 
@@ -33,7 +33,7 @@ def test_normalize_share_config_user_adds_actor_and_deduplicates() -> None:
         {"access_level": "user", "department_ids": [1], "user_uids": [" other ", "owner", ""]},
         default_config={"access_level": "user", "department_ids": [], "user_uids": []},
         default_access_level="user",
-        invalid_access_level_message="无效的权限等级",
+        invalid_access_level_message="Cấp quyền không hợp lệ",
         user_uid="owner",
     )
 
@@ -41,12 +41,12 @@ def test_normalize_share_config_user_adds_actor_and_deduplicates() -> None:
 
 
 def test_normalize_share_config_rejects_disallowed_access_level() -> None:
-    with pytest.raises(ValueError, match="无权使用该共享范围"):
+    with pytest.raises(ValueError, match="Không có quyền sử dụng phạm vi chia sẻ này"):
         normalize_share_config(
             {"access_level": "global", "department_ids": [], "user_uids": []},
             default_config={"access_level": "user", "department_ids": [], "user_uids": []},
             default_access_level="user",
-            invalid_access_level_message="无效的权限等级",
+            invalid_access_level_message="Cấp quyền không hợp lệ",
             allowed_access_levels={"user"},
-            unauthorized_access_level_message="无权使用该共享范围",
+            unauthorized_access_level_message="Không có quyền sử dụng phạm vi chia sẻ này",
         )

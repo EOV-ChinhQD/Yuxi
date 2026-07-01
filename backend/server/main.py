@@ -3,11 +3,11 @@ import os
 import sys
 
 # ==============================================================================
-# 解决 Windows 下 psycopg 异步模式不支持 ProactorEventLoop 的问题
-# 注意：这段代码必须放在应用的极早期，最好在导入 FastAPI 或初始化数据库之前
+# Solve the problem that ProactorEventLoop is not supported in psycopg asynchronous mode under Windows
+# Note: This code must be placed very early in the application, preferably before importing FastAPI or initializing the database
 # ==============================================================================
 if sys.platform == "win32":
-    # 把当前文件 (main.py) 的上一级的上一级 (即根目录 Yuxi) 加入到 sys.path
+    # Add the previous level of the current file (main.py) (i.e. the root directory Yuxi) to sys.path
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -25,7 +25,7 @@ from server.utils.lifespan import lifespan
 from server.utils.common_utils import setup_logging
 from server.utils.access_log_middleware import AccessLogMiddleware
 
-# 设置日志配置
+# Set log configuration
 setup_logging()
 
 RATE_LIMIT_MAX_ATTEMPTS = 10
@@ -73,10 +73,10 @@ def _build_cors_options(origins: list[str] | None = None) -> dict[str, object]:
 
 
 app = FastAPI(lifespan=lifespan)
-# 所有业务接口统一挂载到 /api，具体分组在 server.routers 中集中注册。
+# All business interfaces are mounted to /api, and specific groups are centrally registered in server.routers.
 app.include_router(router, prefix="/api")
 
-# CORS 设置
+# CORS settings
 app.add_middleware(
     CORSMiddleware,
     **_build_cors_options(),
@@ -111,7 +111,7 @@ class LoginRateLimitMiddleware(BaseHTTPMiddleware):
                     retry_after = int(max(1, RATE_LIMIT_WINDOW_SECONDS - (now - attempt_history[0])))
                     return JSONResponse(
                         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                        content={"detail": "登录尝试过于频繁，请稍后再试"},
+                        content={"detail": "There have been too many login attempts, please try again later."},
                         headers={"Retry-After": str(retry_after)},
                     )
 
@@ -128,10 +128,10 @@ class LoginRateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-# 添加访问日志中间件（记录请求处理时间）
+# Add access log middleware (record request processing time)
 app.add_middleware(AccessLogMiddleware)
 
-# 添加登录限流中间件
+# Add login current limiting middleware
 app.add_middleware(LoginRateLimitMiddleware)
 
 if __name__ == "__main__":
@@ -142,6 +142,6 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=5050,
         reload=True,
-        # 与 docker-compose 开发环境保持一致，避免 package 下代码变更不触发热重载。
+        # Be consistent with the docker-compose development environment to prevent code changes under the package from triggering hot reloading.
         reload_dirs=["server", "package"],
     )

@@ -115,11 +115,11 @@ async def test_agent_bubble_sort_run_creates_expected_artifacts(
     thread_id = await _create_thread(e2e_client, e2e_headers, str(e2e_agent_context["agent_id"]))
 
     query = (
-        "在工作区创建一个 Python 冒泡排序脚本，并执行它。"
-        f"脚本必须保存到 {SCRIPT_PATH}。"
-        "脚本内容要求：对列表 [5, 1, 4, 2, 8] 使用冒泡排序，并打印排序后的结果。"
-        f"然后执行该脚本，并将标准输出保存到 {RESULT_PATH}。"
-        "不要写入其他路径。完成后简单回复这两个文件路径。"
+        "Create a Python bubble sort script in the workspace and execute it."
+        f"The script must be saved to {SCRIPT_PATH}。"
+        "Script content requirements: pair list [5, 1, 4, 2, 8] Use bubble sort and print the sorted results."
+        f"The script is then executed and the standard output is saved to {RESULT_PATH}。"
+        "Do not write to other paths. Simply reply to the two file paths when finished."
     )
     run_id = await _create_run(
         e2e_client,

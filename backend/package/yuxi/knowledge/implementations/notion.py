@@ -168,11 +168,11 @@ class _NotionClient:
 
 
 class NotionKB(ReadOnlyConnectors):
-    """连接 Notion Data Source 的只读知识库实现"""
+    """Read-only knowledge base implementation connected to Notion Data Source"""
 
     kb_type = "notion"
     name = "Notion"
-    description = "连接 Notion Data Source 的只读知识库，支持检索、打开页面和页内查找"
+    description = "Read-only knowledge base connected to Notion Data Source, supporting retrieval, page opening and in-page search"
 
     def __init__(self, work_dir: str, **kwargs):
         del kwargs
@@ -188,15 +188,15 @@ class NotionKB(ReadOnlyConnectors):
                     "label": "Notion Token",
                     "type": "password",
                     "required": False,
-                    "placeholder": "留空则使用 NOTION_TOKEN / NOTION_API_KEY",
-                    "description": "Notion integration token，需要 read content 权限",
+                    "placeholder": "Leave blank to use NOTION_TOKEN / NOTION_API_KEY",
+                    "description": "Notion integration token, requires read content permission",
                 },
                 {
                     "key": "notion_data_source_id",
                     "label": "Data Source ID",
                     "type": "text",
                     "required": True,
-                    "placeholder": "请输入 Notion data_source_id",
+                    "placeholder": "Please enter Notion data_source_id",
                 },
                 {
                     "key": "notion_version",
@@ -217,9 +217,9 @@ class NotionKB(ReadOnlyConnectors):
         notion_version = str(params.get("notion_version") or NOTION_DEFAULT_VERSION).strip() or NOTION_DEFAULT_VERSION
 
         if not data_source_id:
-            raise ValueError("Notion 参数缺失: notion_data_source_id")
+            raise ValueError("Thiếu tham số Notion: notion_data_source_id")
         if not token and not (os.getenv("NOTION_TOKEN") or os.getenv("NOTION_API_KEY")):
-            raise ValueError("Notion 参数缺失: notion_token 或环境变量 NOTION_TOKEN/NOTION_API_KEY")
+            raise ValueError("Thiếu tham số Notion: notion_token hoặc biến môi trường NOTION_TOKEN/NOTION_API_KEY")
 
         return {
             "notion_token": token,
@@ -407,7 +407,7 @@ class NotionKB(ReadOnlyConnectors):
         async with _NotionClient(token, notion_version) as client:
             page = await client.retrieve_page(page_id)
             if not self._page_belongs_to_data_source(page, data_source_id):
-                raise ValueError(f"Notion 页面 {page_id} 不属于当前 Data Source")
+                raise ValueError(f"Trang Notion {page_id} không thuộc Nguồn dữ liệu hiện tại")
             markdown = await self._page_to_markdown(client, page_id, page)
 
         content = markdown["content"]
@@ -461,7 +461,7 @@ class NotionKB(ReadOnlyConnectors):
         lines.extend(await self._blocks_to_markdown(client, page_id, depth=0, state=block_state))
         if block_state["truncated"]:
             lines.append("")
-            lines.append("[内容过长，已截断]")
+            lines.append("[The content is too long and has been cut off]")
 
         return {"title": title, "properties": properties, "content": "\n".join(lines).strip()}
 
@@ -686,59 +686,59 @@ class NotionKB(ReadOnlyConnectors):
             "options": [
                 {
                     "key": "search_mode",
-                    "label": "检索模式",
+                    "label": "Search mode",
                     "type": "select",
                     "default": "hybrid",
                     "options": [
                         {
                             "value": "hybrid",
-                            "label": "混合检索",
-                            "description": "先 Notion 搜索，不足时扫描 Data Source",
+                            "label": "Hybrid search",
+                            "description": "Search Notion first, then scan Data Source if insufficient",
                         },
-                        {"value": "notion_search", "label": "Notion 搜索", "description": "使用 Notion search API"},
+                        {"value": "notion_search", "label": "Notion search", "description": "Using Notion search API"},
                         {
                             "value": "data_source_scan",
-                            "label": "Data Source 扫描",
-                            "description": "扫描 Data Source 并本地匹配",
+                            "label": "Data Source scanning",
+                            "description": "Scan Data Source and match locally",
                         },
                     ],
-                    "description": "选择 Notion 检索方式",
+                    "description": "Select Notion search method",
                 },
                 {
                     "key": "final_top_k",
-                    "label": "最终返回数量",
+                    "label": "Final return quantity",
                     "type": "number",
                     "default": 10,
                     "min": 1,
                     "max": 50,
-                    "description": "返回给前端和智能体的页面数量",
+                    "description": "Number of pages returned to the frontend and agent",
                 },
                 {
                     "key": "max_scan_pages",
-                    "label": "最大扫描页面数",
+                    "label": "Maximum number of scanned pages",
                     "type": "number",
                     "default": 100,
                     "min": 10,
                     "max": 1000,
-                    "description": "Data Source 扫描模式最多读取的页面数量",
+                    "description": "Data Source Maximum number of pages read in scan mode",
                 },
                 {
                     "key": "max_hydrate_pages",
-                    "label": "最大读取全文页数",
+                    "label": "Maximum number of full-text pages read",
                     "type": "number",
                     "default": NOTION_DEFAULT_MAX_HYDRATE_PAGES,
                     "min": 1,
                     "max": 100,
-                    "description": "候选排序后最多读取 block 全文的页面数量",
+                    "description": "The maximum number of pages that can read the full text of the block after candidate sorting",
                 },
                 {
                     "key": "snippet_window_lines",
-                    "label": "片段窗口行数",
+                    "label": "Fragment window row number",
                     "type": "number",
                     "default": 12,
                     "min": 3,
                     "max": 40,
-                    "description": "搜索结果片段包含的上下文行数",
+                    "description": "The number of context lines the search result fragment contains",
                 },
             ],
         }

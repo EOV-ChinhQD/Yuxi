@@ -1,4 +1,4 @@
-"""Skills 管理路由"""
+"""Skills Management routing"""
 
 from __future__ import annotations
 
@@ -46,53 +46,53 @@ user_skills = APIRouter(prefix="/skills", tags=["skills"])
 
 
 class ShareConfigPayload(BaseModel):
-    share_config: dict | None = Field(None, description="共享权限配置")
+    share_config: dict | None = Field(None, description="Cấu hình quyền chia sẻ")
 
 
 class SkillEnabledUpdateRequest(BaseModel):
-    enabled: bool = Field(..., description="是否启用")
+    enabled: bool = Field(..., description="Có kích hoạt hay không")
 
 
 class SkillNodeCreateRequest(BaseModel):
-    path: str = Field(..., description="相对 skill 根目录的路径")
-    is_dir: bool = Field(False, description="是否创建目录")
-    content: str | None = Field("", description="文件内容（仅文件创建时生效）")
+    path: str = Field(..., description="Đường dẫn tương đối từ thư mục gốc skill")
+    is_dir: bool = Field(False, description="Có tạo thư mục hay không")
+    content: str | None = Field("", description="Nội dung tệp (chỉ có hiệu lực khi tạo tệp)")
 
 
 class SkillFileUpdateRequest(BaseModel):
-    path: str = Field(..., description="相对 skill 根目录的路径")
-    content: str = Field(..., description="文件内容")
+    path: str = Field(..., description="Đường dẫn tương đối từ thư mục gốc skill")
+    content: str = Field(..., description="Nội dung tệp")
 
 
 class SkillDependenciesUpdateRequest(BaseModel):
-    tool_dependencies: list[str] = Field(default_factory=list, description="依赖的内置工具列表")
-    mcp_dependencies: list[str] = Field(default_factory=list, description="依赖的 MCP 服务列表")
-    skill_dependencies: list[str] = Field(default_factory=list, description="依赖的其他 skill slug 列表")
+    tool_dependencies: list[str] = Field(default_factory=list, description="Danh sách các công cụ tích hợp phụ thuộc")
+    mcp_dependencies: list[str] = Field(default_factory=list, description="Danh sách dịch vụ MCP phụ thuộc")
+    skill_dependencies: list[str] = Field(default_factory=list, description="Danh sách slug skill khác phụ thuộc")
 
 
 class RemoteSkillSourceRequest(BaseModel):
-    source: str = Field(..., description="skills 仓库来源，如 owner/repo 或 GitHub URL")
+    source: str = Field(..., description="Nguồn kho lưu trữ skills, ví dụ: owner/repo hoặc GitHub URL")
 
 
 class RemoteSkillPrepareRequest(RemoteSkillSourceRequest):
-    skills: list[str] = Field(..., description="需要安装的 skill 名称列表")
+    skills: list[str] = Field(..., description="Danh sách tên các skill cần cài đặt")
 
 
 class RemoteSkillSearchRequest(BaseModel):
-    query: str = Field(..., description="搜索关键字")
+    query: str = Field(..., description="Từ khóa tìm kiếm")
 
 
 class SkillBatchDeleteRequest(BaseModel):
-    slugs: list[str] = Field(..., max_length=50, description="需要批量删除的 skill slug 列表，最多支持 50 个")
+    slugs: list[str] = Field(..., max_length=50, description="Danh sách slug skill cần xóa hàng loạt, hỗ trợ tối đa 50 phần tử")
 
 
 class SkillDraftConfirmRequest(BaseModel):
-    share_config: dict | None = Field(None, description="共享权限配置")
+    share_config: dict | None = Field(None, description="Cấu hình quyền chia sẻ")
 
 
 def _raise_from_value_error(e: ValueError) -> None:
     message = str(e)
-    status_code = 404 if "不存在" in message or "无权" in message else 400
+    status_code = 404 if "không tồn tại" in message or "No rights" in message else 400
     raise HTTPException(status_code=status_code, detail=message)
 
 
@@ -128,7 +128,7 @@ async def list_accessible_skills_route(
         return {"success": True, "data": [_serialize_skill_for_user(item, current_user) for item in items]}
     except Exception as e:
         logger.error(f"Failed to list accessible skills: {e}")
-        raise HTTPException(status_code=500, detail="获取可访问 Skills 失败")
+        raise HTTPException(status_code=500, detail="Lấy danh sách Skills có quyền truy cập thất bại")
 
 
 @user_skills.post("/import/prepare")
@@ -149,7 +149,7 @@ async def prepare_skill_upload_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to prepare skill upload: {e}")
-        raise HTTPException(status_code=500, detail="解析上传 Skill 失败")
+        raise HTTPException(status_code=500, detail="Phân tích Skill tải lên thất bại")
 
 
 @user_skills.post("/remote/list")
@@ -160,7 +160,7 @@ async def list_remote_skills_route(payload: RemoteSkillSourceRequest, _current_u
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to list remote skills from '{payload.source}': {e}")
-        raise HTTPException(status_code=500, detail="获取远程 skills 列表失败")
+        raise HTTPException(status_code=500, detail="Lấy danh sách skills từ xa thất bại")
 
 
 @user_skills.post("/remote/search")
@@ -173,7 +173,7 @@ async def search_remote_skills_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to search remote skills with query '{payload.query}': {e}")
-        raise HTTPException(status_code=500, detail="搜索远程 skills 失败")
+        raise HTTPException(status_code=500, detail="Tìm kiếm skills từ xa thất bại")
 
 
 @user_skills.post("/remote/prepare")
@@ -194,7 +194,7 @@ async def prepare_remote_skills_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to prepare remote skills from '{payload.source}': {e}")
-        raise HTTPException(status_code=500, detail="解析远程 Skills 失败")
+        raise HTTPException(status_code=500, detail="Phân tích Skills từ xa thất bại")
 
 
 @user_skills.post("/install-drafts/{draft_id}/confirm")
@@ -216,7 +216,7 @@ async def confirm_skill_install_draft_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to confirm skill install draft '{draft_id}': {e}")
-        raise HTTPException(status_code=500, detail="确认安装 Skill 失败")
+        raise HTTPException(status_code=500, detail="Xác nhận cài đặt Skill thất bại")
 
 
 @user_skills.delete("/install-drafts/{draft_id}")
@@ -228,7 +228,7 @@ async def discard_skill_install_draft_route(draft_id: str, current_user: User = 
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to discard skill install draft '{draft_id}': {e}")
-        raise HTTPException(status_code=500, detail="取消安装 Skill 失败")
+        raise HTTPException(status_code=500, detail="Hủy cài đặt Skill thất bại")
 
 
 @skills.get("")
@@ -245,12 +245,12 @@ async def list_skills_route(
         }
     except Exception as e:
         logger.error(f"Failed to list manageable skills: {e}")
-        raise HTTPException(status_code=500, detail="获取技能列表失败")
+        raise HTTPException(status_code=500, detail="Lấy danh sách kỹ năng thất bại")
 
 
 @skills.get("/dependency-options")
 async def get_skill_dependency_options_route(
-    slug: str | None = Query(None, description="当前 Skill slug"),
+    slug: str | None = Query(None, description="Slug của Skill hiện tại"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -262,7 +262,7 @@ async def get_skill_dependency_options_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to get skill dependency options: {e}")
-        raise HTTPException(status_code=500, detail="获取 skill 依赖选项失败")
+        raise HTTPException(status_code=500, detail="Lấy tùy chọn phụ thuộc của skill thất bại")
 
 
 @skills.get("/builtin")
@@ -277,7 +277,7 @@ async def list_builtin_skills_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to list builtin skills: {e}")
-        raise HTTPException(status_code=500, detail="获取内置 skill 列表失败")
+        raise HTTPException(status_code=500, detail="Lấy danh sách skill tích hợp thất bại")
 
 
 @skills.post("/builtin/sync")
@@ -292,7 +292,7 @@ async def sync_builtin_skills_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to sync builtin skills: {e}")
-        raise HTTPException(status_code=500, detail="同步内置 skill 失败")
+        raise HTTPException(status_code=500, detail="Đồng bộ hóa skill tích hợp thất bại")
 
 
 @skills.put("/{slug}/share-config")
@@ -309,7 +309,7 @@ async def update_skill_share_config_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to update skill share config '{slug}': {e}")
-        raise HTTPException(status_code=500, detail="更新 Skill 共享范围失败")
+        raise HTTPException(status_code=500, detail="Cập nhật phạm vi chia sẻ Skill thất bại")
 
 
 @skills.put("/{slug}/enabled")
@@ -326,7 +326,7 @@ async def update_skill_enabled_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to update skill enabled '{slug}': {e}")
-        raise HTTPException(status_code=500, detail="更新 Skill 启用状态失败")
+        raise HTTPException(status_code=500, detail="Cập nhật trạng thái kích hoạt Skill thất bại")
 
 
 @skills.get("/{slug}/tree")
@@ -342,13 +342,13 @@ async def get_skill_tree_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to get skill tree '{slug}': {e}")
-        raise HTTPException(status_code=500, detail="获取技能目录树失败")
+        raise HTTPException(status_code=500, detail="Lấy cây danh mục kỹ năng thất bại")
 
 
 @skills.get("/{slug}/file")
 async def get_skill_file_route(
     slug: str,
-    path: str = Query(..., description="相对 skill 根目录路径"),
+    path: str = Query(..., description="Đường dẫn tương đối từ thư mục gốc skill"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -359,7 +359,7 @@ async def get_skill_file_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to read skill file '{slug}/{path}': {e}")
-        raise HTTPException(status_code=500, detail="读取技能文件失败")
+        raise HTTPException(status_code=500, detail="Đọc tệp kỹ năng thất bại")
 
 
 @skills.post("/{slug}/file")
@@ -384,7 +384,7 @@ async def create_skill_file_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to create skill node '{slug}/{payload.path}': {e}")
-        raise HTTPException(status_code=500, detail="创建技能文件失败")
+        raise HTTPException(status_code=500, detail="Tạo tệp kỹ năng thất bại")
 
 
 @skills.put("/{slug}/file")
@@ -408,7 +408,7 @@ async def update_skill_file_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to update skill file '{slug}/{payload.path}': {e}")
-        raise HTTPException(status_code=500, detail="更新技能文件失败")
+        raise HTTPException(status_code=500, detail="Cập nhật tệp kỹ năng thất bại")
 
 
 @skills.put("/{slug}/dependencies")
@@ -432,13 +432,13 @@ async def update_skill_dependencies_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to update skill dependencies '{slug}': {e}")
-        raise HTTPException(status_code=500, detail="更新 skill 依赖失败")
+        raise HTTPException(status_code=500, detail="Cập nhật phụ thuộc skill thất bại")
 
 
 @skills.delete("/{slug}/file")
 async def delete_skill_file_route(
     slug: str,
-    path: str = Query(..., description="相对 skill 根目录路径"),
+    path: str = Query(..., description="Đường dẫn tương đối từ thư mục gốc skill"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -450,7 +450,7 @@ async def delete_skill_file_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to delete skill file '{slug}/{path}': {e}")
-        raise HTTPException(status_code=500, detail="删除技能文件失败")
+        raise HTTPException(status_code=500, detail="Xóa tệp kỹ năng thất bại")
 
 
 @skills.get("/{slug}/export")
@@ -469,7 +469,7 @@ async def export_skill_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to export skill '{slug}': {e}")
-        raise HTTPException(status_code=500, detail="导出技能失败")
+        raise HTTPException(status_code=500, detail="Xuất kỹ năng thất bại")
 
 
 @skills.delete("/{slug}")
@@ -486,7 +486,7 @@ async def delete_skill_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to delete skill '{slug}': {e}")
-        raise HTTPException(status_code=500, detail="删除技能失败")
+        raise HTTPException(status_code=500, detail="Xóa kỹ năng thất bại")
 
 
 @skills.post("/delete-batch")
@@ -504,4 +504,4 @@ async def delete_skills_batch_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to delete skills batch: {e}")
-        raise HTTPException(status_code=500, detail="批量删除技能失败")
+        raise HTTPException(status_code=500, detail="Xóa hàng loạt kỹ năng thất bại")

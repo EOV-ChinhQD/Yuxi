@@ -1,38 +1,38 @@
 ---
 name: image-gen
-description: "在 Agent 沙盒中生成图片并保存到 outputs。当用户要求生成图片、海报、插画、文生图，或指定 Qwen-Image、其它兼容图片生成接口时使用此技能。"
+description: "Generate images in the Agent sandbox and save them to outputs. Use this skill when the user requires the generation of images, posters, illustrations, and illustrations, or specifies Qwen-Image or other compatible image generation interfaces."
 ---
 
-# 图片生成技能
+# Image generation skills
 
-当用户要求生成图片、海报、插画、文生图，或明确提到 Qwen-Image 时，使用此技能组织图片生成流程。
+Use this skill to organize the image generation process when the user requests to generate pictures, posters, illustrations, drawings, or explicitly mentions Qwen-Image.
 
-## 默认生成接口
+## Default generated interface
 
-默认使用 SiliconFlow 的 Qwen-Image 接口：
+SiliconFlow's Qwen-Image interface is used by default:
 
 - Endpoint: `POST https://api.siliconflow.cn/v1/images/generations`
 - Model: `Qwen/Qwen-Image`
-- 默认参数：
+-Default parameters:
   - `negative_prompt`: `""`
   - `num_inference_steps`: `20`
   - `guidance_scale`: `7.5`
 
-调用外部接口时，必须在 Agent 沙盒执行环境中读取 `SILICONFLOW_API_KEY`。不要依赖后端进程环境变量。
+When calling an external interface, `SILICONFLOW_API_KEY` must be read in the Agent sandbox execution environment. Do not rely on backend process environment variables.
 
-## 操作流程
+## Operation process
 
-1. 明确用户要生成的图片内容、风格、尺寸或约束；信息不足但不影响生成时，使用合理默认值，不要反复追问。
-2. 使用可用的执行工具在沙盒中运行脚本，调用图片生成接口，传入用户需求整理后的 `prompt`，并按需传入 `negative_prompt`、`num_inference_steps`、`guidance_scale`。
-3. 从生成接口响应中读取图片地址，默认路径为 `images[0].url`。
-4. 在同一个沙盒脚本中用 `Authorization: Bearer $SILICONFLOW_API_KEY` 下载该图片地址；如果接口直接返回 base64，则直接解码保存。
-5. 将最终图片保存到 `/home/gem/user-data/outputs/` 下，例如 `/home/gem/user-data/outputs/generated-image.png`。
-6. 调用 `present_artifacts`，传入保存后的 outputs 虚拟路径，让前端展示图片产物。
-7. 最终回复简要说明图片已生成，不要把外部临时 URL 当作最终结果展示。
+1. Clarify the image content, style, size or constraints that the user wants to generate; when the information is insufficient but does not affect the generation, use reasonable default values ​​and do not ask repeatedly.
+2. Use the available execution tools to run the script in the sandbox, call the image generation interface, pass in the `prompt` compiled according to user requirements, and pass in `negative_prompt`, `num_inference_steps`, and `guidance_scale` as needed.
+3. Read the image address from the generated interface response. The default path is `images[0].url`.
+4. Use `Authorization: Bearer $SILICONFLOW_API_KEY` in the same sandbox script to download the image address; if the interface directly returns base64, it will be decoded and saved directly.
+5. Save the final image to `/home/gem/user-data/outputs/`, for example `/home/gem/user-data/outputs/generated-image.png`.
+6. Call `present_artifacts`, pass in the saved outputs virtual path, and let the front end display the image products.
+7. The final reply briefly states that the image has been generated, and do not display the external temporary URL as the final result.
 
-## 脚本示例
+## Script example
 
-可根据用户需求调整 prompt 和输出文件名：
+The prompt and output file name can be adjusted according to user needs:
 
 ```python
 import os
@@ -40,7 +40,7 @@ import requests
 from pathlib import Path
 
 api_key = os.environ["SILICONFLOW_API_KEY"]
-prompt = "根据用户需求整理后的图片提示词"
+prompt = "Picture prompt words organized according to user needs"
 
 response = requests.post(
     "https://api.siliconflow.cn/v1/images/generations",
@@ -70,13 +70,13 @@ output_path.write_bytes(image_response.content)
 print(output_path.as_posix())
 ```
 
-## 多模型扩展
+##Multi-model extension
 
-如果用户指定其它图片生成模型或兼容接口，可以按该接口的协议先生成图片。只要最终拿到图片 bytes 或 base64，就保存到 `/home/gem/user-data/outputs/`，再调用 `present_artifacts` 展示。
+If the user specifies another image generation model or compatible interface, the image can be generated first according to the protocol of that interface. As long as you finally get the image bytes or base64, save it to `/home/gem/user-data/outputs/`, and then call `present_artifacts` to display it.
 
-## 关键约束
+## Key constraints
 
-- 不要把外部生成接口返回的临时 URL 当作最终结果直接展示给用户。
-- 不要调用后端 MinIO 上传工具；图片生成和下载都应在沙盒内完成。
-- 如果 `SILICONFLOW_API_KEY` 缺失，应明确提示用户需要在 Agent 沙盒环境变量中配置。
-- 保存到 outputs 后必须调用 `present_artifacts`，否则前端不会自动展示生成图片。
+- Do not treat the temporary URL returned by the external generation interface as the final result and display it directly to the user.
+- Do not call the backend MinIO upload tool; image generation and downloading should be done within the sandbox.
+- If `SILICONFLOW_API_KEY` is missing, the user should be explicitly prompted to configure it in the Agent sandbox environment variable.
+- `present_artifacts` must be called after saving to outputs, otherwise the front end will not automatically display the generated image.

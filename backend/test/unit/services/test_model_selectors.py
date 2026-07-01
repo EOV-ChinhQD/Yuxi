@@ -72,7 +72,7 @@ def _httpx_embedding_response(status_code: int, content: str | None = None) -> h
     ],
 )
 def test_selectors_report_unknown_unconfigured_specs(selector, args):
-    with pytest.raises(ValueError, match="Unknown|未找到模型"):
+    with pytest.raises(ValueError, match="Unknown|Không tìm thấy mô hình"):
         selector(**args)
 
 
@@ -87,7 +87,7 @@ def test_resolve_chat_model_spec_prefers_explicit_then_fallback_then_default(mon
 def test_resolve_chat_model_spec_rejects_all_empty(monkeypatch):
     monkeypatch.setattr("yuxi.agents.models.sys_config.default_model", "")
 
-    with pytest.raises(ValueError, match="model spec 不能为空"):
+    with pytest.raises(ValueError, match="model spec không được để trống"):
         resolve_chat_model_spec("", fallback=None)
 
 
@@ -168,7 +168,7 @@ def test_load_chat_model_uses_toolcall_chunk_fix_for_openai_compatible(monkeypat
 
     model = load_chat_model("siliconflow-cn:deepseek-ai/DeepSeek-V4-Flash")
 
-    # 不再按 provider 禁用流式，改用归一化子类规避 v3 流式累积丢 tool_call 字段的缺陷
+    # Instead of disabling streaming by provider, use normalized subclasses to avoid the defect of missing tool_call fields in v3 streaming.
     assert isinstance(model, _ToolCallChunkFixChatOpenAI)
     assert model.disable_streaming is False
 
@@ -222,7 +222,7 @@ async def test_embedding_connection_checks_configured_dimension(monkeypatch):
 
     monkeypatch.setattr(model, "aencode", fake_aencode)
 
-    assert await model.test_connection() == (True, "连接正常")
+    assert await model.test_connection() == (True, "The connection is normal")
 
 
 @pytest.mark.asyncio
@@ -239,7 +239,7 @@ async def test_embedding_connection_reports_dimension_mismatch(monkeypatch):
 
     monkeypatch.setattr(model, "aencode", fake_aencode)
 
-    assert await model.test_connection() == (False, "Embedding 维度不一致：配置 4，实际 3")
+    assert await model.test_connection() == (False, "Embedding Inconsistent dimensions: config 4, actual 3")
 
 
 def test_embedding_sync_400_logs_warning(monkeypatch):

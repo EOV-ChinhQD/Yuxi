@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 
 UTC = dt.UTC
 SHANGHAI_TZ = ZoneInfo("Asia/Shanghai")
+VIETNAM_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 _ISO_Z_SUFFIX = "+00:00"
 
 
@@ -30,6 +31,11 @@ def utc_now_naive() -> dt.datetime:
 def shanghai_now() -> dt.datetime:
     """Return the current Asia/Shanghai time as an aware datetime."""
     return utc_now().astimezone(SHANGHAI_TZ)
+
+
+def vietnam_now() -> dt.datetime:
+    """Return the current Asia/Ho_Chi_Minh time as an aware datetime."""
+    return utc_now().astimezone(VIETNAM_TZ)
 
 
 def ensure_utc(value: dt.datetime) -> dt.datetime:
@@ -137,9 +143,11 @@ def utc_isoformat_from_timestamp(timestamp: float | int | None) -> str | None:
 __all__ = [
     "UTC",
     "SHANGHAI_TZ",
+    "VIETNAM_TZ",
     "utc_now",
     "utc_now_naive",
     "shanghai_now",
+    "vietnam_now",
     "ensure_utc",
     "ensure_shanghai",
     "utc_isoformat",

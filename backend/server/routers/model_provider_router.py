@@ -1,4 +1,4 @@
-"""独立模型供应商配置路由。"""
+"""Independent model provider configuration routing."""
 
 from typing import Any
 
@@ -26,7 +26,7 @@ model_providers = APIRouter(prefix="/system/model-providers", tags=["model-provi
 
 
 async def _refresh_model_cache() -> None:
-    """刷新模型缓存（CRUD 操作后调用）。"""
+    """Refresh model cache (called after CRUD operation)."""
     from yuxi.models.providers.cache import model_cache
 
     try:
@@ -39,24 +39,24 @@ async def _refresh_model_cache() -> None:
 
 
 class ModelProviderPayload(BaseModel):
-    provider_id: str | None = Field(None, description="供应商稳定标识")
-    display_name: str | None = Field(None, description="展示名称")
-    provider_type: str | None = Field(None, description="供应商适配类型，默认 openai")
-    default_protocol: str | None = Field(None, description="默认协议")
-    base_url: str | None = Field(None, description="API 基础 URL")
-    embedding_base_url: str | None = Field(None, description="Embedding 模型请求基础 URL")
-    rerank_base_url: str | None = Field(None, description="Rerank 模型请求基础 URL")
-    models_endpoint: str | None = Field(None, description="聊天/通用模型列表端点")
-    embedding_models_endpoint: str | None = Field(None, description="Embedding 模型列表端点")
-    rerank_models_endpoint: str | None = Field(None, description="Rerank 模型列表端点")
-    api_key_env: str | None = Field(None, description="API Key 环境变量名")
-    api_key: str | None = Field(None, description="直接配置的 API Key")
-    capabilities: list[str] | None = Field(None, description="支持能力")
-    enabled_models: list[dict[str, Any]] | None = Field(None, description="已启用模型配置")
-    headers_json: dict[str, Any] | None = Field(None, description="额外请求头")
-    extra_json: dict[str, Any] | None = Field(None, description="扩展配置")
-    is_enabled: bool | None = Field(None, description="是否启用")
-    is_builtin: bool | None = Field(None, description="是否内置")
+    provider_id: str | None = Field(None, description="Mã định danh ổn định nhà cung cấp")
+    display_name: str | None = Field(None, description="Tên hiển thị")
+    provider_type: str | None = Field(None, description="Loại bộ chuyển đổi nhà cung cấp, mặc định openai")
+    default_protocol: str | None = Field(None, description="Giao thức mặc định")
+    base_url: str | None = Field(None, description="URL cơ sở API")
+    embedding_base_url: str | None = Field(None, description="URL cơ sở yêu cầu mô hình Embedding")
+    rerank_base_url: str | None = Field(None, description="URL cơ sở yêu cầu mô hình Rerank")
+    models_endpoint: str | None = Field(None, description="Endpoint danh sách mô hình Chat/Chung")
+    embedding_models_endpoint: str | None = Field(None, description="Endpoint danh sách mô hình Embedding")
+    rerank_models_endpoint: str | None = Field(None, description="Endpoint danh sách mô hình Rerank")
+    api_key_env: str | None = Field(None, description="Tên biến môi trường API Key")
+    api_key: str | None = Field(None, description="API Key được cấu hình trực tiếp")
+    capabilities: list[str] | None = Field(None, description="Khả năng hỗ trợ")
+    enabled_models: list[dict[str, Any]] | None = Field(None, description="Cấu hình mô hình đã bật")
+    headers_json: dict[str, Any] | None = Field(None, description="Header yêu cầu bổ sung")
+    extra_json: dict[str, Any] | None = Field(None, description="Cấu hình mở rộng")
+    is_enabled: bool | None = Field(None, description="Có kích hoạt hay không")
+    is_builtin: bool | None = Field(None, description="Có tích hợp sẵn hay không")
 
 
 @model_providers.get("")
@@ -64,7 +64,7 @@ async def list_providers(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """获取独立模型供应商配置列表。"""
+    """Get a list of independent model vendor configurations."""
     providers = await get_all_model_providers(db)
     data = []
     for p in providers:
@@ -80,7 +80,7 @@ async def create_provider(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """创建独立模型供应商配置。"""
+    """Create a standalone model supplier configuration."""
     try:
         provider = await create_provider_config(
             db,
@@ -93,8 +93,8 @@ async def create_provider(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"创建模型供应商失败: {e}")
-        raise HTTPException(status_code=500, detail="创建模型供应商失败")
+        logger.error(f"Failed to create model supplier: {e}")
+        raise HTTPException(status_code=500, detail="Tạo nhà cung cấp mô hình thất bại")
 
 
 @model_providers.get("/{provider_id}")
@@ -103,10 +103,10 @@ async def get_provider(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """获取单个独立模型供应商配置。"""
+    """Get a single standalone model supplier configuration."""
     provider = await get_model_provider_by_id(db, provider_id)
     if provider is None:
-        raise HTTPException(status_code=404, detail=f"供应商 {provider_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Nhà cung cấp {provider_id} không tồn tại")
     data = provider.to_dict()
     data["credential_status"] = check_credential_status(provider)
     return {"success": True, "data": data}
@@ -119,9 +119,9 @@ async def update_provider(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """更新独立模型供应商配置。"""
+    """Update standalone model vendor configuration."""
     try:
-        # 获取用户显式设置过的字段（即使值为 None），以便正确处理清空操作
+        # Get fields that have been explicitly set by the user (even if the value is None) so that clearing operations are handled correctly
         unset_fields = payload.model_fields_set
         data = payload.model_dump(exclude_none=True)
         for nullable_field in (
@@ -138,7 +138,7 @@ async def update_provider(
                 data[nullable_field] = None
         provider = await update_provider_config(db, provider_id, data, current_user.username)
         if provider is None:
-            raise HTTPException(status_code=404, detail=f"供应商 {provider_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"Nhà cung cấp {provider_id} không tồn tại")
         await db.commit()
         await _refresh_model_cache()
         return {"success": True, "data": provider.to_dict()}
@@ -147,8 +147,8 @@ async def update_provider(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"更新模型供应商失败 {provider_id}: {e}")
-        raise HTTPException(status_code=500, detail="更新模型供应商失败")
+        logger.error(f"Update model provider failed {provider_id}: {e}")
+        raise HTTPException(status_code=500, detail="Cập nhật nhà cung cấp mô hình thất bại")
 
 
 @model_providers.delete("/{provider_id}")
@@ -157,10 +157,10 @@ async def delete_provider(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """删除独立模型供应商配置。"""
+    """Remove standalone model vendor configuration."""
     deleted = await delete_provider_config(db, provider_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail=f"供应商 {provider_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Nhà cung cấp {provider_id} không tồn tại")
     await db.commit()
     await _refresh_model_cache()
     return {"success": True}
@@ -172,33 +172,33 @@ async def get_remote_models(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """实时拉取远端 /models，不落库。"""
+    """Pull the remote end in real time /models, do not fall into the library."""
     provider = await get_model_provider_by_id(db, provider_id)
     if provider is None:
-        raise HTTPException(status_code=404, detail=f"供应商 {provider_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Nhà cung cấp {provider_id} không tồn tại")
     try:
         models = await fetch_remote_models(provider)
         return {"success": True, "data": models}
     except httpx.HTTPStatusError as e:
-        # 远程 API 返回的错误，不透传状态码避免前端误判为系统认证失败
+        # The error returned by the remote API does not transparently transmit the status code to avoid the front-end misjudgment as a system authentication failure.
         detail = e.response.text
         if e.response.status_code == 401:
-            raise HTTPException(status_code=502, detail="远端 API 认证失败，请检查 API Key 配置")
-        raise HTTPException(status_code=e.response.status_code, detail=f"Models 请求失败: {detail}")
+            raise HTTPException(status_code=502, detail="Xác thực API từ xa thất bại, vui lòng kiểm tra cấu hình API Key")
+        raise HTTPException(status_code=e.response.status_code, detail=f"Yêu cầu Models thất bại: {detail}")
     except Exception as e:
-        logger.error(f"拉取远端模型失败 {provider_id}: {e}")
-        raise HTTPException(status_code=400, detail=f"拉取远端模型失败: {e}")
+        logger.error(f"Failed to pull remote model {provider_id}: {e}")
+        raise HTTPException(status_code=400, detail=f"Lấy mô hình từ xa thất bại: {e}")
 
 
 @model_providers.post("/models/cache/refresh")
 async def refresh_model_cache(
     current_user: User = Depends(get_admin_user),
 ):
-    """强制刷新模型缓存，从数据库重新加载所有供应商配置到 Redis。"""
+    """Force a refresh of the model cache to reload all provider configurations from the database into Redis."""
     await _refresh_model_cache()
     from yuxi.models.providers.cache import model_cache
 
-    return {"success": True, "message": "缓存已刷新", "model_count": len(model_cache.get_all_specs())}
+    return {"success": True, "message": "Bộ nhớ đệm đã được làm mới", "model_count": len(model_cache.get_all_specs())}
 
 
 @model_providers.get("/models/v2")
@@ -207,10 +207,10 @@ async def get_v2_models(
     _current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """获取 v2 格式的模型列表，按 provider 分组。
+    """Get v2 FormatofModel column surface, by provider point group.
 
-    v2 模型 spec 格式: provider_id:model_id（冒号分隔）
-    返回数据供前端模型选择器使用。
+    v2 Model spec Format: provider_id:model_id (separated by colon point)
+    Return data for use by the front-end Model selector.
     """
     from yuxi.models.providers.cache import model_cache
 
@@ -245,10 +245,10 @@ async def get_model_status_by_spec(
     spec: str,
     current_user: User = Depends(get_admin_user),
 ):
-    """根据 full spec 检查模型状态（自动识别 V1/V2、Chat/Embedding）。"""
+    """Check model status against full spec (auto-recognize V1/V2、Chat/Embedding）。"""
     try:
         result = await test_model_status_by_spec(spec)
         return {"success": True, "data": result}
     except Exception as e:
-        logger.error(f"测试模型状态失败 {spec}: {e}")
+        logger.error(f"Test model status failed {spec}: {e}")
         return {"success": False, "data": {"spec": spec, "status": "error", "message": str(e)}}

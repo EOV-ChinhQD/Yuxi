@@ -2,16 +2,16 @@ from typing import Any
 
 from yuxi.utils import logger
 
-# 工具元数据缓存
+# Tool metadata cache
 _metadata_cache: list[dict] = []
 
 
 def _extract_tool_info(tool_obj) -> dict:
-    """从 tool_obj 提取基础信息"""
+    """Extract basic information from tool_obj"""
     metadata = getattr(tool_obj, "metadata", {}) or {}
     info = {
         "slug": tool_obj.name,
-        "name": metadata.get("name", tool_obj.name),  # 显示名称优先从 metadata 获取
+        "name": metadata.get("name", tool_obj.name),  # The display name is first obtained from metadata
         "description": tool_obj.description,
         "metadata": metadata,
         "args": [],
@@ -33,10 +33,10 @@ def _extract_tool_info(tool_obj) -> dict:
 
 
 def _ensure_metadata_loaded():
-    """延迟加载工具元数据（首次调用时自动触发）"""
+    """Lazy loading tool metadata (automatically triggered on first call)"""
     global _metadata_cache
 
-    if _metadata_cache:  # 已加载
+    if _metadata_cache:  # Loaded
         return
 
     from yuxi.agents.toolkits.registry import (
@@ -44,7 +44,7 @@ def _ensure_metadata_loaded():
         get_all_tool_instances,
     )
 
-    # 获取所有工具实例
+    # Get all tool instances
     all_tools = get_all_tool_instances()
     extra_meta = get_all_extra_metadata()
 
@@ -52,17 +52,17 @@ def _ensure_metadata_loaded():
         tool_name = tool.name
         runtime_info = _extract_tool_info(tool)
 
-        # 合并附加元数据
+        # Merge additional metadata
         if tool_name in extra_meta:
             extra = extra_meta[tool_name]
             runtime_info["category"] = extra.category
             runtime_info["tags"] = extra.tags
             runtime_info["config_guide"] = extra.config_guide
-            # display_name 优先级高于 tool.name
+            # display_name has higher priority than tool.name
             if extra.display_name:
                 runtime_info["name"] = extra.display_name
         else:
-            # 未注册，设为默认分类
+            # Not registered, set as default category
             runtime_info["category"] = "buildin"
             runtime_info["tags"] = []
             runtime_info["config_guide"] = ""
@@ -73,7 +73,7 @@ def _ensure_metadata_loaded():
 
 
 def get_tool_metadata(category: str = None) -> list[dict]:
-    """获取工具元数据列表（延迟加载）"""
+    """Get a list of tool metadata (lazy loading)"""
     _ensure_metadata_loaded()
 
     if category:
@@ -130,9 +130,9 @@ async def resolve_configured_runtime_tools(context) -> list[Any]:
             selected_tools.append(tool)
             selected_tool_names.add(tool.name)
 
-    # Skill 依赖的本地工具：必须随基础工具一起注册进 create_agent 的 ToolNode 才可执行，
-    # 否则 Skill 激活后模型虽能发起调用，执行器仍报 "not a valid tool"。
-    # 默认绑定给模型的可见性由 SkillsMiddleware 按 Skill 激活状态门控（保持按需加载）。
+    # Local tools that Skill depends on: must be registered with the basic tool into the ToolNode of create_agent before it can be executed.
+    # Otherwise, although the model can initiate calls after the Skill is activated, the executor will still report "not a valid tool".
+    # Visibility bound to the model by default is gated by the SkillsMiddleware activation state per Skill (keeps loading on demand).
     from yuxi.agents.middlewares.skills import resolve_skill_gated_tools
 
     for tool in resolve_skill_gated_tools(context):

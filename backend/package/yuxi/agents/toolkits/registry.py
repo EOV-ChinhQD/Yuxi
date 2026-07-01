@@ -4,38 +4,38 @@ from dataclasses import dataclass, field
 
 @dataclass
 class ToolExtraMetadata:
-    """附加元数据（用装饰器注册）"""
+    """Meta-dữ liệu bổ sung (đăng ký bằng decorator)"""
 
-    category: str = ""  # 分类: buildin, knowledge, mysql, subagents, debug
+    category: str = ""  # Phân loại: buildin, knowledge, mysql, subagents, debug
     tags: list[str] = field(default_factory=list)
-    display_name: str = ""  # 显示名称（给人看的名字）
+    display_name: str = ""  # Tên hiển thị
     icon: str = ""
-    config_guide: str = ""  # 配置说明（给人看的使用前配置提示）
+    config_guide: str = ""  # Hướng dẫn cấu hình
 
 
-# 全局注册表: tool_name -> ToolExtraMetadata
+# Global registry: tool_name -> ToolExtraMetadata
 _extra_registry: dict[str, ToolExtraMetadata] = {}
 
-# 全局工具实例列表（由 @tool 装饰器自动收集）
+# List of global tool instances (automatically collected by the @tool decorator)
 _all_tool_instances: list = []
 
 
 def get_extra_metadata(tool_name: str) -> ToolExtraMetadata | None:
-    """获取工具附加元数据"""
+    """Get tool additional metadata"""
     return _extra_registry.get(tool_name)
 
 
 def get_all_extra_metadata() -> dict[str, ToolExtraMetadata]:
-    """获取所有附加元数据"""
+    """Get all additional metadata"""
     return _extra_registry.copy()
 
 
 def get_all_tool_instances() -> list:
-    """获取所有工具实例（由 @tool 装饰器自动收集）"""
+    """Get all tool instances (provided by @tool Decorators automatically collected)"""
     return _all_tool_instances
 
 
-# 基于 langchain.tool 的拓展装饰器
+# Extended decorator based on langchain.tool
 def tool(
     category: str = "",
     tags: list[str] = None,
@@ -47,18 +47,16 @@ def tool(
     args_schema: type | None = None,
     return_direct: bool = False,
 ):
-    """基于 langchain.tool 的拓展装饰器，同时注册元数据
+    """Decorator mở rộng dựa trên langchain.tool, đồng thời đăng ký meta-dữ liệu.
 
-    使用方式:
-    @tool(category="buildin", tags=["计算"], display_name="计算器")
+    Cách sử dụng:
+    @tool(category="buildin", tags=["tinh-toan"], display_name="Calculator")
     def calculator(a: float, b: float, operation: str) -> float:
         ...
-
-    或者保留原有的 name_or_callable 和 description 参数来自定义工具名称和说明。
     """
     from langchain.tools import tool as langchain_tool
 
-    # 先应用 langchain tool 装饰器
+    # First apply the langchain tool decorator
     langchain_decorator = langchain_tool(
         name_or_callable=name_or_callable,
         description=description,
@@ -67,10 +65,10 @@ def tool(
     )
 
     def decorator(func: Callable) -> Callable:
-        # 应用 langchain 装饰器
+        # Apply the langchain decorator
         tool_obj = langchain_decorator(func)
 
-        # 注册附加元数据
+        # Register additional metadata
         tool_name = tool_obj.name
         _extra_registry[tool_name] = ToolExtraMetadata(
             category=category,
@@ -80,7 +78,7 @@ def tool(
             config_guide=config_guide,
         )
 
-        # 自动收集工具实例
+        # Automatic collection tool example
         tool_obj.handle_tool_error = True
         _all_tool_instances.append(tool_obj)
 

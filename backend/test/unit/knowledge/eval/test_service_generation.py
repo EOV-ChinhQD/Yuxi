@@ -76,7 +76,7 @@ async def test_generate_dataset_rejects_graph_mode_without_indexed_chunks():
     service.eval_repo = FakeEvaluationRepository()
     service.chunk_repo = FakeChunkRepository(indexed_count=0)
 
-    with pytest.raises(ValueError, match="尚未完成图索引"):
+    with pytest.raises(ValueError, match="chưa hoàn thành chỉ mục đồ thị"):
         await service.generate_dataset(
             kb_id="db_1",
             name="dataset",
@@ -122,12 +122,12 @@ async def test_run_evaluation_saves_custom_name(monkeypatch):
     run_id = await service.run_evaluation(
         kb_id="db_1",
         dataset_id="dataset_1",
-        name="  回归评估  ",
+        name="  regression evaluation  ",
         model_config={"answer_llm": "test:model"},
         created_by="user_1",
     )
 
     assert run_id.startswith("run_")
-    assert repo.created_run["name"] == "回归评估"
+    assert repo.created_run["name"] == "regression evaluation"
     assert repo.created_run["retrieval_config"]["top_k"] == 3
     assert repo.created_run["retrieval_config"]["answer_llm"] == "test:model"

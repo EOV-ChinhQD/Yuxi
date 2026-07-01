@@ -18,11 +18,11 @@ async def resolve_agent_runtime_context(
 ) -> BaseContext:
     agent_item = await AgentRepository(db).get_visible_by_slug(slug=bound_agent_id, user=user)
     if not agent_item:
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent không tồn tại")
 
     backend = agent_manager.get_agent(agent_item.backend_id)
     if not backend:
-        raise HTTPException(status_code=404, detail="智能体后端不存在")
+        raise HTTPException(status_code=404, detail="Backend của agent không tồn tại")
 
     context_schema = backend.context_schema
     context = context_schema(thread_id="", uid=str(user.uid))

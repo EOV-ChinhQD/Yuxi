@@ -1,4 +1,4 @@
-"""思维导图工具函数。"""
+"""Mind mapping tool function."""
 
 import copy
 import json
@@ -16,72 +16,72 @@ from yuxi.utils import logger
 MINDMAP_FILE_PAGE_SIZE = 500
 MINDMAP_GENERATION_FILE_LIMIT = 200
 
-MINDMAP_SYSTEM_PROMPT = """你是一个专业的知识整理助手。
+MINDMAP_SYSTEM_PROMPT = """Bạn là một trợ lý sắp xếp kiến thức chuyên nghiệp.
 
-你的任务是分析用户提供的文件列表，生成一个层次分明的思维导图结构。
+Your task is to analyze the list of files provided by the user and generate a hierarchical mind map structure.
 
-**核心规则：每个文件名只能出现一次！不允许重复！**
+**Core rule: Each file name may appear only once! No duplicates allowed!**
 
-要求：
-1. 思维导图要有清晰的层级结构（2-4层）
-2. 根节点是知识库名称
-3. 第一层是主要分类（如：技术文档、规章制度、数据资源等）
-4. 第二层是子分类
-5. **叶子节点必须是具体的文件名称**
-6. **每个文件名在整个思维导图中只能出现一次，不得重复！**
-7. 如果一个文件可能属于多个分类，只选择最合适的一个分类放置
-8. 使用合适的emoji图标增强可读性
-9. 返回JSON格式，遵循以下结构：
+Require:
+1. Mind maps should have a clear hierarchical structure (2-4 levels)
+2. The root node is Knowledge base name
+3. The first layer is the main category (like: technical document, chapter system, data resources, etc.)
+4. The second layer is a sub-category
+5. **Leaf nodes must be specific file names**
+6. **Each file name can only appear once in the entire mind map and cannot be repeated!**
+7. If one file may belong to multiple categories, only select the most suitable category to place.
+8. Use appropriate emoji tags to enhance readability
+9. Returns JSON format, following the following structure:
 
 ```json
 {
-  "content": "知识库名称",
+  "content": "Knowledge base name",
   "children": [
     {
-      "content": "🎯 主分类1",
+      "content": "🎯 Main category 1",
       "children": [
         {
-          "content": "子分类1.1",
+          "content": "Subcategory 1.1",
           "children": [
-            {"content": "文件名1.txt", "children": []},
-            {"content": "文件名2.pdf", "children": []}
+            {"content": "File name 1.txt", "children": []},
+            {"content": "File name 2.pdf", "children": []}
           ]
         }
       ]
     },
     {
-      "content": "💻 主分类2",
+      "content": "💻 Main category 2",
       "children": [
-        {"content": "文件名3.docx", "children": []},
-        {"content": "文件名4.md", "children": []}
+        {"content": "File name 3.docx", "children": []},
+        {"content": "File name 4.md", "children": []}
       ]
     }
   ]
 }
 ```
 
-**重要约束：**
-- 每个文件名在整个JSON中只能出现一次
-- 不要按多个维度分类导致文件重复
-- 选择最主要、最合适的分类维度
-- 每个叶子节点的children必须是空数组[]
-- 分类名称要简洁明了
-- 使用emoji增强视觉效果
+**Important constraints:**
+- Each file name can only appear once in the entire JSON
+- Do not classify files by multiple dimensions resulting in duplication of files
+- Choose the most important and appropriate classification dimension
+- The children of each leaf node must be an empty array[]
+- Category names should be concise and clear
+- Use emoji to enhance visual effects
 """
 
-MINDMAP_INCREMENTAL_SYSTEM_PROMPT = """你是一个专业的知识整理助手。
+MINDMAP_INCREMENTAL_SYSTEM_PROMPT = """Bạn là một trợ lý sắp xếp kiến thức chuyên nghiệp.
 
-你的任务是将新文件整合到已有的思维导图结构中。
+Your task is to integrate the new document into the existing mind map structure.
 
-**核心规则：**
-1. 保留现有思维导图的分类结构不变
-2. 将新文件添加到最合适的已有分类下
-3. 如果新文件不属于任何现有分类，可以创建新的分类节点
-4. 每个文件名只能出现一次，不允许重复
-5. 如果已有分类名称需要微调以容纳新文件，可以适当调整
-6. 返回完整的思维导图JSON（包含原有结构 + 新文件）
+**Core rules:**
+1. Keep the existing category structure unchanged.
+2. It is most suitable to add the new document to the existing category.
+3. If the new document does not belong to any existing category, you can create a new category node.
+4. Each individual file name can only appear once, no repetitions are allowed.
+5. If the existing category name needs to be fine-tuned to accommodate the new document, it can be adjusted appropriately.
+6. Return the complete mind map JSON (including the original structure + new document)
 
-返回JSON格式同标准思维导图结构。
+The returned JSON Format is the same as the standard mind map structure.
 """
 
 
@@ -151,20 +151,20 @@ def collect_mindmap_files(all_files: dict[str, dict[str, Any]], file_ids: list[s
 
 def build_mindmap_user_message(db_name: str, files_info: list[dict[str, str]], user_prompt: str = "") -> str:
     files_text = "\n".join([f"- {file_info['filename']} ({file_info['type']})" for file_info in files_info])
-    return textwrap.dedent(f"""请为知识库\"{db_name}\"生成思维导图结构。
+    return textwrap.dedent(f"""Please generate a mind map structure for the knowledge base "{db_name}".
 
-        文件列表（共{len(files_info)}个文件）：
+        Document list (total {len(files_info)} files):
         {files_text}
 
-        {f"用户补充说明：{user_prompt}" if user_prompt else ""}
+        {f"Additional user instructions:{user_prompt}" if user_prompt else ""}
 
-        **重要提醒：**
-        1. 这个知识库共有{len(files_info)}个文件
-        2. 每个文件名只能在思维导图中出现一次
-        3. 不要让同一个文件出现在多个分类下
-        4. 为每个文件选择最合适的唯一分类
+        **Important reminder:**
+        1. This knowledge base has {len(files_info)} files
+        2. Each individual file name can only appear once in the mind map.
+        3. Do not let the same file appear under multiple categories
+        4. Select the most appropriate category for each file
 
-        请生成合理的思维导图结构。""")
+        Please generate a reasonable mind map structure. """)
 
 
 def build_mindmap_incremental_user_message(
@@ -172,23 +172,23 @@ def build_mindmap_incremental_user_message(
 ) -> str:
     existing_structure = json.dumps(mindmap_data, ensure_ascii=False, indent=2)
     files_text = "\n".join([f"- {f['filename']} ({f['type']})" for f in added_files])
-    return textwrap.dedent(f"""请将以下新文件整合到知识库\"{db_name}\"的现有思维导图中。
+    return textwrap.dedent(f"""Please integrate the following new documents into the existing mind map of the knowledge base "{db_name}".
 
-        现有思维导图结构：
+        Existing mind map structure:
         {existing_structure}
 
-        新增文件列表（共{len(added_files)}个文件）：
+        Added file list (total {len(added_files)} files):
         {files_text}
 
-        {f"用户补充说明：{user_prompt}" if user_prompt else ""}
+        {f"Additional user instructions:{user_prompt}" if user_prompt else ""}
 
-        **重要提醒：**
-        1. 保留现有分类结构，将新文件添加到最合适的已有分类下
-        2. 如果新文件不适合任何现有分类，创建新的分类节点
-        3. 每个文件名只能出现一次
-        4. 返回完整的思维导图JSON（包含原有结构 + 新文件）
+        **Important reminder:**
+        1. Keep the existing category structure, and it is most suitable to add the new document to the existing category.
+        2. If the new document does not fit any existing category, create a new category node
+        3. Each individual file name can only appear once.
+        4. Return the complete mind map JSON (including the original structure + new document)
 
-        请整合新文件到现有结构中。""")
+        Please integrate the new document into the existing structure. """)
 
 
 def parse_mindmap_content(content: str) -> dict[str, Any]:
@@ -203,7 +203,7 @@ def parse_mindmap_content(content: str) -> dict[str, Any]:
 
     mindmap_data = json.loads(content)
     if not isinstance(mindmap_data, dict) or "content" not in mindmap_data:
-        raise ValueError("思维导图结构不正确")
+        raise ValueError("Cấu trúc sơ đồ tư duy không chính xác")
     return mindmap_data
 
 
@@ -212,8 +212,8 @@ def detect_mindmap_changes(
     mindmap_file_ids: dict[str, str] | None,
     current_files: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    """对比思维导图追踪的文件与知识库当前文件，返回变更信息。"""
-    # 兼容旧数据：如果存在思维导图但缺少追踪的 file_ids，通过叶子节点反向重建映射
+    """Compare the files tracked by the mind map with the current files in the knowledge base and return the change information."""
+    # Compatible with old data: if a mind map exists but the tracked file_ids are missing, reconstruct the mapping backwards through the leaf nodes
     if mindmap_data and not mindmap_file_ids:
         leaf_filenames = _collect_leaf_filenames(mindmap_data)
         mindmap_file_ids = {
@@ -261,7 +261,7 @@ def detect_mindmap_changes(
 
 
 def _prune_mindmap_node(node: dict[str, Any], removed_filenames: set[str], root_name: str) -> dict[str, Any] | None:
-    """递归修剪思维导图节点，移除指定文件名的叶子节点。"""
+    """Recursively prune mind map nodes and remove leaf nodes with specified file names."""
     content = node.get("content", "")
     children = node.get("children", [])
 
@@ -287,7 +287,7 @@ def _prune_mindmap_node(node: dict[str, Any], removed_filenames: set[str], root_
 
 
 def remove_files_from_mindmap(mindmap_data: dict[str, Any], removed_filenames: set[str]) -> dict[str, Any]:
-    """从思维导图树中移除指定文件名的叶子节点，无需 AI 调用。"""
+    """Removes the leaf node of the specified file name from the mind map tree without AI call."""
     if not removed_filenames:
         return mindmap_data
 
@@ -300,7 +300,7 @@ def remove_files_from_mindmap(mindmap_data: dict[str, Any], removed_filenames: s
 async def get_mindmap_database_files(kb_id: str) -> dict[str, Any]:
     kb = await KnowledgeBaseRepository().get_by_kb_id(kb_id)
     if kb is None:
-        raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Cơ sở kiến thức {kb_id} không tồn tại")
 
     current_files, total = await _list_mindmap_files_page(kb_id)
     return {
@@ -315,10 +315,10 @@ async def get_mindmap_database_files(kb_id: str) -> dict[str, Any]:
 
 
 async def get_mindmap_diff(kb_id: str) -> dict[str, Any]:
-    """获取思维导图变更检测结果。"""
+    """Get mind map change detection results."""
     kb = await KnowledgeBaseRepository().get_by_kb_id(kb_id)
     if kb is None:
-        raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Cơ sở kiến thức {kb_id} không tồn tại")
 
     current_files, total = await _load_mindmap_current_files(kb_id, list((kb.mindmap_file_ids or {}).keys()))
 
@@ -332,13 +332,13 @@ async def get_mindmap_diff(kb_id: str) -> dict[str, Any]:
 
 
 async def update_mindmap_incremental(kb_id: str, user_prompt: str = "") -> dict[str, Any]:
-    """增量更新思维导图：纯删除场景无需 AI，有新增时调用 AI 整合。"""
+    """Incremental mind map update: pure deletion of scenes does not require AI, and AI integration is called when new ones are added."""
     kb = await KnowledgeBaseRepository().get_by_kb_id(kb_id)
     if kb is None or not kb.mindmap:
-        raise HTTPException(status_code=400, detail="知识库没有现有思维导图，请使用全量生成")
+        raise HTTPException(status_code=400, detail="Kho kiến thức không có sơ đồ tư duy hiện tại, vui lòng tạo toàn bộ")
 
     current_files, total = await _load_mindmap_current_files(kb_id, list((kb.mindmap_file_ids or {}).keys()))
-    db_name = kb.name or "知识库"
+    db_name = kb.name or "knowledge base"
 
     changes = detect_mindmap_changes(kb.mindmap, kb.mindmap_file_ids, current_files)
     changes["current_files_truncated"] = total > len(current_files)
@@ -390,8 +390,8 @@ async def update_mindmap_incremental(kb_id: str, user_prompt: str = "") -> dict[
             try:
                 mindmap_data = parse_mindmap_content(content)
             except ValueError as e:
-                logger.error(f"增量AI返回的JSON解析失败: {e}, 原始内容: {content}")
-                raise HTTPException(status_code=500, detail=f"AI返回格式错误: {str(e)}") from e
+                logger.error(f"JSON parsing returned by incremental AI failed: {e}, original content: {content}")
+                raise HTTPException(status_code=500, detail=f"Lỗi định dạng trả về từ AI: {str(e)}") from e
 
         for f in changes["added_files"]:
             updated_file_ids[f["file_id"]] = f["filename"]
@@ -412,9 +412,9 @@ async def update_mindmap_incremental(kb_id: str, user_prompt: str = "") -> dict[
                 "mindmap_metadata": metadata,
             },
         )
-        logger.info(f"思维导图增量更新成功: {kb_id}")
+        logger.info(f"Mind map incremental update successful: {kb_id}")
     except Exception as save_error:
-        logger.error(f"保存思维导图失败: {save_error}")
+        logger.error(f"Failed to save mind map: {save_error}")
 
     no_ai = not changes["added_files"]
     return {
@@ -435,9 +435,9 @@ async def generate_database_mindmap(
 
     kb = await KnowledgeBaseRepository().get_by_kb_id(kb_id)
     if kb is None:
-        raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Cơ sở kiến thức {kb_id} không tồn tại")
 
-    db_name = kb.name or "知识库"
+    db_name = kb.name or "knowledge base"
     from yuxi.repositories.knowledge_file_repository import KnowledgeFileRepository
 
     file_repo = KnowledgeFileRepository()
@@ -446,7 +446,7 @@ async def generate_database_mindmap(
         selected_file_ids = list(file_ids[:MINDMAP_GENERATION_FILE_LIMIT])
         if len(file_ids) > MINDMAP_GENERATION_FILE_LIMIT:
             logger.info(
-                f"文件数量超过限制，已从{original_count}个文件中选择前{MINDMAP_GENERATION_FILE_LIMIT}个文件生成思维导图"
+                f"The number of files exceeds the limit and has been removed from{original_count}before selecting files{MINDMAP_GENERATION_FILE_LIMIT}Generate mind map from file"
             )
         records = await file_repo.list_by_file_ids(selected_file_ids)
         all_files = {
@@ -459,13 +459,13 @@ async def generate_database_mindmap(
         selected_file_ids = list(all_files.keys())
 
     if not selected_file_ids:
-        raise HTTPException(status_code=400, detail="知识库中没有文件")
+        raise HTTPException(status_code=400, detail="Không có file trong kho kiến thức")
 
     files_info = collect_mindmap_files(all_files, selected_file_ids)
     if not files_info:
-        raise HTTPException(status_code=400, detail="选择的文件不存在")
+        raise HTTPException(status_code=400, detail="File đã chọn không tồn tại")
 
-    logger.info(f"开始生成思维导图，知识库: {db_name}, 文件数量: {len(files_info)}")
+    logger.info(f"Start generating mind maps and knowledge bases: {db_name}, Number of files: {len(files_info)}")
 
     model = select_model(model_spec=config.default_model)
     messages = [
@@ -478,10 +478,10 @@ async def generate_database_mindmap(
     try:
         mindmap_data = parse_mindmap_content(content)
     except ValueError as e:
-        logger.error(f"AI返回的JSON解析失败: {e}, 原始内容: {content}")
-        raise HTTPException(status_code=500, detail=f"AI返回格式错误: {str(e)}") from e
+        logger.error(f"JSON parsing returned by AI failed: {e}, original content: {content}")
+        raise HTTPException(status_code=500, detail=f"Lỗi định dạng trả về từ AI: {str(e)}") from e
 
-    logger.info("思维导图生成成功")
+    logger.info("Mind map generated successfully")
 
     now = datetime.now(UTC).isoformat()
     mindmap_file_ids = {fid: all_files[fid].get("filename", "") for fid in selected_file_ids if fid in all_files}
@@ -500,9 +500,9 @@ async def generate_database_mindmap(
                 "mindmap_metadata": mindmap_metadata,
             },
         )
-        logger.info(f"思维导图已保存到知识库: {kb_id}")
+        logger.info(f"The mind map has been saved to the knowledge base: {kb_id}")
     except Exception as save_error:
-        logger.error(f"保存思维导图失败: {save_error}")
+        logger.error(f"Failed to save mind map: {save_error}")
 
     return {
         "message": "success",
@@ -545,7 +545,7 @@ async def get_mindmap_databases_overview(uid: str) -> dict[str, Any]:
 async def get_database_mindmap_data(kb_id: str) -> dict[str, Any]:
     kb = await KnowledgeBaseRepository().get_by_kb_id(kb_id)
     if kb is None:
-        raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Cơ sở kiến thức {kb_id} không tồn tại")
 
     return {
         "message": "success",
@@ -559,7 +559,7 @@ async def get_database_mindmap_data(kb_id: str) -> dict[str, Any]:
 
 
 def _collect_leaf_filenames(node: dict[str, Any]) -> set[str]:
-    """递归收集思维导图中所有叶子节点的文件名。"""
+    """Recursively collect the file names of all leaf nodes in the mind map."""
     children = node.get("children", [])
     if not children:
         return {node.get("content", "")}
@@ -570,12 +570,12 @@ def _collect_leaf_filenames(node: dict[str, Any]) -> set[str]:
 
 
 async def remove_file_from_mindmap(kb_id: str, file_id: str, filename: str | None = None) -> None:
-    """从思维导图中移除已删除文件的叶子节点（纯树手术，无 AI 调用）。
+    """Remove and Delete files of leaf nodes from the mind guide picture (pure tree surgery, no AI calls).
 
     Args:
-        kb_id: 知识库 ID
-        file_id: 被删除文件的 ID
-        filename: 被删除文件的文件名（可选，用于旧数据兼容）
+        kb_id: knowledge base ID
+        file_id: Delete filesof ID
+        filename: The file name of the deleted file (optional, for old data compatibility)
     """
     kb = await KnowledgeBaseRepository().get_by_kb_id(kb_id)
     if not kb or not kb.mindmap:
@@ -606,17 +606,17 @@ async def remove_file_from_mindmap(kb_id: str, file_id: str, filename: str | Non
                 "mindmap_file_ids": updated_file_ids,
             },
         )
-        logger.info(f"思维导图中已移除文件: {removed_filename}")
+        logger.info(f"File removed from mind map: {removed_filename}")
     except Exception as e:
-        logger.error(f"从思维导图移除文件失败: {e}")
+        logger.error(f"Failed to remove file from mind map: {e}")
 
 
 async def batch_remove_files_from_mindmap(kb_id: str, removals: list[tuple[str, str]]) -> None:
-    """批量从思维导图中移除已删除文件的叶子节点（单次 DB 读写，无 AI 调用）。
+    """Remove and Delete files of leaf nodes from mind guidance pictures in batches (single DB read and write, no AI call).
 
     Args:
-        kb_id: 知识库 ID
-        removals: [(file_id, filename), ...] 待移除的文件列表
+        kb_id: knowledge base ID
+        removals: [(file_id, filename), ...] List of files to be removed
     """
     if not removals:
         return
@@ -654,6 +654,6 @@ async def batch_remove_files_from_mindmap(kb_id: str, removals: list[tuple[str, 
                 "mindmap_file_ids": updated_file_ids,
             },
         )
-        logger.info(f"思维导图批量清理完成: {kb_id}, 移除 {len(stale_filenames)} 个文件")
+        logger.info(f"Mind map batch cleaning completed: {kb_id}, Remove {len(stale_filenames)} files")
     except Exception as e:
-        logger.error(f"从思维导图批量移除文件失败: {e}")
+        logger.error(f"Batch removal of files from mind map failed: {e}")

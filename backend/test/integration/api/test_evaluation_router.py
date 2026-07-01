@@ -13,7 +13,7 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 
 async def _upload_test_dataset(test_client, admin_headers: dict[str, str], kb_id: str) -> tuple[str, str]:
     dataset_name = f"pytest_dataset_{uuid.uuid4().hex[:8]}"
-    line = '{"query":"什么是单元测试？","gold_answer":"用于验证代码行为的自动化测试"}\n'
+    line = '{"query":"What is unit testing?","gold_answer":"Automated tests to verify code behavior"}\n'
 
     response = await test_client.post(
         f"/api/evaluation/databases/{kb_id}/datasets/upload",

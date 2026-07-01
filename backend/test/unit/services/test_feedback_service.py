@@ -95,11 +95,11 @@ async def test_submit_message_feedback_skips_langfuse_without_trace_id(monkeypat
     result = await svc.submit_message_feedback_view(
         message_id=3,
         rating="dislike",
-        reason="不相关",
+        reason="Not relevant",
         db=db,
         current_uid="user-1",
     )
 
     assert result["rating"] == "dislike"
-    assert result["reason"] == "不相关"
+    assert result["reason"] == "Not relevant"
     assert calls == []

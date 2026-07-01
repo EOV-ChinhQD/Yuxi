@@ -185,7 +185,7 @@ async def test_notion_find_file_content_uses_page_markdown(monkeypatch, notion_k
 async def test_notion_open_file_content_rejects_unknown_parent(monkeypatch, notion_kb):
     monkeypatch.setattr("yuxi.knowledge.implementations.notion._NotionClient", _UnknownParentNotionClient)
 
-    with pytest.raises(ValueError, match="不属于当前 Data Source"):
+    with pytest.raises(ValueError, match="không thuộc Data Source hiện tại"):
         await notion_kb.open_file_content("kb_notion", PAGE_ID)
 
 

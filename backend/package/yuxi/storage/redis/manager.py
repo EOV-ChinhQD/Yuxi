@@ -1,7 +1,7 @@
-"""Redis 客户端管理。
+"""Redis client management.
 
-本模块只负责 Redis 连接参数、客户端创建和连接生命周期；业务 key、TTL、序列化格式
-留在调用方模块中。
+This module is only responsible for Redis connection parameters, client creation and connection life cycle; business key, TTL, serialization Format
+Stay in the caller module.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ def _float_or_none(value: str | None) -> float | None:
 
 
 def redact_redis_url(url: str) -> str:
-    """隐藏 url 中的密码部分用于日志输出。"""
+    """Hide the password part in the url for log output."""
     try:
         parsed = urlparse(url)
         if parsed.password:
@@ -37,7 +37,7 @@ def redact_redis_url(url: str) -> str:
 
 @dataclass(frozen=True)
 class RedisConfig:
-    """Redis 连接配置，仅承载参数，不建立连接。"""
+    """Redis Connection configuration only carries parameters and does not establish a connection."""
 
     url: str = DEFAULT_REDIS_URL
     max_connections: int = DEFAULT_REDIS_MAX_CONNECTIONS
@@ -90,7 +90,7 @@ def _close_sync_client(client: Any) -> None:
 
 @contextmanager
 def sync_redis_client(config: RedisConfig | None = None, *, ping: bool = True) -> Iterator[Any]:
-    """短生命周期同步 Redis 客户端。"""
+    """Short-lived synchronization Redis client."""
     client = create_sync_redis_client(config, ping=ping)
     try:
         yield client
@@ -106,7 +106,7 @@ async def _close_async_client(client: Any) -> None:
 
 
 def create_sync_redis_client(config: RedisConfig | None = None, *, ping: bool = True) -> Any:
-    """创建同步 Redis 客户端。调用方按自身生命周期缓存或关闭。"""
+    """Create a synchronous Redis client. The caller caches or closes according to its own life cycle."""
     config = config or RedisConfig.from_env()
     try:
         import redis
@@ -126,7 +126,7 @@ def create_sync_redis_client(config: RedisConfig | None = None, *, ping: bool = 
 
 
 async def create_async_redis_client(config: RedisConfig | None = None, *, ping: bool = True) -> Any:
-    """创建异步 Redis 客户端。调用方按自身生命周期缓存或关闭。"""
+    """Create an asynchronous Redis client. The caller caches or closes according to its own life cycle."""
     config = config or RedisConfig.from_env()
     try:
         from redis.asyncio import Redis
@@ -157,7 +157,7 @@ def _get_async_redis_lock() -> asyncio.Lock:
 
 
 async def get_async_redis_client(config: RedisConfig | None = None) -> Any:
-    """获取共享异步 Redis 客户端。"""
+    """Get a shared asynchronous Redis client."""
     global _async_redis_client
     if _async_redis_client is not None:
         return _async_redis_client
@@ -169,7 +169,7 @@ async def get_async_redis_client(config: RedisConfig | None = None) -> Any:
 
 
 async def close_async_redis_client() -> None:
-    """关闭共享异步 Redis 客户端。"""
+    """Close the shared asynchronous Redis client."""
     global _async_redis_client
     if _async_redis_client is None:
         return
@@ -178,7 +178,7 @@ async def close_async_redis_client() -> None:
 
 
 def get_arq_redis_settings(config: RedisConfig | None = None) -> Any:
-    """创建 ARQ 使用的 RedisSettings。"""
+    """Create RedisSettings used by ARQ."""
     config = config or RedisConfig.from_env()
     try:
         from arq.connections import RedisSettings
@@ -188,7 +188,7 @@ def get_arq_redis_settings(config: RedisConfig | None = None) -> Any:
 
 
 async def create_arq_redis_pool(config: RedisConfig | None = None) -> Any:
-    """创建 ARQ Redis 连接池。"""
+    """Create an ARQ Redis connection pool."""
     try:
         from arq.connections import create_pool
     except Exception as e:

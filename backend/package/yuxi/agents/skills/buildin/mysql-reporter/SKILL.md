@@ -1,49 +1,49 @@
 ---
 name: mysql reporter
 slug: mysql-reporter
-description: "生成 MySQL 查询报表并生成可视化图表。当用户需要查询 MySQL 数据库并以报表形式展示结果时使用此技能，包括：统计销售数据、分析用户行为、生成业务报表、查询业务指标等。"
+description: "Generate MySQL query reports and generate visual charts. Use this skill when users need to query the MySQL database and display the results in the form of reports, including: counting sales data, analyzing user behavior, generating business reports, querying business indicators, etc."
 ---
 
-# MySQL 报表技能
+# MySQL reporting skills
 
-根据用户的指令，通过终端脚本访问 MySQL 数据库，并结合图表绘制工具构建 SQL 查询报告。
+According to the user's instructions, access the MySQL database through terminal scripts and combine it with chart drawing tools to build SQL query reports.
 
-## 操作流程
+## Operation process
 
-1. 理解用户的指令，明确报表的需求和目标
-2. 通过 terminal 进入技能目录：`cd /home/gem/skills/mysql-reporter`
-3. 使用 `uv run scripts/list_tables.py` 查看可用表；如果脚本提示缺少 MySQL 配置，按“环境变量缺失处理”回复用户
-4. 必要时用 `uv run scripts/describe_table.py --table 表名` 查看表结构
-5. 生成正确且高效的只读 SQL，通过 `uv run scripts/query.py --sql "SQL语句" --timeout 60` 执行查询并获取结果
-6. 使用 Charts MCP 生成图表
-7. 将图表以 markdown 图片格式嵌入报表
+1. Understand user instructions and clarify report needs and goals
+2. Enter the skills directory through terminal: `cd /home/gem/skills/mysql-reporter`
+3. Use `uv run scripts/list_tables.py` to view available tables; if the script prompts that MySQL configuration is missing, reply to the user according to "Handling missing environment variables"
+4. If necessary, use `uv run scripts/describe_table.py --table table name` to view the table structure
+5. Generate correct and efficient read-only SQL, execute the query and obtain the results through `uv run scripts/query.py --sql "SQL statement" --timeout 60`
+6. Use Charts MCP to generate charts
+7. Embed the chart into the report in markdown image format
 
-## 环境变量缺失处理
+## Handling missing environment variables
 
-脚本只读取 Agent 沙盒中的环境变量，不读取后端 `.env` 或 Docker Compose 变量。必填变量包括：
+The script only reads environment variables in the Agent sandbox, not backend `.env` or Docker Compose variables. Required variables include:
 
 - `MYSQL_HOST`
 - `MYSQL_USER`
 - `MYSQL_PASSWORD`
 - `MYSQL_DATABASE`
 
-可选变量包括：
+Optional variables include:
 
-- `MYSQL_PORT`：默认 `3306`
-- `MYSQL_DATABASE_DESCRIPTION`：数据库业务说明，用于辅助理解表和指标含义
+- `MYSQL_PORT`: default `3306`
+- `MYSQL_DATABASE_DESCRIPTION`: database business description, used to assist in understanding the meaning of tables and indicators
 
-如果执行脚本时出现 `MySQL configuration missing required key`，不要继续猜测连接信息或编造报表。应明确告诉用户：需要在个人设置中的「沙盒环境变量」里配置缺失的 `MYSQL_*` 变量；保存后仅对新建沙盒生效，需要重新发起任务或新建会话后再执行。
+If `MySQL configuration missing required key` appears when executing a script, do not continue to guess connection information or make up reports. Users should be clearly told that they need to configure the missing `MYSQL_*` variables in the "Sandbox Environment Variables" in personal settings; after saving, they will only take effect for new sandboxes, and they need to re-initiate the task or create a new session before executing.
 
-## 关键约束
+## Key constraints
 
-- 生成的 SQL 查询必须正确且高效，避免全表扫描
-- MySQL 操作必须通过本技能 `scripts/` 下的 CLI 脚本执行，不要调用平台内置 MySQL tools
-- 不要在报表或错误说明中输出 `MYSQL_PASSWORD` 等敏感环境变量的值，只能说明缺少哪些变量名
-- 图表生成工具的返回结果不会默认渲染，必须在最终报表中以 `![描述](图片URL)` 格式嵌入
-- 只返回报表相关的结论，不要返回原始 SQL 查询语句
+- The generated SQL queries must be correct and efficient to avoid full table scans
+- MySQL operations must be executed through the CLI script under `scripts/` in this skill. Do not call the platform's built-in MySQL tools.
+- Do not output the values ​​of sensitive environment variables such as `MYSQL_PASSWORD` in reports or error descriptions. Only indicate which variable names are missing.
+- The results returned by the chart generation tool will not be rendered by default and must be embedded in the final report in the format of `![Description](Picture URL)`
+- Only return conclusions related to the report, do not return the original SQL query statement
 
-## 允许的工具
+## Allowed tools
 
-- terminal：执行 `scripts/list_tables.py`、`scripts/describe_table.py`、`scripts/query.py`
-- Charts MCP：生成可视化图表
-- 网络检索工具：必要时补充背景信息
+- terminal: execute `scripts/list_tables.py`, `scripts/describe_table.py`, `scripts/query.py`
+- Charts MCP: generate visual charts
+- Web search tool: add background information if necessary

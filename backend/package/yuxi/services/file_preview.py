@@ -84,7 +84,7 @@ OFFICE_PREVIEW_TIMEOUT_SECONDS = _office_preview_timeout_seconds()
 
 
 class OfficePreviewConversionError(RuntimeError):
-    """Office 文件转换为 PDF 失败。"""
+    """Office File conversion to PDF failed."""
 
 
 def is_office_pdf_preview_file(path: str) -> bool:
@@ -100,7 +100,7 @@ def render_preview_too_large_payload() -> dict:
         "content": None,
         "preview_type": "unsupported",
         "supported": False,
-        "message": "文件过大，当前仅支持 30 MB 以内的文件预览",
+        "message": "The file is too large. Currently, only file previews within 30 MB are supported.",
         "truncated": False,
         "limit": MAX_BINARY_PREVIEW_SIZE_BYTES,
     }
@@ -109,14 +109,14 @@ def render_preview_too_large_payload() -> dict:
 def _office_converter_executable() -> str:
     executable = shutil.which("soffice") or shutil.which("libreoffice")
     if not executable:
-        raise OfficePreviewConversionError("Office PDF 预览依赖 LibreOffice，请先安装 soffice/libreoffice")
+        raise OfficePreviewConversionError("Xem trước Office PDF phụ thuộc vào LibreOffice, vui lòng cài đặt soffice/libreoffice trước")
     return executable
 
 
 def _convert_office_to_pdf_sync(filename: str, content: bytes) -> bytes:
     suffix = PurePosixPath(filename).suffix.lower()
     if suffix not in _OFFICE_PDF_PREVIEW_EXTENSIONS:
-        raise OfficePreviewConversionError("当前文件类型不支持转换为 PDF 预览")
+        raise OfficePreviewConversionError("Loại tệp hiện tại không hỗ trợ chuyển đổi sang bản xem trước PDF")
 
     executable = _office_converter_executable()
     with tempfile.TemporaryDirectory(prefix="yuxi-office-preview-") as temp_dir:
@@ -150,18 +150,18 @@ def _convert_office_to_pdf_sync(filename: str, content: bytes) -> bytes:
             )
         except subprocess.TimeoutExpired as exc:
             raise OfficePreviewConversionError(
-                f"Office 文件转换 PDF 超时（{OFFICE_PREVIEW_TIMEOUT_SECONDS} 秒）"
+                f"Office File conversion PDF timeout ({OFFICE_PREVIEW_TIMEOUT_SECONDS} Second)"
             ) from exc
         if result.returncode != 0:
             detail = (result.stderr or result.stdout).decode("utf-8", errors="ignore").strip()
-            raise OfficePreviewConversionError(f"Office 文件转换 PDF 失败: {detail or 'LibreOffice 执行失败'}")
+            raise OfficePreviewConversionError(f"Chuyển đổi tệp Office sang PDF thất bại: {detail or 'LibreOffice thực thi thất bại'}")
         if not output_path.exists():
             detail = (result.stderr or result.stdout).decode("utf-8", errors="ignore").strip()
-            raise OfficePreviewConversionError(f"Office 文件转换 PDF 失败: 未生成 PDF 文件。{detail}")
+            raise OfficePreviewConversionError(f"Chuyển đổi tệp Office sang PDF thất bại: Không tạo được tệp PDF。{detail}")
 
         pdf_content = output_path.read_bytes()
         if not pdf_content.startswith(b"%PDF-"):
-            raise OfficePreviewConversionError("Office 文件转换 PDF 失败: 输出文件不是有效 PDF")
+            raise OfficePreviewConversionError("Chuyển đổi tệp Office sang PDF thất bại: Tệp đầu ra không phải là PDF hợp lệ")
         return pdf_content
 
 
@@ -190,12 +190,12 @@ def detect_preview_type(path: str, raw_content: bytes) -> tuple[str, bool, str |
         return "text", True, None
 
     if b"\x00" in head:
-        return "unsupported", False, "当前文件是二进制文件，暂不支持预览"
+        return "unsupported", False, "The current file is a binary file and preview is not currently supported."
 
     if any(head.startswith(signature) for signature in _BINARY_SIGNATURES):
         if head.startswith(b"RIFF") and b"WEBP" in head[:16]:
             return "image", True, None
-        return "unsupported", False, "当前文件格式暂不支持预览"
+        return "unsupported", False, "The current file format does not support preview yet"
 
     if mime_type:
         if mime_type.startswith("text/"):
@@ -203,7 +203,7 @@ def detect_preview_type(path: str, raw_content: bytes) -> tuple[str, bool, str |
         if mime_type in {"application/json", "application/xml", "application/javascript"}:
             return "text", True, None
         if mime_type.startswith("application/"):
-            return "unsupported", False, "当前文件格式暂不支持预览"
+            return "unsupported", False, "The current file format does not support preview yet"
 
     if not raw_content:
         return "text", True, None
@@ -212,7 +212,7 @@ def detect_preview_type(path: str, raw_content: bytes) -> tuple[str, bool, str |
         raw_content.decode("utf-8")
         return "text", True, None
     except UnicodeDecodeError:
-        return "unsupported", False, "当前文件不是可读文本，暂不支持预览"
+        return "unsupported", False, "The current file is not readable text and preview is not currently supported."
 
 
 def render_preview_payload(path: str, raw_content: bytes) -> dict:
@@ -235,7 +235,7 @@ def render_preview_payload(path: str, raw_content: bytes) -> dict:
             "content": None,
             "preview_type": "unsupported",
             "supported": False,
-            "message": "当前文件不是 UTF-8 文本，暂不支持预览",
+            "message": "The current file is not UTF-8 Text, preview is not supported yet",
             "truncated": False,
             "limit": None,
         }

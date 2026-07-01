@@ -29,7 +29,7 @@ def build_evaluation_run_name(started_at=None, hash_value: str | None = None) ->
 
 
 class EvaluationService:
-    """RAG评估服务"""
+    """RAG Assessment Services"""
 
     def __init__(self):
         self.eval_repo = EvaluationRepository()
@@ -99,12 +99,12 @@ class EvaluationService:
         task = await self.task_repo.get_by_id(task_id) if task_id else None
         if task is None:
             metadata.pop("progress", None)
-            metadata.update(status="failed", message="生成任务不存在")
+            metadata.update(status="failed", message="Nhiệm vụ tạo không tồn tại")
         elif task.status == "success":
-            metadata.update(status="completed", progress=100, message=task.message or "完成")
+            metadata.update(status="completed", progress=100, message=task.message or "Hoàn thành")
         elif task.status in {"failed", "cancelled"}:
             metadata.pop("progress", None)
-            metadata.update(status="failed", message=task.error or task.message or "生成任务失败")
+            metadata.update(status="failed", message=task.error or task.message or "Nhiệm vụ tạo thất bại")
         else:
             metadata.update(status=task.status, progress=task.progress, message=task.message)
 
@@ -158,9 +158,9 @@ class EvaluationService:
             try:
                 item = json.loads(line)
             except json.JSONDecodeError as e:
-                raise ValueError(f"第{line_num}行JSON格式错误: {str(e)}")
+                raise ValueError(f"Lỗi định dạng JSON ở dòng {line_num}: {str(e)}")
             if "query" not in item:
-                raise ValueError(f"第{line_num}行缺少必需的'query'字段")
+                raise ValueError(f"Dòng {line_num} thiếu trường 'query' bắt buộc")
             if item.get("gold_chunk_ids"):
                 has_gold_chunks = True
             if item.get("gold_answer"):
@@ -168,7 +168,7 @@ class EvaluationService:
             questions.append(item)
 
         if not questions:
-            raise ValueError("文件中没有有效的问题数据")
+            raise ValueError("Không có dữ liệu câu hỏi hợp lệ trong file")
         return questions, has_gold_chunks, has_gold_answers
 
     async def upload_dataset(
@@ -200,7 +200,7 @@ class EvaluationService:
             )
             return self._dataset_to_dict(row)
         except Exception as e:
-            logger.error(f"上传评估数据集失败: {e}")
+            logger.error(f"Failed to upload evaluation dataset: {e}")
             raise
 
     async def list_datasets(self, kb_id: str) -> list[dict[str, Any]]:
@@ -210,7 +210,7 @@ class EvaluationService:
                 await self._sync_dataset_build_metadata(row)
             return [self._dataset_to_dict(row) for row in rows]
         except Exception as e:
-            logger.error(f"获取评估数据集列表失败: {e}")
+            logger.error(f"Failed to get list of evaluation datasets: {e}")
             raise
 
     async def get_dataset_detail(
@@ -242,7 +242,7 @@ class EvaluationService:
             )
             return data
         except Exception as e:
-            logger.error(f"获取评估数据集详情失败: {e}")
+            logger.error(f"Failed to get evaluation dataset details: {e}")
             raise
 
     async def export_dataset_jsonl(self, dataset_id: str) -> dict[str, str]:
@@ -263,9 +263,9 @@ class EvaluationService:
             if row is None:
                 raise ValueError("Dataset not found")
             await self.eval_repo.delete_dataset(dataset_id)
-            logger.info(f"成功删除评估数据集: {dataset_id}")
+            logger.info(f"Successfully deleted evaluation dataset: {dataset_id}")
         except Exception as e:
-            logger.error(f"删除评估数据集失败: {e}")
+            logger.error(f"Failed to delete evaluation dataset: {e}")
             raise
 
     async def generate_dataset(
@@ -287,11 +287,11 @@ class EvaluationService:
         concurrency_count = normalize_generation_concurrency_count(concurrency_count)
         graph_expand_top_k = min(max(1, int(graph_expand_top_k)), 3)
         if generation_mode not in {"vector", "graph_enhanced"}:
-            raise ValueError("不支持的评估基准生成方式")
+            raise ValueError("Phương thức tạo benchmark không được hỗ trợ")
         if generation_mode == "graph_enhanced":
             indexed_count = await self.chunk_repo.count_graph_indexed_by_kb_id(kb_id)
             if indexed_count <= 0:
-                raise ValueError("当前知识库尚未完成图索引，无法使用图增强构建")
+                raise ValueError("Kho kiến thức hiện tại chưa hoàn thành chỉ mục đồ thị, không thể sử dụng tăng cường đồ thị")
         build_metadata = {
             "source": "generated",
             "status": "pending",
@@ -319,7 +319,7 @@ class EvaluationService:
             }
         )
         task = await tasker.enqueue(
-            name="生成评估数据集",
+            name="Generate evaluation data set",
             task_type="dataset_generation",
             payload={
                 "dataset_id": dataset_id,
@@ -338,7 +338,7 @@ class EvaluationService:
         )
         build_metadata["task_id"] = task.id
         await self.eval_repo.update_dataset(dataset_id, {"build_metadata": build_metadata})
-        return {"dataset_id": dataset_id, "task_id": task.id, "message": "评估数据集生成任务已提交"}
+        return {"dataset_id": dataset_id, "task_id": task.id, "message": "Evaluation dataset generation task has been submitted"}
 
     async def _update_dataset_build_metadata(
         self, dataset_id: str, metadata: dict[str, Any], **updates
@@ -348,7 +348,7 @@ class EvaluationService:
         return metadata
 
     async def _generate_dataset_task(self, context: TaskContext):
-        await context.set_progress(0, "初始化")
+        await context.set_progress(0, "initialization")
         payload = context.payload
 
         dataset_id = payload.get("dataset_id")
@@ -387,10 +387,10 @@ class EvaluationService:
         try:
             kb_instance = await knowledge_base.aget_kb(kb_id)
             if not kb_instance:
-                await report_progress(100, "知识库不存在")
+                await report_progress(100, "Knowledge base does not exist")
                 raise ValueError("Knowledge Base not found")
             if kb_instance.kb_type != "milvus":
-                await report_progress(100, "仅支持 commonrag/Milvus 类型知识库生成评估数据集")
+                await report_progress(100, "Only supports commonrag/Milvus Type knowledge base generates evaluation data set")
                 raise ValueError("Unsupported KB type for dataset generation")
 
             questions = []
@@ -410,11 +410,11 @@ class EvaluationService:
                     questions.append(item)
             except ValueError as e:
                 if str(e) == "No chunks found in knowledge base":
-                    await report_progress(100, "知识库为空或未解析到chunks")
+                    await report_progress(100, "The knowledge base is empty or not parsed into chunks")
                 raise
 
             if not questions:
-                raise ValueError("未生成有效评估题目")
+                raise ValueError("Chưa tạo câu hỏi đánh giá hợp lệ")
 
             await self.eval_repo.add_dataset_items(self._build_dataset_items(dataset_id, kb_id, questions))
             await self.eval_repo.update_dataset(dataset_id, {"item_count": len(questions)})
@@ -423,9 +423,9 @@ class EvaluationService:
                 build_metadata,
                 status="completed",
                 progress=100,
-                message="完成",
+                message="Hoàn thành",
             )
-            await context.set_progress(100, "完成")
+            await context.set_progress(100, "Hoàn thành")
         except Exception as e:
             await self._update_dataset_build_metadata(
                 dataset_id,
@@ -463,9 +463,9 @@ class EvaluationService:
                     kb_instance = await knowledge_base.aget_kb(kb_id)
                     if kb_instance:
                         retrieval_config = kb_instance._get_default_query_params(kb_id).get("options", {})
-                logger.info(f"从知识库 {kb_id} 加载检索配置: {list(retrieval_config.keys())}")
+                logger.info(f"from knowledge base {kb_id} Load retrieval configuration: {list(retrieval_config.keys())}")
             except Exception as e:
-                logger.error(f"获取知识库检索配置失败: {e}")
+                logger.error(f"Failed to obtain knowledge base retrieval configuration: {e}")
 
             if model_config:
                 retrieval_config.update(model_config)
@@ -489,7 +489,7 @@ class EvaluationService:
             )
 
             await tasker.enqueue(
-                name=f"RAG评估({run_name})",
+                name=f"RAG assessment({run_name})",
                 task_type="rag_evaluation",
                 payload={
                     "run_id": run_id,
@@ -503,7 +503,7 @@ class EvaluationService:
             )
             return run_id
         except Exception as e:
-            logger.error(f"启动评估失败: {e}")
+            logger.error(f"Startup evaluation failed: {e}")
             raise
 
     async def _run_evaluation_task(self, context: TaskContext):
@@ -515,7 +515,7 @@ class EvaluationService:
             dataset_id = payload["dataset_id"]
             retrieval_config = payload["retrieval_config"]
 
-            await context.set_progress(5, "加载评估数据集")
+            await context.set_progress(5, "Load the evaluation dataset")
             dataset_row = await self.eval_repo.get_dataset(dataset_id)
             if dataset_row is None or dataset_row.kb_id != kb_id:
                 raise ValueError("Dataset not found")
@@ -559,7 +559,7 @@ class EvaluationService:
             for index, item in enumerate(dataset_items):
                 await context.raise_if_cancelled()
                 progress = 10 + (index / total_items) * 80
-                await context.set_progress(progress, f"评估 {index + 1}/{total_items}")
+                await context.set_progress(progress, f"Evaluate {index + 1}/{total_items}")
 
                 question_data = {
                     "query": item.query_text,
@@ -595,7 +595,7 @@ class EvaluationService:
                     )
                     await update_run_db(completed=index + 1)
 
-            await context.set_progress(95, "计算最终指标")
+            await context.set_progress(95, "Calculate final indicator")
             overall_metrics, overall_score = aggregate_metrics(
                 all_retrieval_metrics, all_answer_metrics, include_overall_score=True
             )
@@ -605,7 +605,7 @@ class EvaluationService:
                 metrics=overall_metrics,
                 final_score=overall_score,
             )
-            await context.set_progress(100, "完成")
+            await context.set_progress(100, "Hoàn thành")
         except Exception as e:
             logger.error(f"Task failed: {e}")
             try:
@@ -656,7 +656,7 @@ class EvaluationService:
                 runs.append(run)
             return runs
         except Exception as e:
-            logger.error(f"获取评估运行历史失败: {e}")
+            logger.error(f"Failed to get evaluation run history: {e}")
             raise
 
     async def get_run_results(
@@ -719,4 +719,4 @@ class EvaluationService:
         if row is None or row.kb_id != kb_id:
             raise ValueError("Run not found")
         await self.eval_repo.delete_run(run_id)
-        logger.info(f"成功删除评估运行: {run_id}")
+        logger.info(f"Evaluation run deleted successfully: {run_id}")

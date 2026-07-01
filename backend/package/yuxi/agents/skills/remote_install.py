@@ -34,16 +34,16 @@ class RemoteSkillsBatchPreparation:
 def _normalize_source(source: str) -> str:
     value = str(source or "").strip()
     if not value:
-        raise ValueError("source 不能为空")
+        raise ValueError("source không được để trống")
     if any(ch in value for ch in ("\n", "\r", "\x00")):
-        raise ValueError("source 包含非法字符")
+        raise ValueError("source chứa ký tự không hợp lệ")
     return value
 
 
 def _normalize_skill_name(skill: str) -> str:
     value = str(skill or "").strip()
     if not is_valid_skill_slug(value):
-        raise ValueError("skill 名称不合法")
+        raise ValueError("Tên skill không hợp lệ")
     return value
 
 
@@ -121,7 +121,7 @@ async def _run_skills_cli(
     except TimeoutError:
         process.kill()
         await process.communicate()
-        raise ValueError("skills CLI 执行超时") from None
+        raise ValueError("skills CLI thực thi quá thời gian") from None
 
     output = (stdout or b"").decode("utf-8", errors="replace")
     error_output = (stderr or b"").decode("utf-8", errors="replace")
@@ -129,7 +129,7 @@ async def _run_skills_cli(
     if process.returncode != 0:
         cleaned_lines = _clean_cli_output(combined)
         error_msg = "\n".join(line for line in cleaned_lines if line)[:500]
-        raise ValueError(error_msg or "skills CLI 执行失败")
+        raise ValueError(error_msg or "skills CLI thực thi thất bại")
     return combined
 
 
@@ -157,7 +157,7 @@ async def list_remote_skills(source: str) -> list[dict[str, str]]:
 
     skills = _parse_available_skills(output)
     if not skills:
-        raise ValueError("未发现可安装的 skills")
+        raise ValueError("Không tìm thấy bất kỳ skill nào có thể cài đặt")
     return skills
 
 
@@ -182,7 +182,7 @@ async def install_remote_skill(
         )
         available_names = {item["name"] for item in available_skills}
         if normalized_skill not in available_names:
-            raise ValueError(f"远程仓库中不存在 skill: {normalized_skill}")
+            raise ValueError(f"Skill không tồn tại trong kho lưu trữ từ xa: {normalized_skill}")
 
         await _run_skills_cli(
             [
@@ -204,7 +204,7 @@ async def install_remote_skill(
         skills_dir = Path(temp_home).resolve() / ".agents" / "skills"
         installed_dir = _find_skill_dir(skills_dir, normalized_skill)
         if installed_dir is None:
-            raise ValueError("skills CLI 未生成预期的技能目录")
+            raise ValueError("skills CLI không tạo ra thư mục skill như mong đợi")
 
         return await import_skill_dir(
             db,
@@ -222,16 +222,16 @@ async def install_remote_skills_batch(
     skills: list[str],
     created_by: str | None,
 ) -> list[dict]:
-    """批量从同一个远程仓库安装多个 skills（仅一次克隆）。
+    """Batch install multiple individual skills from the same individual remote repository (only one clone).
 
     Args:
-        db: 数据库会话。
-        source: 远程仓库来源，如 ``owner/repo`` 或 GitHub URL。
-        skills: 需要安装的 skill 名称列表。
-        created_by: 操作者标识。
+        db: database session.
+        source: Remote warehouse source, such as ``owner/repo`` or GitHub URL。
+        skills: Need to install the skill name column surface.
+        created_by: operator ID.
 
     Returns:
-        每个 skill 的安装结果列表，顺序与请求一致: ``[{slug, success, error?}, ...]``
+        List of installation results for each skill, in the same order as requested: ``[{slug, success, error?}, ...]``
     """
     preparation = await prepare_remote_skills_batch(source=source, skills=skills)
     try:
@@ -263,12 +263,12 @@ async def prepare_remote_skills_batch(
     source: str,
     skills: list[str],
 ) -> RemoteSkillsBatchPreparation:
-    """批量从远程仓库拉取 skill 目录，但不写数据库。"""
+    """Pull skill directories in batches from the remote warehouse, but do not write to the database."""
     normalized_source = _normalize_source(source)
     if not skills:
-        raise ValueError("skills 列表不能为空")
+        raise ValueError("Danh sách skill không được để trống")
 
-    # 预分配结果数组（按请求顺序），校验非法名并记录失败
+    # Pre-allocate the result array (in request order), verify illegal names and log failures
     results: list[dict] = [{"slug": "", "success": False, "error": "unset"} for _ in range(len(skills))]
     normalized_skills: list[str] = []
     valid_indices: list[int] = []
@@ -306,14 +306,14 @@ async def prepare_remote_skills_batch(
                 cwd=workdir,
             )
         except ValueError:
-            # CLI 对不匹配的 skill 会退出码非零，但已安装的目录仍在
+            # The CLI will exit with a non-zero code for unmatched skills, but the installed directory remains
             cli_failed = True
 
         skills_dir = Path(temp_home).resolve() / ".agents" / "skills"
         for original_index, name in zip(valid_indices, normalized_skills):
             installed_dir = _find_skill_dir(skills_dir, name)
             if installed_dir is None:
-                error_msg = "CLI 安装失败" if cli_failed else "skills CLI 未生成预期的技能目录"
+                error_msg = "CLI Installation failed" if cli_failed else "skills CLI Expected skills catalog not generated"
                 results[original_index] = {"slug": name, "success": False, "error": error_msg}
             else:
                 results[original_index] = {"slug": name, "success": True, "source_dir": installed_dir}
@@ -325,7 +325,7 @@ async def prepare_remote_skills_batch(
 
 
 def _find_skill_dir(skills_dir: Path, name: str) -> Path | None:
-    """在 skills 安装目录下按名称查找 skill 子目录。"""
+    """Find the skill subdirectory by name in the skills installation directory."""
     if not skills_dir.is_dir():
         return None
     for candidate in skills_dir.iterdir():
@@ -335,11 +335,11 @@ def _find_skill_dir(skills_dir: Path, name: str) -> Path | None:
 
 
 def _parse_search_skills(output: str) -> list[dict[str, str]]:
-    """解析 npx skills find 命令的输出。"""
+    """Parse the output of the npx skills find command."""
     lines = _clean_cli_output(output)
     results: list[dict[str, str]] = []
-    # 匹配形如 "owner/repo@skill-name [installs]"
-    # 例如：vercel-labs/agent-skills@web-design-guidelines 339.3K installs
+    # Matches the form "owner/repo@skill-name [installs]"
+    # For example: vercel-labs/agent-skills@web-design-guidelines 339.3K installs
     pattern = re.compile(r"^([a-zA-Z0-9_\-\.]+/[a-zA-Z0-9_\-\.]+)\@([a-zA-Z0-9_\-\.]+)(?:\s+(.*))?$")
     for line in lines:
         line = line.strip()
@@ -360,12 +360,12 @@ def _parse_search_skills(output: str) -> list[dict[str, str]]:
 
 
 async def search_remote_skills(query: str) -> list[dict[str, str]]:
-    """使用 npx skills find <query> 搜索远程 skills。"""
+    """Use npx skills find <query> Search for remote skills."""
     query_val = str(query or "").strip()
     if not query_val:
         return []
     if any(ch in query_val for ch in ("\n", "\r", "\x00")):
-        raise ValueError("搜索关键字包含非法字符")
+        raise ValueError("Từ khóa tìm kiếm chứa ký tự không hợp lệ")
 
     temp_home, env, workdir = _create_isolated_workdir()
     try:

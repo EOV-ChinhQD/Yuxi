@@ -1,6 +1,6 @@
 """
-图片处理工具模块
-支持图片的格式转换、压缩、缩略图生成等功能
+picture processing tool module
+Support pictureofFormat conversion, compression, thumbnail picturegenerate and other functions
 """
 
 import base64
@@ -12,50 +12,50 @@ from yuxi.utils import logger
 
 
 class ImageProcessor:
-    """图片处理类"""
+    """Image processing class"""
 
-    # 支持的图片格式
+    # Supported image formats
     SUPPORTED_FORMATS = {"JPEG", "PNG", "WebP", "GIF", "BMP"}
 
-    # 最大文件大小（5MB）
+    # Maximum file size (5MB)
     MAX_FILE_SIZE = 5 * 1024 * 1024
 
-    # 缩略图尺寸
+    # Thumbnail size
     THUMBNAIL_SIZE = (200, 200)
 
     def process_image(self, image_data: bytes, original_filename: str = "") -> dict:
         """
-        处理上传的图片
+        Handle upload ofpicture
 
         Args:
-            image_data: 图片二进制数据
-            original_filename: 原始文件名
+            image_data: picturetwo hexadecimal data
+            original_filename: original file name
 
         Returns:
-            dict: 包含处理结果的字典
+            dict: Dictionary containing processing results
         """
         try:
-            # 验证图片格式
+            # Verify image format
             img_format, _ = self._validate_image_format(image_data)
             if img_format not in self.SUPPORTED_FORMATS:
-                raise ValueError(f"不支持的图片格式: {img_format}")
+                raise ValueError(f"Định dạng hình ảnh không được hỗ trợ: {img_format}")
 
-            # 加载图片
+            # Load images
             with Image.open(io.BytesIO(image_data)) as img:
-                # 处理EXIF方向信息
+                # Handle EXIF ​​orientation information
                 img = self._fix_image_orientation(img)
 
-                # 生成缩略图
+                # Generate thumbnails
                 thumbnail_data = self._generate_thumbnail(img)
 
-                # 压缩主图片（如果需要）
+                # Compress main image (if needed)
                 processed_data, final_format = self._compress_image(img, img_format)
 
-                # 转换为 base64
+                # Convert to base64
                 base64_data = base64.b64encode(processed_data).decode("utf-8")
                 base64_thumbnail = base64.b64encode(thumbnail_data).decode("utf-8")
 
-                # 获取图片信息
+                # Get picture information
                 width, height = img.size
                 mime_type = f"image/{final_format.lower()}"
 
@@ -72,19 +72,19 @@ class ImageProcessor:
                 }
 
         except Exception as e:
-            logger.error(f"图片处理失败: {str(e)}")
+            logger.error(f"Image processing failed: {str(e)}")
             return {"success": False, "error": str(e)}
 
     def _validate_image_format(self, image_data: bytes) -> tuple[str, str]:
-        """验证图片格式并返回格式信息"""
+        """Verify image format and return format information"""
         try:
             with Image.open(io.BytesIO(image_data)) as img:
                 return img.format, img.mode
         except Exception as e:
-            raise ValueError(f"无效的图片格式: {str(e)}")
+            raise ValueError(f"Định dạng hình ảnh không hợp lệ: {str(e)}")
 
     def _fix_image_orientation(self, img: Image.Image) -> Image.Image:
-        """根据EXIF信息修正图片方向"""
+        """Correct image orientation based on EXIF ​​information"""
         try:
             if hasattr(img, "_getexif"):
                 exif = img._getexif()
@@ -99,33 +99,33 @@ class ImageProcessor:
                                 img = img.rotate(90, expand=True)
                             break
         except Exception as e:
-            logger.warning(f"修正图片方向失败，使用原始方向: {str(e)}")
+            logger.warning(f"Failed to correct image orientation, use original orientation: {str(e)}")
 
         return img
 
     def _generate_thumbnail(self, img: Image.Image) -> bytes:
-        """生成缩略图"""
+        """Generate thumbnails"""
         try:
             thumbnail = self._convert_to_rgb_for_export(img)
 
-            # 生成缩略图，保持宽高比
+            # Generate thumbnails, maintaining aspect ratio
             thumbnail.thumbnail(self.THUMBNAIL_SIZE, Image.Resampling.LANCZOS)
 
-            # 转换为JPEG格式
+            # Convert to JPEG format
             with io.BytesIO() as output:
                 thumbnail.save(output, format="JPEG", quality=85, optimize=True)
                 return output.getvalue()
 
         except Exception as e:
-            logger.error(f"生成缩略图失败: {str(e)}")
-            # 如果缩略图生成失败，返回一个1x1的透明图片
+            logger.error(f"Failed to generate thumbnail: {str(e)}")
+            # If the thumbnail generation fails, a 1x1 transparent image is returned.
             with io.BytesIO() as output:
                 empty_img = Image.new("RGB", (1, 1), color="white")
                 empty_img.save(output, format="JPEG", quality=85)
                 return output.getvalue()
 
     def _convert_to_rgb_for_export(self, img: Image.Image) -> Image.Image:
-        """转换为 RGB，同时把透明像素按白底合成，避免隐藏颜色变成可见像素。"""
+        """Convert to RGB, and combine transparent pixels on a white background to prevent hidden colors from becoming visible pixels."""
         if img.mode == "RGB":
             return img.copy()
 
@@ -140,33 +140,33 @@ class ImageProcessor:
 
     def _compress_image(self, img: Image.Image, original_format: str) -> tuple[bytes, str]:
         """
-        压缩图片，如果超过大小限制
+        Compress the picture if it exceeds the size limit
 
         Args:
-            img: PIL Image对象
-            original_format: 原始格式
+            img: PIL Image object
+            original_format: original Format
 
         Returns:
-            Tuple[bytes, str]: (压缩后的图片数据, 最终格式)
+            Tuple[bytes, str]: (Compressed image data, final format)
         """
         processed_img = self._convert_to_rgb_for_export(img)
 
-        # 尝试保持原始格式，但优先使用JPEG（更好的压缩）
+        # Try to keep the original format, but prefer JPEG (better compression)
         target_format = "JPEG" if original_format != "PNG" else "PNG"
 
-        # 初始质量设置
+        # Initial quality settings
         quality = 85
 
         with io.BytesIO() as output:
-            # 第一次保存以检查大小
+            # Save first time to check size
             processed_img.save(output, format=target_format, quality=quality, optimize=True)
             compressed_data = output.getvalue()
 
-            # 如果文件大小合适，直接返回
+            # If the file size is appropriate, return directly
             if len(compressed_data) <= self.MAX_FILE_SIZE:
                 return compressed_data, target_format
 
-            # 如果文件太大，逐步降低质量
+            # If the file is too large, gradually reduce the quality
             while len(compressed_data) > self.MAX_FILE_SIZE and quality > 10:
                 quality -= 10
                 output.seek(0)
@@ -174,9 +174,9 @@ class ImageProcessor:
                 processed_img.save(output, format=target_format, quality=quality, optimize=True)
                 compressed_data = output.getvalue()
 
-            # 如果质量降到最低仍然太大，尝试缩小尺寸
+            # If it's still too big with the lowest quality, try reducing the size
             if len(compressed_data) > self.MAX_FILE_SIZE:
-                # 逐步缩小尺寸
+                # gradually reduce size
                 scale_factor = 0.9
                 while len(compressed_data) > self.MAX_FILE_SIZE and scale_factor > 0.3:
                     new_width = int(processed_img.width * scale_factor)
@@ -193,19 +193,19 @@ class ImageProcessor:
             return compressed_data, target_format
 
 
-# 全局实例
+# global instance
 image_processor = ImageProcessor()
 
 
 def process_uploaded_image(image_data: bytes, filename: str = "") -> dict:
     """
-    处理上传的图片（便捷函数）
+    Handle upload ofpicture (convenience function)
 
     Args:
-        image_data: 图片二进制数据
-        filename: 文件名
+        image_data: picturetwo hexadecimal data
+        filename: file name
 
     Returns:
-        dict: 处理结果
+        dict: Processing results
     """
     return image_processor.process_image(image_data, filename)

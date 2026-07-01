@@ -23,12 +23,12 @@ class GraphExtractor(ABC):
 
 def normalize_extraction_result(result: dict[str, Any], extractor_type: str) -> dict[str, Any]:
     if not isinstance(result, dict):
-        raise ValueError("extraction_result 必须是对象")
+        raise ValueError("extraction_result phải là object")
 
     entities = result.get("entities") or []
     relations = result.get("relations") or []
     if not isinstance(entities, list) or not isinstance(relations, list):
-        raise ValueError("extraction_result.entities 和 relations 必须是数组")
+        raise ValueError("extraction_result.entities và relations phải là array")
 
     normalized_entities_by_key: dict[tuple[str, str], dict[str, Any]] = {}
     entity_refs: dict[str, dict[str, Any]] = {}
@@ -53,7 +53,7 @@ def normalize_extraction_result(result: dict[str, Any], extractor_type: str) -> 
     normalized_relations = []
     for index, relation in enumerate(relations):
         if not isinstance(relation, dict):
-            raise ValueError("relations 元素必须是对象")
+            raise ValueError("phần tử relations phải là object")
         source = _normalize_relation_endpoint(
             relation.get("source"),
             entity_refs,
@@ -70,7 +70,7 @@ def normalize_extraction_result(result: dict[str, Any], extractor_type: str) -> 
         )
         text = str(relation.get("text") or "").strip()
         if not text:
-            raise ValueError("relations[].text 不能为空")
+            raise ValueError("relations[].text không được để trống")
         normalized_relations.append(
             {
                 "source": source,
@@ -104,28 +104,28 @@ def _normalize_relation_endpoint(
     entity = entity_refs.get(endpoint_ref)
     if entity is None:
         raise ValueError(
-            f"relations[].source/target 必须是实体对象，或引用 entities[].text/id，"
-            f"未找到: {path}={endpoint_ref}, Result: {result}"
+            f"relations[].source/target Must be an entity object, or reference entities[].text/id，"
+            f"not found: {path}={endpoint_ref}, Result: {result}"
         )
     return entity
 
 
 def _normalize_entity(entity: Any, path: str) -> dict[str, Any]:
     if not isinstance(entity, dict):
-        raise ValueError(f"{path} 必须是对象")
+        raise ValueError(f"{path} phải là một đối tượng")
 
     text = str(entity.get("text") or "").strip()
     if not text:
-        raise ValueError(f"{path}.text 不能为空")
+        raise ValueError(f"{path}.text không được để trống")
 
     attributes = entity.get("attributes") or []
     if not isinstance(attributes, list):
-        raise ValueError(f"{path}.attributes 必须是数组")
+        raise ValueError(f"{path}.attributes phải là một mảng")
 
     normalized_attributes = []
     for attribute in attributes:
         if not isinstance(attribute, dict):
-            raise ValueError(f"{path}.attributes 元素必须是对象")
+            raise ValueError(f"Các phần tử {path}.attributes phải là đối tượng")
         attr_text = str(attribute.get("text") or "").strip()
         if not attr_text:
             continue

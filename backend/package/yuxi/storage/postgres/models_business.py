@@ -1,4 +1,4 @@
-"""PostgreSQL 业务数据模型 - 用户、部门、对话等相关表"""
+"""PostgreSQL business data model - User, department, conversation and other related tables"""
 
 from datetime import timedelta
 from typing import Any
@@ -26,7 +26,7 @@ LOGIN_LOCK_DURATION_SECONDS = 300
 
 
 class Department(Base):
-    """部门模型"""
+    """department model"""
 
     __tablename__ = "departments"
 
@@ -35,7 +35,7 @@ class Department(Base):
     description = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=utc_now_naive)
 
-    # 关联关系
+    # Association relationship
     users = relationship("User", back_populates="department", cascade="all, delete-orphan")
 
     def to_dict(self) -> dict[str, Any]:
@@ -48,37 +48,37 @@ class Department(Base):
 
 
 class User(Base):
-    """用户模型"""
+    """user model"""
 
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    username = Column(String, nullable=False, unique=True, index=True)  # 显示名称
-    uid = Column(String, nullable=False, unique=True, index=True)  # 登录标识
-    phone_number = Column(String, nullable=True, unique=True, index=True)  # 手机号
-    avatar = Column(String, nullable=True)  # 头像URL
+    username = Column(String, nullable=False, unique=True, index=True)  # display name
+    uid = Column(String, nullable=False, unique=True, index=True)  # Login ID
+    phone_number = Column(String, nullable=True, unique=True, index=True)  # Phone number
+    avatar = Column(String, nullable=True)  # Avatar URL
     password_hash = Column(String, nullable=False)
-    role = Column(String, nullable=False, default="user")  # 角色: superadmin, admin, user
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)  # 部门ID
+    role = Column(String, nullable=False, default="user")  # Role: superadmin, admin, user
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)  # Department ID
     created_at = Column(DateTime, default=utc_now_naive)
     last_login = Column(DateTime, nullable=True)
 
-    # 登录失败限制相关字段
-    login_failed_count = Column(Integer, nullable=False, default=0)  # 登录失败次数
-    last_failed_login = Column(DateTime, nullable=True)  # 最后一次登录失败时间
-    login_locked_until = Column(DateTime, nullable=True)  # 锁定到什么时候
+    # Login failure restriction related fields
+    login_failed_count = Column(Integer, nullable=False, default=0)  # Number of failed login attempts
+    last_failed_login = Column(DateTime, nullable=True)  # Last login failure time
+    login_locked_until = Column(DateTime, nullable=True)  # When will it be locked?
 
-    # 软删除相关字段
-    is_deleted = Column(Integer, nullable=False, default=0, index=True)  # 是否已删除：0=否，1=是
-    deleted_at = Column(DateTime, nullable=True)  # 删除时间
+    # Soft delete related fields
+    is_deleted = Column(Integer, nullable=False, default=0, index=True)  # Deleted or not: 0=no, 1=yes
+    deleted_at = Column(DateTime, nullable=True)  # Delete time
 
-    # 关联操作日志
+    # Correlation operation log
     operation_logs = relationship("OperationLog", back_populates="user", cascade="all, delete-orphan")
 
-    # 关联部门
+    # Related departments
     department = relationship("Department", back_populates="users")
 
-    # 关联 API Keys
+    # Associated API Keys
     api_keys = relationship("APIKey", back_populates="user", cascade="all, delete-orphan")
 
     agent_env = relationship("AgentEnv", back_populates="user", cascade="all, delete-orphan", uselist=False)
@@ -105,34 +105,34 @@ class User(Base):
         return result
 
     def is_login_locked(self) -> bool:
-        """检查用户是否处于登录锁定状态"""
+        """Check if user is in login locked state"""
         if self.login_locked_until is None:
             return False
         return utc_now_naive() < self.login_locked_until
 
     def get_remaining_lock_time(self) -> int:
-        """获取剩余锁定时间（秒）"""
+        """Get the remaining lock time (seconds)"""
         if self.login_locked_until is None:
             return 0
         remaining = int((self.login_locked_until - utc_now_naive()).total_seconds())
         return max(0, remaining)
 
     def increment_failed_login(self):
-        """增加登录失败计数，并在达到阈值后锁定登录"""
+        """Increase login failure count and lock logins after threshold is reached"""
         self.login_failed_count += 1
         self.last_failed_login = utc_now_naive()
         if self.login_failed_count >= MAX_LOGIN_FAILED_ATTEMPTS:
             self.login_locked_until = self.last_failed_login + timedelta(seconds=LOGIN_LOCK_DURATION_SECONDS)
 
     def reset_failed_login(self):
-        """重置登录失败相关字段"""
+        """Reset fields related to login failure"""
         self.login_failed_count = 0
         self.last_failed_login = None
         self.login_locked_until = None
 
 
 class AgentEnv(Base):
-    """用户级 Agent 沙盒环境变量"""
+    """User-level Agent sandbox environment variables"""
 
     __tablename__ = "agent_envs"
 
@@ -154,7 +154,7 @@ class AgentEnv(Base):
 
 
 class Agent(Base):
-    """用户可管理、可授权、可切换的智能体。"""
+    """User-manageable, authorizable, and switchable agents."""
 
     __tablename__ = "agents"
 
@@ -202,25 +202,25 @@ class Agent(Base):
 
 
 class Skill(Base):
-    """Skill 元数据模型（内容存文件系统，索引存数据库）"""
+    """Skill Metadata model (content is stored in the file system, index is stored in the database)"""
 
     __tablename__ = "skills"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    slug = Column(String(128), nullable=False, unique=True, index=True, comment="技能唯一标识（目录名）")
-    name = Column(String(128), nullable=False, comment="技能名称（来自 SKILL.md frontmatter.name）")
-    description = Column(Text, nullable=False, comment="技能描述（来自 SKILL.md frontmatter.description）")
+    slug = Column(String(128), nullable=False, unique=True, index=True, comment="Skill unique identifier (directory name)")
+    name = Column(String(128), nullable=False, comment="Skill name (from SKILL.md frontmatter.name）")
+    description = Column(Text, nullable=False, comment="Skill description (from SKILL.md frontmatter.description）")
     source_type = Column(
-        String(32), nullable=False, default="upload", index=True, comment="来源: builtin/upload/remote"
+        String(32), nullable=False, default="upload", index=True, comment="source: builtin/upload/remote"
     )
-    tool_dependencies = Column(JSON, nullable=False, default=list, comment="依赖的内置工具名列表")
-    mcp_dependencies = Column(JSON, nullable=False, default=list, comment="依赖的 MCP 服务名列表")
-    skill_dependencies = Column(JSON, nullable=False, default=list, comment="依赖的其他 skill slug 列表")
-    dir_path = Column(String(512), nullable=False, comment="技能目录路径（相对 save_dir）")
-    version = Column(String(64), nullable=True, comment="技能版本（内置 skill 使用语义化版本）")
-    content_hash = Column(String(128), nullable=True, comment="技能目录内容哈希（内置 skill 安装时计算）")
-    share_config = Column(JSON, nullable=False, default=dict, comment="共享权限配置")
-    enabled = Column(Boolean, nullable=False, default=True, comment="是否启用")
+    tool_dependencies = Column(JSON, nullable=False, default=list, comment="List of dependent built-in tool names")
+    mcp_dependencies = Column(JSON, nullable=False, default=list, comment="List of dependent MCP service names")
+    skill_dependencies = Column(JSON, nullable=False, default=list, comment="List of other skill slugs it depends on")
+    dir_path = Column(String(512), nullable=False, comment="Skill directory path (relative to save_dir)")
+    version = Column(String(64), nullable=True, comment="Skill version (built-in skill uses semantic version)")
+    content_hash = Column(String(128), nullable=True, comment="Skill directory content hash (calculated when the built-in skill is installed)")
+    share_config = Column(JSON, nullable=False, default=dict, comment="Sharing permission configuration")
+    enabled = Column(Boolean, nullable=False, default=True, comment="Whether to enable")
     created_by = Column(String(64), nullable=True)
     updated_by = Column(String(64), nullable=True)
     created_at = Column(DateTime, default=utc_now_naive)
@@ -249,7 +249,7 @@ class Skill(Base):
 
 
 class Conversation(Base):
-    """Conversation table - 对话表"""
+    """Conversation table - dialogue table"""
 
     __tablename__ = "conversations"
 
@@ -287,7 +287,7 @@ class Conversation(Base):
 
 
 class Message(Base):
-    """Message table - 消息表"""
+    """Message table - message table"""
 
     __tablename__ = "messages"
 
@@ -336,7 +336,7 @@ class Message(Base):
 
 
 class ToolCall(Base):
-    """ToolCall table - 工具调用表"""
+    """ToolCall table - tool call table"""
 
     __tablename__ = "tool_calls"
 
@@ -368,7 +368,7 @@ class ToolCall(Base):
 
 
 class ConversationStats(Base):
-    """ConversationStats table - 对话统计表"""
+    """ConversationStats table - Conversation statistics table"""
 
     __tablename__ = "conversation_stats"
 
@@ -400,7 +400,7 @@ class ConversationStats(Base):
 
 
 class OperationLog(Base):
-    """操作日志模型"""
+    """Operation log model"""
 
     __tablename__ = "operation_logs"
 
@@ -411,7 +411,7 @@ class OperationLog(Base):
     ip_address = Column(String, nullable=True)
     timestamp = Column(DateTime, default=utc_now_naive)
 
-    # 关联用户
+    # Associated users
     user = relationship("User", back_populates="operation_logs")
 
     def to_dict(self) -> dict[str, Any]:
@@ -426,7 +426,7 @@ class OperationLog(Base):
 
 
 class MessageFeedback(Base):
-    """Message feedback table - 消息反馈表"""
+    """Message feedback table - Message feedback form"""
 
     __tablename__ = "message_feedbacks"
 
@@ -454,40 +454,40 @@ class MessageFeedback(Base):
 
 
 class MCPServer(Base):
-    """MCP 服务器配置模型"""
+    """MCP Server configuration model"""
 
     __tablename__ = "mcp_servers"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    slug = Column(String(100), nullable=False, unique=True, index=True, comment="稳定标识")
-    name = Column(String(100), nullable=False, comment="展示名称")
-    description = Column(String(500), nullable=True, comment="描述")
+    slug = Column(String(100), nullable=False, unique=True, index=True, comment="stable identification")
+    name = Column(String(100), nullable=False, comment="display name")
+    description = Column(String(500), nullable=True, comment="describe")
 
-    # 连接配置
-    transport = Column(String(20), nullable=False, comment="传输类型：sse/streamable_http/stdio")
-    url = Column(String(500), nullable=True, comment="服务器 URL（sse/streamable_http）")
-    command = Column(String(500), nullable=True, comment="命令（stdio）")
-    args = Column(JSON, nullable=True, comment="命令参数数组（stdio）")
-    env = Column(JSON, nullable=True, comment="环境变量（stdio）")
-    headers = Column(JSON, nullable=True, comment="HTTP 请求头")
-    timeout = Column(Integer, nullable=True, comment="HTTP 超时时间（秒）")
-    sse_read_timeout = Column(Integer, nullable=True, comment="SSE 读取超时（秒）")
+    # Connection configuration
+    transport = Column(String(20), nullable=False, comment="Transmission type: sse/streamable_http/stdio")
+    url = Column(String(500), nullable=True, comment="Server URL (sse/streamable_http）")
+    command = Column(String(500), nullable=True, comment="command(stdio)")
+    args = Column(JSON, nullable=True, comment="Command parameter array (stdio)")
+    env = Column(JSON, nullable=True, comment="Environment variables (stdio)")
+    headers = Column(JSON, nullable=True, comment="HTTP Request header")
+    timeout = Column(Integer, nullable=True, comment="HTTP Timeout (seconds)")
+    sse_read_timeout = Column(Integer, nullable=True, comment="SSE Read timeout (seconds)")
 
-    # UI 增强字段
-    tags = Column(JSON, nullable=True, comment="标签数组")
-    icon = Column(String(50), nullable=True, comment="图标（emoji）")
+    # UI enhanced fields
+    tags = Column(JSON, nullable=True, comment="tag array")
+    icon = Column(String(50), nullable=True, comment="icon (emoji)")
 
-    # 状态字段
-    enabled = Column(Integer, nullable=False, default=1, comment="是否启用：1=是，0=否")
-    disabled_tools = Column(JSON, nullable=True, comment="禁用的工具名称列表")
+    # status field
+    enabled = Column(Integer, nullable=False, default=1, comment="Enabled or not: 1=Yes, 0=no")
+    disabled_tools = Column(JSON, nullable=True, comment="List of disabled tool names")
 
-    # 用户追踪
-    created_by = Column(String(100), nullable=False, comment="创建人用户名")
-    updated_by = Column(String(100), nullable=False, comment="修改人用户名")
+    # User tracking
+    created_by = Column(String(100), nullable=False, comment="Creator username")
+    updated_by = Column(String(100), nullable=False, comment="Modifier username")
 
-    # 时间戳
-    created_at = Column(DateTime, default=utc_now_naive, comment="创建时间")
-    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive, comment="更新时间")
+    # Timestamp
+    created_at = Column(DateTime, default=utc_now_naive, comment="creation time")
+    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive, comment="Update time")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -514,7 +514,7 @@ class MCPServer(Base):
         }
 
     def to_mcp_config(self) -> dict[str, Any]:
-        """转换为 MCP 配置格式（用于加载到 MCP_SERVERS 缓存）"""
+        """Convert to MCP configuration format (for loading into MCP_SERVERS cache)"""
         import json
 
         config = {"transport": self.transport}
@@ -522,7 +522,7 @@ class MCPServer(Base):
             config["url"] = self.url
         if self.command:
             config["command"] = self.command
-        # args 只用于 stdio 传输类型，必须是列表
+        # args is only used for stdio transfer type and must be a list
         if self.transport == "stdio" and self.args:
             if isinstance(self.args, list):
                 config["args"] = self.args
@@ -539,7 +539,7 @@ class MCPServer(Base):
                     config["env"] = json.loads(self.env)
                 except json.JSONDecodeError:
                     pass
-        # headers 只用于 sse/streamable_http 传输类型
+        # headers only for sse/streamable_http transport type
         if self.transport in ("sse", "streamable_http") and self.headers:
             if isinstance(self.headers, dict):
                 config["headers"] = self.headers
@@ -558,37 +558,37 @@ class MCPServer(Base):
 
 
 class ModelProvider(Base):
-    """模型供应商配置，存储 provider 基础信息、模型端点和可用模型。"""
+    """Model provider configuration, which stores provider basic information, model endpoints, and available models."""
 
     __tablename__ = "model_providers"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    provider_id = Column(String(100), nullable=False, unique=True, index=True, comment="供应商稳定标识")
-    display_name = Column(String(100), nullable=False, comment="展示名称")
-    provider_type = Column(String(32), nullable=False, default="openai", comment="供应商适配类型，默认 openai")
+    provider_id = Column(String(100), nullable=False, unique=True, index=True, comment="Supplier Stability Identification")
+    display_name = Column(String(100), nullable=False, comment="display name")
+    provider_type = Column(String(32), nullable=False, default="openai", comment="Supplier adaptation type, default openai")
 
-    default_protocol = Column(String(64), nullable=True, comment="默认协议，如 openai_compatible")
-    base_url = Column(String(500), nullable=False, comment="API 基础 URL")
-    embedding_base_url = Column(String(500), nullable=True, comment="Embedding 模型请求基础 URL")
-    rerank_base_url = Column(String(500), nullable=True, comment="Rerank 模型请求基础 URL")
-    models_endpoint = Column(String(200), nullable=True, comment="聊天/通用模型列表端点")
-    embedding_models_endpoint = Column(String(200), nullable=True, comment="Embedding 模型列表端点")
-    rerank_models_endpoint = Column(String(200), nullable=True, comment="Rerank 模型列表端点")
-    api_key_env = Column(String(128), nullable=True, comment="API Key 环境变量名")
-    api_key = Column(String(500), nullable=True, comment="直接配置的 API Key")
+    default_protocol = Column(String(64), nullable=True, comment="Default protocol, such as openai_compatible")
+    base_url = Column(String(500), nullable=False, comment="API Base URL")
+    embedding_base_url = Column(String(500), nullable=True, comment="Embedding Model request base URL")
+    rerank_base_url = Column(String(500), nullable=True, comment="Rerank Model request base URL")
+    models_endpoint = Column(String(200), nullable=True, comment="chat/Generic model list endpoint")
+    embedding_models_endpoint = Column(String(200), nullable=True, comment="Embedding Model list endpoint")
+    rerank_models_endpoint = Column(String(200), nullable=True, comment="Rerank Model list endpoint")
+    api_key_env = Column(String(128), nullable=True, comment="API Key Environment variable name")
+    api_key = Column(String(500), nullable=True, comment="Directly configured API Key")
 
-    capabilities = Column(JSON, nullable=False, default=list, comment="支持能力：chat/embedding/rerank")
-    enabled_models = Column(JSON, nullable=False, default=list, comment="已启用模型配置对象")
-    headers_json = Column(JSON, nullable=True, comment="额外请求头")
-    extra_json = Column(JSON, nullable=True, comment="扩展配置")
+    capabilities = Column(JSON, nullable=False, default=list, comment="Support capability: chat/embedding/rerank")
+    enabled_models = Column(JSON, nullable=False, default=list, comment="Model configuration object enabled")
+    headers_json = Column(JSON, nullable=True, comment="Additional request headers")
+    extra_json = Column(JSON, nullable=True, comment="extended configuration")
 
-    is_enabled = Column(Boolean, nullable=False, default=True, index=True, comment="供应商是否启用")
-    is_builtin = Column(Boolean, nullable=False, default=False, comment="是否内置")
+    is_enabled = Column(Boolean, nullable=False, default=True, index=True, comment="Is the supplier enabled?")
+    is_builtin = Column(Boolean, nullable=False, default=False, comment="Is it built-in")
 
     created_by = Column(String(100), nullable=True)
     updated_by = Column(String(100), nullable=True)
-    created_at = Column(DateTime, default=utc_now_naive, comment="创建时间")
-    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive, comment="更新时间")
+    created_at = Column(DateTime, default=utc_now_naive, comment="creation time")
+    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive, comment="Update time")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -662,7 +662,7 @@ class TaskRecord(Base):
 
 
 class APIKey(Base):
-    """API Key 模型"""
+    """API Key Model"""
 
     __tablename__ = "api_keys"
 
@@ -681,7 +681,7 @@ class APIKey(Base):
     created_by = Column(String(64), nullable=False)
     created_at = Column(DateTime, default=utc_now_naive)
 
-    # 关联
+    # association
     user = relationship("User", back_populates="api_keys")
     department = relationship("Department")
 
@@ -700,7 +700,7 @@ class APIKey(Base):
         }
 
     def is_valid(self) -> bool:
-        """检查 Key 是否有效"""
+        """Check if Key is valid"""
         if not self.is_enabled:
             return False
         if self.expires_at and utc_now_naive() > self.expires_at:
@@ -709,7 +709,7 @@ class APIKey(Base):
 
 
 class CLIAuthSession(Base):
-    """CLI 浏览器授权会话。"""
+    """CLI Browser authorization session."""
 
     __tablename__ = "cli_auth_sessions"
 
@@ -746,7 +746,7 @@ class CLIAuthSession(Base):
 
 
 class AgentRun(Base):
-    """AgentRun table - 运行任务表"""
+    """AgentRun table - Run task list"""
 
     __tablename__ = "agent_runs"
 

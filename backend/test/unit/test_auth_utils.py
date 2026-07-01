@@ -65,7 +65,7 @@ def test_access_token_rejects_public_default_secret_in_production(monkeypatch):
     monkeypatch.setenv("JWT_SECRET_KEY", "yuxi_know_secure_key")
     monkeypatch.setenv("YUXI_INSTANCE_ID", "pytest-instance")
 
-    with pytest.raises(ValueError, match="公开默认密钥"):
+    with pytest.raises(ValueError, match="Khóa mặc định công khai"):
         AuthUtils.create_access_token({"sub": "1"})
 
 
@@ -110,7 +110,7 @@ def test_verify_access_token_rejects_wrong_audience(monkeypatch):
         algorithm=JWT_ALGORITHM,
     )
 
-    with pytest.raises(ValueError, match="无效的令牌"):
+    with pytest.raises(ValueError, match="Token không hợp lệ"):
         AuthUtils.verify_access_token(token)
 
 
@@ -123,5 +123,5 @@ def test_verify_access_token_requires_claims(monkeypatch):
         algorithm=JWT_ALGORITHM,
     )
 
-    with pytest.raises(ValueError, match="无效的令牌"):
+    with pytest.raises(ValueError, match="Token không hợp lệ"):
         AuthUtils.verify_access_token(token)

@@ -1,4 +1,4 @@
-"""测试内置 ask_user_question 工具的格式契约。"""
+"""Test the format contract of the built-in ask_user_question tool."""
 
 import json
 
@@ -21,10 +21,10 @@ def test_ask_user_question_interrupt_payload_and_result_format(monkeypatch):
         questions=[
             {
                 "question_id": "style",
-                "question": "选择界面风格",
+                "question": "Choose interface style",
                 "options": [
-                    {"label": "简洁 (Recommended)", "value": "simple"},
-                    {"label": "详细", "value": "detailed"},
+                    {"label": "concise (Recommended)", "value": "simple"},
+                    {"label": "detailed", "value": "detailed"},
                 ],
                 "multi_select": False,
                 "allow_other": False,
@@ -35,10 +35,10 @@ def test_ask_user_question_interrupt_payload_and_result_format(monkeypatch):
     expected_questions = [
         {
             "question_id": "style",
-            "question": "选择界面风格",
+            "question": "Choose interface style",
             "options": [
-                {"label": "简洁 (Recommended)", "value": "simple"},
-                {"label": "详细", "value": "detailed"},
+                {"label": "concise (Recommended)", "value": "simple"},
+                {"label": "detailed", "value": "detailed"},
             ],
             "multi_select": False,
             "allow_other": False,
@@ -58,7 +58,7 @@ def test_ask_user_question_accepts_json_string_questions(monkeypatch):
         questions=json.dumps(
             [
                 {
-                    "question": "选择一个选项",
+                    "question": "Select an option",
                     "options": ["A", "B"],
                     "allow_other": False,
                 }
@@ -71,7 +71,7 @@ def test_ask_user_question_accepts_json_string_questions(monkeypatch):
     assert captured_payloads[0]["questions"] == [
         {
             "question_id": "q-1",
-            "question": "选择一个选项",
+            "question": "Select an option",
             "options": [{"label": "A", "value": "A"}, {"label": "B", "value": "B"}],
             "multi_select": False,
             "allow_other": False,
@@ -81,5 +81,5 @@ def test_ask_user_question_accepts_json_string_questions(monkeypatch):
 
 
 def test_ask_user_question_rejects_empty_questions():
-    with pytest.raises(ValueError, match="questions 至少需要包含一个有效问题"):
+    with pytest.raises(ValueError, match="questions phải chứa ít nhất một câu hỏi hợp lệ"):
         tools.ask_user_question.func(questions=[])

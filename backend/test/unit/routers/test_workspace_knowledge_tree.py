@@ -28,7 +28,7 @@ class FakeKnowledgeBase:
     async def get_database_info(self, kb_id):
         return {
             "kb_id": kb_id,
-            "name": "知识库",
+            "name": "knowledge base",
             "kb_type": "milvus" if self.supports else "dify",
         }
 
@@ -37,13 +37,13 @@ class FakeKnowledgeBase:
         return {
             "items": [
                 {
-                    "file_id": "__virtual_folder__:root:资料/",
-                    "filename": "资料",
+                    "file_id": "__virtual_folder__:root:material/",
+                    "filename": "material",
                     "status": "done",
                     "is_folder": True,
                     "parent_id": None,
                     "is_virtual_folder": True,
-                    "path_prefix": "资料/",
+                    "path_prefix": "material/",
                     "created_at": None,
                     "updated_at": None,
                     "file_size": 0,
@@ -98,7 +98,7 @@ def test_workspace_knowledge_tree_uses_paginated_document_listing(monkeypatch):
         params={
             "kb_id": "kb_1",
             "parent_id": "folder_1",
-            "path_prefix": "资料/",
+            "path_prefix": "material/",
             "page": 2,
             "page_size": 100,
             "files_only": True,
@@ -110,7 +110,7 @@ def test_workspace_knowledge_tree_uses_paginated_document_listing(monkeypatch):
         {
             "kb_id": "kb_1",
             "parent_id": "folder_1",
-            "path_prefix": "资料/",
+            "path_prefix": "material/",
             "page": 2,
             "page_size": 100,
             "recursive": False,
@@ -134,4 +134,4 @@ def test_workspace_knowledge_tree_rejects_non_document_kb(monkeypatch):
     response = client.get("/api/workspace/knowledge/tree", params={"kb_id": "kb_1"})
 
     assert response.status_code == 501
-    assert "不支持文件浏览" in response.json()["detail"]
+    assert "không hỗ trợ duyệt tệp" in response.json()["detail"]

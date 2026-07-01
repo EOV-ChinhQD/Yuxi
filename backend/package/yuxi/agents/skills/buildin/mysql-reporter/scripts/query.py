@@ -20,15 +20,15 @@ from pymysql.cursors import DictCursor
 
 
 class MySQLConnectionError(Exception):
-    """MySQL 连接异常"""
+    """MySQL Connection abnormality"""
 
 
 class QueryTimeoutError(Exception):
-    """查询超时异常"""
+    """Query timeout exception"""
 
 
 class MySQLSecurityChecker:
-    """MySQL 安全检查器"""
+    """MySQL security checker"""
 
     ALLOWED_OPERATIONS = {"SELECT", "SHOW", "DESCRIBE", "EXPLAIN"}
 
@@ -54,7 +54,7 @@ class MySQLSecurityChecker:
 
     @classmethod
     def validate_sql(cls, sql: str) -> bool:
-        """验证SQL语句的安全性"""
+        """Verify the security of SQL statements"""
         if not sql:
             return False
 
@@ -94,7 +94,7 @@ class MySQLSecurityChecker:
 
     @classmethod
     def validate_timeout(cls, timeout: int) -> bool:
-        """验证timeout参数"""
+        """Verify timeout parameter"""
         return isinstance(timeout, int) and 1 <= timeout <= 600
 
 
@@ -106,7 +106,7 @@ def load_mysql_config() -> dict[str, Any]:
         "database": os.getenv("MYSQL_DATABASE"),
         "port": int(os.getenv("MYSQL_PORT") or "3306"),
         "charset": "utf8mb4",
-        "description": os.getenv("MYSQL_DATABASE_DESCRIPTION") or "默认 MySQL 数据库",
+        "description": os.getenv("MYSQL_DATABASE_DESCRIPTION") or "Default MySQL database",
     }
 
     required_keys = ["host", "user", "password", "database"]
@@ -148,7 +148,7 @@ def create_connection(config: dict[str, Any]) -> pymysql.Connection:
 def execute_query_with_timeout(
     connection: pymysql.Connection, sql: str, params: tuple | None = None, timeout: int = 10
 ):
-    """使用线程池实现超时控制，避免信号导致的生成器问题"""
+    """Use thread pool to implement timeout control to avoid generator problems caused by signals"""
 
     def query_worker():
         cursor = connection.cursor(DictCursor)
@@ -177,7 +177,7 @@ def execute_query_with_timeout(
 
 
 def limit_result_size(result: list, max_chars: int = 10000) -> list:
-    """限制结果大小"""
+    """Limit result size"""
     if not result:
         return result
 
@@ -198,13 +198,13 @@ def limit_result_size(result: list, max_chars: int = 10000) -> list:
 
 def format_query_result(result: list[dict[str, Any]]) -> str:
     if not result:
-        return "查询执行成功，但没有返回任何结果"
+        return "Truy vấn thực thi thành công nhưng không trả về bất kỳ kết quả nào"
 
     limited_result = limit_result_size(result, max_chars=10000)
 
     if len(limited_result) < len(result):
-        warning = f"\n\n⚠️ 警告: 查询结果过大，只显示了前 {len(limited_result)} 行（共 {len(result)} 行）。\n"
-        warning += "建议使用更精确的查询条件或使用LIMIT子句来减少返回的数据量。"
+        warning = f"\n\n⚠️ Cảnh báo: Kết quả truy vấn quá lớn, chỉ hiển thị {len(limited_result)} dòng đầu tiên (trong tổng số {len(result)} dòng).\n"
+        warning += "Khuyến nghị sử dụng điều kiện truy vấn chính xác hơn hoặc sử dụng mệnh đề LIMIT để giảm lượng dữ liệu trả về."
     else:
         warning = ""
 
@@ -224,25 +224,25 @@ def format_query_result(result: list[dict[str, Any]]) -> str:
             row_str = "| " + " | ".join(f"{str(row.get(col, '')):<{col_widths[col]}}" for col in columns) + " |"
             rows.append(row_str)
 
-        result_str = f"查询结果（共 {len(limited_result)} 行）:\n\n"
+        result_str = f"Kết quả truy vấn (tổng số {len(limited_result)} dòng):\n\n"
         result_str += header + "\n" + separator + "\n"
         result_str += "\n".join(rows[:50])
 
         if len(rows) > 50:
-            result_str += f"\n\n... 还有 {len(rows) - 50} 行未显示 ..."
+            result_str += f"\n\n... còn {len(rows) - 50} dòng khác chưa hiển thị ..."
 
         result_str += warning
         return result_str
 
-    return "查询执行成功，但返回数据为空"
+    return "Truy vấn thực thi thành công nhưng dữ liệu trả về trống"
 
 
 def run_query(sql: str, timeout: int) -> str:
     if not MySQLSecurityChecker.validate_sql(sql):
-        raise ValueError("SQL语句包含不安全的操作或可能的注入攻击，请检查SQL语句")
+        raise ValueError("Câu lệnh SQL chứa thao tác không an toàn hoặc có khả năng bị tấn công SQL Injection, vui lòng kiểm tra lại câu lệnh SQL")
 
     if not MySQLSecurityChecker.validate_timeout(timeout):
-        raise ValueError("timeout参数必须在1-600之间")
+        raise ValueError("Tham số timeout phải nằm trong khoảng 1-600")
 
     config = load_mysql_config()
     connection = create_connection(config)
@@ -255,30 +255,30 @@ def run_query(sql: str, timeout: int) -> str:
 
 
 def build_query_error(exc: Exception, sql: str) -> str:
-    error_msg = f"SQL查询执行失败: {exc}\n\n{sql}"
+    error_msg = f"Thực thi truy vấn SQL thất bại: {exc}\n\n{sql}"
 
     if "timeout" in str(exc).lower():
-        error_msg += "\n\n💡 建议：查询超时了，请尝试以下方法：\n"
-        error_msg += "1. 减少查询的数据量（使用WHERE条件过滤）\n"
-        error_msg += "2. 使用LIMIT子句限制返回行数\n"
-        error_msg += "3. 增加timeout参数值（最大600秒）"
+        error_msg += "\n\n💡 Gợi ý: Truy vấn bị quá thời gian (timeout), vui lòng thử các phương pháp sau:\n"
+        error_msg += "1. Giảm lượng dữ liệu truy vấn (sử dụng điều kiện WHERE để lọc)\n"
+        error_msg += "2. Sử dụng mệnh đề LIMIT để giới hạn số dòng trả về\n"
+        error_msg += "3. Tăng giá trị tham số timeout (tối đa 600 giây)"
     elif "table" in str(exc).lower() and "doesn't exist" in str(exc).lower():
-        error_msg += "\n\n💡 建议：表不存在，请使用 scripts/list_tables.py 查看可用的表名"
+        error_msg += "\n\n💡 Gợi ý: Bảng không tồn tại, vui lòng sử dụng scripts/list_tables.py để xem các tên bảng khả dụng"
     elif "column" in str(exc).lower() and "doesn't exist" in str(exc).lower():
-        error_msg += "\n\n💡 建议：列不存在，请使用 scripts/describe_table.py 查看表结构"
+        error_msg += "\n\n💡 Gợi ý: Cột không tồn tại, vui lòng sử dụng scripts/describe_table.py để xem cấu trúc bảng"
     elif "not enough arguments for format string" in str(exc).lower():
         error_msg += (
-            "\n\n💡 建议：SQL 中的百分号 (%) 被当作参数占位符使用。"
-            " 如需匹配包含百分号的文本，请将百分号写成双百分号 (%%) 或使用参数化查询。"
+            "\n\n💡 Gợi ý: Ký tự phần trăm (%) trong SQL được coi là trình giữ chỗ tham số."
+            " Nếu muốn khớp văn bản chứa ký tự phần trăm, vui lòng viết ký tự phần trăm thành hai ký tự phần trăm (%%) hoặc sử dụng truy vấn tham số hóa."
         )
 
     return error_msg
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="执行只读 MySQL SQL 查询")
-    parser.add_argument("--sql", required=True, help="要执行的SQL查询语句")
-    parser.add_argument("--timeout", type=int, default=60, help="查询超时时间（秒），默认60秒，最大600秒")
+    parser = argparse.ArgumentParser(description="Thực thi truy vấn MySQL SQL chỉ đọc")
+    parser.add_argument("--sql", required=True, help="SQL query statement to be executed")
+    parser.add_argument("--timeout", type=int, default=60, help="Query timeout (seconds), default 60 seconds, maximum 600 seconds")
     return parser.parse_args()
 
 

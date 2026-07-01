@@ -1,4 +1,4 @@
-"""PostgreSQL 数据库管理器 - 支持知识库和业务数据"""
+"""PostgreSQL Database manager - Support knowledge base and business data"""
 
 import json
 import os
@@ -13,10 +13,10 @@ from yuxi.storage.postgres.models_knowledge import Base as KnowledgeBase
 from yuxi.utils import logger
 from yuxi.utils.singleton import SingletonMeta
 
-# 合并两个 Base
+# Merge two Bases
 CombinedBase = declarative_base()
 
-# 继承所有表
+# Inherit all tables
 for module in [KnowledgeBase, BusinessBase]:
     for table_name in dir(module):
         table = getattr(module, table_name)
@@ -25,9 +25,9 @@ for module in [KnowledgeBase, BusinessBase]:
 
 
 class PostgresManager(metaclass=SingletonMeta):
-    """PostgreSQL 数据库管理器 - 支持知识库和业务数据"""
+    """PostgreSQL Database manager - Support knowledge base and business data"""
 
-    # 知识库 PostgreSQL URL 环境变量名
+    # Knowledge Base PostgreSQL URL environment variable name
     KB_DATABASE_URL_ENV = "POSTGRES_URL"
 
     def __init__(self):
@@ -37,20 +37,20 @@ class PostgresManager(metaclass=SingletonMeta):
         self._initialized = False
 
     def initialize(self):
-        """初始化数据库连接"""
+        """Initialize database connection"""
         if self._initialized:
             return
 
         db_url = os.getenv(self.KB_DATABASE_URL_ENV)
         if not db_url:
             logger.error(
-                f"环境变量 {self.KB_DATABASE_URL_ENV} 未设置，"
-                "请在 docker-compose.yml 或 .env 中配置 PostgreSQL 连接字符串"
+                f"environment variables {self.KB_DATABASE_URL_ENV} not set,"
+                "Please docker-compose.yml or .env Configuring the PostgreSQL connection string in"
             )
             return
 
         try:
-            # 创建异步 SQLAlchemy 引擎
+            # Create an asynchronous SQLAlchemy engine
             self.async_engine = create_async_engine(
                 db_url,
                 json_serializer=lambda obj: json.dumps(obj, ensure_ascii=False),
@@ -61,7 +61,7 @@ class PostgresManager(metaclass=SingletonMeta):
                 max_overflow=20,
             )
 
-            # 创建异步会话工厂
+            # Create an asynchronous session factory
             self.AsyncSession = async_sessionmaker(
                 bind=self.async_engine,
                 class_=AsyncSession,
@@ -69,33 +69,33 @@ class PostgresManager(metaclass=SingletonMeta):
             )
 
             # ==========================================
-            # 2. 为 LangGraph 专门初始化一个原生 psycopg_pool
+            # 2. Initialize a native psycopg_pool specifically for LangGraph
             # ==========================================
-            # ⚠️ 注意：psycopg 不认识 "+asyncpg" 这样的 SQLAlchemy 方言标识。
-            # 如果你的 db_url 是 "postgresql+asyncpg://user:pwd@host/db"，
-            # 需要把它清洗成标准的 "postgresql://user:pwd@host/db"
+            # ⚠️ Note: psycopg does not recognize the SQLAlchemy dialect flag "+asyncpg".
+            # If your db_url is "postgresql+asyncpg://user:pwd@host/db",
+            # It needs to be cleaned to the standard "postgresql://user:pwd@host/db"
             langgraph_db_url = db_url.replace("+asyncpg", "").replace("+psycopg", "")
 
-            # 创建 LangGraph 专属连接池
+            # Create LangGraph exclusive connection pool
             self.langgraph_pool = AsyncConnectionPool(
                 conninfo=langgraph_db_url,
-                max_size=10,  # 根据你的 Agent 并发情况设置，通常 5-10 足够了
-                kwargs={"autocommit": True},  # LangGraph Checkpoint 强依赖 autocommit
+                max_size=10,  # Depending on your Agent concurrency settings, 5-10 is usually enough
+                kwargs={"autocommit": True},  # LangGraph Checkpoint strongly depends on autocommit
             )
 
             self._initialized = True
             logger.info(f"PostgreSQL manager initialized for knowledge base: {db_url.split('@')[0]}://***")
         except Exception as e:
             logger.error(f"Failed to initialize PostgreSQL manager: {e}")
-            # 不抛出异常，允许应用启动，但在使用时会报错
+            # Does not throw an exception and allows the application to start, but an error will be reported when using it.
 
     def _check_initialized(self):
-        """检查是否已初始化"""
+        """Check if it has been initialized"""
         if not self._initialized:
             raise RuntimeError("PostgreSQL manager not initialized. Please check configuration.")
 
     async def create_tables(self):
-        """创建所有表（知识库和业务表）"""
+        """Create all tables (knowledge base and business tables)"""
         self._check_initialized()
         async with self.async_engine.begin() as conn:
             await conn.run_sync(KnowledgeBase.metadata.create_all)
@@ -103,14 +103,14 @@ class PostgresManager(metaclass=SingletonMeta):
         logger.info("PostgreSQL tables created/checked (knowledge + business)")
 
     async def create_business_tables(self):
-        """创建所有业务数据表"""
+        """Create all business data tables"""
         self._check_initialized()
         async with self.async_engine.begin() as conn:
             await conn.run_sync(BusinessBase.metadata.create_all)
         logger.info("PostgreSQL business tables created/checked")
 
     async def drop_tables(self):
-        """删除所有表（慎用！）"""
+        """Delete all tables (use with caution!)"""
         self._check_initialized()
         async with self.async_engine.begin() as conn:
             await conn.run_sync(BusinessBase.metadata.drop_all)
@@ -118,7 +118,7 @@ class PostgresManager(metaclass=SingletonMeta):
         logger.info("PostgreSQL tables dropped")
 
     async def ensure_knowledge_schema(self):
-        """确保知识库 schema 包含所有必要字段"""
+        """Make sure the knowledge base schema contains all necessary fields"""
         self._check_initialized()
         stmts = [
             "ALTER TABLE IF EXISTS knowledge_bases ADD COLUMN IF NOT EXISTS embedding_model_spec VARCHAR(512)",
@@ -372,7 +372,7 @@ class PostgresManager(metaclass=SingletonMeta):
                 await conn.execute(text(stmt))
 
     async def ensure_business_schema(self):
-        """确保业务 schema 包含后续新增字段（运行时 schema 演进）。"""
+        """Ensure that the business schema includes subsequently added fields (runtime schema evolution)."""
         self._check_initialized()
         stmts = [
             "ALTER TABLE IF EXISTS skills ADD COLUMN IF NOT EXISTS tool_dependencies JSONB DEFAULT '[]'::jsonb",
@@ -478,20 +478,20 @@ class PostgresManager(metaclass=SingletonMeta):
 
     @property
     def is_postgresql(self) -> bool:
-        """检查是否是 PostgreSQL 数据库"""
+        """Check if it is a PostgreSQL database"""
         if not self._initialized:
             return False
         return self.async_engine.dialect.name == "postgresql"
 
     async def get_async_session(self) -> AsyncSession:
-        """获取异步数据库会话"""
-        self.initialize()  # 确保已初始化
+        """Get an asynchronous database session"""
+        self.initialize()  # Make sure it is initialized
         return self.AsyncSession()
 
     @asynccontextmanager
     async def get_async_session_context(self):
-        """获取异步数据库会话的上下文管理器"""
-        self.initialize()  # 确保已初始化
+        """Get the context manager for an asynchronous database session"""
+        self.initialize()  # Make sure it is initialized
         session = self.AsyncSession()
         try:
             yield session
@@ -504,15 +504,17 @@ class PostgresManager(metaclass=SingletonMeta):
             await session.close()
 
     async def close(self):
-        """关闭引擎"""
+        """shut down engine"""
         if self.async_engine:
             await self.async_engine.dispose()
 
         if self.langgraph_pool:
             await self.langgraph_pool.close()
 
+        self._initialized = False
+
     async def async_check_first_run(self):
-        """检查是否首次运行（异步版本）- 检查用户表是否有数据"""
+        """Check if first run (async version)- Check if the user table has data"""
         from sqlalchemy import func, select
 
         self._check_initialized()
@@ -524,11 +526,11 @@ class PostgresManager(metaclass=SingletonMeta):
             return count == 0
 
     async def commit(self):
-        """提交当前会话"""
+        """Submit current session"""
         self._check_initialized()
         async with self.get_async_session_context():
             pass  # commit is automatic in context manager
 
 
-# 创建全局 PostgreSQL 管理器实例
+# Create a global PostgreSQL manager instance
 pg_manager = PostgresManager()

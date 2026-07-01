@@ -160,7 +160,7 @@ async def test_task_tool_rejects_unconfigured_subagent() -> None:
         {"description": "do work", "subagent_type": "missing", "runtime": runtime}
     )
 
-    assert result == "无法调用子智能体 missing，可用子智能体只有：`worker`"
+    assert result == "Không thể gọi sub-agent missing, các sub-agent khả dụng chỉ gồm: `worker`"
 
 
 @pytest.mark.asyncio
@@ -235,7 +235,7 @@ async def test_task_tool_invokes_subagent_with_child_scope(monkeypatch) -> None:
 
     child_thread_id = make_child_thread_id("parent-thread", "worker.agent", "tool-1")
     assert isinstance(result, Command)
-    assert result.update["messages"][0].content == f"> 子智能体线程 ID: {child_thread_id}\n\n---\n\nchild done"
+    assert result.update["messages"][0].content == f"> ID thread sub-agent: {child_thread_id}\n\n---\n\nchild done"
     assert result.update["messages"][0].tool_call_id == "tool-1"
     assert result.update["artifacts"] == ["/home/gem/user-data/outputs/report.md"]
     assert result.update["subagent_runs"] == [
@@ -385,7 +385,7 @@ async def test_task_tool_records_failed_subagent_run(monkeypatch) -> None:
     child_thread_id = make_child_thread_id("parent-thread", "worker", "tool-1")
     assert (
         result.update["messages"][0].content
-        == f"> 子智能体线程 ID: {child_thread_id}\n\n---\n\n子智能体 worker 调用失败：child boom"
+        == f"> ID thread sub-agent: {child_thread_id}\n\n---\n\nGọi sub-agent worker thất bại: child boom"
     )
     assert result.update["subagent_runs"] == [
         {
@@ -399,7 +399,7 @@ async def test_task_tool_records_failed_subagent_run(monkeypatch) -> None:
             "parent_agent_run_id": "parent-run",
             "status": "failed",
             "completed_at": "2026-05-31T02:00:04Z",
-            "result_preview": "子智能体 worker 调用失败：child boom",
+            "result_preview": "Gọi sub-agent worker thất bại: child boom",
             "error": "child boom",
             "artifacts": [],
         }
@@ -470,7 +470,7 @@ async def test_task_tool_continues_existing_subagent_thread(monkeypatch) -> None
     )
 
     assert isinstance(result, Command)
-    assert result.update["messages"][0].content == f"> 子智能体线程 ID: {child_thread_id}\n\n---\n\ncontinued done"
+    assert result.update["messages"][0].content == f"> ID thread sub-agent: {child_thread_id}\n\n---\n\ncontinued done"
     assert result.update["subagent_runs"] == [
         {
             "id": "tool-2",
@@ -525,7 +525,7 @@ async def test_task_tool_rejects_invalid_continuation_thread(monkeypatch) -> Non
             raise AssertionError("invalid continuation should not invoke graph")
 
     async def reject_continuation(_self, **kwargs):
-        raise ValueError(f"无法继续子智能体线程 {kwargs['child_thread_id']}：当前对话中没有找到对应的子智能体运行记录")
+        raise ValueError(f"Không thể tiếp tục thread sub-agent {kwargs['child_thread_id']}: Không tìm thấy bản ghi chạy sub-agent tương ứng trong hội thoại hiện tại")
 
     monkeypatch.setattr(
         subagent_task_middleware,
@@ -556,7 +556,7 @@ async def test_task_tool_rejects_invalid_continuation_thread(monkeypatch) -> Non
         thread_id=unknown_thread_id,
     )
 
-    assert result == f"无法继续子智能体线程 {unknown_thread_id}：当前对话中没有找到对应的子智能体运行记录"
+    assert result == f"Không thể tiếp tục thread sub-agent {unknown_thread_id}: Không tìm thấy bản ghi chạy sub-agent tương ứng trong hội thoại hiện tại"
     assert graph_called is False
 
 

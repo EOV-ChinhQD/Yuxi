@@ -1,6 +1,6 @@
 """
-MinIO 存储客户端
-简化的 MinIO 对象存储操作
+MinIO storage client
+Simplifying of MinIO object storage operations
 """
 
 import asyncio
@@ -19,17 +19,17 @@ from minio.error import S3Error
 
 
 class StorageError(Exception):
-    """存储相关异常基类"""
+    """Storage-related exception base class"""
 
     pass
 
 
 class StorageUploadError(StorageError):
-    """存储相关异常基类"""
+    """Storage-related exception base class"""
 
 
 class UploadResult:
-    """简化的上传结果"""
+    """Simplified upload results"""
 
     def __init__(self, url: str, bucket_name: str, object_name: str):
         self.url = url
@@ -39,12 +39,12 @@ class UploadResult:
 
 class MinIOClient:
     """
-    简化的 MinIO 客户端类
+    Simplified MinIO client class
     """
 
     PUBLIC_READ_BUCKETS = {"public"}
 
-    # 知识库相关的 bucket 名称
+    # Bucket name related to knowledge base
     KB_BUCKETS = {
         "documents": "knowledgebases",
         "parsed": "knowledgebases",
@@ -52,13 +52,13 @@ class MinIOClient:
     }
 
     def __init__(self):
-        """初始化 MinIO 客户端"""
+        """Initialize the MinIO client"""
         self.endpoint = os.getenv("MINIO_URI") or "http://minio:9000"
         self.access_key = os.getenv("MINIO_ACCESS_KEY") or "minioadmin"
         self.secret_key = os.getenv("MINIO_SECRET_KEY") or "minioadmin"
         self._client = None
 
-        # 设置公开访问端点
+        # Set up a publicly accessible endpoint
         if os.getenv("RUNNING_IN_DOCKER"):
             host_ip = (os.getenv("HOST_IP") or "").strip()
             if not host_ip:
@@ -74,7 +74,7 @@ class MinIOClient:
 
     @property
     def client(self) -> Minio:
-        """获取 MinIO 客户端实例"""
+        """Get a MinIO client instance"""
         if self._client is None:
             endpoint = self.endpoint
             if "://" in endpoint:
@@ -86,22 +86,22 @@ class MinIOClient:
         return self._client
 
     def ensure_bucket_exists(self, bucket_name: str) -> bool:
-        """确保存储桶存在"""
+        """Make sure the bucket exists"""
         try:
             created = False
             if not self.client.bucket_exists(bucket_name=bucket_name):
                 self.client.make_bucket(bucket_name=bucket_name)
                 created = True
-                logger.info(f"存储桶 '{bucket_name}' 已创建")
+                logger.info(f"bucket '{bucket_name}' Created")
 
             self._ensure_public_read_access(bucket_name)
 
             if created and bucket_name in self.PUBLIC_READ_BUCKETS:
-                logger.info(f"存储桶 '{bucket_name}' 已配置为公开可读")
+                logger.info(f"bucket '{bucket_name}' Configured to be publicly readable")
 
             return True
         except S3Error as e:
-            logger.error(f"存储桶 '{bucket_name}' 错误: {e}")
+            logger.error(f"bucket '{bucket_name}' mistake: {e}")
             raise StorageError(f"Error with bucket '{bucket_name}': {e}")
         except StorageError:
             raise
@@ -109,7 +109,7 @@ class MinIOClient:
     def upload_file(
         self, bucket_name: str, object_name: str, data: bytes, content_type: str | None = None
     ) -> UploadResult:
-        """上传文件到 MinIO"""
+        """Upload files to MinIO"""
         try:
             self.ensure_bucket_exists(bucket_name=bucket_name)
 
@@ -129,7 +129,7 @@ class MinIOClient:
             return UploadResult(url, bucket_name, object_name)
 
         except S3Error as e:
-            error_msg = f"上传文件 '{object_name}' 失败: {e}"
+            error_msg = f"Upload files '{object_name}' fail: {e}"
             logger.error(error_msg)
             raise StorageError(error_msg)
 
@@ -146,7 +146,7 @@ class MinIOClient:
         return result
 
     def upload_file_from_path(self, bucket_name: str, object_name: str, file_path: str) -> UploadResult:
-        """从文件路径上传文件"""
+        """Upload file from file path"""
         try:
             with open(file_path, "rb") as file_data:
                 data = file_data.read()
@@ -154,12 +154,12 @@ class MinIOClient:
             return self.upload_file(bucket_name, object_name, data)
 
         except FileNotFoundError:
-            raise StorageError(f"文件 '{file_path}' 不存在")
+            raise StorageError(f"Tệp '{file_path}' không tồn tại")
         except Exception as e:
-            raise StorageError(f"从路径上传文件失败: {e}")
+            raise StorageError(f"Tải lên tệp từ đường dẫn thất bại: {e}")
 
     def _guess_content_type(self, object_name: str) -> str:
-        """根据文件名猜测 MIME 类型"""
+        """Guess MIME type based on file name"""
         guessed_type, _ = mimetypes.guess_type(object_name)
         if guessed_type:
             return guessed_type
@@ -180,21 +180,21 @@ class MinIOClient:
         return content_types.get(ext, "application/octet-stream")
 
     def download_file(self, bucket_name: str, object_name: str) -> bytes:
-        """下载文件"""
+        """Download file"""
         try:
             response = self.client.get_object(bucket_name=bucket_name, object_name=object_name)
             data = response.read()
             response.close()
-            logger.info(f"成功下载 '{object_name}' 从存储桶 '{bucket_name}'")
+            logger.info(f"Successfully downloaded '{object_name}' from bucket '{bucket_name}'")
             return data
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                raise StorageError(f"对象 '{object_name}' 在存储桶 '{bucket_name}' 中不存在")
-            raise StorageError(f"下载文件失败: {e}")
+                raise StorageError(f"Đối tượng '{object_name}' không tồn tại trong bucket '{bucket_name}'")
+            raise StorageError(f"Tải xuống tệp thất bại: {e}")
 
     async def adownload_response(self, bucket_name: str, object_name: str) -> BaseHTTPResponse:
-        """异步下载文件"""
+        """Download files asynchronously"""
         try:
             response = await asyncio.to_thread(
                 self.client.get_object,
@@ -205,45 +205,45 @@ class MinIOClient:
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                raise StorageError(f"对象 '{object_name}' 在存储桶 '{bucket_name}' 中不存在")
-            raise StorageError(f"下载文件失败: {e}")
+                raise StorageError(f"Đối tượng '{object_name}' không tồn tại trong bucket '{bucket_name}'")
+            raise StorageError(f"Tải xuống tệp thất bại: {e}")
 
     async def adownload_file(self, bucket_name: str, object_name: str) -> bytes:
-        """异步下载文件"""
+        """Download files asynchronously"""
         try:
             response = await asyncio.to_thread(self.client.get_object, bucket_name=bucket_name, object_name=object_name)
             data = await asyncio.to_thread(response.read)
             response.close()
-            logger.info(f"成功下载 '{object_name}' 从存储桶 '{bucket_name}'")
+            logger.info(f"Successfully downloaded '{object_name}' from bucket '{bucket_name}'")
             return data
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                raise StorageError(f"对象 '{object_name}' 在存储桶 '{bucket_name}' 中不存在")
-            raise StorageError(f"下载文件失败: {e}")
+                raise StorageError(f"Đối tượng '{object_name}' không tồn tại trong bucket '{bucket_name}'")
+            raise StorageError(f"Tải xuống tệp thất bại: {e}")
 
     def get_presigned_url(self, bucket_name: str, object_name: str, days=7) -> str:
-        """将minio放在内网访问，外部通过返回代理链接访问"""
+        """Put minio on the internal network for access, and access it externally through the return proxy link"""
         res_url = self.client.get_presigned_url(
             method="GET", bucket_name=bucket_name, object_name=object_name, expires=timedelta(days=days)
         )
         return res_url
 
     def delete_file(self, bucket_name: str, object_name: str) -> bool:
-        """删除文件"""
+        """Delete files"""
         try:
             self.client.remove_object(bucket_name=bucket_name, object_name=object_name)
-            logger.info(f"成功删除 '{object_name}' 从存储桶 '{bucket_name}'")
+            logger.info(f"successfully deleted '{object_name}' from bucket '{bucket_name}'")
             return True
 
         except S3Error as e:
             if e.code == "NoSuchKey":
-                logger.warning(f"要删除的对象 '{object_name}' 不存在")
+                logger.warning(f"object to delete '{object_name}' does not exist")
                 return False
-            raise StorageError(f"删除文件失败: {e}")
+            raise StorageError(f"Xóa tệp thất bại: {e}")
 
     async def adelete_file(self, bucket_name: str, object_name: str) -> bool:
-        """删除文件"""
+        """Delete files"""
         result = await asyncio.to_thread(
             self.delete_file,
             bucket_name=bucket_name,
@@ -253,14 +253,14 @@ class MinIOClient:
 
     async def adelete_objects_by_prefix(self, bucket_name: str, prefix: str) -> int:
         """
-        按前缀删除对象
+        Delete objects by prefix
 
         Args:
-            bucket_name: bucket 名称
-            prefix: 对象前缀
+            bucket_name: bucket name
+            prefix: object prefix
 
         Returns:
-            删除的对象数量
+            Number of objects deleted
         """
         deleted_count = 0
 
@@ -282,53 +282,53 @@ class MinIOClient:
 
     async def adelete_bucket(self, bucket_name: str) -> bool:
         """
-        删除 bucket（先删除所有对象，再删除 bucket）
+        Delete bucket (Delete all objects first, Delete bucket again)
 
         Args:
-            bucket_name: bucket 名称
+            bucket_name: bucket name
 
         Returns:
-            是否成功
+            Is it successful?
         """
         try:
-            # 先删除所有对象
+            # Delete all objects first
             await self.adelete_objects_by_prefix(bucket_name, "")
-            # 再删除 bucket
+            # Delete bucket again
             await asyncio.to_thread(self.client.remove_bucket, bucket_name)
-            logger.info(f"成功删除 bucket: {bucket_name}")
+            logger.info(f"bucket deleted successfully: {bucket_name}")
             return True
         except S3Error as e:
             if e.code == "NoSuchBucket":
-                logger.warning(f"bucket 不存在: {bucket_name}")
+                logger.warning(f"bucket does not exist: {bucket_name}")
                 return False
-            raise StorageError(f"删除 bucket 失败: {e}")
+            raise StorageError(f"Xóa bucket thất bại: {e}")
 
     def file_exists(self, bucket_name: str, object_name: str) -> bool:
-        """检查文件是否存在"""
+        """Check if the file exists"""
         try:
             self.client.stat_object(bucket_name=bucket_name, object_name=object_name)
             return True
         except S3Error as e:
             if e.code == "NoSuchKey":
                 return False
-            raise StorageError(f"检查文件存在性失败: {e}")
+            raise StorageError(f"Kiểm tra sự tồn tại của tệp thất bại: {e}")
 
     def stat_file(self, bucket_name: str, object_name: str) -> int | None:
-        """获取文件大小（字节），文件不存在时返回 None"""
+        """Get the file size (bytes), return None if the file does not exist"""
         try:
             stat = self.client.stat_object(bucket_name=bucket_name, object_name=object_name)
             return stat.size
         except S3Error as e:
             if e.code == "NoSuchKey":
                 return None
-            raise StorageError(f"获取文件信息失败: {e}")
+            raise StorageError(f"Lấy thông tin tệp thất bại: {e}")
 
     async def astat_file(self, bucket_name: str, object_name: str) -> int | None:
-        """异步获取文件大小（字节），文件不存在时返回 None"""
+        """Get the file size (bytes) asynchronously, returning None if the file does not exist"""
         return await asyncio.to_thread(self.stat_file, bucket_name, object_name)
 
     def _ensure_public_read_access(self, bucket_name: str) -> None:
-        """设置存储桶策略，允许公开读取对象"""
+        """Set bucket policy to allow public reading of objects"""
         if bucket_name not in self.PUBLIC_READ_BUCKETS:
             return
 
@@ -353,8 +353,8 @@ class MinIOClient:
         try:
             self.client.set_bucket_policy(bucket_name=bucket_name, policy=json.dumps(policy))
         except S3Error as e:
-            logger.warning(f"设置存储桶 '{bucket_name}' 公共读取策略失败: {e}")
-            raise StorageError(f"无法设置存储桶公共访问策略: {e}")
+            logger.warning(f"Set up bucket '{bucket_name}' Public read policy failed: {e}")
+            raise StorageError(f"Không thể thiết lập chính sách truy cập công khai cho bucket: {e}")
 
     @asynccontextmanager
     async def temp_file_from_url(
@@ -363,59 +363,59 @@ class MinIOClient:
         allowed_extensions: list[str] | None = None,
     ):
         """
-        异步上下文管理器：从 MinIO URL 下载文件到临时文件，使用后自动清理
+        Asynchronous context manager: Download filearrive temporary document from MinIO URL, automatically clean up after use
 
         Args:
-            url: MinIO 文件 URL
-            allowed_extensions: 允许的文件扩展名列表（可选）
+            url: MinIO document URL
+            allowed_extensions: allow office extension column surface (optional)
 
         Yields:
-            str: 临时文件路径
+            str: temporary document path
 
         Raises:
-            StorageError: 如果 URL 无效或下载失败
+            StorageError: If the URL is invalid or the download fails
         """
         import tempfile
         from urllib.parse import urlparse
 
-        # 验证 URL
+        # Verify URL
         if not url or not isinstance(url, str):
-            raise StorageError("URL 不能为空")
+            raise StorageError("URL không được để trống")
 
         url = url.strip()
 
         if not url.startswith(("http://", "https://")):
-            raise StorageError("无效的 MinIO URL，只允许 http/https")
+            raise StorageError("URL MinIO không hợp lệ, chỉ cho phép http/https")
 
         parsed = urlparse(url)
 
-        # 验证主机
+        # Verify host
         endpoint_host = self.endpoint.split("://")[-1].split(":")[0]
         url_host = parsed.netloc.split(":")[0]
 
         if endpoint_host != url_host and url_host != os.environ.get("HOST_IP", "localhost"):
-            raise StorageError(f"不允许的外部 URL: {url_host}")
+            raise StorageError(f"URL bên ngoài không được phép: {url_host}")
 
-        # 检查路径遍历
+        # Check path traversal
         if ".." in url or "\\" in url:
-            raise StorageError("URL 包含路径遍历字符")
+            raise StorageError("URL chứa ký tự duyệt qua đường dẫn")
 
-        # 验证扩展名
+        # Verify extension
         if allowed_extensions and not any(url.endswith(ext) for ext in allowed_extensions):
-            raise StorageError(f"文件扩展名不符合要求，允许: {', '.join(allowed_extensions)}")
+            raise StorageError(f"Phần mở rộng tệp không đáp ứng yêu cầu, cho phép: {', '.join(allowed_extensions)}")
 
-        # 解析 bucket 和 object name
+        # Parse bucket and object names
         path_parts = parsed.path.lstrip("/").split("/", 1)
         if len(path_parts) != 2:
-            raise StorageError("无法解析 MinIO URL")
+            raise StorageError("Không thể phân tích URL MinIO")
 
         bucket_name, object_name = path_parts
 
-        # 下载文件
+        # Download file
         file_data = await self.adownload_file(bucket_name, object_name)
-        logger.info(f"成功从 MinIO 下载文件: {object_name} ({len(file_data)} bytes)")
+        logger.info(f"Successfully downloaded file from MinIO: {object_name} ({len(file_data)} bytes)")
 
-        # 创建临时文件
+        # Create temporary files
         if allowed_extensions:
             suffix = next((ext for ext in allowed_extensions if url.endswith(ext)), ".tmp")
         else:
@@ -427,24 +427,24 @@ class MinIOClient:
                 temp_file.write(file_data)
                 temp_path = temp_file.name
 
-            logger.info(f"文件已下载到临时路径: {temp_path}")
+            logger.info(f"File downloaded to temporary path: {temp_path}")
             yield temp_path
 
         finally:
             if temp_path and os.path.exists(temp_path):
                 try:
                     os.unlink(temp_path)
-                    logger.info(f"已删除临时文件: {temp_path}")
+                    logger.info(f"Temporary files deleted: {temp_path}")
                 except Exception as e:
-                    logger.warning(f"删除临时文件失败: {e}")
+                    logger.warning(f"Failed to delete temporary files: {e}")
 
 
-# 全局客户端实例
+# Global client instance
 _default_client = None
 
 
 def get_minio_client() -> MinIOClient:
-    """获取 MinIO 客户端实例"""
+    """Get a MinIO client instance"""
     global _default_client
     if _default_client is None:
         _default_client = MinIOClient()
@@ -453,15 +453,15 @@ def get_minio_client() -> MinIOClient:
 
 async def aupload_file_to_minio(bucket_name: str, file_name: str, data: bytes) -> str:
     """
-    通过字节上传文件到 MinIO 的异步接口，并返回资源 URL。
-    MIME 类型由 MinIO 客户端内部根据 object_name 自动推断。
+    Pass byteUpload files to MinIO's asynchronous interface and return the resource URL.
+    The MIME type is automatically inferred internally by the MinIO client based on object_name.
 
     Args:
         bucket_name: bucket_name
         file_name : filename
-        data: 文件字节流
+        data: documentbyte stream
     Returns:
-        str: 文件访问 URL
+        str: File access URL
     """
     client = get_minio_client()
     upload_result = await client.aupload_file(bucket_name, file_name, data)

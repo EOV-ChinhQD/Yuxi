@@ -1,9 +1,9 @@
-"""模型缓存服务 - 基于 Redis 的跨进程模型信息缓存。
+"""Model caching service - Based on Redis of cross-process Model information caching.
 
-本模块将数据库中的 model_providers 表数据序列化到 Redis，
-供 API 和 Worker 等多进程同步读取，避免在同步函数中查询异步数据库。
+This module serializes the of model_providers surface data in the database to arrive Redis.
+It is used for synchronous reading by multiple processes such as API and Worker to avoid querying the asynchronous database in synchronous functions.
 
-模型 spec 格式: provider_id:model_id（冒号分隔）。model_id 允许包含斜杠。
+Model spec Format: provider_id:model_id (colon separated). model_id is allowed to contain slashes.
 """
 
 from __future__ import annotations
@@ -22,23 +22,23 @@ _CACHE_TTL_SECONDS = 5
 
 @dataclass(frozen=True)
 class ModelInfo:
-    """不可变的模型信息，供运行时使用。"""
+    """Immutable model information for runtime use."""
 
     provider_id: str
     model_id: str
     model_type: str  # chat / embedding / rerank
     display_name: str
 
-    # 运行时配置
+    # Runtime configuration
     api_key: str
     base_url: str
     provider_type: str  # openai / anthropic / gemini / openrouter
 
-    # 可选配置
+    # Optional configuration
     headers: dict[str, str] = field(default_factory=dict)
     extra: dict[str, Any] = field(default_factory=dict)
 
-    # Embedding 专属
+    # Embedding Exclusive
     dimension: int | None = None
     batch_size: int = 40
 
@@ -79,7 +79,7 @@ class ModelInfo:
 
 
 class ModelCache:
-    """基于 Redis 的模型缓存，所有写入均走 Redis，保证跨进程一致。"""
+    """Based on Redis model cache, all writes go through Redis to ensure consistency across processes."""
 
     def __init__(self) -> None:
         self._local_cache: dict[str, ModelInfo] | None = None
@@ -186,9 +186,9 @@ model_cache = ModelCache()
 
 
 def resolve_model_spec(spec: str) -> ModelInfo:
-    """根据 spec 返回 ModelInfo。"""
+    """Returns ModelInfo according to spec."""
     if not spec:
-        raise ValueError("model spec 不能为空")
+        raise ValueError("model spec không được để trống")
 
     info = model_cache.get_model_info(spec)
     if info:
@@ -196,4 +196,4 @@ def resolve_model_spec(spec: str) -> ModelInfo:
 
     all_specs = model_cache.get_all_specs()
     available = [item.spec for item in all_specs[:10]]
-    raise ValueError(f"未找到模型: '{spec}'。可用模型 ({len(all_specs)}): {available}")
+    raise ValueError(f"Không tìm thấy model: '{spec}'. Các model khả dụng ({len(all_specs)}): {available}")

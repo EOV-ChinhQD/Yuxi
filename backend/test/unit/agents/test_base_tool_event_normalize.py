@@ -7,12 +7,12 @@ from yuxi.agents.base import _json_safe, _normalize_tool_event_data
 
 
 def _command_tool_finished(tool_call_id: str) -> dict:
-    """模拟 write_todos / task 这类返回 Command 的工具的 tool-finished 事件。"""
+    """Simulate write_todos / task tool for this type of tool that returns a Command-finished event."""
     tool_message = ToolMessage(
-        content="Updated todo list to [{'content': '步骤一', 'status': 'in_progress'}]",
+        content="Updated todo list to [{'content': 'step one', 'status': 'in_progress'}]",
         tool_call_id=tool_call_id,
     )
-    command = Command(update={"todos": [{"content": "步骤一", "status": "in_progress"}], "messages": [tool_message]})
+    command = Command(update={"todos": [{"content": "step one", "status": "in_progress"}], "messages": [tool_message]})
     return {"event": "tool-finished", "tool_call_id": tool_call_id, "output": command}
 
 
@@ -22,16 +22,16 @@ def test_command_tool_finished_extracts_tool_message_for_frontend_association():
     safe = _json_safe(data)
     output = safe["output"]
 
-    # 前端按 tool_call_id 关联结果，并要求 output 是对象（dict），否则会被丢弃。
+    # The front end associates results by tool_call_id and requires output to be an object (dict), otherwise it will be discarded.
     assert isinstance(output, dict)
     assert output["tool_call_id"] == tool_call_id
     assert output["type"] == "tool"
-    assert "步骤一" in output["content"]
+    assert "step one" in output["content"]
 
 
 def test_command_tool_finished_prefers_message_matching_tool_call_id():
-    other = ToolMessage(content="别的工具结果", tool_call_id="call_other")
-    target = ToolMessage(content="目标结果", tool_call_id="call_target")
+    other = ToolMessage(content="Other tool results", tool_call_id="call_other")
+    target = ToolMessage(content="target result", tool_call_id="call_target")
     data = {
         "event": "tool-finished",
         "tool_call_id": "call_target",
@@ -41,7 +41,7 @@ def test_command_tool_finished_prefers_message_matching_tool_call_id():
     output = _normalize_tool_event_data(data)["output"]
     assert isinstance(output, ToolMessage)
     assert output.tool_call_id == "call_target"
-    assert output.content == "目标结果"
+    assert output.content == "target result"
 
 
 def test_regular_dict_output_is_left_untouched():
@@ -55,6 +55,6 @@ def test_tool_started_event_is_left_untouched():
 
 
 def test_command_without_tool_message_is_left_untouched():
-    command = Command(update={"todos": [{"content": "无消息", "status": "pending"}]})
+    command = Command(update={"todos": [{"content": "No news", "status": "pending"}]})
     data = {"event": "tool-finished", "tool_call_id": "call_x", "output": command}
     assert _normalize_tool_event_data(data)["output"] is command

@@ -26,18 +26,18 @@ def _get_or_create_dev_env(name: str, value_factory) -> str:
     if value:
         return value
     if _is_production_env():
-        raise ValueError(f"{name} 未配置，请在生产环境的 .env.prod 中设置持久化随机值")
+        raise ValueError(f"{name} chưa được cấu hình, vui lòng thiết lập giá trị ngẫu nhiên tĩnh trong .env.prod cho môi trường sản xuất")
 
     value = value_factory()
     os.environ[name] = value
-    print(f"{name} 未配置，开发环境已自动生成临时随机值，服务重启后会重新生成。")
+    print(f"{name} Not configured. The development environment has automatically generated a temporary random value, which will be regenerated after the service is restarted.")
     return value
 
 
 def _get_jwt_secret_key() -> str:
     secret_key = _get_or_create_dev_env("JWT_SECRET_KEY", lambda: secrets.token_hex(32))
     if _is_production_env() and secret_key == PUBLIC_DEFAULT_JWT_SECRET_KEY:
-        raise ValueError("JWT_SECRET_KEY 不能使用公开默认密钥，请重新生成随机强密钥")
+        raise ValueError("JWT_SECRET_KEY không thể sử dụng khóa mặc định công khai, vui lòng tạo khóa mạnh ngẫu nhiên mới")
     return secret_key
 
 
@@ -101,6 +101,6 @@ class AuthUtils:
                 options={"require": ["exp", "sub", "iss", "aud"]},
             )
         except jwt.ExpiredSignatureError:
-            raise ValueError("令牌已过期")
+            raise ValueError("Token đã hết hạn")
         except jwt.InvalidTokenError:
-            raise ValueError("无效的令牌")
+            raise ValueError("Token không hợp lệ")

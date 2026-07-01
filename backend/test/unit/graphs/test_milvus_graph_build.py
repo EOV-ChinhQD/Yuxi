@@ -16,15 +16,15 @@ from yuxi.knowledge.graphs.milvus_graph_service import MilvusGraphService
 def test_normalize_extraction_result_defaults_and_validates_refs():
     result = normalize_extraction_result(
         {
-            "entities": [{"text": "张三"}, {"text": "公司"}],
-            "relations": [{"source": "张三", "target": "公司", "text": "任职于"}],
+            "entities": [{"text": "Zhang San"}, {"text": "company"}],
+            "relations": [{"source": "Zhang San", "target": "company", "text": "Served in"}],
         },
         "llm",
     )
 
     assert result["entities"][0]["label"] == "Entity"
     assert result["relations"][0]["label"] == "RELATED_TO"
-    assert result["relations"][0]["source"] == {"text": "张三", "label": "Entity", "attributes": []}
+    assert result["relations"][0]["source"] == {"text": "Zhang San", "label": "Entity", "attributes": []}
     assert result["metadata"] == {"extractor_type": "llm", "schema_version": 1}
 
 
@@ -34,12 +34,12 @@ def test_normalize_extraction_result_accepts_llm_nested_relation_entities():
             "relations": [
                 {
                     "source": {
-                        "text": "张三",
+                        "text": "Zhang San",
                         "label": "Person",
-                        "attributes": [{"text": "工程师", "label": "Occupation"}],
+                        "attributes": [{"text": "engineer", "label": "Occupation"}],
                     },
-                    "target": {"text": "公司", "label": "Organization"},
-                    "text": "任职于",
+                    "target": {"text": "company", "label": "Organization"},
+                    "text": "Served in",
                     "label": "WORKS_AT",
                 }
             ]
@@ -48,17 +48,17 @@ def test_normalize_extraction_result_accepts_llm_nested_relation_entities():
     )
 
     assert result["entities"] == [
-        {"text": "张三", "label": "Person", "attributes": [{"text": "工程师", "label": "Occupation"}]},
-        {"text": "公司", "label": "Organization", "attributes": []},
+        {"text": "Zhang San", "label": "Person", "attributes": [{"text": "engineer", "label": "Occupation"}]},
+        {"text": "company", "label": "Organization", "attributes": []},
     ]
-    assert result["relations"][0]["source"]["attributes"] == [{"text": "工程师", "label": "Occupation"}]
-    assert result["relations"][0]["target"] == {"text": "公司", "label": "Organization", "attributes": []}
+    assert result["relations"][0]["source"]["attributes"] == [{"text": "engineer", "label": "Occupation"}]
+    assert result["relations"][0]["target"] == {"text": "company", "label": "Organization", "attributes": []}
 
 
 @pytest.mark.parametrize(
     "payload",
     [
-        {"entities": [{"text": "张三"}], "relations": [{"source": "张三", "target": "不存在", "text": "关系"}]},
+        {"entities": [{"text": "Zhang San"}], "relations": [{"source": "Zhang San", "target": "không tồn tại", "text": "relation"}]},
         {"entities": [{"text": ""}], "relations": []},
     ],
 )
@@ -70,7 +70,7 @@ def test_normalize_extraction_result_rejects_invalid_payload(payload):
 def test_llm_graph_extractor_rejects_custom_prompt():
     extractor = LLMGraphExtractor({"model_spec": "test/model", "prompt": "custom"})
 
-    with pytest.raises(ValueError, match="不支持自定义完整 Prompt"):
+    with pytest.raises(ValueError, match="không hỗ trợ Prompt tùy chỉnh đầy đủ"):
         extractor.validate_options()
 
 
@@ -78,18 +78,18 @@ def test_llm_graph_extractor_appends_schema_to_fixed_prompt():
     extractor = LLMGraphExtractor(
         {
             "model_spec": "test/model",
-            "schema": "实体类型只能是 Person 或 Organization",
+            "schema": "Entity type can only be Person or Organization",
             "concurrency_count": 5,
             "model_params": {"temperature": 0.1},
         }
     )
 
-    prompt = extractor._build_prompt("张三任职于公司")
+    prompt = extractor._build_prompt("Zhang San works in the company")
 
-    assert "请从下面文本中抽取实体和实体关系" in prompt
-    assert "抽取 Schema 约束" in prompt
-    assert "实体类型只能是 Person 或 Organization" in prompt
-    assert "文本：\n张三任职于公司" in prompt
+    assert "Please extract entities and entity relationships from the following text" in prompt
+    assert "Extract Schema constraints" in prompt
+    assert "Entity type can only be Person or Organization" in prompt
+    assert "text:\nZhang San works in the company" in prompt
 
 
 def test_graph_extractor_factory_supports_only_llm():
@@ -114,7 +114,7 @@ async def test_milvus_graph_service_configure_rejects_spacy():
 
     service = MilvusGraphService(kb_repo=Repo())
 
-    with pytest.raises(ValueError, match="不支持的图谱抽取器类型"):
+    with pytest.raises(ValueError, match="Loại bộ trích xuất đồ thị không được hỗ trợ"):
         await service.configure(
             "kb_test",
             extractor_type="spacy",
@@ -179,7 +179,7 @@ def test_milvus_graph_service_writes_chunk_entity_and_relation():
         file_id="file_1",
         kb_id="kb_test",
         chunk_index=1,
-        content="张三任职于公司",
+        content="Zhang San works in the company",
         start_char_pos=0,
         end_char_pos=8,
     )
@@ -192,12 +192,12 @@ def test_milvus_graph_service_writes_chunk_entity_and_relation():
                 "relations": [
                     {
                         "source": {
-                            "text": "张三",
+                            "text": "Zhang San",
                             "label": "Person",
-                            "attributes": [{"text": "工程师", "label": "Occupation"}],
+                            "attributes": [{"text": "engineer", "label": "Occupation"}],
                         },
-                        "target": {"text": "公司", "label": "Organization"},
-                        "text": "任职于",
+                        "target": {"text": "company", "label": "Organization"},
+                        "text": "Served in",
                         "label": "WORKS_AT",
                     }
                 ],
@@ -206,7 +206,7 @@ def test_milvus_graph_service_writes_chunk_entity_and_relation():
         ),
     )
 
-    assert [entity["name"] for entity in entities] == ["张三", "公司"]
+    assert [entity["name"] for entity in entities] == ["Zhang San", "company"]
     assert {entity["label"] for entity in entities} == {"Person", "Organization"}
     assert triples[0]["relation_type"] == "WORKS_AT"
     queries = [call.args[0] for call in tx.run.call_args_list]
@@ -214,7 +214,7 @@ def test_milvus_graph_service_writes_chunk_entity_and_relation():
     assert any("MERGE (e:Entity:MilvusKB:`kb_test`" in query for query in queries)
     assert any("MERGE (source)-[r:RELATION" in query for query in queries)
     entity_call = next(call for call in tx.run.call_args_list if "MERGE (e:Entity" in call.args[0])
-    assert entity_call.kwargs["attributes"] == '[{"text": "工程师", "label": "Occupation"}]'
+    assert entity_call.kwargs["attributes"] == '[{"text": "engineer", "label": "Occupation"}]'
 
 
 @pytest.mark.asyncio

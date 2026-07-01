@@ -89,7 +89,7 @@ async def test_stream_agent_run_events_reads_redis_and_ends_on_end_event(monkeyp
                         "run_id": "run-1",
                         "thread_id": "thread-1",
                         "event": "messages",
-                        "payload": {"items": [{"status": "loading", "response": "你"}]},
+                        "payload": {"items": [{"status": "loading", "response": "you"}]},
                         "created_at": "2026-05-27T00:00:00+00:00",
                     },
                     "ts": 1700000000000,
@@ -179,10 +179,10 @@ async def test_stream_agent_run_events_compacts_verbose_false(monkeypatch: pytes
                             "response": None,
                             "thread_id": "thread-1",
                             "status": "init",
-                            "meta": {"query": "写一个冒泡排序", "uid": "user-1"},
+                            "meta": {"query": "Write a bubble sort", "uid": "user-1"},
                             "msg": {
                                 "role": "user",
-                                "content": "写一个冒泡排序",
+                                "content": "Write a bubble sort",
                                 "type": "human",
                                 "image_content": "base64-image-data",
                                 "extra_metadata": {
@@ -243,7 +243,7 @@ async def test_stream_agent_run_events_compacts_verbose_false(monkeypatch: pytes
                         "items": [
                             {
                                 "request_id": "req-1",
-                                "response": "你",
+                                "response": "you",
                                 "thread_id": "thread-1",
                                 "status": "loading",
                                 "stream_event": {
@@ -661,7 +661,7 @@ async def test_create_agent_run_core_can_skip_input_message_for_child_run(monkey
     assert db.committed is True
 
 
-# ==================== run 结果基础能力 ====================
+# ==================== run result basic ability ====================
 
 
 @pytest.mark.asyncio
@@ -987,7 +987,7 @@ async def test_create_chat_run_with_image_persists_multimodal_message_type(monke
     db = _patch_common_run_repos(monkeypatch, RunRepo)
 
     await agent_run_service.create_agent_run_view(
-        query="看图",
+        query="Look at the picture",
         agent_id="default",
         thread_id="thread-1",
         meta={"request_id": "req-1"},
@@ -1094,7 +1094,7 @@ async def test_create_chat_run_snapshots_system_default_when_agent_model_empty(m
 
 @pytest.mark.asyncio
 async def test_create_resume_run_inherits_parent_model_spec(monkeypatch: pytest.MonkeyPatch):
-    # 即使 resume 入参传了别的模型，也必须沿用父运行的模型
+    # Even if another model is passed into the resume input parameter, the model run by the parent must be used.
     captured = {}
     created_run = SimpleNamespace(id="", thread_id="thread-1", status="pending", request_id="resume-req", uid="user-1")
 

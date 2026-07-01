@@ -25,7 +25,7 @@ from yuxi.utils.upload_utils import read_upload_with_limit, write_upload_to_path
 
 ATTACHMENT_ALLOWED_EXTENSIONS: tuple[str, ...] = ()
 MAX_ATTACHMENT_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
-MAX_ATTACHMENT_MARKDOWN_CHARS = 32_000  # TODO: 转 MARKDOWN的时候，不应该裁剪
+MAX_ATTACHMENT_MARKDOWN_CHARS = 32_000  # TODO: When converting to MARKDOWN, you should not crop
 TMP_ATTACHMENT_PREFIX = "tmp/chat_attachments"
 TMP_ATTACHMENT_PARSE_EXTENSIONS = (".pdf", ".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif")
 TMP_ATTACHMENT_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif")
@@ -62,7 +62,7 @@ async def _write_upload_to_disk(upload: UploadFile, dest: Path) -> int:
         upload,
         dest,
         max_size_bytes=MAX_ATTACHMENT_SIZE_BYTES,
-        too_large_message="附件过大，当前仅支持 5 MB 以内的文件",
+        too_large_message="Tệp đính kèm quá lớn, hiện tại chỉ hỗ trợ các tệp dưới 5 MB",
     )
 
 
@@ -71,21 +71,21 @@ def _truncate_markdown(markdown: str) -> tuple[str, bool]:
         return markdown, False
 
     truncated_content = markdown[: MAX_ATTACHMENT_MARKDOWN_CHARS - 100].rstrip()
-    truncated_content = f"{truncated_content}\n\n[内容已截断，超出 {MAX_ATTACHMENT_MARKDOWN_CHARS} 字符限制]"
+    truncated_content = f"{truncated_content}\n\n[Content has been truncated and exceeds {MAX_ATTACHMENT_MARKDOWN_CHARS} character limit]"
     return truncated_content, True
 
 
 async def _convert_upload_to_markdown(upload: UploadFile) -> ConversionResult:
     """Persist an UploadFile temporarily, convert it to markdown, and clean up."""
     if not upload.filename:
-        raise ValueError("无法识别的文件名")
+        raise ValueError("Không thể nhận dạng tên file")
 
     file_name = Path(upload.filename).name
     suffix = Path(file_name).suffix.lower()
 
     if ATTACHMENT_ALLOWED_EXTENSIONS and suffix not in ATTACHMENT_ALLOWED_EXTENSIONS:
         allowed = ", ".join(ATTACHMENT_ALLOWED_EXTENSIONS)
-        raise ValueError(f"不支持的文件类型: {suffix or '未知'}，当前仅支持 {allowed}")
+        raise ValueError(f"Loại tệp không được hỗ trợ: {suffix or 'Không xác định'}, hiện tại chỉ hỗ trợ {allowed}")
 
     temp_dir = _ensure_workdir()
     temp_path = temp_dir / f"{uuid.uuid4().hex}{suffix}"
@@ -110,7 +110,7 @@ async def _convert_upload_to_markdown(upload: UploadFile) -> ConversionResult:
 async def require_user_conversation(conv_repo: ConversationRepository, thread_id: str, uid: str):
     conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
     if not conversation or conversation.uid != str(uid) or conversation.status == "deleted":
-        raise HTTPException(status_code=404, detail="对话线程不存在")
+        raise HTTPException(status_code=404, detail="Thread trò chuyện không tồn tại")
     return conversation
 
 
@@ -124,22 +124,22 @@ def _make_upload_virtual_path(file_name: str) -> str:
 
 
 def _make_attachment_path(file_name: str) -> str:
-    """生成附件在沙盒用户目录中的统一路径。"""
+    """Generate a unified path for attachments in the sandbox user directory."""
     file_name = _safe_file_name(file_name)
-    # 提取不带扩展名的部分
+    # Extract part without extension
     base_name = file_name
     for ext in [".docx", ".txt", ".html", ".htm", ".pdf", ".md"]:
         if file_name.lower().endswith(ext):
             base_name = file_name[: -len(ext)]
             break
 
-    # 替换路径分隔符
+    # Replace path separator
     safe_name = base_name.replace("/", "_").replace("\\", "_")
     return f"{safe_name}.md"
 
 
 def _build_attachment_storage_path(*, uid: str, thread_id: str, file_name: str) -> tuple[str, Path]:
-    """返回附件虚拟路径和宿主机落盘路径。"""
+    """Returns the attachment virtual path and the host disk path."""
     relative_name = _make_attachment_path(file_name)
     virtual_path = f"{VIRTUAL_PATH_UPLOADS}/attachments/{relative_name}"
 
@@ -163,7 +163,7 @@ def _get_tmp_attachment_bucket() -> str:
 
 
 def _make_tmp_attachment_object(uid: str, file_name: str) -> tuple[str, str]:
-    """生成用户隔离的 tmp 对象路径。"""
+    """Generate user-isolated tmp object paths."""
     tmp_file_id = uuid.uuid4().hex
     safe_name = _safe_file_name(file_name)
     return tmp_file_id, f"{_tmp_attachment_prefix(uid, tmp_file_id)}/original/{safe_name}"
@@ -180,15 +180,15 @@ def _minio_source(bucket_name: str, object_name: str) -> str:
 
 def _parse_user_tmp_object(object_name: str, uid: str) -> tuple[str, str, str]:
     if not object_name or "\\" in object_name:
-        raise HTTPException(status_code=400, detail="无效的临时附件路径")
+        raise HTTPException(status_code=400, detail="Đường dẫn tệp đính kèm tạm thời không hợp lệ")
 
     user_prefix = f"{TMP_ATTACHMENT_PREFIX}/{uid}/"
     if not object_name.startswith(user_prefix):
-        raise HTTPException(status_code=403, detail="无权访问该临时附件")
+        raise HTTPException(status_code=403, detail="Không có quyền truy cập tệp đính kèm tạm thời này")
 
     parts = object_name[len(user_prefix) :].split("/")
     if len(parts) != 3 or any(not part or part in {".", ".."} for part in parts):
-        raise HTTPException(status_code=400, detail="无效的临时附件路径")
+        raise HTTPException(status_code=400, detail="Đường dẫn tệp đính kèm tạm thời không hợp lệ")
 
     return parts[0], parts[1], parts[2]
 
@@ -201,16 +201,16 @@ def _require_tmp_object_section(
 ) -> tuple[str, str]:
     current_tmp_file_id, current_section, object_file_name = _parse_user_tmp_object(object_name, uid)
     if current_section != section or (tmp_file_id is not None and current_tmp_file_id != tmp_file_id):
-        raise HTTPException(status_code=400, detail="无效的临时附件路径")
+        raise HTTPException(status_code=400, detail="Đường dẫn tệp đính kèm tạm thời không hợp lệ")
     if section == "parsed" and Path(object_file_name).suffix.lower() != ".md":
-        raise HTTPException(status_code=400, detail="无效的解析附件路径")
+        raise HTTPException(status_code=400, detail="Đường dẫn tệp đính kèm phân tích không hợp lệ")
     return current_tmp_file_id, object_file_name
 
 
 def _normalize_parse_method(file_name: str, parse_method: str | None) -> str:
     suffix = Path(file_name).suffix.lower()
     if suffix not in TMP_ATTACHMENT_PARSE_EXTENSIONS:
-        raise HTTPException(status_code=400, detail="当前仅支持 PDF 和图片附件解析")
+        raise HTTPException(status_code=400, detail="Hiện chỉ hỗ trợ phân tích PDF và hình ảnh")
 
     method = parse_method or ("rapid_ocr" if suffix in TMP_ATTACHMENT_IMAGE_EXTENSIONS else "disable")
     if suffix in TMP_ATTACHMENT_IMAGE_EXTENSIONS:
@@ -220,7 +220,7 @@ def _normalize_parse_method(file_name: str, parse_method: str | None) -> str:
 
     if method not in allowed_methods:
         allowed = ", ".join(allowed_methods)
-        raise HTTPException(status_code=400, detail=f"不支持的解析方法: {method}，可选: {allowed}")
+        raise HTTPException(status_code=400, detail=f"Phương thức phân tích cú pháp không được hỗ trợ: {method}, tùy chọn: {allowed}")
     return method
 
 
@@ -300,7 +300,7 @@ async def _materialize_attachment_files(
     file_name: str,
     file_content: bytes,
 ) -> dict:
-    """将原始附件与可选 markdown 副本落盘到线程 user-data。"""
+    """Drop original attachment and optional markdown copy to thread user-data。"""
     ensure_thread_dirs(thread_id, uid)
 
     upload_virtual_path = _make_upload_virtual_path(file_name)
@@ -360,7 +360,7 @@ def _materialize_tmp_attachment_files(
     parsed_markdown: str | None = None,
     truncated: bool = False,
 ) -> dict:
-    """将 tmp 附件复制到线程目录，不主动删除 tmp 对象。"""
+    """Copy the tmp attachment to the thread directory and do not actively delete the tmp object."""
     ensure_thread_dirs(thread_id, uid)
 
     storage_name = f"{file_id}_{file_name}"
@@ -415,12 +415,12 @@ async def create_thread_view(
     user_result = await db.execute(select(User).where(User.uid == str(current_uid)))
     current_user = user_result.scalar_one_or_none()
     if not current_user:
-        raise HTTPException(status_code=404, detail="用户不存在")
+        raise HTTPException(status_code=404, detail="Người dùng không tồn tại")
 
     agent_repo = AgentRepository(db)
     agent_item = await agent_repo.get_visible_by_slug(slug=agent_id, user=current_user)
     if not agent_item:
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent không tồn tại")
 
     thread_id = str(uuid.uuid4())
     conv_repo = ConversationRepository(db)
@@ -429,7 +429,7 @@ async def create_thread_view(
     conversation = await conv_repo.create_conversation(
         uid=str(current_uid),
         agent_id=agent_item.slug,
-        title=title or "新的对话",
+        title=title or "new conversation",
         thread_id=thread_id,
         metadata=thread_metadata,
     )
@@ -541,8 +541,8 @@ async def delete_thread_view(
     await require_user_conversation(conv_repo, thread_id, str(current_uid))
     deleted = await conv_repo.delete_conversation(thread_id, soft_delete=True)
     if not deleted:
-        raise HTTPException(status_code=404, detail="对话线程不存在")
-    return {"message": "删除成功"}
+        raise HTTPException(status_code=404, detail="Thread trò chuyện không tồn tại")
+    return {"message": "Delete successfully"}
 
 
 async def update_thread_view(
@@ -557,7 +557,7 @@ async def update_thread_view(
     await require_user_conversation(conv_repo, thread_id, str(current_uid))
     updated_conv = await conv_repo.update_conversation(thread_id, title=title, is_pinned=is_pinned)
     if not updated_conv:
-        raise HTTPException(status_code=500, detail="更新失败")
+        raise HTTPException(status_code=500, detail="Cập nhật thất bại")
     return {
         "id": updated_conv.thread_id,
         "uid": updated_conv.uid,
@@ -571,16 +571,16 @@ async def update_thread_view(
 
 
 async def upload_tmp_attachment_view(*, file: UploadFile, current_uid: str) -> dict:
-    """上传附件到用户隔离的 MinIO tmp 路径。"""
+    """Upload attachments to the user-isolated MinIO tmp path."""
     if not file.filename:
-        raise HTTPException(status_code=400, detail="无法识别的文件名")
+        raise HTTPException(status_code=400, detail="Không thể nhận dạng tên file")
 
     file_name = _safe_file_name(file.filename)
     try:
         file_content = await read_upload_with_limit(
             file,
             max_size_bytes=MAX_ATTACHMENT_SIZE_BYTES,
-            too_large_message="附件过大，当前仅支持 5 MB 以内的文件",
+            too_large_message="Tệp đính kèm quá lớn, hiện tại chỉ hỗ trợ các tệp dưới 5 MB",
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -597,7 +597,7 @@ async def upload_tmp_attachment_view(*, file: UploadFile, current_uid: str) -> d
             content_type=file.content_type,
         )
     except StorageError as exc:
-        raise HTTPException(status_code=500, detail=f"临时附件上传失败: {exc}") from exc
+        raise HTTPException(status_code=500, detail=f"Tải lên tệp đính kèm tạm thời thất bại: {exc}") from exc
 
     suffix = Path(file_name).suffix.lower()
     if suffix == ".pdf":
@@ -629,12 +629,12 @@ async def parse_tmp_attachment_view(
     bucket_name: str | None,
     current_uid: str,
 ) -> dict:
-    """解析用户 tmp 附件并把 markdown 写回 tmp。"""
+    """Parse user tmp attachments and write markdown back to tmp."""
     minio_client = get_minio_client()
     expected_bucket = _get_tmp_attachment_bucket()
     bucket_name = bucket_name or expected_bucket
     if bucket_name != expected_bucket:
-        raise HTTPException(status_code=400, detail="无效的临时附件 bucket")
+        raise HTTPException(status_code=400, detail="Bucket tệp đính kèm tạm thời không hợp lệ")
 
     tmp_file_id, safe_name = _require_tmp_object_section(object_name, str(current_uid), "original")
     method = _normalize_parse_method(safe_name, parse_method)
@@ -650,10 +650,10 @@ async def parse_tmp_attachment_view(
             content_type="text/markdown; charset=utf-8",
         )
     except StorageError as exc:
-        raise HTTPException(status_code=400, detail=f"读取临时附件失败: {exc}") from exc
+        raise HTTPException(status_code=400, detail=f"Đọc tệp đính kèm tạm thời thất bại: {exc}") from exc
     except Exception as exc:  # noqa: BLE001
         logger.warning(f"Tmp attachment parse failed for {safe_name}: {exc}")
-        raise HTTPException(status_code=400, detail=f"附件解析失败: {exc}") from exc
+        raise HTTPException(status_code=400, detail=f"Phân tích tệp đính kèm thất bại: {exc}") from exc
 
     return {
         "tmp_file_id": tmp_file_id,
@@ -675,9 +675,9 @@ async def confirm_tmp_thread_attachments_view(
     db: AsyncSession,
     current_uid: str,
 ) -> dict:
-    """将选中的 tmp 附件正式关联到对话线程。"""
+    """Officially associate the selected tmp attachment to the conversation thread."""
     if not attachments:
-        raise HTTPException(status_code=400, detail="请选择要添加的附件")
+        raise HTTPException(status_code=400, detail="Vui lòng chọn tệp đính kèm cần thêm")
 
     conv_repo = ConversationRepository(db)
     conversation = await require_user_conversation(conv_repo, thread_id, str(current_uid))
@@ -689,17 +689,17 @@ async def confirm_tmp_thread_attachments_view(
         object_name = str(item.get("object_name") or "")
         bucket_name = str(item.get("bucket_name") or expected_bucket)
         if bucket_name != expected_bucket:
-            raise HTTPException(status_code=400, detail="无效的临时附件 bucket")
+            raise HTTPException(status_code=400, detail="Bucket tệp đính kèm tạm thời không hợp lệ")
 
         tmp_file_id, file_name = _require_tmp_object_section(object_name, str(current_uid), "original")
         try:
             file_content = await minio_client.adownload_file(bucket_name, object_name)
         except StorageError as exc:
-            raise HTTPException(status_code=400, detail=f"读取临时附件失败: {exc}") from exc
+            raise HTTPException(status_code=400, detail=f"Đọc tệp đính kèm tạm thời thất bại: {exc}") from exc
 
         if len(file_content) > MAX_ATTACHMENT_SIZE_BYTES:
             max_size_mb = MAX_ATTACHMENT_SIZE_BYTES // (1024 * 1024)
-            raise HTTPException(status_code=400, detail=f"附件过大，当前仅支持 {max_size_mb} MB 以内的文件")
+            raise HTTPException(status_code=400, detail=f"Tệp đính kèm quá lớn, hiện tại chỉ hỗ trợ các tệp dưới {max_size_mb} MB")
 
         parsed_markdown = None
         parsed_object_name = str(item.get("parsed_object_name") or "")
@@ -707,14 +707,14 @@ async def confirm_tmp_thread_attachments_view(
             _require_tmp_object_section(parsed_object_name, str(current_uid), "parsed", tmp_file_id)
             expected_parsed_object = _make_tmp_parsed_object(str(current_uid), tmp_file_id, file_name)
             if parsed_object_name != expected_parsed_object:
-                raise HTTPException(status_code=400, detail="解析附件路径无效")
+                raise HTTPException(status_code=400, detail="Đường dẫn tệp đính kèm phân tích không hợp lệ")
             try:
                 parsed_bytes = await minio_client.adownload_file(bucket_name, parsed_object_name)
                 parsed_markdown = parsed_bytes.decode("utf-8")
             except StorageError as exc:
-                raise HTTPException(status_code=400, detail=f"读取解析附件失败: {exc}") from exc
+                raise HTTPException(status_code=400, detail=f"Đọc và phân tích tệp đính kèm thất bại: {exc}") from exc
             except UnicodeDecodeError as exc:
-                raise HTTPException(status_code=400, detail="解析附件内容不是有效的 Markdown 文本") from exc
+                raise HTTPException(status_code=400, detail="Nội dung tệp đính kèm phân tích không phải là văn bản Markdown hợp lệ") from exc
 
         prepared_items.append(
             {
@@ -782,7 +782,7 @@ async def upload_thread_attachment_view(
     conv_repo = ConversationRepository(db)
     conversation = await require_user_conversation(conv_repo, thread_id, str(current_uid))
     if not file.filename:
-        raise HTTPException(status_code=400, detail="无法识别的文件名")
+        raise HTTPException(status_code=400, detail="Không thể nhận dạng tên file")
 
     file_name = Path(file.filename).name
     await file.seek(0)
@@ -790,7 +790,7 @@ async def upload_thread_attachment_view(
     file_size = len(file_content)
     if file_size > MAX_ATTACHMENT_SIZE_BYTES:
         max_size_mb = MAX_ATTACHMENT_SIZE_BYTES // (1024 * 1024)
-        raise HTTPException(status_code=400, detail=f"附件过大，当前仅支持 {max_size_mb} MB 以内的文件")
+        raise HTTPException(status_code=400, detail=f"Tệp đính kèm quá lớn, hiện tại chỉ hỗ trợ các tệp dưới {max_size_mb} MB")
     materialized = await _materialize_attachment_files(
         thread_id=thread_id,
         uid=str(conversation.uid),
@@ -866,7 +866,7 @@ async def delete_thread_attachment_view(
 
     removed = await conv_repo.remove_attachment(conversation.id, file_id)
     if not removed:
-        raise HTTPException(status_code=404, detail="附件不存在或已被删除")
+        raise HTTPException(status_code=404, detail="Tệp đính kèm không tồn tại hoặc đã bị xóa")
 
     if target_attachment:
         delete_candidates = {
@@ -897,7 +897,7 @@ async def delete_thread_attachment_view(
 
     await invalidate_mention_cache(thread_id)
 
-    return {"message": "附件已删除"}
+    return {"message": "Attachment deleted"}
 
 
 async def get_thread_history_view(
@@ -906,11 +906,11 @@ async def get_thread_history_view(
     current_uid: str,
     db: AsyncSession,
 ) -> dict:
-    """获取对话历史消息，包含用户反馈状态"""
+    """Get conversation history messages, including user feedback status"""
     conv_repo = ConversationRepository(db)
     conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
     if not conversation or conversation.uid != str(current_uid) or conversation.status == "deleted":
-        raise HTTPException(status_code=404, detail="对话线程不存在")
+        raise HTTPException(status_code=404, detail="Thread trò chuyện không tồn tại")
 
     messages = await conv_repo.get_messages_by_thread_id(thread_id)
     message_request_ids = set()

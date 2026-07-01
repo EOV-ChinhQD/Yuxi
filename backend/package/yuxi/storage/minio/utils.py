@@ -1,6 +1,6 @@
 """
-MinIO 存储工具函数
-简化的存储操作辅助函数
+MinIO storage utility function
+Simplified of storage operation helper functions
 """
 
 import os
@@ -13,12 +13,12 @@ from .client import aupload_file_to_minio
 
 
 def get_file_size(file_path: str) -> int:
-    """获取文件大小"""
+    """Get file size"""
     return os.path.getsize(file_path)
 
 
 def generate_unique_filename(original_name: str) -> str:
-    """生成唯一的文件名"""
+    """Generate unique file names"""
     name_parts = original_name.rsplit(".", 1)
     base_name = name_parts[0] if len(name_parts) == 2 else original_name
     extension = f".{name_parts[1]}" if len(name_parts) == 2 else ""
@@ -33,7 +33,7 @@ async def upload_image_to_minio(
     too_large_message: str,
 ) -> str:
     if not upload.content_type or not upload.content_type.startswith("image/"):
-        raise ValueError("只能上传图片文件")
+        raise ValueError("Chỉ có thể tải lên file hình ảnh")
 
     file_content = await read_upload_with_limit(
         upload,

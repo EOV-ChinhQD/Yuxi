@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 def html_table_to_markdown(html: str) -> str:
     """
-    将HTML表格转换为Markdown格式的具体实现
+    Specific implementation of converting HTML tables to Markdown format
     """
     soup = BeautifulSoup(html, "html.parser")
     table = soup.find("table")
@@ -73,20 +73,20 @@ def html_table_to_markdown(html: str) -> str:
 
 def html_table_to_key_value(html: str) -> list[str]:
     """
-    将HTML表格转换为键值对格式的列表，为了应对过长的表格的切分问题。
+    Convert the HTMLsheet into a key-value pair Formatof column surface, in order to deal with the overly long sheetof cut pointquestion.
 
-    处理逻辑：
-    1. **网格重建**：由于 HTML 表格可能包含 `rowspan` 和 `colspan`（合并单元格），
-       函数首先构建一个完整的二维网格（grid）。
-    2. **单元格展开**：遍历 HTML 行和列，遇到合并单元格时，将其内容填充到网格中受影响的所有坐标点。
-       这确保了原本被合并的区域在逻辑网格中每个点都有对应的值。
-    3. **键值对转换**：
-       - 将网格的第一行视为表头（Key）。
-       - 从第二行开始，将每一行与表头对应，生成 "键：值" 形式的字符串。
+    Processing logic:
+    1. **mesh reconstruction**: Since HTML tables may contain `rowspan` and `colspan` (merged cells),
+       The function first builds a oneindivual complete oftwo-dimensional grid (grid).
+    2. **Cell expansion**: Traverse HTML rows and columns, and when encountering a merged cell, fill its content with all affected coordinate points in the arrival grid.
+       This ensures that the originally merged of area has a corresponding of value for each individual point in the logical grid.
+    3. **Key-value pair conversion**：
+       - Think of the first row of the grid as the header (Key).
+       - Starting from the second row, correspond each row to the table header to generate "key:value" form ofcharacter string.
 
-    例如：
-    - 输入：HTML表格，包含姓名、年龄、性别三列。
-    - 输出：['姓名：张三；年龄：25；性别：男', '姓名：李四；年龄：30；性别：女']
+    For example：
+    - Input: HTML table, including three columns: name, age, and gender.
+    - Output:['Name: Zhang San; Age: 25; Gender: Male', 'Name: Li Si; Age: 30; Gender: Female']
     """
     soup = BeautifulSoup(html, "html.parser")
     table = soup.find("table")

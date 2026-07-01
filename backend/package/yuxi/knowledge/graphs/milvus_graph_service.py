@@ -170,11 +170,11 @@ class MilvusGraphService:
         if existing_config.get("locked"):
             existing_extractor_type = (existing_config.get("extractor_type") or "").lower()
             if normalized_extractor_type != existing_extractor_type:
-                raise ValueError("图谱抽取器类型已锁定，只能修改模型、Schema 等抽取参数")
+                raise ValueError("Loại bộ trích xuất đồ thị đã bị khóa, chỉ có thể sửa đổi mô hình, Schema và các tham số trích xuất khác")
 
         extractor_options = extractor_options or {}
         if normalized_extractor_type == "llm" and extractor_options.get("prompt"):
-            raise ValueError("LLM 图谱抽取器不支持自定义完整 Prompt，请使用 schema 配置抽取约束")
+            raise ValueError("Bộ trích xuất đồ thị LLM không hỗ trợ Prompt tùy chỉnh đầy đủ, vui lòng sử dụng schema để cấu hình ràng buộc")
         GraphExtractorFactory.create(normalized_extractor_type, extractor_options)
         config = {
             "locked": True,
@@ -251,7 +251,7 @@ class MilvusGraphService:
                             )
                         processed += 1
                     except Exception as exc:
-                        logger.error(f"Chunk 图谱构建失败 chunk_id={chunk.chunk_id}: {exc}")
+                        logger.error(f"Chunk Graph construction failed chunk_id={chunk.chunk_id}: {exc}")
                         failed_chunk_ids.add(chunk.chunk_id)
                         failed += 1
                     finally:
@@ -260,7 +260,7 @@ class MilvusGraphService:
                     if context is not None:
                         completed = processed + failed
                         progress = 5.0 + min(90.0, completed / max(total_pending, 1) * 90.0)
-                        await context.set_progress(progress, f"图谱构建 {completed}/{total_pending}，失败 {failed}")
+                        await context.set_progress(progress, f"Map construction {completed}/{total_pending},fail {failed}")
 
             workers = [asyncio.create_task(worker()) for _ in range(min(worker_count, len(unprocessed)))]
             try:
@@ -314,7 +314,7 @@ class MilvusGraphService:
         chunk,
         normalized_result: dict[str, Any],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-        """将单个 chunk 的抽取结果写入 Neo4j。"""
+        """Write the extraction results of a single chunk to Neo4j."""
         label = safe_neo4j_label(kb_id)
         graph_payload = build_graph_payload(normalized_result)
         relation_extractor_type = graph_payload["metadata"].get("extractor_type", "unknown")
@@ -328,13 +328,13 @@ class MilvusGraphService:
         triple_records = self._build_triple_records(kb_id, relations, entity_record_by_local_id, graph_payload)
         content_preview = (chunk.content or "")[:300]
 
-        # 预构建 Cypher 模板（同一 chunk 内复用）
+        # Pre-built Cypher templates (reused within the same chunk)
         merge_chunk_cypher = cypher_merge_chunk(label)
         merge_entity_cypher = cypher_merge_entity_mention(label)
         merge_relation_cypher = cypher_merge_relation(label)
 
         def query(tx):
-            # 1. MERGE Chunk 节点
+            # 1. MERGE Chunk node
             tx.run(
                 merge_chunk_cypher,
                 chunk_id=chunk.chunk_id,
@@ -346,7 +346,7 @@ class MilvusGraphService:
                 end_char_pos=chunk.end_char_pos,
             )
 
-            # 2. MERGE Entity 节点 + Chunk→Entity (MENTIONS)
+            # 2. MERGE Entity node + Chunk→Entity (MENTIONS)
             for entity in entities:
                 entity_record = entity_record_by_local_id[entity["id"]]
                 tx.run(
@@ -361,7 +361,7 @@ class MilvusGraphService:
                     attributes=json.dumps(entity.get("attributes") or [], ensure_ascii=False),
                 )
 
-            # 3. MERGE Entity→Entity (RELATION) 边
+            # 3. MERGE Entity→Entity (RELATION) edge
             for relation in relations:
                 source = entity_by_id[relation["source"]]
                 target = entity_by_id[relation["target"]]
@@ -463,7 +463,7 @@ class MilvusGraphService:
             additional_params.pop(GRAPH_CONFIG_KEY, None)
             await self.kb_repo.update(kb_id, {"additional_params": additional_params})
         return {
-            "message": "图谱构建状态已重置",
+            "message": "Graph build status reset",
             "status": "success",
             "reset_chunks": reset_chunks,
             "clear_extraction_result": clear_extraction_result,
@@ -761,17 +761,17 @@ class MilvusGraphService:
     async def _get_milvus_kb(self, kb_id: str):
         kb = await self.kb_repo.get_by_kb_id(kb_id)
         if kb is None:
-            raise ValueError(f"知识库 {kb_id} 不存在")
+            raise ValueError(f"Cơ sở kiến thức {kb_id} không tồn tại")
         if (kb.kb_type or "").lower() != "milvus":
-            raise ValueError("仅 Milvus 知识库支持独立图谱构建")
+            raise ValueError("Chỉ kho kiến thức Milvus hỗ trợ xây dựng đồ thị độc lập")
         return kb
 
     def _get_locked_config(self, additional_params: dict[str, Any]) -> dict[str, Any]:
         config = additional_params.get(GRAPH_CONFIG_KEY) or {}
         if not config.get("locked"):
-            raise ValueError("请先确认并锁定图谱抽取配置")
+            raise ValueError("Vui lòng xác nhận và khóa cấu hình trích xuất đồ thị trước")
         if not config.get("extractor_type"):
-            raise ValueError("图谱抽取配置缺少 extractor_type")
+            raise ValueError("Cấu hình trích xuất đồ thị thiếu extractor_type")
         return config
 
     def _public_config(self, config: dict[str, Any]) -> dict[str, Any] | None:

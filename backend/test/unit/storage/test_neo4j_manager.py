@@ -15,9 +15,9 @@ def test_safe_neo4j_label_accepts_valid_labels(label):
     assert safe_neo4j_label(label) == label
 
 
-@pytest.mark.parametrize("label", ["", "1invalid", "has-dash", "has space", "中文"])
+@pytest.mark.parametrize("label", ["", "1invalid", "has-dash", "has space", "TiếngViệt"])
 def test_safe_neo4j_label_rejects_invalid_labels(label):
-    with pytest.raises(ValueError, match="非法 Neo4j 标签"):
+    with pytest.raises(ValueError, match="Nhãn Neo4j không hợp lệ"):
         safe_neo4j_label(label)
 
 

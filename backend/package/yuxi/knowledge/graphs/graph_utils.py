@@ -1,7 +1,7 @@
-"""图谱构建相关的纯函数工具集。
+"""Map construction related of pure function tool set.
 
-将数据变换逻辑从 MilvusGraphService 中抽离，
-使 service 类专注于 I/O 和业务编排。
+Extract the data transformation logic from MilvusGraphService,
+Make the service class focus on I/O and business orchestration.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from yuxi.utils import hashstr
 
 
 def normalize_entity_name(text: str) -> str:
-    """统一实体名称：去首尾空白、小写化、压缩内部连续空白。"""
+    """Unify entity names: remove leading and trailing blanks, lowercase, and compress internal continuous blanks."""
     return " ".join(text.strip().lower().split())
 
 
@@ -43,10 +43,10 @@ def graph_triple_collection_name(kb_id: str) -> str:
 
 
 def build_graph_payload(normalized_result: dict[str, Any]) -> dict[str, Any]:
-    """将抽取器产出的标准化结果转换为 Neo4j 写入所需的图结构。
+    """Convert the extractor output of normalized results into the required picture structure for Neo4j writing.
 
-    返回的 entities 已完成去重合并：同名同 label 的实体只保留一份，
-    属性（attributes）取并集。
+    Return of entities has been merged with FinishRemove duplicates: only one copy of the entity with the same name and label is retained.
+    Take the union of attributes.
     """
     entities: list[dict[str, Any]] = []
     entity_by_key: dict[tuple[str, str], dict[str, Any]] = {}
@@ -90,12 +90,12 @@ def build_graph_payload(normalized_result: dict[str, Any]) -> dict[str, Any]:
     return {"entities": entities, "relations": relations, "metadata": normalized_result["metadata"]}
 
 
-# ─── Cypher 模板 ────────────────────────────────────────────────
-# 将大段 Cypher 字符串集中管理，提升 write_chunk_graph 的可读性。
+# ─── Cypher Template ─────────────────────────────────────────────
+# Centrally manage large Cypher strings to improve the readability of write_chunk_graph.
 
 
 def cypher_merge_chunk(db_label: str) -> str:
-    """MERGE Chunk 节点并写入元数据。"""
+    """MERGE Chunk node and write metadata."""
     return f"""
     MERGE (c:Chunk:MilvusKB:`{db_label}` {{chunk_id: $chunk_id}})
     SET c.file_id = $file_id,
@@ -108,7 +108,7 @@ def cypher_merge_chunk(db_label: str) -> str:
 
 
 def cypher_merge_entity_mention(db_label: str) -> str:
-    """MERGE Entity 节点并创建 Chunk → Entity 的 MENTIONS 关系。"""
+    """MERGE Entity Node and create Chunk → Entity MENTIONS relationship."""
     return f"""
     MATCH (c:Chunk:MilvusKB:`{db_label}` {{chunk_id: $chunk_id}})
     MERGE (e:Entity:MilvusKB:`{db_label}` {{
@@ -124,7 +124,7 @@ def cypher_merge_entity_mention(db_label: str) -> str:
 
 
 def cypher_merge_relation(db_label: str) -> str:
-    """MERGE 两个 Entity 之间的 RELATION 边。"""
+    """MERGE RELATION edge between two Entities."""
     return f"""
     MATCH (source:Entity:MilvusKB:`{db_label}` {{
         kb_id: $kb_id,

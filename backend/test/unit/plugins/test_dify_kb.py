@@ -63,10 +63,10 @@ def test_dify_create_params_config_and_validation():
 
 
 def test_dify_validation_rejects_missing_or_invalid_params():
-    with pytest.raises(ValueError, match="Dify 参数缺失"):
+    with pytest.raises(ValueError, match="Thiếu tham số Dify"):
         DifyKB.normalize_additional_params({"dify_api_url": "https://api.dify.ai/v1"})
 
-    with pytest.raises(ValueError, match="必须以 /v1 结尾"):
+    with pytest.raises(ValueError, match="phải kết thúc bằng /v1"):
         DifyKB.normalize_additional_params(
             {
                 "dify_api_url": "https://api.dify.ai",

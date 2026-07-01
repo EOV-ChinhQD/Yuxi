@@ -23,9 +23,9 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 load_dotenv(PROJECT_ROOT / ".env", override=False)
-load_dotenv(PROJECT_ROOT / "test/.env.test", override=False)
+load_dotenv(PROJECT_ROOT / "test/.env.test", override=True)
 
-API_BASE_URL = os.getenv("TEST_BASE_URL", "http://localhost:5050").rstrip("/")
+API_BASE_URL = os.getenv("TEST_BASE_URL", "http://127.0.0.1:5050").rstrip("/")
 ADMIN_LOGIN = os.getenv("TEST_USERNAME")
 ADMIN_PASSWORD = os.getenv("TEST_PASSWORD")
 

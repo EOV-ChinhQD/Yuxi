@@ -1,4 +1,4 @@
-"""MCP 服务器管理路由"""
+"""MCP Server management routing"""
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
@@ -30,40 +30,40 @@ mcp = APIRouter(prefix="/system/mcp-servers", tags=["mcp"])
 class CreateMcpServerRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    slug: str = Field(..., description="稳定标识")
-    name: str = Field(..., description="展示名称")
-    transport: str = Field(..., description="传输类型：sse/streamable_http/stdio")
-    url: str | None = Field(None, description="服务器 URL（sse/streamable_http）")
-    command: str | None = Field(None, description="命令（stdio）")
-    args: list | None = Field(None, description="命令参数数组（stdio）")
-    env: dict | None = Field(None, description="环境变量（stdio）")
-    description: str | None = Field(None, description="描述")
-    headers: dict | None = Field(None, description="HTTP 请求头")
-    timeout: int | None = Field(None, description="HTTP 超时时间（秒）")
-    sse_read_timeout: int | None = Field(None, description="SSE 读取超时（秒）")
-    tags: list | None = Field(None, description="标签数组")
-    icon: str | None = Field(None, description="图标（emoji）")
+    slug: str = Field(..., description="Mã định danh ổn định")
+    name: str = Field(..., description="Tên hiển thị")
+    transport: str = Field(..., description="Loại truyền tải: sse/streamable_http/stdio")
+    url: str | None = Field(None, description="URL máy chủ (sse/streamable_http)")
+    command: str | None = Field(None, description="Lệnh (stdio)")
+    args: list | None = Field(None, description="Mảng tham số lệnh (stdio)")
+    env: dict | None = Field(None, description="Biến môi trường (stdio)")
+    description: str | None = Field(None, description="Mô tả")
+    headers: dict | None = Field(None, description="HTTP Header")
+    timeout: int | None = Field(None, description="Thời gian chờ HTTP (giây)")
+    sse_read_timeout: int | None = Field(None, description="Thời gian chờ đọc SSE (giây)")
+    tags: list | None = Field(None, description="Mảng tag")
+    icon: str | None = Field(None, description="Biểu tượng (emoji)")
 
 
 class UpdateMcpServerRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    name: str | None = Field(None, description="展示名称")
-    transport: str | None = Field(None, description="传输类型")
-    url: str | None = Field(None, description="服务器 URL")
-    command: str | None = Field(None, description="命令（stdio）")
-    args: list | None = Field(None, description="命令参数数组（stdio）")
-    env: dict | None = Field(None, description="环境变量（stdio）")
-    description: str | None = Field(None, description="描述")
-    headers: dict | None = Field(None, description="HTTP 请求头")
-    timeout: int | None = Field(None, description="HTTP 超时时间（秒）")
-    sse_read_timeout: int | None = Field(None, description="SSE 读取超时（秒）")
-    tags: list | None = Field(None, description="标签数组")
-    icon: str | None = Field(None, description="图标（emoji）")
+    name: str | None = Field(None, description="Tên hiển thị")
+    transport: str | None = Field(None, description="Loại truyền tải")
+    url: str | None = Field(None, description="URL máy chủ")
+    command: str | None = Field(None, description="Lệnh (stdio)")
+    args: list | None = Field(None, description="Mảng tham số lệnh (stdio)")
+    env: dict | None = Field(None, description="Biến môi trường (stdio)")
+    description: str | None = Field(None, description="Mô tả")
+    headers: dict | None = Field(None, description="HTTP Header")
+    timeout: int | None = Field(None, description="Thời gian chờ HTTP (giây)")
+    sse_read_timeout: int | None = Field(None, description="Thời gian chờ đọc SSE (giây)")
+    tags: list | None = Field(None, description="Mảng tag")
+    icon: str | None = Field(None, description="Biểu tượng (emoji)")
 
 
 class UpdateMcpServerStatusRequest(BaseModel):
-    enabled: bool = Field(..., description="是否启用")
+    enabled: bool = Field(..., description="Có kích hoạt hay không")
 
 
 # =============================================================================
@@ -75,12 +75,12 @@ async def get_server_or_404(db: AsyncSession, slug: str):
     """Helper to get server or raise 404."""
     server = await get_mcp_server(db, slug)
     if not server:
-        raise HTTPException(status_code=404, detail=f"服务器 '{slug}' 不存在")
+        raise HTTPException(status_code=404, detail=f"Máy chủ '{slug}' không tồn tại")
     return server
 
 
 # =============================================================================
-# === MCP 服务器 CRUD ===
+# === MCP Server CRUD ===
 # =============================================================================
 
 
@@ -89,7 +89,7 @@ async def get_mcp_servers(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """获取所有 MCP 服务器配置（普通用户仅获取脱敏的基础信息）"""
+    """Obtain all MCP server configurations (ordinary users only obtain the basic information of desensitization)"""
     try:
         servers = await get_all_mcp_servers(db)
         if current_user.role in ["admin", "superadmin"]:
@@ -118,17 +118,17 @@ async def create_mcp_server_route(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """创建新的 MCP 服务器"""
-    # 校验传输类型
+    """Create a new MCP server"""
+    # Check transfer type
     valid_transports = ("sse", "streamable_http", "stdio")
     if request.transport not in valid_transports:
-        raise HTTPException(status_code=400, detail=f"传输类型必须是 {', '.join(valid_transports)} 之一")
+        raise HTTPException(status_code=400, detail=f"Loại truyền tải phải là một trong {', '.join(valid_transports)}")
 
-    # 根据传输类型校验必填字段
+    # Validate required fields based on transfer type
     if request.transport in ("sse", "streamable_http") and not request.url:
-        raise HTTPException(status_code=400, detail=f"传输类型为 {request.transport} 时，url 必填")
+        raise HTTPException(status_code=400, detail=f"Khi loại truyền tải là {request.transport}, url là bắt buộc")
     if request.transport == "stdio" and not request.command:
-        raise HTTPException(status_code=400, detail="传输类型为 stdio 时，command 必填")
+        raise HTTPException(status_code=400, detail="Khi loại truyền tải là stdio, command là bắt buộc")
 
     try:
         server = await create_mcp_server(
@@ -162,7 +162,7 @@ async def get_mcp_server_route(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """获取单个 MCP 服务器配置"""
+    """Get a single MCP server configuration"""
     try:
         server = await get_server_or_404(db, slug)
         return {"success": True, "data": server.to_dict()}
@@ -180,11 +180,11 @@ async def update_mcp_server_route(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """更新 MCP 服务器配置"""
-    # 校验传输类型
+    """Update MCP server configuration"""
+    # Check transfer type
     valid_transports = ("sse", "streamable_http", "stdio")
     if request.transport is not None and request.transport not in valid_transports:
-        raise HTTPException(status_code=400, detail=f"传输类型必须是 {', '.join(valid_transports)} 之一")
+        raise HTTPException(status_code=400, detail=f"Loại truyền tải phải là một trong {', '.join(valid_transports)}")
 
     try:
         fields_set = request.model_fields_set
@@ -223,17 +223,17 @@ async def delete_mcp_server_route(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """删除 MCP 服务器"""
+    """Delete MCP server"""
     try:
-        # 检查是否为系统内置服务器
+        # Check whether it is a built-in server in the system
         server = await get_mcp_server(db, slug)
         if server and server.created_by == "system":
-            raise HTTPException(status_code=403, detail="系统内置的 MCP 服务器无法删除")
+            raise HTTPException(status_code=403, detail="Không thể xóa máy chủ MCP mặc định của hệ thống")
 
         deleted = await delete_mcp_server(db, slug)
         if not deleted:
-            raise HTTPException(status_code=404, detail=f"服务器 '{slug}' 不存在")
-        return {"success": True, "message": f"服务器 '{slug}' 已删除"}
+            raise HTTPException(status_code=404, detail=f"Máy chủ '{slug}' không tồn tại")
+        return {"success": True, "message": f"Máy chủ '{slug}' đã được xóa"}
     except HTTPException:
         raise
     except Exception as e:
@@ -242,7 +242,7 @@ async def delete_mcp_server_route(
 
 
 # =============================================================================
-# === MCP 服务器操作 ===
+# === MCP Server Operations ===
 # =============================================================================
 
 
@@ -252,7 +252,7 @@ async def test_mcp_server(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """测试 MCP 服务器连接"""
+    """Test MCP server connection"""
     try:
         await get_server_or_404(db, slug)
 
@@ -260,11 +260,11 @@ async def test_mcp_server(
             tools = await get_all_mcp_tools(slug)
             return {
                 "success": True,
-                "message": f"连接成功，共发现 {len(tools)} 个工具",
+                "message": f"Kết nối thành công, tìm thấy tổng cộng {len(tools)} công cụ",
                 "tool_count": len(tools),
             }
         except Exception as test_error:
-            raise HTTPException(status_code=500, detail=f"连接失败: {str(test_error)}")
+            raise HTTPException(status_code=500, detail=f"Kết nối thất bại: {str(test_error)}")
     except HTTPException:
         raise
     except Exception as e:
@@ -279,14 +279,14 @@ async def update_mcp_server_status_route(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """更新 MCP 服务器启用状态"""
+    """Update MCP server enablement status"""
     try:
         is_enabled, server = await set_server_enabled(db, slug, request.enabled, current_user.username)
         return {
             "success": True,
             "enabled": is_enabled,
             "data": server.to_dict(),
-            "message": f"MCP '{slug}' 已{'添加' if is_enabled else '移除'}",
+            "message": f"MCP '{slug}' đã {'thêm' if is_enabled else 'gỡ bỏ'}",
         }
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))
@@ -296,7 +296,7 @@ async def update_mcp_server_status_route(
 
 
 # =============================================================================
-# === MCP 工具管理 ===
+# === MCP Tool Management ===
 # =============================================================================
 
 
@@ -306,13 +306,13 @@ async def get_mcp_server_tools(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """获取 MCP 服务器的工具列表"""
+    """Get a list of tools for the MCP server"""
     try:
         server = await get_server_or_404(db, slug)
         disabled_tools = server.disabled_tools or []
 
         try:
-            # 获取所有工具（不过滤 disabled_tools）
+            # Get all tools (without filtering disabled_tools)
             tools = await get_all_mcp_tools(slug)
             tool_list = []
 
@@ -326,7 +326,7 @@ async def get_mcp_server_tools(
                     "description": getattr(tool, "description", ""),
                     "enabled": original_name not in disabled_tools,
                 }
-                # 提取参数信息
+                # Extract parameter information
                 if hasattr(tool, "args_schema") and tool.args_schema:
                     schema = tool.args_schema.schema() if hasattr(tool.args_schema, "schema") else {}
                     tool_info["parameters"] = schema.get("properties", {})
@@ -343,7 +343,7 @@ async def get_mcp_server_tools(
             }
         except Exception as tool_error:
             logger.error(f"Failed to get tools from MCP server '{slug}': {tool_error}")
-            raise HTTPException(status_code=500, detail=f"获取工具失败: {str(tool_error)}")
+            raise HTTPException(status_code=500, detail=f"Lấy công cụ thất bại: {str(tool_error)}")
     except HTTPException:
         raise
     except Exception as e:
@@ -357,24 +357,24 @@ async def refresh_mcp_server_tools(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """刷新 MCP 服务器的工具列表（清除缓存重新获取）"""
+    """Refresh the tool list of the MCP server (clear cache and re-fetch)"""
     try:
         await get_server_or_404(db, slug)
 
         try:
-            # 获取所有工具（不过滤 disabled_tools）
+            # Get all tools (without filtering disabled_tools)
             tools = await get_all_mcp_tools(slug)
 
-            # 获取统计信息
+            # Get statistics
             stats = get_mcp_tools_stats(slug)
             enabled_count = stats.get("enabled", len(tools)) if stats else len(tools)
             disabled_count = stats.get("disabled", 0) if stats else 0
 
-            message = "工具列表已刷新"
+            message = "Danh sách công cụ đã được làm mới"
             if disabled_count > 0:
-                message += f"，{enabled_count} 个已启用，{disabled_count} 个已禁用"
+                message += f", {enabled_count} đã kích hoạt, {disabled_count} đã vô hiệu hóa"
             else:
-                message += f"，共发现 {enabled_count} 个工具"
+                message += f", tìm thấy tổng cộng {enabled_count} công cụ"
 
             return {
                 "success": True,
@@ -384,7 +384,7 @@ async def refresh_mcp_server_tools(
                 "disabled_count": disabled_count,
             }
         except Exception as tool_error:
-            raise HTTPException(status_code=500, detail=f"刷新失败: {str(tool_error)}")
+            raise HTTPException(status_code=500, detail=f"Làm mới thất bại: {str(tool_error)}")
     except HTTPException:
         raise
     except Exception as e:
@@ -399,14 +399,14 @@ async def toggle_mcp_server_tool_route(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """切换单个工具的启用状态"""
+    """Toggle the enabled status of an individual tool"""
     try:
         enabled, _ = await toggle_tool_enabled(db, slug, tool_name, current_user.username)
         return {
             "success": True,
             "tool_name": tool_name,
             "enabled": enabled,
-            "message": f"工具 '{tool_name}' 已{'启用' if enabled else '禁用'}",
+            "message": f"Công cụ '{tool_name}' đã {'kích hoạt' if enabled else 'vô hiệu hóa'}",
         }
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))

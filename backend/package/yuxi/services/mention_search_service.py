@@ -35,7 +35,7 @@ MENTION_EXCLUDE_DIRS = {
 MAX_MENTION_RESULTS = 50
 MAX_ENTRIES_PER_DIR = 500
 MAX_SEARCH_DEPTH = 15
-CACHE_TTL = 60  # 缓存有效期 60 秒
+CACHE_TTL = 60  # Cache validity period 60 seconds
 MAX_CACHED_ENTRIES = 100000
 REDIS_KEY_PREFIX = "yuxi:mention:cache:"
 WORKSPACE_CACHE_PREFIX = f"{REDIS_KEY_PREFIX}workspace:"
@@ -46,7 +46,7 @@ MENTION_SOURCES = {"workspace", "thread"}
 
 def _scan_pruned_files(root: Path, max_entries: int) -> list[tuple[str, str]]:
     """
-    同步扫描磁盘文件目录并进行多重限额剪枝保护 (防止大文件仓库卡死)
+    Simultaneously scan disk file directories and perform multiple quota pruning protection (Prevent large file warehouse from getting stuck)
     """
     results: list[tuple[str, str]] = []
     if not root.exists():
@@ -54,10 +54,10 @@ def _scan_pruned_files(root: Path, max_entries: int) -> list[tuple[str, str]]:
 
     root_str = str(root)
     for dirpath, dirnames, filenames in os.walk(root_str):
-        # 1. 剪枝黑名单和隐藏目录 (直接在 dirnames 中修改，阻止 os.walk 深入)
+        # 1. Prune blacklist and hidden directories (modify directly in dirnames to prevent os.walk from going deeper)
         dirnames[:] = [d for d in dirnames if d not in MENTION_EXCLUDE_DIRS and not d.startswith(".")]
 
-        # 2. 深度保护：限制最大搜索深度（root 本身为第 0 层，第 15 层时 rel.parts 长度恰好为 15）
+        # 2. Depth protection: Limit the maximum search depth (root itself is layer 0, and the length of rel.parts at layer 15 is exactly 15)
         try:
             rel = Path(dirpath).relative_to(root)
             if len(rel.parts) >= MAX_SEARCH_DEPTH:
@@ -66,29 +66,29 @@ def _scan_pruned_files(root: Path, max_entries: int) -> list[tuple[str, str]]:
         except Exception:
             pass
 
-        # 3. 宽度与全局限额保护下的合格“子目录实体”收集
+        # 3. Collection of qualified "subdirectory entities" under width and global quota protection
         for dirname in dirnames:
             full_dir_path = Path(dirpath) / dirname
             rel_dir_path = full_dir_path.relative_to(root).as_posix()
 
-            # 使用以 '/' 结尾的虚拟相对路径，代表这是一个目录
+            # Use a virtual relative path ending with '/' to indicate that this is a directory
             virtual_dir_path = f"{rel_dir_path}/"
             results.append((dirname, virtual_dir_path))
 
             if len(results) >= max_entries:
                 return results
 
-        # 4. 宽度限额保护：单层目录限制最多只读取 500 个文件，防止扁平超宽目录卡死
+        # 4. Width limit protection: A single-layer directory is limited to reading up to 500 files to prevent flat and ultra-wide directories from getting stuck.
         scan_filenames = filenames[:MAX_ENTRIES_PER_DIR]
         for filename in scan_filenames:
             full_path = Path(dirpath) / filename
-            # 计算相对于根路径的相对路径
+            # Calculate relative path relative to root path
             rel_path = full_path.relative_to(root).as_posix()
 
-            # 存为紧凑型元组 (filename, relative_path)
+            # Save as compact tuple (filename, relative_path)
             results.append((filename, rel_path))
 
-            # 5. 全局上限保护：如果总文件数已达上限，熔断退出
+            # 5. Global upper limit protection: If the total number of files reaches the upper limit, the circuit breaker will exit.
             if len(results) >= max_entries:
                 return results
 
@@ -181,7 +181,7 @@ async def get_or_build_file_index(
     uid: str,
     sources: Sequence[str] | None = None,
 ) -> list[tuple[str, str, str]]:
-    """获取或构建当前可提及文件索引，workspace 与 thread 缓存分离。"""
+    """Get or build the current mentionable file index, workspace and thread cache are separated."""
     selected_sources = _normalize_sources(sources, has_thread=bool(thread_id))
     entries: list[tuple[str, str, str]] = []
 
@@ -243,7 +243,7 @@ async def search_mention_files_in_index(
     query: str,
     sources: Sequence[str] | None = None,
 ) -> list[dict]:
-    """搜索可提及文件；未绑定 thread 时只搜索用户 workspace。"""
+    """Search mentionable files; only search user workspace when thread is not bound."""
     if not query:
         return []
 
@@ -265,7 +265,7 @@ async def search_mention_files_in_index(
 
 
 async def invalidate_mention_cache(thread_id: str) -> None:
-    """清理指定 thread 的提及文件缓存。"""
+    """Cleans the mention file cache for the specified thread."""
     try:
         redis = await get_redis_client()
         await redis.delete(f"{THREAD_CACHE_PREFIX}{thread_id}")
@@ -275,7 +275,7 @@ async def invalidate_mention_cache(thread_id: str) -> None:
 
 
 async def invalidate_workspace_mention_cache(uid: str) -> None:
-    """清理指定用户 workspace 的提及文件缓存。"""
+    """Cleans the mention file cache for the specified user's workspace."""
     try:
         redis = await get_redis_client()
         await redis.delete(f"{WORKSPACE_CACHE_PREFIX}{uid}")

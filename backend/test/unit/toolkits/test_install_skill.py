@@ -80,7 +80,7 @@ async def test_install_skill_from_sandbox_installs_as_current_user_private_skill
     )
 
     assert result.update["activated_skills"] == ["demo-skill"]
-    assert "成功安装并激活技能" in result.update["messages"][0].content
+    assert "Cài đặt và kích hoạt thành công" in result.update["messages"][0].content
     assert calls["prepare"]["uid"] == "normal-user"
     assert calls["import"]["created_by"] == "normal-user"
     assert calls["import"]["share_config"] == {
@@ -101,7 +101,7 @@ async def test_install_skill_from_sandbox_installs_as_current_user_private_skill
 @pytest.mark.asyncio
 async def test_install_skill_rejects_subagent_runtime_before_install(monkeypatch):
     def fail_get_session():
-        raise AssertionError("子智能体运行态不应访问数据库或执行安装")
+        raise AssertionError("Tác nhân con ở trạng thái đang chạy không được truy cập DB hoặc cài đặt")
 
     monkeypatch.setattr(
         install_skill_module.pg_manager,
@@ -115,7 +115,7 @@ async def test_install_skill_rejects_subagent_runtime_before_install(monkeypatch
         "tool-1",
     )
 
-    assert "只能在主智能体中使用" in result.update["messages"][0].content
+    assert "chỉ có thể được sử dụng trong agent chính" in result.update["messages"][0].content
     assert "activated_skills" not in result.update
 
 
@@ -127,7 +127,7 @@ async def test_install_skill_git_source_requires_skill_names():
         "tool-1",
     )
 
-    assert "必须通过 skill_names 指定技能名称" in result.update["messages"][0].content
+    assert "phải chỉ định tên kỹ năng qua skill_names" in result.update["messages"][0].content
 
 
 @pytest.mark.asyncio
@@ -138,7 +138,7 @@ async def test_install_skill_rejects_empty_source():
         "tool-1",
     )
 
-    assert "Skill 来源不能为空" in result.update["messages"][0].content
+    assert "Nguồn Skill không được để trống" in result.update["messages"][0].content
 
 
 @pytest.mark.asyncio
@@ -298,5 +298,5 @@ def test_collect_sandbox_file_paths_rejects_more_than_1000_files():
                 entries=[{"path": f"/skill/file-{idx}.txt", "is_dir": False} for idx in range(1001)],
             )
 
-    with pytest.raises(ValueError, match="最多 1000 个文件"):
+    with pytest.raises(ValueError, match="tối đa 1000 tệp"):
         install_skill_module._collect_sandbox_file_paths(FakeBackend(), "/skill")

@@ -15,7 +15,7 @@ _DROPPED_PROCESSING_PARAM_KEYS = {
 
 
 def sanitize_processing_params(params: dict | None) -> dict | None:
-    """移除不应写入单文件元数据的参数。"""
+    """Remove parameters that should not be written to single-file metadata."""
     if not params:
         return None
 
@@ -42,7 +42,7 @@ def resolve_processing_params(
 
 
 async def calculate_content_hash(data: bytes | bytearray) -> str:
-    """计算文件内容的 SHA-256 哈希值。"""
+    """Calculate SHA of file contents-256 Hash value."""
     sha256 = hashlib.sha256()
     sha256.update(data)
     return sha256.hexdigest()
@@ -50,33 +50,33 @@ async def calculate_content_hash(data: bytes | bytearray) -> str:
 
 async def prepare_item_metadata(item: str, content_type: str, kb_id: str, params: dict | None = None) -> dict:
     """
-    准备 MinIO 文件元数据；URL 导入需先通过 fetch-url 预处理为 MinIO 文件。
+    Prepare MinIO file metadata; URL import must first pass fetch-url is preprocessed into MinIO document.
 
     Args:
         item: MinIO URL
-        content_type: 内容类型，目前仅支持 "file"
-        kb_id: 数据库ID
-        params: 处理参数，可选
+        content_type: Content type, currently only supports "file"
+        kb_id: Database ID
+        params: Processing parameters, optional
     """
-    # 检查是否有预处理信息 (针对 URL 转 HTML 文件的情况)
+    # Check whether there is preprocessing information (for the case of URL to HTML file)
     if params and "_preprocessed_map" in params and item in params["_preprocessed_map"]:
         pre_info = params["_preprocessed_map"][item]
 
-        # 使用预处理信息
-        filename = pre_info.get("filename", item)  # 通常是原始 URL
+        # Use preprocessing information
+        filename = pre_info.get("filename", item)  # Usually the original URL
 
-        # 截断文件名以适应数据库限制 (512 chars)，保留部分后缀信息如果可能
+        # Truncate filename to fit database limit (512 chars), retaining partial suffix information if possible
         if len(filename) > 500:
             filename_display = filename[:400] + "..." + filename[-90:]
         else:
             filename_display = filename
 
-        file_type = "html"  # 强制转换为 html 类型，以便后续作为文件处理
+        file_type = "html"  # Force conversion to html type for subsequent processing as a file
         item_path = pre_info["path"]  # MinIO path
         content_hash = pre_info["content_hash"]
 
-        # 使用 item(url) 生成 ID，保证同一 URL 即使多次添加 ID 也不同（配合 time）
-        # 或者我们应该基于 hash？不，基于 time 更符合上传逻辑
+        # Use item(url) to generate ID to ensure that the ID will be different even if the same URL is added multiple times (coordinate with time)
+        # Or should we base it on hash? No, it is more consistent with the upload logic based on time
         file_id = f"file_{hashstr(item + str(time.time()), 6)}"
 
         metadata = {
@@ -94,10 +94,10 @@ async def prepare_item_metadata(item: str, content_type: str, kb_id: str, params
 
         if params:
             safe_params = sanitize_processing_params(params) or {}
-            # 覆盖 content_type 为 file，确保后续解析走文件流程（MinIO 下载 -> HTML 解析）
-            # 而不是再次尝试作为 URL 抓取
+            # Overwrite content_type to file to ensure that subsequent parsing follows the file process (MinIO download -> HTML parsing)
+            # Instead of trying to crawl again as a URL
             safe_params["content_type"] = "file"
-            safe_params["original_source"] = item  # 保存完整 URL 到 JSON 字段，避免数据库字段长度限制
+            safe_params["original_source"] = item  # Save full URL to JSON field to avoid database field length limit
             metadata["processing_params"] = safe_params
 
         return metadata
@@ -140,7 +140,7 @@ async def prepare_item_metadata(item: str, content_type: str, kb_id: str, params
 
     metadata = {
         "kb_id": kb_id,
-        "filename": filename_display,  # 使用显示用的文件名
+        "filename": filename_display,  # Use display file name
         "path": item_path,
         "file_type": file_type,
         "status": "indexing",
@@ -151,7 +151,7 @@ async def prepare_item_metadata(item: str, content_type: str, kb_id: str, params
         "parent_id": params.get("parent_id") if params else None,
     }
 
-    # 保存处理参数到元数据
+    # Save processing parameters to metadata
     if params:
         metadata["processing_params"] = sanitize_processing_params(params)
 
@@ -159,11 +159,11 @@ async def prepare_item_metadata(item: str, content_type: str, kb_id: str, params
 
 
 def _normalize_source_path(value: object) -> str | None:
-    """归一化客户端传入的上传源路径，仅用于知识库文件树中的展示文件名。
+    """The normalized client passes in the of upload source path, which is only used to display the file name in the knowledge based document tree.
 
-    source_path 用来保留 CLI 目录上传时的相对层级。这里不会把它当作真实
-    存储路径使用：反斜杠会转成斜杠，开头的 "./" 会被去掉，绝对路径和
-    ".." 父目录跳转会被拒绝。
+    source_path is used to retain the relative level of the CLI Table of contents when uploading. It won't be taken as real here
+    Storage path use: backslashes will be converted to slashes, the beginning of "./" will be removed, the absolute path and
+    ".." Parent directory jumps will be rejected.
     """
     if not isinstance(value, str):
         return None
@@ -183,22 +183,22 @@ def _normalize_source_path(value: object) -> str | None:
 
 def merge_processing_params(metadata_params: dict | None, request_params: dict | None) -> dict:
     """
-    合并处理参数：优先使用请求参数，缺失时使用元数据中的参数
+    Merge Processing parameters: priority use request parameter, if missing, of parameter in useMetadata
 
     Args:
-        metadata_params: 元数据中保存的参数
-        request_params: 请求中提供的参数
+        metadata_params: Save of parameters in Metadata
+        request_params: of parameters provided in the request
 
     Returns:
-        dict: 合并后的参数
+        dict: Merged parameters
     """
     merged_params = {}
 
-    # 首先使用元数据中的参数作为默认值
+    # First use parameters from metadata as default values
     if metadata_params:
         merged_params.update(metadata_params)
 
-    # 然后使用请求参数覆盖（如果提供）
+    # Then override it with request parameters if provided
     if request_params:
         merged_params.update(request_params)
 
@@ -212,7 +212,7 @@ def merge_processing_params(metadata_params: dict | None, request_params: dict |
 
 
 def is_minio_url(file_path: str) -> bool:
-    """检测是否是本系统生成的 MinIO 存储 URL。"""
+    """Check whether the MinIO storage URL is generated by this system."""
     from urllib.parse import urlparse
 
     parsed_url = urlparse(file_path)
@@ -234,43 +234,43 @@ def is_minio_url(file_path: str) -> bool:
 
 def parse_minio_url(file_path: str) -> tuple[str, str]:
     """
-    解析MinIO URL，提取bucket名称和对象名称
+    parseMinIO URL, extract bucket name and object name
 
-    支持标准 HTTP/HTTPS URL 格式：
+    support standard HTTP/HTTPS URL Format:
     - http(s)://host/bucket-name/path/to/object
 
     Args:
-        file_path: MinIO文件URL (http:// 或 https://)
+        file_path: MinIO file URL (http:// or https://)
 
     Returns:
         tuple[str, str]: (bucket_name, object_name)
 
     Raises:
-        ValueError: 如果无法解析URL
+        ValueError: Nếu không thể phân tích URL
     """
     try:
         from urllib.parse import unquote, urlparse
 
-        # 解析URL
+        # Parse URL
         parsed_url = urlparse(file_path)
 
-        # 对于 minio:// 协议，bucket名称在netloc中
+        # For the minio:// protocol, the bucket name is in netloc
         if parsed_url.scheme == "minio":
             bucket_name = parsed_url.netloc
             object_name = unquote(parsed_url.path.lstrip("/"))
         else:
-            # 对于 http/https 协议，bucket名称在path的第一部分
+            # For the http/https protocol, the bucket name is in the first part of the path
             object_name = parsed_url.path.lstrip("/")
             path_parts = object_name.split("/", 1)
             if len(path_parts) > 1:
                 bucket_name = path_parts[0]
                 object_name = unquote(path_parts[1])
             else:
-                raise ValueError(f"无法解析MinIO URL中的bucket名称: {file_path}")
+                raise ValueError(f"Không thể phân tích tên bucket trong URL MinIO: {file_path}")
 
         logger.debug(f"Parsed MinIO URL: bucket_name={bucket_name}, object_name={object_name}")
         return bucket_name, object_name
 
     except Exception as e:
         logger.error(f"Failed to parse MinIO URL {file_path}: {e}")
-        raise ValueError(f"无法解析MinIO URL: {file_path}")
+        raise ValueError(f"Không thể phân tích URL MinIO: {file_path}")

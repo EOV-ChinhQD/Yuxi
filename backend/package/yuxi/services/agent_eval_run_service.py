@@ -23,7 +23,7 @@ MAX_REQUEST_ID_LENGTH = 64
 
 
 def _normalize_evaluation(evaluation: dict[str, Any] | None) -> dict[str, str]:
-    """仅保留已知评估字段，并统一转成去空白的非空字符串。"""
+    """Only known evaluation fields are retained and converted into non-empty strings with whitespace removed."""
     if not isinstance(evaluation, dict):
         return {}
 
@@ -39,14 +39,14 @@ def _normalize_evaluation(evaluation: dict[str, Any] | None) -> dict[str, str]:
 
 
 def _normalize_request_id(meta: dict[str, Any] | None) -> str:
-    """返回去空白并校验长度的 request_id；缺省时生成新的 UUID。"""
+    """Returns the request_id with whitespace trimmed and length verified; by default a new UUID is generated."""
     raw_request_id = (meta or {}).get("request_id")
     if raw_request_id is None or not str(raw_request_id).strip():
         return str(uuid.uuid4())
 
     request_id = str(raw_request_id).strip()
     if len(request_id) > MAX_REQUEST_ID_LENGTH:
-        raise HTTPException(status_code=422, detail=f"request_id 不能超过 {MAX_REQUEST_ID_LENGTH} 个字符")
+        raise HTTPException(status_code=422, detail=f"request_id không được vượt quá {MAX_REQUEST_ID_LENGTH} ký tự")
     return request_id
 
 
@@ -61,21 +61,21 @@ async def run_agent_eval(
     current_user: User,
     db: AsyncSession,
 ) -> dict[str, Any]:
-    """创建评估 AgentRun，阻塞至运行结束并返回最终结果。
+    """Create Evaluate AgentRun, block until the end of the run and return the final result.
 
-    评估调用方只关心最终输出，因此不做 SSE 流式封装：建 run 后直接复用
-    ``await_agent_run_result`` 等待运行终结并返回结果。注意这会让 HTTP 请求阻塞至
-    运行结束（无中间字节），网关链路上长运行需相应放宽空闲超时。
+    The caller of Evaluate only cares about the final output, so it does not perform SSE streaming encapsulation: it can be directly reused after building run.
+    ``await_agent_run_result`` waits for the run to terminate and returns the result. Note that this will block HTTP requests until
+    The operation ends (no intermediate bytes), and the idle timeout needs to be relaxed accordingly for long operations on the gateway link.
     """
     agent_slug = agent_slug.strip()
     if not agent_slug:
-        raise HTTPException(status_code=422, detail="agent_slug 不能为空")
+        raise HTTPException(status_code=422, detail="agent_slug không được để trống")
     if not query:
-        raise HTTPException(status_code=422, detail="query 不能为空")
+        raise HTTPException(status_code=422, detail="query không được để trống")
 
     agent_item = await AgentRepository(db).get_visible_by_slug(slug=agent_slug, user=current_user)
     if not agent_item:
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent không tồn tại")
 
     evaluation_metadata = _normalize_evaluation(evaluation)
     request_id = _normalize_request_id(meta)

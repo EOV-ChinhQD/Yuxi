@@ -1,3 +1,3 @@
 """
-API测试模块初始化文件
+API test module initialization file
 """

@@ -67,7 +67,7 @@ async def test_resume_rejects_empty_answer_map(test_client, admin_headers):
     )
 
     assert response.status_code == 422
-    assert "answer 不能为空" in response.text
+    assert "answer cannot be empty" in response.text
 
 
 async def test_resume_rejects_empty_question_id(test_client, admin_headers):
@@ -75,12 +75,12 @@ async def test_resume_rejects_empty_question_id(test_client, admin_headers):
     thread_id = await _create_test_thread(test_client, admin_headers)
     response = await test_client.post(
         f"/api/chat/thread/{thread_id}/resume",
-        json={"thread_id": thread_id, "answer": {"": "选项A"}},
+        json={"thread_id": thread_id, "answer": {"": "Option A"}},
         headers=admin_headers,
     )
 
     assert response.status_code == 422
-    assert "question_id 不能为空" in response.text
+    assert "question_id cannot be empty" in response.text
 
 
 async def test_resume_rejects_empty_answer_text(test_client, admin_headers):
@@ -93,7 +93,7 @@ async def test_resume_rejects_empty_answer_text(test_client, admin_headers):
     )
 
     assert response.status_code == 422
-    assert "answer 不能为空" in response.text
+    assert "answer cannot be empty" in response.text
 
 
 async def test_resume_accepts_batch_answer_map(test_client, admin_headers):
@@ -101,7 +101,7 @@ async def test_resume_accepts_batch_answer_map(test_client, admin_headers):
     thread_id = await _create_test_thread(test_client, admin_headers)
     response = await test_client.post(
         f"/api/chat/thread/{thread_id}/resume",
-        json={"thread_id": thread_id, "answer": {"q1": "选项A", "q2": ["选项B", "选项C"]}},
+        json={"thread_id": thread_id, "answer": {"q1": "Option A", "q2": ["Option B", "Option C"]}},
         headers=admin_headers,
     )
 

@@ -1,5 +1,5 @@
 """
-对话域持久化 Repository（Async）
+Conversation domain persistence Repository (Async)
 """
 
 import uuid as uuid_lib

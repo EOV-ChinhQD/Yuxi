@@ -1,4 +1,4 @@
-"""应用配置模块。"""
+"""Application configuration module."""
 
 from __future__ import annotations
 
@@ -17,43 +17,43 @@ READONLY_CONFIG_FIELDS = frozenset({"save_dir"})
 
 
 class Config(BaseModel):
-    """应用配置类。
+    """Application configuration class.
 
-    `save_dir` 只在启动时决定配置文件位置，运行时不可修改。管理员保存配置时先写
-    `base.toml`，再把可运行时同步的字段写入 Redis 快照（`yuxi:runtime_config`）。
-    其他进程通过 `start_runtime_sync()` 启动的后台线程周期性拉取该快照刷新内存值。
+    `save_dir` The configuration file location is only determined at startup and cannot be modified during runtime. The administrator writes first when saving the configuration
+    `base.toml`, and then write the fields that can be synchronized at runtime into the Redis snapshot (`yuxi:runtime_config`）。
+    Other processes use `start_runtime_sync()` where the started background thread periodically pulls the snapshot to refresh the memory value.
     """
 
-    save_dir: str = Field(default="saves", description="保存目录", exclude=True)
-    enable_content_guard: bool = Field(default=False, description="是否启用内容审查")
-    enable_content_guard_llm: bool = Field(default=False, description="是否启用LLM内容审查")
+    save_dir: str = Field(default="saves", description="Thư mục lưu trữ", exclude=True)
+    enable_content_guard: bool = Field(default=False, description="Bật kiểm duyệt nội dung")
+    enable_content_guard_llm: bool = Field(default=False, description="Bật kiểm duyệt nội dung LLM")
     default_model: str = Field(
         default="siliconflow-cn:Pro/MiniMaxAI/MiniMax-M2.5",
-        description="默认对话模型",
+        description="Mô hình trò chuyện mặc định",
     )
     fast_model: str = Field(
         default="siliconflow-cn:Pro/MiniMaxAI/MiniMax-M2.5",
-        description="快速响应模型",
+        description="Mô hình phản hồi nhanh",
     )
     embed_model: str = Field(
         default="siliconflow-cn:Pro/BAAI/bge-m3",
-        description="默认 Embedding 模型",
+        description="Mô hình Embedding mặc định",
     )
     reranker: str = Field(
         default="siliconflow-cn:Pro/BAAI/bge-reranker-v2-m3",
-        description="默认 Re-Ranker 模型",
+        description="Mô hình Re-Ranker mặc định",
     )
     content_guard_llm_model: str = Field(
         default="siliconflow-cn:Pro/MiniMaxAI/MiniMax-M2.5",
-        description="内容审查LLM模型",
+        description="Mô hình LLM kiểm duyệt nội dung",
     )
 
-    sandbox_provider: str = Field(default="provisioner", description="沙箱提供者")
-    sandbox_provisioner_url: str = Field(default="http://sandbox-provisioner:8002", description="沙箱服务地址")
-    sandbox_virtual_path_prefix: str = Field(default="/home/gem/user-data", description="沙箱用户目录前缀")
-    sandbox_exec_timeout_seconds: int = Field(default=180, description="沙箱执行超时时间（秒）")
-    sandbox_max_output_bytes: int = Field(default=262144, description="沙箱最大输出字节数")
-    sandbox_keepalive_interval_seconds: int = Field(default=30, description="沙箱保活间隔")
+    sandbox_provider: str = Field(default="provisioner", description="Nhà cung cấp sandbox")
+    sandbox_provisioner_url: str = Field(default="http://sandbox-provisioner:8002", description="Địa chỉ dịch vụ sandbox")
+    sandbox_virtual_path_prefix: str = Field(default="/home/gem/user-data", description="Tiền tố thư mục người dùng sandbox")
+    sandbox_exec_timeout_seconds: int = Field(default=180, description="Thời gian chờ thực thi sandbox (giây)")
+    sandbox_max_output_bytes: int = Field(default=262144, description="Số byte đầu ra tối đa của sandbox")
+    sandbox_keepalive_interval_seconds: int = Field(default=30, description="Khoảng thời gian giữ kết nối sandbox")
 
     _config_file: Path | None = PrivateAttr(default=None)
     _runtime_sync_thread: Any = PrivateAttr(default=None)
@@ -117,7 +117,7 @@ class Config(BaseModel):
             self.sandbox_virtual_path_prefix = f"/{self.sandbox_virtual_path_prefix}"
 
     def start_runtime_sync(self, interval: float = runtime_cache.RUNTIME_CONFIG_SYNC_INTERVAL_SECONDS) -> None:
-        """启动后台线程周期性从 Redis 同步运行时配置。多次调用仅启动一次。"""
+        """Start a background thread to periodically synchronize the runtime configuration from Redis. Multiple calls only start once."""
         self._runtime_sync_thread = runtime_cache.start_runtime_sync(
             self,
             self._runtime_sync_thread,
@@ -125,7 +125,7 @@ class Config(BaseModel):
         )
 
     def refresh(self) -> None:
-        """从 Redis 快照刷新公开配置字段到内存；Redis 不可用或无快照时保持当前值。"""
+        """Refresh public configuration fields to memory from a Redis snapshot; keep current values ​​when Redis is unavailable or there is no snapshot."""
         runtime_cache.refresh_runtime_config(self)
 
     def save(self) -> None:

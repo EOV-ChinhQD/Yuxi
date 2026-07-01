@@ -34,23 +34,23 @@ def _normalize_dict(value: Any) -> dict:
 
 def _validate_provider_id(provider_id: str) -> None:
     if not _PROVIDER_ID_RE.match(provider_id):
-        raise ValueError("provider_id 只能包含字母、数字、下划线和中划线，长度 2-100")
+        raise ValueError("provider_id chỉ có thể chứa chữ cái, số, dấu gạch dưới và dấu gạch ngang, độ dài 2-100")
 
 
 def _normalize_model_item(model: dict[str, Any]) -> dict[str, Any]:
-    """规范化模型配置对象，校验运行所需字段。"""
+    """Standardize the model configuration object and verify the fields required for operation."""
     model_id = str(model.get("id") or "").strip()
     if not model_id:
-        raise ValueError("模型 id 不能为空")
+        raise ValueError("ID mô hình không được để trống")
 
     model_type = str(model.get("type") or "unknown").strip()
     if model_type not in VALID_MODEL_TYPES:
-        raise ValueError(f"启用模型 {model_id} 的 type 必须是 chat、embedding 或 rerank")
+        raise ValueError(f"Loại model được kích hoạt {model_id} phải là chat, embedding hoặc rerank")
 
-    # source 区分手动添加 vs 远端拉取，用于跳过远端清单存在性的视觉警告。
+    # source differentiates manual addition vs remote pull, used to skip visual warnings of remote manifest existence.
     source = str(model.get("source") or "remote").strip()
     if source not in VALID_MODEL_SOURCES:
-        raise ValueError(f"模型 {model_id} 的 source 必须是 manual 或 remote")
+        raise ValueError(f"Nguồn của model {model_id} phải là manual hoặc remote")
 
     normalized = dict(model)
     normalized["id"] = model_id
@@ -75,20 +75,20 @@ def _normalize_model_list(models: Any) -> list[dict[str, Any]]:
     seen_ids: set[str] = set()
     for item in _normalize_list(models):
         if not isinstance(item, dict):
-            raise ValueError("模型配置必须是对象列表")
+            raise ValueError("Cấu hình mô hình phải là một mảng object")
         normalized = _normalize_model_item(item)
         if normalized["id"] in seen_ids:
-            raise ValueError(f"模型 id 重复: {normalized['id']}")
+            raise ValueError(f"ID model bị trùng lặp: {normalized['id']}")
         seen_ids.add(normalized["id"])
         normalized_models.append(normalized)
     return normalized_models
 
 
 def _validate_models_capabilities(enabled_models: list[dict], capabilities: set[str]) -> None:
-    """校验 enabled_models 中所有模型的 type 都在 provider capabilities 范围内。"""
+    """Verify that the types of all models in enabled_models are within the scope of provider capabilities."""
     for model in enabled_models or []:
         if model["type"] not in capabilities:
-            raise ValueError(f"模型 {model['id']} 的 type={model['type']} 不在 provider 能力 {sorted(capabilities)} 内")
+            raise ValueError(f"type={model['type']} của model {model['id']} không nằm trong khả năng của provider {sorted(capabilities)}")
 
 
 _FIELD_DEFAULTS: dict[str, Any] = {
@@ -119,13 +119,13 @@ def _normalize_payload(data: dict[str, Any], *, partial: bool = False) -> dict[s
     if not partial or "display_name" in payload:
         display_name = str(payload.get("display_name") or "").strip()
         if not display_name:
-            raise ValueError("display_name 不能为空")
+            raise ValueError("display_name không được để trống")
         payload["display_name"] = display_name
 
     if not partial or "base_url" in payload:
         base_url = str(payload.get("base_url") or "").strip()
         if not base_url:
-            raise ValueError("base_url 不能为空")
+            raise ValueError("base_url không được để trống")
         payload["base_url"] = base_url
 
     for endpoint_field in (
@@ -142,9 +142,9 @@ def _normalize_payload(data: dict[str, Any], *, partial: bool = False) -> dict[s
         payload["provider_type"] = "openai"
     elif provider_type is not None:
         if provider_type not in VALID_PROVIDER_TYPES:
-            raise ValueError(f"provider_type 必须是 {', '.join(sorted(VALID_PROVIDER_TYPES))} 之一")
+            raise ValueError(f"provider_type phải là một trong {', '.join(sorted(VALID_PROVIDER_TYPES))}")
 
-    # partial 模式下仅规范化传入值，非 partial 补全默认值
+    # In partial mode, only the incoming value is normalized, non-partial completion of the default value
     for field, default in _FIELD_DEFAULTS.items():
         if field in payload:
             normalizer = _FIELD_NORMALIZERS.get(field)
@@ -152,9 +152,9 @@ def _normalize_payload(data: dict[str, Any], *, partial: bool = False) -> dict[s
         elif not partial:
             payload[field] = default
 
-    # 仅当本次 payload 同时携带 capabilities 与 enabled_models 时做一致性校验，
-    # 防止前端把超出 provider.capabilities 的模型 type 写入。
-    # partial 模式下若只更新其中一项，跳过校验避免误判（DB 已有值不可见）。
+    # Only when this payload carries both capabilities and enabled_models will the consistency check be performed.
+    # Prevent the front end from writing model types that exceed provider.capabilities.
+    # In partial mode, if only one of the items is updated, the verification is skipped to avoid misjudgment (the existing value in the DB is not visible).
     if "capabilities" in payload and "enabled_models" in payload:
         capabilities_set = set(payload.get("capabilities") or [])
         if capabilities_set:
@@ -164,7 +164,7 @@ def _normalize_payload(data: dict[str, Any], *, partial: bool = False) -> dict[s
 
 
 def resolve_api_key(provider: ModelProvider) -> str | None:
-    """解析 provider 的 API Key，优先直接配置，其次从环境变量读取。"""
+    """Parse the API Key of the provider, first configure it directly, and then read it from environment variables."""
     if provider.api_key:
         return provider.api_key
     if provider.api_key_env:
@@ -173,7 +173,7 @@ def resolve_api_key(provider: ModelProvider) -> str | None:
 
 
 def check_credential_status(provider: ModelProvider) -> str:
-    """检查 provider 的凭证配置状态。仅对启用的 provider 做校验。"""
+    """Check the provider's credential configuration status. Only enabled providers are verified."""
     if not provider.is_enabled:
         return "ok"
     if provider.api_key:
@@ -224,19 +224,19 @@ def _normalize_remote_model(raw_model: dict[str, Any], model_type: str = "chat")
 
 
 async def get_all_model_providers(db: AsyncSession) -> list[ModelProvider]:
-    """获取全部独立模型供应商配置。"""
+    """Get all independent model supplier configurations."""
     return await list_model_providers(db)
 
 
 async def get_model_provider_by_id(db: AsyncSession, provider_id: str) -> ModelProvider | None:
-    """按 provider_id 获取独立模型供应商配置。"""
+    """Get the standalone model provider configuration by provider_id."""
     return await get_model_provider(db, provider_id)
 
 
 async def ensure_builtin_model_providers_in_db(db: AsyncSession) -> None:
-    """确保独立模型配置模块的内置 provider 模板存在。
+    """Ensure that the independent ModelConfiguration module of built-in provider template exists.
 
-    这里只补不存在的内置 provider，不覆盖管理员已编辑的配置。
+    This only adds that does not exist of built-in provider, and does not cover the administrator's compiled configuration of configuration.
     """
     existing = await list_model_providers(db)
     existing_ids = {p.provider_id: p for p in existing}
@@ -264,10 +264,10 @@ async def ensure_builtin_model_providers_in_db(db: AsyncSession) -> None:
 
 
 async def create_provider_config(db: AsyncSession, data: dict[str, Any], username: str) -> ModelProvider:
-    """创建独立模型供应商配置。"""
+    """Create a standalone model supplier configuration."""
     payload = _normalize_payload(data)
     if await get_model_provider(db, payload["provider_id"]):
-        raise ValueError(f"供应商 {payload['provider_id']} 已存在")
+        raise ValueError(f"Nhà cung cấp {payload['provider_id']} đã tồn tại")
     payload["created_by"] = username
     payload["updated_by"] = username
     return await create_model_provider(db, payload)
@@ -279,12 +279,12 @@ async def update_provider_config(
     data: dict[str, Any],
     username: str,
 ) -> ModelProvider | None:
-    """更新独立模型供应商配置。"""
+    """Update standalone model vendor configuration."""
     provider = await get_model_provider(db, provider_id)
     if provider is None:
         return None
     payload = _normalize_payload(data, partial=True)
-    # partial 更新时仅传 enabled_models，结合 DB 中现有 capabilities 校验
+    # When partial is updated, only enabled_models is passed, and is verified based on the existing capabilities in the DB.
     if "enabled_models" in payload and "capabilities" not in payload:
         existing_caps = set(provider.capabilities or [])
         if existing_caps:
@@ -294,7 +294,7 @@ async def update_provider_config(
 
 
 async def delete_provider_config(db: AsyncSession, provider_id: str) -> bool:
-    """删除独立模型供应商配置。"""
+    """Remove standalone model vendor configuration."""
     provider = await get_model_provider(db, provider_id)
     if provider is None:
         return False
@@ -309,7 +309,7 @@ async def _fetch_models_from_endpoint(
     endpoint: str | None,
     model_type: str,
 ) -> list[dict[str, Any]]:
-    """按单个模型类型端点拉取并规范化远端模型列表。"""
+    """Pull and normalize a list of remote models by a single model type endpoint."""
     if not endpoint:
         return []
 
@@ -319,7 +319,7 @@ async def _fetch_models_from_endpoint(
 
     raw_models = payload.get("data") if isinstance(payload, dict) else payload
     if not isinstance(raw_models, list):
-        raise ValueError(f"{endpoint} 响应必须是列表或包含 data 列表")
+        raise ValueError(f"Phản hồi {endpoint} phải là một danh sách hoặc chứa danh sách dữ liệu")
 
     models = []
     for raw_model in raw_models:
@@ -331,10 +331,10 @@ async def _fetch_models_from_endpoint(
 
 
 async def fetch_remote_models(provider: ModelProvider) -> list[dict[str, Any]]:
-    """按 provider 配置实时拉取远端模型列表，不落库。
+    """Press provider ConfigurationPull the remote end in real timeModel column surface without falling into the library.
 
-    Chat 模型默认走 /models；embedding 只有 provider 声明能力时才走
-    /embeddings/models；rerank 供应商没有稳定通用端点，配置了 endpoint 才拉取。
+    Chat Modeldefault goes to /models; embedding is only taken when the provider declares capabilities
+    /embeddings/models; rerank supplier does not have a stable common endpoint, and it will be pulled only after the endpoint is configured.
     """
     headers = dict(provider.headers_json or {})
     api_key = resolve_api_key(provider)
@@ -370,12 +370,12 @@ async def fetch_remote_models(provider: ModelProvider) -> list[dict[str, Any]]:
 
 
 async def test_model_status_by_spec(spec: str) -> dict:
-    """根据 spec 测试模型连接状态。"""
+    """Test model connection status according to spec."""
     from yuxi.models.providers.cache import model_cache
 
     info = model_cache.get_model_info(spec)
     if not info:
-        return {"spec": spec, "status": "error", "message": f"未找到模型: {spec}"}
+        return {"spec": spec, "status": "error", "message": f"Model not found: {spec}"}
 
     try:
         if info.model_type == "embedding":
@@ -386,7 +386,7 @@ async def test_model_status_by_spec(spec: str) -> dict:
             return {
                 "spec": spec,
                 "status": "available" if success else "unavailable",
-                "message": "连接正常" if success else message,
+                "message": "The connection is normal" if success else message,
                 "model_type": "embedding",
             }
         if info.model_type == "rerank":
@@ -397,7 +397,7 @@ async def test_model_status_by_spec(spec: str) -> dict:
             return {
                 "spec": spec,
                 "status": "available" if success else "unavailable",
-                "message": "连接正常" if success else message,
+                "message": "The connection is normal" if success else message,
                 "model_type": "rerank",
             }
 
@@ -407,7 +407,7 @@ async def test_model_status_by_spec(spec: str) -> dict:
         test_messages = [{"role": "user", "content": "Say 1"}]
         response = await model.call(test_messages, stream=False)
         if response and response.content:
-            return {"spec": spec, "status": "available", "message": "连接正常", "model_type": "chat"}
-        return {"spec": spec, "status": "unavailable", "message": "响应无效", "model_type": "chat"}
+            return {"spec": spec, "status": "available", "message": "The connection is normal", "model_type": "chat"}
+        return {"spec": spec, "status": "unavailable", "message": "Invalid response", "model_type": "chat"}
     except Exception as e:
         return {"spec": spec, "status": "error", "message": str(e), "model_type": info.model_type}
