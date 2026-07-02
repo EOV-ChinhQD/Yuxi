@@ -232,10 +232,24 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
         if file_name:
             kwargs["file_name"] = file_name
 
+        from yuxi.knowledge.retrieval.multi_hop_retriever import detect_and_decompose, multi_hop_retrieve_labeled
+
+        # Lấy cấu hình LLM để thực hiện phân tách câu hỏi
+        llm_model_spec = target_info.get("metadata", {}).get("llm_model_spec") or "gpt-4o"
+
+        is_multi_hop = False
+        sub_queries = []
         if inspect.iscoroutinefunction(retriever):
-            result = await retriever(query_text, **kwargs)
+            is_multi_hop, sub_queries = await detect_and_decompose(query_text, llm_model_spec)
+
+        if is_multi_hop:
+            result = await multi_hop_retrieve_labeled(sub_queries, retriever, **kwargs)
+            result["kb_id"] = target_kb_id
         else:
-            result = retriever(query_text, **kwargs)
+            if inspect.iscoroutinefunction(retriever):
+                result = await retriever(query_text, **kwargs)
+            else:
+                result = retriever(query_text, **kwargs)
 
         return await _build_query_output(target_kb_id, result)
 

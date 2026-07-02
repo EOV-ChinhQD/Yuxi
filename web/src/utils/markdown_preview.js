@@ -156,8 +156,8 @@ const ensureLanguages = async (highlighter, languages) => {
   )
 }
 
-const createRenderer = ({ themeName, highlighter }) =>
-  new MarkdownIt({
+const createRenderer = ({ themeName, highlighter }) => {
+  const md = new MarkdownIt({
     html: true,
     breaks: true,
     linkify: true,
@@ -174,6 +174,28 @@ const createRenderer = ({ themeName, highlighter }) =>
     .use(markdownKatexPlugin, { throwOnError: false, errorColor: '#cc0000', trust: false })
     .use(taskLists, { enabled: false, label: false, labelAfter: false })
     .use(markdownItFrontmatterCard)
+
+  const defaultImageRenderer = md.renderer.rules.image || function(tokens, idx, options, env, self) {
+    return self.renderToken(tokens, idx, options);
+  };
+  md.renderer.rules.image = function(tokens, idx, options, env, self) {
+    const token = tokens[idx];
+    const srcIndex = token.attrIndex('src');
+    if (srcIndex >= 0) {
+      let src = token.attrs[srcIndex][1];
+      if (src && src.startsWith('/api/')) {
+        const authToken = localStorage.getItem('user_token');
+        if (authToken) {
+          const separator = src.includes('?') ? '&' : '?';
+          token.attrs[srcIndex][1] = `${src}${separator}token=${encodeURIComponent(authToken)}`;
+        }
+      }
+    }
+    return defaultImageRenderer(tokens, idx, options, env, self);
+  };
+
+  return md;
+}
 
 const getRenderer = async (theme, needsHighlight) => {
   const themeName = normalizeTheme(theme)

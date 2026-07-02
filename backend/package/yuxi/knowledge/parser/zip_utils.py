@@ -9,7 +9,7 @@ from pathlib import Path
 from yuxi.storage.minio import get_minio_client
 from yuxi.utils import logger
 
-DEFAULT_IMAGE_BUCKET = "public"
+DEFAULT_IMAGE_BUCKET = "knowledgebases"
 DEFAULT_IMAGE_PREFIX = "unknown/kb-images"
 
 

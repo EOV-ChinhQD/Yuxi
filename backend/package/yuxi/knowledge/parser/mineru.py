@@ -190,7 +190,7 @@ class MinerUParser(BaseDocumentProcessor):
                     tmp_zip.flush()
 
                     try:
-                        image_bucket = params.get("image_bucket") or "public"
+                        image_bucket = params.get("image_bucket") or "knowledgebases"
                         image_prefix = params.get("image_prefix") or "unknown/kb-images"
 
                         processed = process_zip_file_sync(

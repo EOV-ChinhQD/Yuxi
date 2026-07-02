@@ -2,6 +2,8 @@ from collections.abc import Callable
 from typing import Any
 
 from yuxi.knowledge.eval.metrics import EvaluationMetricsCalculator
+from yuxi.knowledge.retrieval.multi_hop_retriever import detect_and_decompose, MultiHopRetriever
+from yuxi.models.chat import ChatResponse
 from yuxi.utils import logger
 
 
@@ -67,7 +69,29 @@ async def evaluate_question(
     select_model_fn: Callable[..., Any],
 ) -> dict[str, Any]:
     query = question_data["query"]
-    query_result = await kb_instance.aquery(query, kb_id, **retrieval_config)
+    
+    is_multi_hop = False
+    try:
+        model_spec = retrieval_config.get("llm_model_spec") or "gpt-4o"
+        decompose_result = await detect_and_decompose(query, model_spec=model_spec)
+        if decompose_result and decompose_result["is_multi_hop"]:
+            is_multi_hop = True
+            mh_retriever = MultiHopRetriever(
+                kb_id=kb_id, 
+                model_spec=model_spec, 
+                kb_instance=kb_instance, 
+                retrieval_config=retrieval_config
+            )
+            # Parallel retrieve sub-queries
+            retrieved_chunks_raw = await mh_retriever.parallel_retrieve(decompose_result["sub_queries"])
+            query_result = {"answer": "", "chunks": retrieved_chunks_raw}
+            logger.info(f"[Eval] Đã sử dụng Multi-hop cho truy vấn: {query}")
+    except Exception as e:
+        logger.error(f"[Eval] Lỗi phân rã Multi-hop: {e}")
+        
+    if not is_multi_hop:
+        query_result = await kb_instance.aquery(query, kb_id, **retrieval_config)
+        
     generated_answer, retrieved_chunks = normalize_query_result(query_result)
     generated_answer = await generate_answer_if_needed(
         query=query,

@@ -48,7 +48,7 @@ class MinIOClient:
     KB_BUCKETS = {
         "documents": "knowledgebases",
         "parsed": "knowledgebases",
-        "images": "public",
+        "images": "knowledgebases",
     }
 
     def __init__(self):

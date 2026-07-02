@@ -2,11 +2,21 @@ from __future__ import annotations
 
 from typing import Any
 
+import asyncio
 import json_repair
 
 from yuxi.models.chat import select_model
 
 from .base import GraphExtractor
+
+# Global Semaphore for LLM Graph Extraction to prevent rate limits
+_global_llm_semaphore = None
+
+def get_llm_semaphore(limit: int = 10) -> asyncio.Semaphore:
+    global _global_llm_semaphore
+    if _global_llm_semaphore is None:
+        _global_llm_semaphore = asyncio.Semaphore(limit)
+    return _global_llm_semaphore
 
 DEFAULT_TRIPLE_EXTRACTION_PROMPT = """Vui lòng trích xuất các thực thể và mối quan hệ thực thể từ văn bản bên dưới, trả về JSON chuẩn, không in ra lời giải thích.
 JSON Format:
@@ -47,15 +57,17 @@ class LLMGraphExtractor(GraphExtractor):
 
     async def extract(self, text: str, *, chunk_metadata: dict[str, Any] | None = None) -> dict[str, Any]:
         self.validate_options()
-        model = select_model(
-            model_spec=self.options["model_spec"],
-            timeout=60.0,
-            model_params=self.options.get("model_params") or {},
-        )
-        prompt = self._build_prompt(text)
-        response = await model.call(prompt, stream=False)
-        parsed = json_repair.loads(response.content if response else "")
-        return parsed
+        semaphore = get_llm_semaphore(10)
+        async with semaphore:
+            model = select_model(
+                model_spec=self.options["model_spec"],
+                timeout=60.0,
+                model_params=self.options.get("model_params") or {},
+            )
+            prompt = self._build_prompt(text)
+            response = await model.call(prompt, stream=False)
+            parsed = json_repair.loads(response.content if response else "")
+            return parsed
 
     def _build_prompt(self, text: str) -> str:
         extraction_prompt = DEFAULT_TRIPLE_EXTRACTION_PROMPT

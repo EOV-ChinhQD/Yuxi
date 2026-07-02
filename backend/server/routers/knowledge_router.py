@@ -2040,3 +2040,40 @@ async def generate_description(
     except Exception as e:
         logger.error(f"Tạo mô tả thất bại: {e}, {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Tạo mô tả thất bại: {e}")
+@knowledge.get("/images/{object_name:path}")
+async def get_knowledge_image(
+    object_name: str,
+    token: str = Query(..., description="Access token"),
+    db: AsyncSession = Depends(get_db)
+):
+    from server.utils.auth_middleware import get_current_user
+    user = await get_current_user(authorization=f"Bearer {token}", db=db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    # Fetch from MinIO
+    minio_client = get_minio_client()
+    try:
+        minio_response = await minio_client.adownload_response(
+            bucket_name=MinIOClient.KB_BUCKETS["images"],
+            object_name=object_name,
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Image not found")
+        
+    ext = os.path.splitext(object_name)[1].lower()
+    media_type = media_types.get(ext, "application/octet-stream")
+    
+    async def minio_stream():
+        try:
+            while True:
+                chunk = await asyncio.to_thread(minio_response.read, 8192)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            minio_response.close()
+            minio_response.release_conn()
+
+    return StreamingResponse(minio_stream(), media_type=media_type)
+

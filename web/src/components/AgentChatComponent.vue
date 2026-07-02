@@ -2807,13 +2807,15 @@ watch(
   { flush: 'post' }
 )
 
-watch(currentChatId, (threadId, oldThreadId) => {
+watch(currentChatId, async (threadId, oldThreadId) => {
   if (threadId === oldThreadId) return
   if (!threadId || approvalState.threadId !== threadId) {
     hideApprovalState()
   }
   if (threadId) {
     restorePendingInterruptForThread(threadId)
+    await nextTick()
+    scrollController.scrollToBottomStaticForce()
   }
   emit('thread-change', threadId || '')
 })

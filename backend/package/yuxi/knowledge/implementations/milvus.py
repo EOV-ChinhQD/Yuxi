@@ -166,6 +166,51 @@ class MilvusRetrievalConfig:
         default=False,
         metadata={"label": "Bật tìm kiếm đồ thị", "type": "boolean", "description": "Có bật tìm kiếm khuếch tán thực thể và bộ ba (triplet) hay không"},
     )
+    use_consensus_retrieval: bool = field(
+        default=True,
+        metadata={
+            "label": "Sử dụng Consensus Search",
+            "type": "boolean",
+            "depend_on": ("use_graph_retrieval", True),
+            "description": "Kết hợp thuật toán Consensus Search khi bật tìm kiếm đồ thị",
+        },
+    )
+    consensus_weight_vector: float = field(
+        default=0.5,
+        metadata={
+            "label": "Trọng số Vector Search",
+            "type": "number",
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.1,
+            "depend_on": ("use_consensus_retrieval", True),
+            "description": "Trọng số điểm cho tìm kiếm Vector cơ bản (Naive Vector)",
+        },
+    )
+    consensus_weight_local: float = field(
+        default=0.35,
+        metadata={
+            "label": "Trọng số Local Entity",
+            "type": "number",
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.1,
+            "depend_on": ("use_consensus_retrieval", True),
+            "description": "Trọng số điểm cho tìm kiếm theo thực thể đồ thị (Local Entity)",
+        },
+    )
+    consensus_weight_relation: float = field(
+        default=0.15,
+        metadata={
+            "label": "Trọng số Mối quan hệ",
+            "type": "number",
+            "min": 0.0,
+            "max": 1.0,
+            "step": 0.1,
+            "depend_on": ("use_consensus_retrieval", True),
+            "description": "Trọng số điểm cho tìm kiếm theo mối quan hệ đồ thị (Relation)",
+        },
+    )
     graph_entity_top_k: int = field(
         default=10,
         metadata={
@@ -813,7 +858,7 @@ class MilvusKB(KnowledgeBase):
                 )
 
                 # Reparse the file as markdown
-                parse_params = {**resolved_params, "image_bucket": "public", "image_prefix": f"{kb_id}/kb-images"}
+                parse_params = {**resolved_params, "image_bucket": "knowledgebases", "image_prefix": f"{kb_id}/kb-images"}
                 markdown_content = await Parser.aparse(source=file_path, params=parse_params)
 
                 # Regenerate chunks
@@ -1024,10 +1069,46 @@ class MilvusKB(KnowledgeBase):
                 logger.debug(f"Milvus hybrid query response: {len(retrieved_chunks)} chunks found")
 
             if use_graph_retrieval:
-                graph_chunks = await self._retrieve_graph_chunks(query_text, kb_id, retrieved_chunks, merged_kwargs)
-                if graph_chunks:
-                    graph_weight = float(merged_kwargs.get("graph_weight", 1.0))
-                    retrieved_chunks = self._fuse_chunk_rankings(retrieved_chunks, graph_chunks, graph_weight)
+                use_consensus_retrieval = bool(merged_kwargs.get("use_consensus_retrieval", True))
+                if use_consensus_retrieval:
+                    from yuxi.knowledge.retrieval.consensus_retriever import ConsensusRetriever
+
+                    llm_model_spec = self.databases_meta[kb_id].get("llm_model_spec") or "gpt-4o"
+                    embedding_model_spec = self.databases_meta[kb_id].get("embedding_model_spec")
+
+                    consensus_weight_vector = float(merged_kwargs.get("consensus_weight_vector", 0.5))
+                    consensus_weight_local = float(merged_kwargs.get("consensus_weight_local", 0.35))
+                    consensus_weight_relation = float(merged_kwargs.get("consensus_weight_relation", 0.15))
+
+                    retriever = ConsensusRetriever(
+                        kb_id=kb_id,
+                        embedding_model_spec=embedding_model_spec,
+                        llm_model_spec=llm_model_spec,
+                        w_naive=consensus_weight_vector,
+                        w_local=consensus_weight_local,
+                        w_relation=consensus_weight_relation
+                    )
+
+                    consensus_chunk_ids = await retriever.consensus_search(
+                        query=query_text,
+                        retrieved_chunks=retrieved_chunks,
+                        top_k_each_method=max(int(merged_kwargs.get("graph_entity_top_k", 10)), 1),
+                        final_k=recall_top_k
+                    )
+
+                    if consensus_chunk_ids:
+                        chunks = await KnowledgeChunkRepository().list_by_chunk_ids(consensus_chunk_ids)
+                        chunks_by_id = {chunk.chunk_id: chunk for chunk in chunks}
+                        retrieved_chunks = []
+                        for idx, cid in enumerate(consensus_chunk_ids):
+                            if cid in chunks_by_id:
+                                score = 1.0 - (idx * 0.001)
+                                retrieved_chunks.append(self._build_chunk_from_record(chunks_by_id[cid], score, score_field="score"))
+                else:
+                    graph_chunks = await self._retrieve_graph_chunks(query_text, kb_id, retrieved_chunks, merged_kwargs)
+                    if graph_chunks:
+                        graph_weight = float(merged_kwargs.get("graph_weight", 1.0))
+                        retrieved_chunks = self._fuse_chunk_rankings(retrieved_chunks, graph_chunks, graph_weight)
 
             if not retrieved_chunks:
                 return []

@@ -78,7 +78,7 @@ def _get_docling_converter() -> DocumentConverter:
 def _resolve_image_storage_params(params: dict | None) -> tuple[str, str]:
     params = params or {}
 
-    image_bucket = params.get("image_bucket") or "public"
+    image_bucket = params.get("image_bucket") or "knowledgebases"
     image_prefix = params.get("image_prefix")
     if image_prefix:
         normalized_prefix = str(image_prefix).strip("/")
@@ -112,6 +112,8 @@ def _upload_image_to_minio(image_data: bytes, filename: str, bucket_name: str, o
         object_name=object_name,
         data=image_data,
     )
+    if bucket_name == minio_client.KB_BUCKETS["images"]:
+        return f"/api/v1/knowledge/images/{object_name}"
     return result.url
 
 

@@ -136,6 +136,8 @@ export class ScrollController {
   }
 
   async scrollToBottomStaticForce() {
+    await nextTick()
+    await this.waitForLayoutStable()
     const container = this.getContainer()
     if (!container) return
 
@@ -148,6 +150,17 @@ export class ScrollController {
     }
 
     container.scrollTo(scrollOptions)
+
+    const retryDelays = [50, 150]
+    retryDelays.forEach((delay) => {
+      setTimeout(() => {
+        this.isProgrammaticScroll = true
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'auto'
+        })
+      }, delay)
+    })
   }
 
   /**
