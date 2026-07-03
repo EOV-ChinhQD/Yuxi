@@ -2,6 +2,8 @@
 
 路线图可能会经常变更，如果有强烈的建议，可以在 [issue](https://github.com/xerrors/Yuxi/issues) 中提。
 
+项目看板（Maintainer Only）：[GitHub Project](https://github.com/users/xerrors/projects/2)
+
 日志添加规范（For Agent）:
 
 
