@@ -880,6 +880,7 @@ class MilvusGraphService:
     def _finalize_subgraph_result(
         nodes: list[dict[str, Any]], edges: list[dict[str, Any]], limit: int
     ) -> dict[str, Any]:
+        limit = max(0, limit)
         final_nodes = nodes[:limit]
         node_ids = {node["id"] for node in final_nodes}
         final_edges = [

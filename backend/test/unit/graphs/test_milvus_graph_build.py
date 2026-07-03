@@ -290,6 +290,23 @@ def test_milvus_graph_service_process_query_result_filters_edges_to_excluded_chu
     assert result["edges"] == []
 
 
+def test_milvus_graph_service_process_query_result_clamps_negative_limit():
+    service = MilvusGraphService()
+    result = service._process_query_result(
+        [
+            {
+                "h": _raw_graph_node("node-a"),
+                "t": _raw_graph_node("node-b"),
+                "r": _raw_graph_edge("edge-a-b", "node-a", "node-b"),
+            }
+        ],
+        limit=-1,
+        kb_id="kb_test",
+    )
+
+    assert result == {"nodes": [], "edges": []}
+
+
 @pytest.mark.asyncio
 async def test_milvus_graph_service_query_nodes_empty_kb_id():
     service = MilvusGraphService()
