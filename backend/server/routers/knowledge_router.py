@@ -34,7 +34,8 @@ from yuxi.storage.postgres.models_business import User
 from yuxi.utils import logger
 from yuxi.utils.upload_utils import MAX_UPLOAD_SIZE_BYTES, read_upload_with_limit, write_upload_to_path
 
-from server.utils.auth_middleware import get_admin_user, get_required_user
+from sqlalchemy.ext.asyncio import AsyncSession
+from server.utils.auth_middleware import get_admin_user, get_required_user, get_db
 
 knowledge = APIRouter(prefix="/knowledge", tags=["knowledge"])
 

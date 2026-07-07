@@ -3,7 +3,7 @@ from typing import Any
 
 from yuxi.knowledge.eval.metrics import EvaluationMetricsCalculator
 from yuxi.knowledge.retrieval.multi_hop_retriever import detect_and_decompose, MultiHopRetriever
-from yuxi.models.chat import ChatResponse
+
 from yuxi.utils import logger
 
 

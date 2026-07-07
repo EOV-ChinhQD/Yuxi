@@ -28,15 +28,15 @@ class Config(BaseModel):
     enable_content_guard: bool = Field(default=False, description="Bật kiểm duyệt nội dung")
     enable_content_guard_llm: bool = Field(default=False, description="Bật kiểm duyệt nội dung LLM")
     default_model: str = Field(
-        default="siliconflow-cn:Pro/MiniMaxAI/MiniMax-M2.5",
+        default="gemini_compatible:gemini-2.5-flash",
         description="Mô hình trò chuyện mặc định",
     )
     fast_model: str = Field(
-        default="siliconflow-cn:Pro/MiniMaxAI/MiniMax-M2.5",
+        default="gemini_compatible:gemini-2.5-flash",
         description="Mô hình phản hồi nhanh",
     )
     embed_model: str = Field(
-        default="siliconflow-cn:Pro/BAAI/bge-m3",
+        default="gemini_compatible:text-embedding-004",
         description="Mô hình Embedding mặc định",
     )
     reranker: str = Field(
@@ -44,7 +44,7 @@ class Config(BaseModel):
         description="Mô hình Re-Ranker mặc định",
     )
     content_guard_llm_model: str = Field(
-        default="siliconflow-cn:Pro/MiniMaxAI/MiniMax-M2.5",
+        default="gemini_compatible:gemini-2.5-flash",
         description="Mô hình LLM kiểm duyệt nội dung",
     )
 

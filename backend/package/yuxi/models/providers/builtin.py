@@ -17,13 +17,18 @@ BUILTIN_PROVIDERS: list[dict[str, Any]] = [
     #     "api_key_env": "ANTHROPIC_API_KEY",
     #     "models_endpoint": "https://api.anthropic.com/models",
     # },
-    # {
-    #     "provider_id": "google",
-    #     "display_name": "Google Gemini",
-    #     "base_url": "https://generativelanguage.googleapis.com",
-    #     "api_key_env": "GEMINI_API_KEY",
-    #     "models_endpoint": "https://generativelanguage.googleapis.com/v1beta/models",
-    # },
+    {
+        "provider_id": "gemini_compatible",
+        "provider_type": "gemini",
+        "display_name": "Google Gemini",
+        "api_key_env": "GEMINI_API_KEY",
+        "capabilities": ["chat", "embedding"],
+        "enabled_models": [
+            {"id": "gemini-2.5-flash", "type": "chat", "display_name": "gemini-2.5-flash"},
+            {"id": "gemini-1.5-pro", "type": "chat", "display_name": "gemini-1.5-pro"},
+            {"id": "text-embedding-004", "type": "embedding", "display_name": "text-embedding-004", "dimension": 768, "batch_size": 100}
+        ]
+    },
     {
         "provider_id": "deepseek",
         "display_name": "DeepSeek",
