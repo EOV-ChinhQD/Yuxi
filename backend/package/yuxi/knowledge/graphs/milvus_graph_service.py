@@ -26,7 +26,7 @@ from yuxi.storage.neo4j import (
     neo4j_write,
     safe_neo4j_label,
 )
-from yuxi.utils import logger
+from yuxi.utils import logger, hashstr
 from yuxi.utils.datetime_utils import utc_isoformat
 
 GRAPH_CONFIG_KEY = "graph_build_config"
@@ -226,29 +226,60 @@ class MilvusGraphService:
                     try:
                         extraction_result = await self._get_chunk_extraction_result(kb_id, chunk, extractor)
                         async with write_lock:
-                            entities, triples = await asyncio.to_thread(
-                                self.write_chunk_graph,
-                                kb_id,
-                                chunk,
-                                extraction_result,
-                            )
-                            await self.graph_repo.upsert_chunk_graph(
-                                kb_id=kb_id,
-                                file_id=chunk.file_id,
-                                chunk_id=chunk.chunk_id,
-                                entities=entities,
-                                triples=triples,
-                            )
-                            await self.graph_vector_store.insert_missing_graph_records(
-                                kb_id=kb_id,
-                                embedding_model_spec=kb.embedding_model_spec,
-                                entities=entities,
-                                triples=triples,
-                            )
-                            await self.chunk_repo.mark_graph_indexed(
-                                chunk.chunk_id,
-                                ent_ids=[entity["entity_id"] for entity in entities],
-                            )
+                            if extractor.extractor_type == "event_llm":
+                                entities, events = self.write_chunk_events(
+                                    kb_id,
+                                    chunk,
+                                    extraction_result,
+                                )
+                                await self.graph_repo.upsert_chunk_graph(
+                                    kb_id=kb_id,
+                                    file_id=chunk.file_id,
+                                    chunk_id=chunk.chunk_id,
+                                    entities=entities,
+                                    triples=[],
+                                )
+                                await self.graph_repo.upsert_chunk_events(
+                                    kb_id=kb_id,
+                                    file_id=chunk.file_id,
+                                    chunk_id=chunk.chunk_id,
+                                    events=events,
+                                )
+                                await self.graph_vector_store.insert_missing_graph_records(
+                                    kb_id=kb_id,
+                                    embedding_model_spec=kb.embedding_model_spec,
+                                    entities=entities,
+                                    triples=[],
+                                    events=events,
+                                )
+                                await self.chunk_repo.mark_graph_indexed(
+                                    chunk.chunk_id,
+                                    ent_ids=[entity["entity_id"] for entity in entities],
+                                )
+                            else:
+                                entities, triples = await asyncio.to_thread(
+                                    self.write_chunk_graph,
+                                    kb_id,
+                                    chunk,
+                                    extraction_result,
+                                )
+                                await self.graph_repo.upsert_chunk_graph(
+                                    kb_id=kb_id,
+                                    file_id=chunk.file_id,
+                                    chunk_id=chunk.chunk_id,
+                                    entities=entities,
+                                    triples=triples,
+                                )
+                                await self.graph_vector_store.insert_missing_graph_records(
+                                    kb_id=kb_id,
+                                    embedding_model_spec=kb.embedding_model_spec,
+                                    entities=entities,
+                                    triples=triples,
+                                )
+                                await self.chunk_repo.mark_graph_indexed(
+                                    chunk.chunk_id,
+                                    ent_ids=[entity["entity_id"] for entity in entities],
+                                )
                         processed += 1
                     except Exception as exc:
                         logger.error(f"Chunk Graph construction failed chunk_id={chunk.chunk_id}: {exc}")
@@ -292,6 +323,21 @@ class MilvusGraphService:
 
     async def _get_chunk_extraction_result(self, kb_id: str, chunk, extractor: GraphExtractor) -> dict[str, Any]:
         extractor_type = extractor.extractor_type
+        if extractor_type == "event_llm":
+            if chunk.extraction_result:
+                return chunk.extraction_result
+            extraction_result = await extractor.extract(
+                chunk.content,
+                chunk_metadata={
+                    "kb_id": kb_id,
+                    "chunk_id": chunk.chunk_id,
+                    "file_id": chunk.file_id,
+                    "chunk_index": chunk.chunk_index,
+                },
+            )
+            await self.chunk_repo.update_extraction_result(chunk.chunk_id, extraction_result)
+            return extraction_result
+
         if chunk.extraction_result:
             return normalize_extraction_result(chunk.extraction_result, extractor_type)
 
@@ -393,6 +439,82 @@ class MilvusGraphService:
 
         neo4j_write(self.driver, query)
         return entity_records, triple_records
+
+    def write_chunk_events(
+        self,
+        kb_id: str,
+        chunk,
+        extraction_result: dict[str, Any],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """Process event-centric extraction results.
+
+        Returns:
+            (entities_data, events_data) where:
+            - entities_data is a list of entity records.
+            - events_data is a list of event records (which contains entity mappings).
+        """
+        raw_entities = extraction_result.get("entities") or []
+        entity_records = self._build_entity_records(kb_id, raw_entities)
+
+        raw_event = extraction_result.get("event") or {}
+        event_id = hashstr(f"{kb_id}:event:{chunk.chunk_id}", length=32)
+
+        event_entities = []
+        for entity in entity_records:
+            event_entities.append({
+                "entity_id": entity["entity_id"],
+                "weight": 1.0,
+                "relation_type": "MENTIONS",
+            })
+
+        event_record = {
+            "event_id": event_id,
+            "title": raw_event.get("title") or (chunk.content[:50] if chunk.content else "Event"),
+            "summary": raw_event.get("summary") or "",
+            "content": raw_event.get("content") or chunk.content,
+            "category": raw_event.get("category") or "general",
+            "keywords": raw_event.get("keywords") or [],
+            "level": 0,
+            "rank": chunk.chunk_index,
+            "entities": event_entities,
+        }
+
+        # Optionally write metadata node and entities to Neo4j if not LITE_MODE
+        label = safe_neo4j_label(kb_id)
+        merge_chunk_cypher = cypher_merge_chunk(label)
+        merge_entity_cypher = cypher_merge_entity_mention(label)
+        content_preview = (chunk.content or "")[:300]
+
+        def query(tx):
+            tx.run(
+                merge_chunk_cypher,
+                chunk_id=chunk.chunk_id,
+                file_id=chunk.file_id,
+                kb_id=kb_id,
+                chunk_index=chunk.chunk_index,
+                content_preview=content_preview,
+                start_char_pos=chunk.start_char_pos,
+                end_char_pos=chunk.end_char_pos,
+            )
+            for entity in entity_records:
+                tx.run(
+                    merge_entity_cypher,
+                    chunk_id=chunk.chunk_id,
+                    file_id=chunk.file_id,
+                    kb_id=kb_id,
+                    entity_id=entity["entity_id"],
+                    normalized_name=entity["normalized_name"],
+                    entity_label=entity["label"],
+                    name=entity["name"],
+                    attributes=entity["attributes"],
+                )
+
+        try:
+            neo4j_write(self.driver, query)
+        except Exception as e:
+            logger.warning(f"Neo4j event indexing write failed (continuing PG/Milvus write): {e}")
+
+        return entity_records, [event_record]
 
     def _build_entity_records(self, kb_id: str, entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
         records = []

@@ -290,3 +290,48 @@ class EvaluationRunItem(Base):
     retrieved_chunks = Column(JSON_VALUE)
     metrics = Column(JSON_VALUE)
     created_at = Column(DateTime(timezone=True), default=utc_now_naive)
+
+
+class KnowledgeGraphEvent(Base):
+    """Knowledge graph event model"""
+
+    __tablename__ = "knowledge_graph_events"
+    __table_args__ = (
+        UniqueConstraint("event_id", name="uq_knowledge_graph_events_event_id"),
+        Index("ix_knowledge_graph_events_kb_id", "kb_id"),
+        Index("ix_knowledge_graph_events_file_id", "file_id"),
+        Index("ix_knowledge_graph_events_chunk_id", "chunk_id"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_id = Column(String(64), nullable=False)
+    kb_id = Column(String(80), ForeignKey("knowledge_bases.kb_id", ondelete="CASCADE"), nullable=False)
+    file_id = Column(String(64), ForeignKey("knowledge_files.file_id", ondelete="CASCADE"), nullable=False)
+    chunk_id = Column(String(128), ForeignKey("knowledge_chunks.chunk_id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(512), nullable=False)
+    summary = Column(Text, nullable=False, default="")
+    content = Column(Text, nullable=False)
+    category = Column(String(128))
+    keywords = Column(JSON_VALUE)
+    level = Column(Integer, default=0, nullable=False)
+    rank = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now_naive)
+    updated_at = Column(DateTime(timezone=True), default=utc_now_naive, onupdate=utc_now_naive)
+
+
+class KnowledgeGraphEventEntity(Base):
+    """Event to entity relationship mapping"""
+
+    __tablename__ = "knowledge_graph_event_entities"
+    __table_args__ = (
+        UniqueConstraint("event_id", "entity_id", name="uq_knowledge_graph_event_entities_unique"),
+        Index("ix_knowledge_graph_event_entities_event_id", "event_id"),
+        Index("ix_knowledge_graph_event_entities_entity_id", "entity_id"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_id = Column(String(64), ForeignKey("knowledge_graph_events.event_id", ondelete="CASCADE"), nullable=False)
+    entity_id = Column(String(64), ForeignKey("knowledge_graph_entities.entity_id", ondelete="CASCADE"), nullable=False)
+    weight = Column(Float, default=1.0, nullable=False)
+    relation_type = Column(String(256))
+    created_at = Column(DateTime(timezone=True), default=utc_now_naive)

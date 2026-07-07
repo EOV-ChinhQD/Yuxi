@@ -11,6 +11,8 @@ from yuxi.storage.postgres.models_knowledge import (
     KnowledgeGraphEntityMention,
     KnowledgeGraphTriple,
     KnowledgeGraphTripleMention,
+    KnowledgeGraphEvent,
+    KnowledgeGraphEventEntity,
 )
 
 
@@ -98,6 +100,69 @@ class KnowledgeGraphRepository:
                     .on_conflict_do_nothing(index_elements=["triple_id", "chunk_id"])
                 )
 
+    async def upsert_chunk_events(
+        self,
+        *,
+        kb_id: str,
+        file_id: str,
+        chunk_id: str,
+        events: list[dict[str, Any]],
+    ) -> None:
+        async with pg_manager.get_async_session_context() as session:
+            if not events:
+                return
+
+            event_rows = []
+            event_entities = []
+
+            for event in events:
+                event_rows.append({
+                    "event_id": event["event_id"],
+                    "kb_id": kb_id,
+                    "file_id": file_id,
+                    "chunk_id": chunk_id,
+                    "title": event["title"],
+                    "summary": event.get("summary", ""),
+                    "content": event["content"],
+                    "category": event.get("category"),
+                    "keywords": event.get("keywords"),
+                    "level": event.get("level", 0),
+                    "rank": event.get("rank", 0),
+                })
+                
+                for entity in event.get("entities", []):
+                    event_entities.append({
+                        "event_id": event["event_id"],
+                        "entity_id": entity["entity_id"],
+                        "weight": entity.get("weight", 1.0),
+                        "relation_type": entity.get("relation_type"),
+                    })
+
+            if event_rows:
+                event_stmt = insert(KnowledgeGraphEvent).values(event_rows)
+                await session.execute(
+                    event_stmt.on_conflict_do_update(
+                        index_elements=["event_id"],
+                        set_={
+                            "title": event_stmt.excluded.title,
+                            "summary": event_stmt.excluded.summary,
+                            "content": event_stmt.excluded.content,
+                            "category": event_stmt.excluded.category,
+                            "keywords": event_stmt.excluded.keywords,
+                            "level": event_stmt.excluded.level,
+                            "rank": event_stmt.excluded.rank,
+                            "updated_at": func.now(),
+                        },
+                    )
+                )
+
+            if event_entities:
+                await session.execute(
+                    insert(KnowledgeGraphEventEntity)
+                    .values(event_entities)
+                    .on_conflict_do_nothing(index_elements=["event_id", "entity_id"])
+                )
+
     async def delete_file_references(self, file_id: str) -> tuple[list[str], list[str]]:
         async with pg_manager.get_async_session_context() as session:
             affected_entity_ids = list(
@@ -128,6 +193,9 @@ class KnowledgeGraphRepository:
             )
             await session.execute(
                 delete(KnowledgeGraphEntityMention).where(KnowledgeGraphEntityMention.file_id == file_id)
+            )
+            await session.execute(
+                delete(KnowledgeGraphEvent).where(KnowledgeGraphEvent.file_id == file_id)
             )
 
             orphan_triple_ids: list[str] = []
@@ -187,5 +255,127 @@ class KnowledgeGraphRepository:
         async with pg_manager.get_async_session_context() as session:
             await session.execute(delete(KnowledgeGraphTripleMention).where(KnowledgeGraphTripleMention.kb_id == kb_id))
             await session.execute(delete(KnowledgeGraphEntityMention).where(KnowledgeGraphEntityMention.kb_id == kb_id))
+            await session.execute(delete(KnowledgeGraphEvent).where(KnowledgeGraphEvent.kb_id == kb_id))
             await session.execute(delete(KnowledgeGraphTriple).where(KnowledgeGraphTriple.kb_id == kb_id))
             await session.execute(delete(KnowledgeGraphEntity).where(KnowledgeGraphEntity.kb_id == kb_id))
+
+    async def search_entities_by_text(self, kb_id: str, query_text: str, limit: int) -> list[dict[str, Any]]:
+        async with pg_manager.get_async_session_context() as session:
+            stmt = (
+                select(KnowledgeGraphEntity)
+                .where(
+                    KnowledgeGraphEntity.kb_id == kb_id,
+                    KnowledgeGraphEntity.name.ilike(f"%{query_text}%")
+                )
+                .limit(limit)
+            )
+            res = await session.execute(stmt)
+            entities = res.scalars().all()
+            return [
+                {
+                    "id": ent.entity_id,
+                    "name": ent.name,
+                    "type": ent.label,
+                    "attributes": ent.attributes,
+                }
+                for ent in entities
+            ]
+
+    async def search_entities_by_name(self, kb_id: str, names: list[str]) -> list[dict[str, Any]]:
+        if not names:
+            return []
+        from yuxi.knowledge.graphs.graph_utils import normalize_entity_name
+        normalized_names = [normalize_entity_name(name) for name in names]
+        async with pg_manager.get_async_session_context() as session:
+            stmt = (
+                select(KnowledgeGraphEntity)
+                .where(
+                    KnowledgeGraphEntity.kb_id == kb_id,
+                    KnowledgeGraphEntity.normalized_name.in_(normalized_names)
+                )
+            )
+            res = await session.execute(stmt)
+            entities = res.scalars().all()
+            return [
+                {
+                    "id": ent.entity_id,
+                    "name": ent.name,
+                    "type": ent.label,
+                    "attributes": ent.attributes,
+                }
+                for ent in entities
+            ]
+
+    async def get_event_ids_by_entity_ids(
+        self, kb_id: str, entity_ids: list[str], exclude_event_ids: list[str] | None = None
+    ) -> list[str]:
+        if not entity_ids:
+            return []
+        async with pg_manager.get_async_session_context() as session:
+            stmt = (
+                select(KnowledgeGraphEventEntity.event_id)
+                .join(KnowledgeGraphEvent, KnowledgeGraphEvent.event_id == KnowledgeGraphEventEntity.event_id)
+                .where(
+                    KnowledgeGraphEvent.kb_id == kb_id,
+                    KnowledgeGraphEventEntity.entity_id.in_(entity_ids)
+                )
+            )
+            if exclude_event_ids:
+                stmt = stmt.where(KnowledgeGraphEventEntity.event_id.notin_(exclude_event_ids))
+            res = await session.execute(stmt)
+            return list(set(res.scalars().all()))
+
+    async def get_events_with_entity_ids(self, event_ids: list[str]) -> dict[str, dict[str, Any]]:
+        if not event_ids:
+            return {}
+        from collections import defaultdict
+        async with pg_manager.get_async_session_context() as session:
+            stmt_events = select(KnowledgeGraphEvent).where(KnowledgeGraphEvent.event_id.in_(event_ids))
+            res_events = await session.execute(stmt_events)
+            events = res_events.scalars().all()
+
+            stmt_links = select(KnowledgeGraphEventEntity).where(KnowledgeGraphEventEntity.event_id.in_(event_ids))
+            res_links = await session.execute(stmt_links)
+            links = res_links.scalars().all()
+
+            event_to_entities = defaultdict(list)
+            for link in links:
+                event_to_entities[link.event_id].append(link.entity_id)
+
+            result = {}
+            for event in events:
+                result[event.event_id] = {
+                    "id": event.event_id,
+                    "event_id": event.event_id,
+                    "title": event.title,
+                    "summary": event.summary,
+                    "content": event.content,
+                    "category": event.category,
+                    "keywords": event.keywords,
+                    "level": event.level,
+                    "rank": event.rank,
+                    "entityIds": event_to_entities[event.event_id],
+                }
+            return result
+
+    async def get_events_by_ids(self, event_ids: list[str]) -> list[dict[str, Any]]:
+        if not event_ids:
+            return []
+        async with pg_manager.get_async_session_context() as session:
+            stmt = select(KnowledgeGraphEvent).where(KnowledgeGraphEvent.event_id.in_(event_ids))
+            res = await session.execute(stmt)
+            events = res.scalars().all()
+            return [
+                {
+                    "id": event.event_id,
+                    "event_id": event.event_id,
+                    "title": event.title,
+                    "summary": event.summary,
+                    "content": event.content,
+                    "category": event.category,
+                    "keywords": event.keywords,
+                    "level": event.level,
+                    "rank": event.rank,
+                }
+                for event in events
+            ]

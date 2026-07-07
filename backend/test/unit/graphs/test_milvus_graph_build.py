@@ -93,7 +93,7 @@ def test_llm_graph_extractor_appends_schema_to_fixed_prompt():
 
 
 def test_graph_extractor_factory_supports_only_llm():
-    assert GraphExtractorFactory.supported_types() == ["llm"]
+    assert set(GraphExtractorFactory.supported_types()) == {"llm", "event_llm"}
 
 
 def test_graph_extractor_factory_rejects_spacy():

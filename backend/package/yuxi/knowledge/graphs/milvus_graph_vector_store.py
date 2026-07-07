@@ -17,7 +17,11 @@ from pymilvus import (
     utility,
 )
 
-from yuxi.knowledge.graphs.graph_utils import graph_entity_collection_name, graph_triple_collection_name
+from yuxi.knowledge.graphs.graph_utils import (
+    graph_entity_collection_name,
+    graph_triple_collection_name,
+    graph_event_collection_name,
+)
 from yuxi.knowledge.implementations.milvus import (
     CONTENT_ANALYZER_PARAMS,
     CONTENT_SPARSE_FIELD,
@@ -54,8 +58,9 @@ class MilvusGraphVectorStore:
         embedding_model_spec: str,
         entities: list[dict[str, Any]],
         triples: list[dict[str, Any]],
+        events: list[dict[str, Any]] | None = None,
     ) -> None:
-        if not entities and not triples:
+        if not entities and not triples and not events:
             return
 
         embedding_info = model_cache.get_model_info(embedding_model_spec)
@@ -64,36 +69,53 @@ class MilvusGraphVectorStore:
 
         entity_collection = self._get_or_create_entity_collection(kb_id, embedding_info)
         triple_collection = self._get_or_create_triple_collection(kb_id, embedding_info)
+        event_collection = self._get_or_create_event_collection(kb_id, embedding_info)
 
         entity_ids = [entity["entity_id"] for entity in entities]
         triple_ids = [triple["triple_id"] for triple in triples]
-        existing_entity_ids, existing_triple_ids = await asyncio.gather(
+        event_ids = [event["event_id"] for event in events] if events else []
+
+        existing_entity_ids, existing_triple_ids, existing_event_ids = await asyncio.gather(
             asyncio.to_thread(self._query_existing_ids, entity_collection, entity_ids),
             asyncio.to_thread(self._query_existing_ids, triple_collection, triple_ids),
+            asyncio.to_thread(self._query_existing_ids, event_collection, event_ids),
         )
 
         missing_entities = [entity for entity in entities if entity["entity_id"] not in existing_entity_ids]
         missing_triples = [triple for triple in triples if triple["triple_id"] not in existing_triple_ids]
-        if not missing_entities and not missing_triples:
+        missing_events = [event for event in (events or []) if event["event_id"] not in existing_event_ids]
+        if not missing_entities and not missing_triples and not missing_events:
             return
 
         embed = self._get_embedding_function(embedding_model_spec)
-        entity_embeddings, triple_embeddings = await asyncio.gather(
+        entity_embeddings, triple_embeddings, event_embeddings = await asyncio.gather(
             embed([entity["content"] for entity in missing_entities]) if missing_entities else self._empty_embeddings(),
             embed([triple["content"] for triple in missing_triples]) if missing_triples else self._empty_embeddings(),
+            embed([event["content"] for event in missing_events]) if missing_events else self._empty_embeddings(),
         )
 
         if missing_entities:
             await asyncio.to_thread(self._insert_entities, entity_collection, missing_entities, entity_embeddings)
         if missing_triples:
             await asyncio.to_thread(self._insert_triples, triple_collection, missing_triples, triple_embeddings)
+        if missing_events:
+            await asyncio.to_thread(self._insert_events, event_collection, missing_events, event_embeddings)
 
-    async def delete_graph_records(self, kb_id: str, *, entity_ids: list[str], triple_ids: list[str]) -> None:
+    async def delete_graph_records(
+        self,
+        kb_id: str,
+        *,
+        entity_ids: list[str],
+        triple_ids: list[str],
+        event_ids: list[str] | None = None,
+    ) -> None:
         tasks = []
         if entity_ids:
             tasks.append(asyncio.to_thread(self._delete_ids, graph_entity_collection_name(kb_id), entity_ids))
         if triple_ids:
             tasks.append(asyncio.to_thread(self._delete_ids, graph_triple_collection_name(kb_id), triple_ids))
+        if event_ids:
+            tasks.append(asyncio.to_thread(self._delete_ids, graph_event_collection_name(kb_id), event_ids))
         if tasks:
             await asyncio.gather(*tasks)
 
@@ -141,8 +163,34 @@ class MilvusGraphVectorStore:
             output_fields=["id", "content", "source_id", "target_id"],
         )
 
+    async def search_events(
+        self,
+        *,
+        kb_id: str,
+        query_text: str,
+        embedding_model_spec: str,
+        top_k: int,
+    ) -> list[dict[str, Any]]:
+        collection_name = graph_event_collection_name(kb_id)
+        has_collection = await _run_milvus_query_io(
+            utility.has_collection, collection_name, using=self.connection_alias
+        )
+        if not has_collection:
+            return []
+        return await self._search_graph_collection(
+            collection_name=collection_name,
+            query_text=query_text,
+            embedding_model_spec=embedding_model_spec,
+            top_k=top_k,
+            output_fields=["id", "content"],
+        )
+
     def drop_graph_collections(self, kb_id: str) -> None:
-        for collection_name in [graph_entity_collection_name(kb_id), graph_triple_collection_name(kb_id)]:
+        for collection_name in [
+            graph_entity_collection_name(kb_id),
+            graph_triple_collection_name(kb_id),
+            graph_event_collection_name(kb_id),
+        ]:
             try:
                 if utility.has_collection(collection_name, using=self.connection_alias):
                     utility.drop_collection(collection_name, using=self.connection_alias)
@@ -249,6 +297,22 @@ class MilvusGraphVectorStore:
         ]
         return self._get_or_create_collection(collection_name, fields, embedding_info)
 
+    def _get_or_create_event_collection(self, kb_id: str, embedding_info: Any) -> Collection:
+        collection_name = graph_event_collection_name(kb_id)
+        fields = [
+            FieldSchema(name="id", dtype=DataType.VARCHAR, max_length=100, is_primary=True),
+            FieldSchema(
+                name="content",
+                dtype=DataType.VARCHAR,
+                max_length=65535,
+                enable_analyzer=True,
+                analyzer_params=CONTENT_ANALYZER_PARAMS,
+            ),
+            FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=embedding_info.dimension or 1024),
+            FieldSchema(name=CONTENT_SPARSE_FIELD, dtype=DataType.SPARSE_FLOAT_VECTOR),
+        ]
+        return self._get_or_create_collection(collection_name, fields, embedding_info)
+
     def _get_or_create_collection(
         self, collection_name: str, fields: list[FieldSchema], embedding_info: Any
     ) -> Collection:
@@ -308,6 +372,15 @@ class MilvusGraphVectorStore:
                 [triple["content"] for triple in triples],
                 [triple["source_entity_id"] for triple in triples],
                 [triple["target_entity_id"] for triple in triples],
+                embeddings,
+            ]
+        )
+
+    def _insert_events(self, collection: Collection, events: list[dict[str, Any]], embeddings: list) -> None:
+        collection.insert(
+            [
+                [event["event_id"] for event in events],
+                [event["content"] for event in events],
                 embeddings,
             ]
         )

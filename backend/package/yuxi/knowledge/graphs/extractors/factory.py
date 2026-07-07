@@ -4,11 +4,13 @@ from typing import Any
 
 from .base import GraphExtractor
 from .llm import LLMGraphExtractor
+from .event import LLMEventExtractor
 
 
 class GraphExtractorFactory:
     _registry: dict[str, type[GraphExtractor]] = {
         "llm": LLMGraphExtractor,
+        "event_llm": LLMEventExtractor,
     }
 
     @classmethod

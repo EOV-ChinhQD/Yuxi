@@ -1076,9 +1076,10 @@ class MilvusKB(KnowledgeBase):
                     llm_model_spec = self.databases_meta[kb_id].get("llm_model_spec") or "gpt-4o"
                     embedding_model_spec = self.databases_meta[kb_id].get("embedding_model_spec")
 
-                    consensus_weight_vector = float(merged_kwargs.get("consensus_weight_vector", 0.5))
-                    consensus_weight_local = float(merged_kwargs.get("consensus_weight_local", 0.35))
+                    consensus_weight_vector = float(merged_kwargs.get("consensus_weight_vector", 0.4))
+                    consensus_weight_local = float(merged_kwargs.get("consensus_weight_local", 0.25))
                     consensus_weight_relation = float(merged_kwargs.get("consensus_weight_relation", 0.15))
+                    consensus_weight_event = float(merged_kwargs.get("consensus_weight_event", 0.2))
 
                     retriever = ConsensusRetriever(
                         kb_id=kb_id,
@@ -1086,7 +1087,8 @@ class MilvusKB(KnowledgeBase):
                         llm_model_spec=llm_model_spec,
                         w_naive=consensus_weight_vector,
                         w_local=consensus_weight_local,
-                        w_relation=consensus_weight_relation
+                        w_relation=consensus_weight_relation,
+                        w_event=consensus_weight_event
                     )
 
                     consensus_chunk_ids = await retriever.consensus_search(

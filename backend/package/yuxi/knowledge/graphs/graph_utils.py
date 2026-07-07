@@ -42,6 +42,10 @@ def graph_triple_collection_name(kb_id: str) -> str:
     return f"{kb_id}_triple"
 
 
+def graph_event_collection_name(kb_id: str) -> str:
+    return f"{kb_id}_event"
+
+
 def build_graph_payload(normalized_result: dict[str, Any]) -> dict[str, Any]:
     """Convert the extractor output of normalized results into the required picture structure for Neo4j writing.
 

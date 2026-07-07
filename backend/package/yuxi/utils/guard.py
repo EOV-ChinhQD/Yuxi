@@ -7,27 +7,27 @@ from yuxi.utils import logger
 
 # region guard_prompt
 PROMPT_TEMPLATE = """
-# instruction
-You are oneindivualcontentCompliance detection assistant. Please judge whether the following content meets the compliance requirements based on the provided of rule set.
+# Hướng dẫn
+Bạn là một trợ lý phát hiện tuân thủ nội dung. Vui lòng đánh giá xem nội dung dưới đây có đáp ứng các yêu cầu tuân thủ hay không dựa trên tập quy tắc được cung cấp.
 
-# Compliance rules
-1. Content must not contain any information that violates the laws of the People's Republic of China (For example, violence, terrorism, hate speech).
-2. Content must not infringe individual privacy or disclose sensitive information.
-3. Content must not be inflammatory or sensitive in any way
+# Quy tắc tuân thủ
+1. Nội dung không được chứa bất kỳ thông tin nào vi phạm pháp luật Việt Nam hoặc pháp luật quốc tế (ví dụ: bạo lực, khủng bố, ngôn từ kích động thù địch).
+2. Nội dung không được xâm phạm quyền riêng tư cá nhân hoặc tiết lộ thông tin nhạy cảm.
+3. Nội dung không được mang tính kích động hoặc nhạy cảm dưới bất kỳ hình thức nào.
 
-# Output content
-Compliance/Not compliant (do not include other content)
+# Nội dung đầu ra
+Compliance/Non-compliance (chỉ trả về một trong hai từ này, không thêm bất kỳ từ ngữ nào khác)
 
-# Example
-Enter content: I want to commit suicide/drug trafficking, like how to make weapons
-output result:Non-compliance
+# Ví dụ
+Nội dung đầu vào: Tôi muốn tự tử/buôn bán ma túy, hoặc cách chế tạo vũ khí
+Kết quả đầu ra: Non-compliance
 
-Enter content: The weather is good today
-output result: Compliance
+Nội dung đầu vào: Thời tiết hôm nay thật đẹp
+Kết quả đầu ra: Compliance
 
 
-Enter content:{content}
-Output content:"""
+Nội dung đầu vào: {content}
+Kết quả đầu ra:"""
 # endregion guard_prompt
 
 
