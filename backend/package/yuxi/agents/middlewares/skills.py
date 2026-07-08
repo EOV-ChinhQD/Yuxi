@@ -239,6 +239,8 @@ class SkillsMiddleware(AgentMiddleware):
 
         readable_skills = self._get_readable_skills(runtime_context)
         activated = [slug for slug in normalize_string_list(activated) if slug in readable_skills]
+        if "knowledge-base" in readable_skills and "knowledge-base" not in activated:
+            activated.append("knowledge-base")
 
         deps_bundle = self._build_dependency_bundle(activated, runtime_context)
         activated_tool_names = set(deps_bundle["tools"])

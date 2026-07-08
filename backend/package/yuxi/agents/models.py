@@ -85,6 +85,7 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
         return ChatGoogleGenerativeAI(
             model=info.model_id,
             google_api_key=SecretStr(api_key),
+            max_retries=10,
             **kwargs,
         )
 

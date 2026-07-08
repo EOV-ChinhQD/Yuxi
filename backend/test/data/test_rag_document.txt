@@ -1,0 +1,117 @@
+# Báo cáo Nghiên cứu về Hệ thống RAG (Retrieval-Augmented Generation)
+# Tài liệu Test cho Yuxi Knowledge Base Pipeline
+# =====================================================
+# Tác giả: Nhóm Kỹ thuật AI
+# Ngày: 2026-07-08
+# Mục đích: Kiểm tra toàn bộ pipeline từ ingestion đến LLM response
+
+## 1. Tổng quan về Hệ thống RAG
+
+Hệ thống RAG (Retrieval-Augmented Generation) là một kiến trúc AI hiện đại kết hợp
+hai thành phần chính:
+- **Retrieval (Truy xuất)**: Tìm kiếm thông tin liên quan từ cơ sở tri thức
+- **Generation (Sinh văn bản)**: Sử dụng LLM để tạo câu trả lời dựa trên thông tin truy xuất được
+
+### 1.1 Ưu điểm của RAG
+
+RAG giải quyết vấn đề "hallucination" (bịa đặt thông tin) của các mô hình ngôn ngữ lớn bằng cách
+cung cấp ngữ cảnh cụ thể từ tài liệu thực tế. Hệ thống có thể:
+
+1. Truy cập thông tin cập nhật mà không cần fine-tuning lại model
+2. Cung cấp nguồn tài liệu tham chiếu cho mỗi câu trả lời
+3. Giảm thiểu sai sót do model tự "bịa" thông tin
+4. Hoạt động hiệu quả với các tài liệu chuyên ngành và nội bộ
+
+## 2. Kiến trúc Pipeline
+
+Pipeline của Yuxi bao gồm 5 giai đoạn chính:
+
+### Giai đoạn 1: Document Ingestion (Nhập liệu tài liệu)
+- Upload file (PDF, DOCX, TXT, MD, CSV)
+- Lưu trữ vào MinIO object storage
+- Ghi metadata vào PostgreSQL database
+- Trạng thái: `uploaded`
+
+### Giai đoạn 2: Document Parsing (Phân tích cú pháp)
+- Trích xuất nội dung text từ file
+- Xử lý định dạng đặc biệt (bảng, hình ảnh với OCR)
+- Loại bỏ noise và chuẩn hóa văn bản
+- Trạng thái: `parsed`
+
+### Giai đoạn 3: Chunking (Chia nhỏ văn bản)
+- Chia tài liệu thành các đoạn nhỏ (chunks) phù hợp với context window
+- Sử dụng thuật toán semantic chunking để giữ nguyên ý nghĩa
+- Kích thước chunk điển hình: 512-1024 tokens
+- Overlap giữa các chunks: 64-128 tokens để tránh mất ngữ cảnh
+
+### Giai đoạn 4: Embedding và Indexing (Nhúng và đánh chỉ mục)
+- Chuyển đổi mỗi chunk thành vector nhúng (embedding) bằng model
+- Lưu vector vào Milvus vector database
+- Lưu text gốc vào PostgreSQL để hybrid search
+- Xây dựng đồ thị tri thức trong Neo4j (Knowledge Graph)
+- Trạng thái: `indexed`
+
+### Giai đoạn 5: Retrieval và Generation (Truy xuất và Sinh văn bản)
+- Nhận câu hỏi từ người dùng
+- Embed câu hỏi thành vector
+- Tìm kiếm hybrid (vector + full-text) trong Milvus
+- Xếp hạng lại (reranking) kết quả
+- Đưa context vào prompt và gọi LLM
+- Streaming response về client
+
+## 3. Thông số Kỹ thuật
+
+### 3.1 Embedding Model
+- Model: Google text-embedding-004
+- Chiều vector: 768 dimensions
+- Batch size: 100 documents/batch
+- Ngôn ngữ hỗ trợ: Đa ngôn ngữ (Vietnamese, English, Chinese...)
+
+### 3.2 LLM Model
+- Model: Google Gemini 2.5 Flash
+- Context window: 1,048,576 tokens
+- Temperature mặc định: 0.7
+- Max output tokens: 8,192
+
+### 3.3 Vector Database (Milvus)
+- Collection type: IVF_FLAT index
+- Distance metric: IP (Inner Product / Cosine similarity)
+- Top-K retrieval: 10 chunks mặc định
+- Reranking: Bge-reranker-v2-m3
+
+## 4. Các Số liệu Quan trọng cho Kiểm thử
+
+Để xác minh pipeline hoạt động đúng, chúng ta cần kiểm tra:
+
+**Câu hỏi kiểm thử 1**: Hệ thống RAG là gì và có những ưu điểm gì?
+**Câu trả lời kỳ vọng**: Đề cập đến Retrieval-Augmented Generation, giải quyết hallucination, kết hợp retrieval và generation.
+
+**Câu hỏi kiểm thử 2**: Yuxi sử dụng bao nhiêu giai đoạn trong pipeline xử lý tài liệu?
+**Câu trả lời kỳ vọng**: 5 giai đoạn: Ingestion, Parsing, Chunking, Embedding/Indexing, Retrieval/Generation.
+
+**Câu hỏi kiểm thử 3**: Embedding model nào được sử dụng và có bao nhiêu chiều vector?
+**Câu trả lời kỳ vọng**: Google text-embedding-004, 768 chiều.
+
+**Câu hỏi kiểm thử 4**: Kích thước chunk điển hình là bao nhiêu token?
+**Câu trả lời kỳ vọng**: 512-1024 tokens với overlap 64-128 tokens.
+
+**Câu hỏi kiểm thử 5**: Milvus sử dụng loại index và metric nào?
+**Câu trả lời kỳ vọng**: IVF_FLAT index với Inner Product distance metric.
+
+## 5. Benchmark Metrics
+
+Các chỉ số đánh giá chất lượng RAG:
+
+- **Faithfulness**: Độ trung thực của câu trả lời so với tài liệu nguồn (mục tiêu > 0.8)
+- **Answer Relevancy**: Độ liên quan của câu trả lời với câu hỏi (mục tiêu > 0.75)
+- **Context Recall**: Tỷ lệ thông tin cần thiết được truy xuất (mục tiêu > 0.7)
+- **Context Precision**: Độ chính xác của chunks được truy xuất (mục tiêu > 0.65)
+
+## 6. Kết luận
+
+Hệ thống RAG với kiến trúc Yuxi cung cấp một nền tảng mạnh mẽ cho các ứng dụng AI
+doanh nghiệp. Việc kết hợp vector search, full-text search và knowledge graph
+cho phép truy xuất thông tin chính xác và toàn diện hơn so với các phương pháp
+truyền thống chỉ dùng keyword search.
+
+Giá trị cốt lõi: Chính xác, Có nguồn gốc rõ ràng, Cập nhật được, Bảo mật dữ liệu nội bộ.

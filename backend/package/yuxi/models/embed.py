@@ -112,6 +112,51 @@ class BaseEmbeddingModel(ABC):
             return False, error_msg
 
 
+
+
+
+class GeminiEmbedding(BaseEmbeddingModel):
+    def build_payload(self, messages: list[str]) -> dict:
+        is_legacy = self.model == "text-embedding-004"
+        m_id = "gemini-embedding-2" if is_legacy else self.model
+        requests = []
+        for m in messages:
+            req = {"model": f"models/{m_id}", "content": {"parts": [{"text": m}]}}
+            if is_legacy:
+                req["outputDimensionality"] = 768
+            requests.append(req)
+        return {
+            "requests": requests
+        }
+
+    def _get_url(self):
+        m_id = "gemini-embedding-2" if self.model == "text-embedding-004" else self.model
+        return f"{self.base_url}/models/{m_id}:batchEmbedContents?key={self.api_key}"
+
+    def encode(self, message: list[str] | str) -> list[list[float]]:
+        messages = [message] if isinstance(message, str) else message
+        payload = self.build_payload(messages)
+        headers = {"Content-Type": "application/json"}
+        import requests
+        response = requests.post(self._get_url(), json=payload, headers=headers, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+        if "embeddings" not in data:
+            raise ValueError(f"Gemini embedding failed: {data}")
+        return [item["values"] for item in data["embeddings"]]
+
+    async def aencode(self, message: list[str] | str) -> list[list[float]]:
+        messages = [message] if isinstance(message, str) else message
+        payload = self.build_payload(messages)
+        headers = {"Content-Type": "application/json"}
+        import httpx
+        async with httpx.AsyncClient() as client:
+            response = await client.post(self._get_url(), json=payload, headers=headers, timeout=60)
+            response.raise_for_status()
+            data = response.json()
+            if "embeddings" not in data:
+                raise ValueError(f"Gemini embedding failed: {data}")
+            return [item["values"] for item in data["embeddings"]]
 class OtherEmbedding(BaseEmbeddingModel):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -256,6 +301,16 @@ def select_embedding_model(model_id: str):
         raise ValueError(f"Model {model_id} is not an embedding model (type={info.model_type})")
 
     logger.info(f"Selecting embedding model: {model_id} (provider_type={info.provider_type})")
+    
+    if info.provider_type == "gemini":
+        return GeminiEmbedding(
+            model=info.model_id,
+            base_url=info.base_url,
+            api_key=info.api_key,
+            dimension=info.dimension,
+            batch_size=info.batch_size,
+        )
+
     return OtherEmbedding(
         model=info.model_id,
         base_url=info.base_url,

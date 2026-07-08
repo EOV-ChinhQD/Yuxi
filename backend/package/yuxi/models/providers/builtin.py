@@ -21,12 +21,14 @@ BUILTIN_PROVIDERS: list[dict[str, Any]] = [
         "provider_id": "gemini_compatible",
         "provider_type": "gemini",
         "display_name": "Google Gemini",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta",
         "api_key_env": "GEMINI_API_KEY",
         "capabilities": ["chat", "embedding"],
         "enabled_models": [
             {"id": "gemini-2.5-flash", "type": "chat", "display_name": "gemini-2.5-flash"},
+            {"id": "gemini-2.0-flash", "type": "chat", "display_name": "gemini-2.0-flash"},
             {"id": "gemini-1.5-pro", "type": "chat", "display_name": "gemini-1.5-pro"},
-            {"id": "text-embedding-004", "type": "embedding", "display_name": "text-embedding-004", "dimension": 768, "batch_size": 100}
+            {"id": "gemini-embedding-2", "type": "embedding", "display_name": "gemini-embedding-2", "dimension": 768, "batch_size": 100}
         ]
     },
     {
