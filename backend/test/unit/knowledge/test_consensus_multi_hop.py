@@ -73,3 +73,35 @@ async def test_consensus_retriever_with_multi_hop():
         res = await retriever.consensus_search("What is SAG?", retrieved_chunks)
         assert len(res) == 1
         assert res[0] == "chunk1"
+
+def test_consensus_retriever_query_type_detection():
+    with patch("yuxi.knowledge.graphs.milvus_graph_vector_store.MilvusGraphVectorStore._init_connection"):
+        retriever = ConsensusRetriever("test_kb", "test/embed", "test/llm")
+    
+    assert retriever._detect_query_type("Thông tin về Yuxi là gì?") == "factual"
+    assert retriever._detect_query_type("Yuxi có liên quan đến công nghệ nào?") == "relational"
+    assert retriever._detect_query_type("What leads to performance issues?") == "relational"
+
+def test_consensus_retriever_weight_routing():
+    with patch("yuxi.knowledge.graphs.milvus_graph_vector_store.MilvusGraphVectorStore._init_connection"):
+        retriever = ConsensusRetriever("test_kb", "test/embed", "test/llm", w_naive=0.4, w_local=0.25, w_relation=0.15, w_event=0.2)
+    
+    base_weights = {
+        "w_naive": 0.4,
+        "w_local": 0.25,
+        "w_relation": 0.15,
+        "w_event": 0.2
+    }
+    
+    # Factual query retains base weights
+    weights_factual = retriever._get_weights_for_query("Tell me about project Yuxi.", base_weights)
+    assert weights_factual == base_weights
+    
+    # Relational query routes to relational weights
+    weights_relational = retriever._get_weights_for_query("How is Yuxi connected to Milvus?", base_weights)
+    assert weights_relational == {
+        "w_naive": 0.25,
+        "w_relation": 0.35,
+        "w_local": 0.25,
+        "w_event": 0.15
+    }

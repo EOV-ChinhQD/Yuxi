@@ -261,10 +261,34 @@ async def _consume_stream_with_cancel(agen, run_ctx: RunContext):
             return
 
 
+async def _record_failed_job(ctx, job_type: str, job_id: str | None, payload: dict, error_type: str, error_message: str, retry_count: int):
+    from yuxi.storage.postgres.models_business import FailedJob
+    from yuxi.storage.postgres.manager import pg_manager
+    try:
+        async with pg_manager.get_async_session_context() as db:
+            failed_job = FailedJob(
+                job_type=job_type,
+                job_id=job_id,
+                payload=payload,
+                error_type=error_type,
+                error_message=error_message,
+                retry_count=retry_count,
+                status="failed"
+            )
+            db.add(failed_job)
+            await db.commit()
+            logger.info(f"Recorded failed job to DLQ: {job_type} (job_id={job_id})")
+    except Exception as ex:
+        logger.error(f"Failed to record failed job to DLQ: {ex}")
+
+
 async def process_agent_run(ctx, run_id: str):
     """执行队列中的 AgentRun，并只从 run 列 và tin nhắn đầu vào để khôi phục tham số chạy."""
     from yuxi.utils.logging_config import set_log_context, reset_log_context
     token = set_log_context(run_id=run_id)
+    uid = None
+    request_id = None
+    thread_id = None
     run = await _get_run(run_id)
     if not run:
         logger.warning(f"Run not found: {run_id}")
@@ -518,6 +542,17 @@ async def process_agent_run(ctx, run_id: str):
                     payload={"chunk": retryable_error_chunk},
                 )
                 logger.error(f"Run failed after retries exhausted {run_id}: {e}")
+                job_id = ctx.get("job_id") if ctx else None
+                job_try = _job_try(ctx) if ctx else 1
+                await _record_failed_job(
+                    ctx=ctx,
+                    job_type="process_agent_run",
+                    job_id=job_id,
+                    payload={"run_id": run_id, "uid": uid, "request_id": request_id, "thread_id": thread_id},
+                    error_type=type(e).__name__,
+                    error_message=str(e),
+                    retry_count=job_try - 1
+                )
                 return
 
             if isinstance(e, RetryableRunError):
@@ -540,6 +575,17 @@ async def process_agent_run(ctx, run_id: str):
         )
         await mark_run_terminal(run_id, "failed", error_type="worker_error", error_message=str(e))
         await _append_end_event(run_id, "failed", thread_id=thread_id, payload={"chunk": error_chunk})
+        job_id = ctx.get("job_id") if ctx else None
+        job_try = _job_try(ctx) if ctx else 1
+        await _record_failed_job(
+            ctx=ctx,
+            job_type="process_agent_run",
+            job_id=job_id,
+            payload={"run_id": run_id, "uid": uid, "request_id": request_id, "thread_id": thread_id},
+            error_type=type(e).__name__,
+            error_message=str(e),
+            retry_count=job_try - 1
+        )
         return
     finally:
         await run_ctx.close()

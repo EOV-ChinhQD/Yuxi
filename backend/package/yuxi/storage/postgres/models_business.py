@@ -887,3 +887,30 @@ Index(
     postgresql_where=AgentRun.status.notin_(AGENT_RUN_TERMINAL_STATUSES),
     sqlite_where=AgentRun.status.notin_(AGENT_RUN_TERMINAL_STATUSES),
 )
+
+
+class FailedJob(Base):
+    __tablename__ = "failed_jobs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    job_type = Column(String(100), nullable=False)   # "process_agent_run"
+    job_id = Column(String(255), nullable=True)
+    payload = Column(JSON, nullable=False)            # full ARQ payload
+    error_type = Column(String(100), nullable=True)
+    error_message = Column(Text, nullable=True)
+    failed_at = Column(DateTime, default=utc_now_naive)
+    retry_count = Column(Integer, default=0)
+    status = Column(String(20), default="failed")    # failed/replayed/ignored
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "job_type": self.job_type,
+            "job_id": self.job_id,
+            "payload": self.payload,
+            "error_type": self.error_type,
+            "error_message": self.error_message,
+            "failed_at": format_utc_datetime(self.failed_at),
+            "retry_count": self.retry_count,
+            "status": self.status,
+        }

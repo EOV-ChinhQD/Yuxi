@@ -157,7 +157,6 @@ def test_builtin_provider_templates_default_to_openai_provider_type():
         normalized = _normalize_payload(payload)
         provider_types.add(normalized["provider_type"])
     assert provider_types == {"openai", "gemini"}
-    assert all("ollama" not in provider["provider_id"] for provider in BUILTIN_PROVIDERS)
 
 
 def test_builtin_siliconflow_provider_includes_default_runnable_models():

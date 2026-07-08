@@ -714,6 +714,19 @@ class PostgresManager(metaclass=SingletonMeta):
             "CREATE INDEX IF NOT EXISTS ix_conversations_is_pinned ON conversations(is_pinned)",
             "CREATE UNIQUE INDEX IF NOT EXISTS ix_model_providers_provider_id ON model_providers(provider_id)",
             "CREATE INDEX IF NOT EXISTS ix_model_providers_is_enabled ON model_providers(is_enabled)",
+            """
+            CREATE TABLE IF NOT EXISTS failed_jobs (
+                id SERIAL PRIMARY KEY,
+                job_type VARCHAR(100) NOT NULL,
+                job_id VARCHAR(255),
+                payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+                error_type VARCHAR(100),
+                error_message TEXT,
+                failed_at TIMESTAMPTZ DEFAULT NOW(),
+                retry_count INTEGER DEFAULT 0,
+                status VARCHAR(20) DEFAULT 'failed'
+            )
+            """,
         ]
         async with self.async_engine.begin() as conn:
             # 历史未绑定用户的 API Key 会在下方迁移语句里被静默删除，先计数告警

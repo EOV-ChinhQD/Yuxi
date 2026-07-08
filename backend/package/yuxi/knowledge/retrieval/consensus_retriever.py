@@ -13,6 +13,11 @@ from yuxi.knowledge.graphs.milvus_graph_service import MilvusGraphService
 _keyword_cache: Dict[str, tuple] = {}
 _KEYWORD_CACHE_TTL = 3600  # 60 phút
 
+_RELATION_KEYWORDS = {
+    "liên quan đến", "ảnh hưởng bởi", "dẫn đến", "kết nối với",
+    "related to", "influenced by", "leads to", "connected to"
+}
+
 def _get_cached_keywords(query: str) -> Optional[str]:
     key = hashlib.md5(query.encode()).hexdigest()
     if key in _keyword_cache:
@@ -55,6 +60,25 @@ class ConsensusRetriever:
         self.w_event = w_event
         self.graph_service = MilvusGraphService()
 
+    def _detect_query_type(self, query: str) -> str:
+        query_lower = query.lower()
+        if any(kw in query_lower for kw in _RELATION_KEYWORDS):
+            return "relational"
+        return "factual"
+
+    def _get_weights_for_query(self, query: str, base_weights: dict) -> dict:
+        query_type = self._detect_query_type(query)
+        if query_type == "relational":
+            weights = {
+                "w_naive": 0.25,
+                "w_relation": 0.35,
+                "w_local": 0.25,
+                "w_event": 0.15
+            }
+            logger.info(f"[Consensus] Relational query detected, routing to relational weights: {weights}")
+            return weights
+        return base_weights
+
     async def _extract_keywords(self, query: str) -> str:
         cached = _get_cached_keywords(query)
         if cached:
@@ -74,7 +98,7 @@ Từ khóa:"""
             
             # Sử dụng select_model từ Yuxi để gọi LLM trích xuất keywords
             model = select_model(model_spec=self.llm_model_spec)
-            response = await model.call(prompt)
+            response = await asyncio.wait_for(model.call(prompt), timeout=2.0)
             keyword_str = response.content.strip()
             
             ms = (time.perf_counter() - t0) * 1000
@@ -87,6 +111,8 @@ Từ khóa:"""
                 logger.info(f"[Consensus] Extracted keywords: {keyword_str[:80]}")
                 _set_cached_keywords(query, keyword_str)
                 return keyword_str
+        except asyncio.TimeoutError:
+            logger.warning("[Consensus] Keyword extraction timed out after 2s, using raw query.")
         except Exception as ke:
             logger.warning(f"[Consensus] Keyword extraction failed, using raw query. Error: {ke}")
 
@@ -224,10 +250,40 @@ Từ khóa:"""
             from yuxi.knowledge.retrieval.multi_hop_retriever import MultiHopRetriever
             event_retriever = MultiHopRetriever(self.kb_id, self.embedding_model_spec, self.llm_model_spec)
 
+            async def safe_get_local():
+                try:
+                    return await asyncio.wait_for(
+                        self._get_local_chunk_ids(keywords, top_k_entities=top_k_each_method),
+                        timeout=3.0
+                    )
+                except Exception as e:
+                    logger.warning(f"[Consensus] Local search failed or timed out: {e}")
+                    return {}
+
+            async def safe_get_relation():
+                try:
+                    return await asyncio.wait_for(
+                        self._get_relation_chunk_ids(keywords, top_k=top_k_each_method),
+                        timeout=3.0
+                    )
+                except Exception as e:
+                    logger.warning(f"[Consensus] Relation search failed or timed out: {e}")
+                    return {}
+
+            async def safe_get_event():
+                try:
+                    return await asyncio.wait_for(
+                        event_retriever.retrieve(query, search_mode="normal", max_hops=2, rerank_top_k=top_k_each_method),
+                        timeout=3.0
+                    )
+                except Exception as e:
+                    logger.warning(f"[Consensus] Event search failed or timed out: {e}")
+                    return []
+
             local_map, relation_map, event_chunks = await asyncio.gather(
-                self._get_local_chunk_ids(keywords, top_k_entities=top_k_each_method),
-                self._get_relation_chunk_ids(keywords, top_k=top_k_each_method),
-                event_retriever.retrieve(query, search_mode="normal", max_hops=2, rerank_top_k=top_k_each_method)
+                safe_get_local(),
+                safe_get_relation(),
+                safe_get_event()
             )
 
             naive_map = {chunk["chunk_id"]: chunk["score"] for chunk in retrieved_chunks}
@@ -237,6 +293,21 @@ Từ khóa:"""
                 f"[Consensus] Naive={len(naive_map)}, Local={len(local_map)}, Relation={len(relation_map)}, Event={len(event_map)} chunks"
             )
 
+            # Thiết lập trọng số consensus
+            base_weights = {
+                "w_naive": self.w_naive,
+                "w_local": self.w_local,
+                "w_relation": self.w_relation,
+                "w_event": self.w_event
+            }
+            weights = self._get_weights_for_query(query, base_weights)
+            W_NAIVE = weights["w_naive"]
+            W_LOCAL = weights["w_local"]
+            W_RELATION = weights["w_relation"]
+            W_EVENT = weights["w_event"]
+
+            logger.info(f"[Consensus] Final weights used: Naive={W_NAIVE}, Local={W_LOCAL}, Relation={W_RELATION}, Event={W_EVENT}")
+
             if span:
                 try:
                     span.update(metadata={
@@ -245,6 +316,8 @@ Từ khóa:"""
                         "relation_chunks": len(relation_map),
                         "event_chunks": len(event_map),
                         "keywords": keywords,
+                        "query_type": self._detect_query_type(query),
+                        "weights_used": weights,
                     })
                 except Exception:
                     pass
@@ -254,12 +327,6 @@ Từ khóa:"""
             local_norm = _normalize_map(local_map)
             relation_norm = _normalize_map(relation_map)
             event_norm = _normalize_map(event_map)
-
-            # Thiết lập trọng số consensus
-            W_NAIVE = self.w_naive
-            W_LOCAL = self.w_local
-            W_RELATION = self.w_relation
-            W_EVENT = self.w_event
 
             all_ids = set(naive_map) | set(local_map) | set(relation_map) | set(event_map)
             chunk_scores: Dict[str, float] = {}

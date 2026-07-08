@@ -37,3 +37,38 @@ def test_aggregate_metrics_matches_service_output_shape():
     assert metrics["f1@1"] == 0.5
     assert metrics["answer_correctness"] == 0.5
     assert metrics["overall_score"] == overall_score
+
+
+from unittest.mock import AsyncMock, MagicMock
+import pytest
+from yuxi.knowledge.eval.evaluator import evaluate_question
+
+@pytest.mark.asyncio
+async def test_evaluate_question_uses_custom_judge_llm():
+    kb_instance = MagicMock()
+    kb_instance.aquery = AsyncMock(return_value={"answer": "Generated Answer", "retrieved_chunks": []})
+
+    question_data = {
+        "query": "What is the capital of France?",
+        "gold_chunk_ids": [],
+        "gold_answer": "Paris"
+    }
+
+    judge_llm = MagicMock()
+    mock_response = MagicMock()
+    mock_response.content = '{"score": 1.0, "reasoning": "Correct answer"}'
+    judge_llm.call = AsyncMock(return_value=mock_response)
+
+    res = await evaluate_question(
+        kb_instance=kb_instance,
+        kb_id="test_kb",
+        question_data=question_data,
+        retrieval_config={"answer_llm": "test/llm"},
+        has_gold_chunks=False,
+        has_gold_answers=True,
+        judge_llm=judge_llm,
+        select_model_fn=MagicMock()
+    )
+
+    assert res["answer_scores"] == {"score": 1.0, "reasoning": "Correct answer"}
+    judge_llm.call.assert_called_once()
