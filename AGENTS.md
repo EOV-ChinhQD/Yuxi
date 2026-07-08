@@ -137,3 +137,8 @@ Chú ý:
 1. Tham khảo quy chuẩn [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) để viết thông điệp commit.
 2. Sử dụng thông điệp commit bằng tiếng Việt hoặc tiếng Anh, tiêu đề ngắn gọn rõ ràng, mô tả chi tiết nội dung và lý do thay đổi.
 3. Tạo PR bắt buộc phải tham khảo [contributing.md](docs/develop-guides/contributing.md) cũng như template PR [PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md), và hoàn thành các mục kiểm tra trong đó trước khi gửi.
+
+## 5. Ngôn ngữ & Đặt tên Chatbot (Language & Naming Constraints)
+- **Quy tắc bắt buộc**: Chatbot mặc định phải có tên là `Yuxi`.
+- **Ràng buộc ngôn ngữ**: Toàn bộ phản hồi từ LLM, các thiết lập Prompt hệ thống, và các nhãn/mô tả trên giao diện người dùng phải viết bằng tiếng Anh. Tuyệt đối loại bỏ và không sử dụng tiếng Trung (chữ Hán) trong cả nội dung trả về của mô hình lẫn văn bản tĩnh trên giao diện.
+

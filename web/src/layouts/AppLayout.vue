@@ -125,7 +125,7 @@ const organizationName = computed(() => {
 const mainList = computed(() => {
   const items = [
     {
-      name: '创建新对话',
+      name: 'Create new chat',
       path: '/agent',
       icon: MessageCirclePlus,
       activeIcon: MessageCirclePlus,
@@ -135,14 +135,14 @@ const mainList = computed(() => {
   ]
 
   items.push({
-    name: '工作区',
+    name: 'Workspace',
     path: '/workspace',
     icon: FolderKanban,
     activeIcon: FolderKanban
   })
 
   items.push({
-    name: '智能体扩展',
+    name: 'Agent Extensions',
     path: '/extensions',
     activePaths: ['/extensions'],
     icon: LibraryBig,
@@ -150,7 +150,7 @@ const mainList = computed(() => {
   })
 
   items.push({
-    name: '智能体管理',
+    name: 'Agent Management',
     path: '/model-manage',
     icon: Box,
     activeIcon: Box
@@ -158,7 +158,7 @@ const mainList = computed(() => {
 
   if (userStore.isSuperAdmin) {
     items.push({
-      name: '数据总览',
+      name: 'Data Dashboard',
       path: '/dashboard',
       icon: BarChart3,
       activeIcon: BarChart3
@@ -330,10 +330,10 @@ provide('settingsModal', {
           @click.stop="openConversationSearch"
         >
           <a-tooltip placement="right" :open="sidebarCollapsed ? undefined : false">
-            <template #title>搜索对话</template>
+            <template #title>Search chat</template>
             <Search class="icon" size="18" />
           </a-tooltip>
-          <span class="nav-text">搜索对话</span>
+          <span class="nav-text">Search chat</span>
         </button>
 
         <RouterLink

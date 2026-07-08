@@ -12,7 +12,7 @@
         <div class="header__left">
           <slot name="header-left"></slot>
           <div
-            v-if="currentThread?.title && currentThread.title !== '新的对话'"
+            v-if="currentThread?.title && currentThread.title !== 'New Chat'"
             class="conversation-title"
           >
             {{ currentThread.title }}
@@ -24,25 +24,25 @@
             type="button"
             class="agent-nav-btn agent-state-btn state-entry-btn"
             :class="{ active: statePanelOpen }"
-            title="查看状态"
+            title="View Status"
             :aria-expanded="statePanelOpen"
             aria-controls="agent-state-panel"
             @click.stop="toggleStatePanel"
           >
             <LayoutList size="16" class="nav-btn-icon" />
-            <span class="hide-text">状态</span>
+            <span class="hide-text">Status</span>
           </button>
           <button
             v-if="showFileEntry && !isFilePanelOpen"
             type="button"
             class="agent-nav-btn agent-state-btn file-entry-btn"
-            title="查看文件"
+            title="View Files"
             :aria-expanded="isFilePanelOpen"
             aria-controls="agent-file-panel"
             @click.stop="toggleAgentPanel"
           >
             <FolderKanban size="16" class="nav-btn-icon" />
-            <span class="hide-text">文件</span>
+            <span class="hide-text">Files</span>
           </button>
           <slot
             name="header-right"
@@ -135,7 +135,7 @@
               <!-- 加载状态：加载消息 -->
               <div v-if="isLoadingMessages" class="chat-loading">
                 <div class="loading-spinner"></div>
-                <span>正在加载消息...</span>
+                <span>Loading messages...</span>
               </div>
 
               <!-- 打招呼区域 - 在输入框上方 -->
@@ -165,7 +165,7 @@
                       :model_spec="currentModelSpec"
                       size="nano"
                       display-name="mini"
-                      placeholder="选择模型"
+                      placeholder="Select Model"
                       @select-model="handleModelSelect"
                     />
                   </div>
@@ -183,7 +183,7 @@
               />
 
               <div class="bottom-actions" v-if="conversations.length > 0">
-                <p class="note">当前智能体：{{ currentThreadAgentName }}；请注意辨别内容的可靠性</p>
+                <p class="note">Current Agent: {{ currentThreadAgentName }}; please note to verify the reliability of the content</p>
               </div>
             </div>
           </div>
@@ -203,13 +203,13 @@
         >
           <div v-if="statePanelOpen" class="state-panel">
             <div class="side-panel__header state-panel-header">
-              <span class="state-panel-title">状态</span>
+              <span class="state-panel-title">Status</span>
               <div class="state-panel-header-actions">
                 <span class="state-panel-summary">{{ stateSummaryLabel }}</span>
                 <button
                   type="button"
                   class="state-refresh-btn"
-                  title="刷新状态"
+                  title="Refresh Status"
                   :disabled="isRefreshingState"
                   @click.stop="handleAgentStateRefresh()"
                 >
@@ -223,7 +223,7 @@
                 v-if="currentTokenUsage"
                 class="state-section"
                 :class="{ 'is-collapsed': !isStateSectionExpanded('tokenUsage') }"
-                aria-label="上下文使用情况"
+                aria-label="Context Usage"
               >
                 <button
                   type="button"
@@ -233,7 +233,7 @@
                   @click="toggleStateSection('tokenUsage')"
                 >
                   <span class="state-section-label">
-                    <span class="state-section-title">上下文使用</span>
+                    <span class="state-section-title">Context Usage</span>
                     <ChevronDown
                       :size="15"
                       class="state-section-chevron"
@@ -252,10 +252,10 @@
                   <div class="token-usage-content">
                     <div class="token-usage-stack">
                       <div class="token-usage-stack-head">
-                        <span>当前上下文</span>
+                        <span>Current Context</span>
                         <strong>{{ tokenUsageStackHeadLabel }}</strong>
                       </div>
-                      <div class="token-usage-stack-track" aria-label="Token 构成">
+                      <div class="token-usage-stack-track" aria-label="Token Composition">
                         <div
                           v-for="segment in tokenUsageBarSegments"
                           :key="segment.key"
@@ -304,7 +304,7 @@
                   @click="toggleStateSection('todos')"
                 >
                   <span class="state-section-label">
-                    <span class="state-section-title">待办</span>
+                    <span class="state-section-title">To-do</span>
                     <ChevronDown
                       :size="15"
                       class="state-section-chevron"
@@ -356,7 +356,7 @@
                   @click="toggleStateSection('files')"
                 >
                   <span class="state-section-label">
-                    <span class="state-section-title">附件/文件</span>
+                    <span class="state-section-title">Attachments/Files</span>
                     <ChevronDown
                       :size="15"
                       class="state-section-chevron"
@@ -399,7 +399,7 @@
                   @click="toggleStateSection('artifacts')"
                 >
                   <span class="state-section-label">
-                    <span class="state-section-title">产物</span>
+                    <span class="state-section-title">Artifacts</span>
                     <ChevronDown
                       :size="15"
                       class="state-section-chevron"
@@ -419,7 +419,7 @@
                       :key="file.path"
                       type="button"
                       class="state-list-item state-list-item--button"
-                      :title="`打开 ${file.name}`"
+                      :title="`Open ${file.name}`"
                       @click="openPanelPreview(file)"
                     >
                       <FileTypeIcon
@@ -449,7 +449,7 @@
                   @click="toggleStateSection('subagents')"
                 >
                   <span class="state-section-label">
-                    <span class="state-section-title">子智能体</span>
+                    <span class="state-section-title">Sub-agents</span>
                     <ChevronDown
                       :size="15"
                       class="state-section-chevron"
@@ -480,7 +480,7 @@
                         kind="agent"
                         :size="28"
                         shape="rounded"
-                        :alt="`${getSubagentRunName(run)}图标`"
+                        :alt="`${getSubagentRunName(run)} Icon`"
                       />
                       <div class="state-list-item-body">
                         <div class="state-list-item-title state-subagent-title">
@@ -508,7 +508,7 @@
                 </div>
               </section>
 
-              <div v-if="!hasVisibleStateSections" class="state-panel-empty">暂无状态内容</div>
+              <div v-if="!hasVisibleStateSections" class="state-panel-empty">No status updates</div>
             </div>
           </div>
         </div>
@@ -638,13 +638,13 @@ const { threads, currentThreadId, currentThread } = storeToRefs(chatThreadsStore
 const userInput = ref('')
 const sendCooldownActive = ref(false)
 let sendCooldownTimer = null
-// 预设的打招呼文本
+// Predefined greeting texts
 const greetingMessages = [
-  '👋 您好，有什么可以帮您？',
-  '👋 你好！有什么想聊的吗？',
-  '👋 嘿，有什么我可以帮助你的？',
-  '👋 欢迎！今天想讨论什么话题？',
-  '👋 你好呀，随时为你服务！'
+  '👋 Hello, how can I help you today?',
+  '👋 Hi! What would you like to talk about?',
+  '👋 Hey, is there anything I can help you with?',
+  '👋 Welcome! What topic shall we discuss today?',
+  '👋 Hello, I am at your service!'
 ]
 
 // 随机选择一个打招呼文本
