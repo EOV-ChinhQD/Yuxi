@@ -35,7 +35,7 @@ class ListKBsInput(BaseModel):
 
 
 @tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=ListKBsInput)
-async def list_kbs(dummy: str, runtime: ToolRuntime) -> str:  # Now has 2 params
+async def list_kbs(dummy: str = "", runtime: ToolRuntime = None) -> str:  # Now has 2 params with defaults
     """Liệt kê danh sách các kho kiến thức mà người dùng hiện tại có thể truy cập.
 
     Trả về danh sách tên các kho kiến thức mà người dùng có quyền truy cập dựa trên vai trò và phòng ban,

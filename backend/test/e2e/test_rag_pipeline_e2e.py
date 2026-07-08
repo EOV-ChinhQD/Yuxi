@@ -114,7 +114,7 @@ def s1_auth():
 # =====================================================================
 def s2_kb():
     sep("STAGE 2 ─ Knowledge Base Creation")
-    KB_NAME = "TEST_RAG_PIPELINE_2046"
+    KB_NAME = "TEST_RAG_PIPELINE_2049"
 
     r = GET("/api/knowledge/databases")
     resp = r.json()
@@ -411,7 +411,7 @@ def s8_rag_chat(agent_id, thread_id, kb_id):
             "query": tc["q"],
             "agent_id": agent_id,
             "thread_id": thread_id,
-            "model_spec": "gemini_compatible:gemini-2.0-flash",
+            "model_spec": "ollama:qwen2.5:7b",
             "meta": {
                 "knowledge_base_ids": [kb_id],
             }

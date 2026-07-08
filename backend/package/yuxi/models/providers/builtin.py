@@ -235,4 +235,16 @@ BUILTIN_PROVIDERS: list[dict[str, Any]] = [
         "embedding_models_endpoint": "https://api.siliconflow.com/v1/models?sub_type=embedding",
         "rerank_models_endpoint": "https://api.siliconflow.com/v1/models?sub_type=reranker",
     },
+    {
+        "provider_id": "ollama",
+        "display_name": "Ollama (Local)",
+        "base_url": "http://host.docker.internal:11434/v1",
+        "api_key_env": "OLLAMA_API_KEY",
+        "capabilities": ["chat"],
+        "enabled_models": [
+            {"id": "qwen2.5:7b", "type": "chat", "display_name": "qwen2.5:7b"},
+            {"id": "qwen2.5:1.5b", "type": "chat", "display_name": "qwen2.5:1.5b"},
+            {"id": "phi3:mini", "type": "chat", "display_name": "phi3:mini"}
+        ]
+    },
 ]
