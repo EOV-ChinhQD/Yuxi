@@ -3,7 +3,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, UploadFile, File
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,8 +11,7 @@ from yuxi.storage.postgres.models_business import User
 from server.utils.auth_middleware import get_db, get_required_user
 from yuxi import config as conf
 from yuxi.models import select_model
-from yuxi.services.chat_service import get_agent_state_view, stream_agent_resume
-from yuxi.repositories.conversation_repository import ConversationRepository
+from yuxi.services.chat_service import get_agent_state_view
 from yuxi.services.conversation_service import (
     confirm_tmp_thread_attachments_view,
     create_thread_view,
@@ -40,10 +39,10 @@ from yuxi.utils.image_processor import process_uploaded_image
 from yuxi.utils.paths import VIRTUAL_PATH_PREFIX
 
 
-# TODO: The functions of the current file are too complex and the routing labels are confusing.
+# TODO：当前文件的功能过于庞杂，路由标签混乱
 
 
-# Image upload response model
+# 图片上传响应模型
 class ImageUploadResponse(BaseModel):
     success: bool
     image_content: str | None = None
@@ -61,10 +60,10 @@ chat = APIRouter(prefix="/chat", tags=["chat"])
 
 @chat.post("/call")
 async def call(query: str = Body(...), meta: dict = Body(None), current_user: User = Depends(get_required_user)):
-    """Call the model for simple Q&A (login required)"""
+    """调用模型进行简单问答（需要登录）"""
     meta = meta or {}
 
-    # Make sure request_id exists
+    # 确保 request_id 存在
     if "request_id" not in meta or not meta.get("request_id"):
         meta["request_id"] = str(uuid.uuid4())
 
@@ -76,108 +75,11 @@ async def call(query: str = Body(...), meta: dict = Body(None), current_user: Us
     return {"response": response.content, "request_id": meta["request_id"]}
 
 
-@chat.post("/thread/{thread_id}/resume")
-async def resume_thread_chat(
-    thread_id: str,
-    approved: bool | None = Body(None),
-    answer: dict | None = Body(None),
-    current_user: User = Depends(get_required_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Resume a conversation interrupted by manual approval (login required)"""
-
-    # Verify that thread exists and belongs to the current user
-    conv_repo = ConversationRepository(db)
-    conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
-    if not conversation or conversation.uid != str(current_user.uid) or conversation.status == "deleted":
-        raise HTTPException(status_code=404, detail="Luồng hội thoại không tồn tại")
-    agent_id = conversation.agent_id
-
-    def normalize_resume_input(raw_answer: Any, raw_approved: bool | None) -> Any:
-        def normalize_single_answer(value: Any) -> Any:
-            if isinstance(value, str):
-                normalized = value.strip()
-                if not normalized:
-                    raise HTTPException(status_code=422, detail="answer không được để trống")
-                return normalized
-
-            if isinstance(value, list):
-                if len(value) == 0:
-                    raise HTTPException(status_code=422, detail="answer không được để trống")
-
-                normalized_list: list[str] = []
-                for item in value:
-                    if not isinstance(item, str) or not item.strip():
-                        raise HTTPException(status_code=422, detail="Danh sách answer phải là chuỗi không trống")
-                    normalized_list.append(item.strip())
-                return normalized_list
-
-            if isinstance(value, dict):
-                if value.get("type") == "other":
-                    text = value.get("text")
-                    if not isinstance(text, str) or not text.strip():
-                        raise HTTPException(status_code=422, detail="Văn bản other không được để trống")
-                return value
-
-            raise HTTPException(status_code=422, detail="Loại giá trị của answer không được hỗ trợ")
-
-        if raw_answer is not None:
-            if isinstance(raw_answer, dict):
-                if len(raw_answer) == 0:
-                    raise HTTPException(status_code=422, detail="answer không được để trống")
-
-                normalized_answers: dict[str, Any] = {}
-                for question_id, value in raw_answer.items():
-                    normalized_question_id = str(question_id).strip()
-                    if not normalized_question_id:
-                        raise HTTPException(status_code=422, detail="question_id không được để trống")
-                    normalized_answers[normalized_question_id] = normalize_single_answer(value)
-                return normalized_answers
-
-            raise HTTPException(status_code=422, detail="answer phải là ánh xạ đối tượng {question_id: answer}")
-
-        if raw_approved is not None:
-            return "approve" if raw_approved else "reject"
-
-        raise HTTPException(status_code=422, detail="approved hoặc answer phải cung cấp ít nhất một trường")
-
-    resume_input = normalize_resume_input(answer, approved)
-
-    logger.info(
-        "Resuming agent_id: %s, thread_id: %s, approved: %s, answer_type: %s",
-        agent_id,
-        thread_id,
-        approved,
-        type(answer).__name__ if answer is not None else "None",
-    )
-
-    meta = {
-        "agent_id": agent_id,
-        "thread_id": thread_id,
-        "uid": current_user.uid,
-        "approved": approved,
-        "answer": answer,
-        "resume_input": resume_input,
-    }
-    if "request_id" not in meta or not meta.get("request_id"):
-        meta["request_id"] = str(uuid.uuid4())
-    return StreamingResponse(
-        stream_agent_resume(
-            thread_id=thread_id,
-            resume_input=resume_input,
-            meta=meta,
-            current_user=current_user,
-            db=db,
-        ),
-        media_type="application/json",
-    )
-
-
 @chat.get("/thread/{thread_id}/history")
 async def get_thread_history(
     thread_id: str, current_user: User = Depends(get_required_user), db: AsyncSession = Depends(get_db)
 ):
-    """Get conversation history messages (login required)- Contains user feedback status"""
+    """获取对话历史消息（需要登录）- 包含用户反馈状态"""
     try:
         return await get_thread_history_view(
             thread_id=thread_id,
@@ -186,8 +88,8 @@ async def get_thread_history(
         )
 
     except Exception as e:
-        logger.error(f"Error getting conversation history message: {e}, {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Lỗi khi lấy tin nhắn lịch sử hội thoại: {str(e)}")
+        logger.error(f"获取对话历史消息出错: {e}, {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi lấy lịch sử tin nhắn: {str(e)}")
 
 
 @chat.get("/thread/{thread_id}/state")
@@ -197,22 +99,22 @@ async def get_thread_state(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get the current status of the conversation (login required)"""
+    """获取对话当前状态（需要登录）"""
     try:
         return await get_agent_state_view(
             thread_id=thread_id,
-            current_uid=str(current_user.uid),
+            current_user=current_user,
             db=db,
             include_messages=include_messages,
         )
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting conversation status: {e}, {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Lỗi khi lấy trạng thái hội thoại: {str(e)}")
+        logger.error(f"获取对话状态出错: {e}, {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi lấy trạng thái cuộc hội thoại: {str(e)}")
 
 
-# ==================== Thread Management API ====================
+# ==================== 线程管理 API ====================
 
 
 class ThreadCreate(BaseModel):
@@ -362,7 +264,7 @@ class SaveThreadArtifactResponse(BaseModel):
 
 
 # =============================================================================
-# > === Session Management Group ===
+# > === 会话管理分组 ===
 # =============================================================================
 
 
@@ -370,9 +272,9 @@ class SaveThreadArtifactResponse(BaseModel):
 async def create_thread(
     thread: ThreadCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_required_user)
 ):
-    """Create new conversation thread (Use new storage system)"""
+    """创建新对话线程 (使用新存储系统)"""
     return await create_thread_view(
-        agent_id=thread.agent_id,
+        agent_slug=thread.agent_id,
         title=thread.title,
         metadata=thread.metadata,
         db=db,
@@ -388,9 +290,9 @@ async def list_threads(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Get all conversation threads of a user (Use new storage system)"""
+    """获取用户的所有对话线程 (使用新存储系统)"""
     return await list_threads_view(
-        agent_id=agent_id, db=db, current_uid=str(current_user.uid), limit=limit, offset=offset
+        agent_slug=agent_id, db=db, current_uid=str(current_user.uid), limit=limit, offset=offset
     )
 
 
@@ -403,7 +305,7 @@ async def search_threads(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Tìm kiếm các cuộc hội thoại lịch sử của người dùng hiện tại。"""
+    """搜索当前用户的历史对话。"""
     return await search_threads_view(
         query=q,
         agent_id=agent_id,
@@ -418,7 +320,7 @@ async def search_threads(
 async def delete_thread(
     thread_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_required_user)
 ):
-    """Delete conversation thread (Use new storage system)"""
+    """删除对话线程 (使用新存储系统)"""
     return await delete_thread_view(thread_id=thread_id, db=db, current_uid=str(current_user.uid))
 
 
@@ -434,7 +336,7 @@ async def update_thread(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Update conversation thread information (Use new storage system)"""
+    """更新对话线程信息 (使用新存储系统)"""
     return await update_thread_view(
         thread_id=thread_id,
         title=thread_update.title,
@@ -445,13 +347,13 @@ async def update_thread(
 
 
 # ================================
-# > === Attachment management group ===
+# > === 附件管理分组 ===
 # ================================
 
 
 @chat.post("/attachments/tmp", response_model=TmpAttachmentResponse)
 async def upload_tmp_attachment(file: UploadFile = File(...), current_user: User = Depends(get_required_user)):
-    """Upload attachments to MinIO tmp, not associated with threads yet."""
+    """上传附件到 MinIO tmp，暂不关联线程。"""
     return await upload_tmp_attachment_view(file=file, current_uid=str(current_user.uid))
 
 
@@ -460,7 +362,7 @@ async def parse_tmp_attachment(
     request: TmpAttachmentParseRequest,
     current_user: User = Depends(get_required_user),
 ):
-    """Parses a tmp attachment and returns the parsed tmp URL."""
+    """解析 tmp 附件并返回解析后的 tmp URL。"""
     return await parse_tmp_attachment_view(
         object_name=request.object_name,
         file_name=request.file_name,
@@ -477,7 +379,7 @@ async def confirm_tmp_thread_attachments(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Officially add the tmp attachment to the thread attachment list."""
+    """将 tmp 附件正式加入线程附件列表。"""
     return await confirm_tmp_thread_attachments_view(
         thread_id=thread_id,
         attachments=[item.model_dump() for item in request.attachments],
@@ -493,7 +395,7 @@ async def upload_thread_attachment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Upload the original attachment and associate it to the specified conversation thread."""
+    """上传原始附件并关联到指定对话线程。"""
     return await upload_thread_attachment_view(
         thread_id=thread_id,
         file=file,
@@ -508,7 +410,7 @@ async def list_thread_attachments(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Lists all attachment metainformation for the current conversation thread."""
+    """列出当前对话线程的所有附件元信息。"""
     return await list_thread_attachments_view(
         thread_id=thread_id,
         db=db,
@@ -523,7 +425,7 @@ async def delete_thread_attachment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Remove the specified attachment."""
+    """移除指定附件。"""
     return await delete_thread_attachment_view(
         thread_id=thread_id,
         file_id=file_id,
@@ -540,7 +442,7 @@ async def list_thread_files(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """List thread file directories."""
+    """列出线程文件目录。"""
     return await list_thread_files_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -559,7 +461,7 @@ async def read_thread_file_content(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Read a threaded text file (paged by line)."""
+    """读取线程文本文件（按行分页）。"""
     return await read_thread_file_content_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -578,7 +480,7 @@ async def get_thread_artifact(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Download or preview the thread file."""
+    """下载或预览线程文件。"""
     file_path = await resolve_thread_artifact_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -598,7 +500,7 @@ async def save_thread_artifact_to_workspace(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Save deliverables to shared workspace/saved_artifacts Table of contents."""
+    """保存交付物到共享 workspace/saved_artifacts 目录。"""
     return await save_thread_artifact_to_workspace_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -608,7 +510,7 @@ async def save_thread_artifact_to_workspace(
 
 
 # =============================================================================
-# > === Message feedback grouping ===
+# > === 消息反馈分组 ===
 # =============================================================================
 
 
@@ -632,7 +534,7 @@ async def submit_message_feedback(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Submit message feedback (login required)"""
+    """提交消息反馈（需要登录）"""
     result = await submit_message_feedback_view(
         message_id=message_id,
         rating=feedback_data.rating,
@@ -649,7 +551,7 @@ async def get_message_feedback(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """Get user feedback for a specified message (login required)"""
+    """获取指定消息的用户反馈（需要登录）"""
     return await get_message_feedback_view(
         message_id=message_id,
         db=db,
@@ -658,38 +560,38 @@ async def get_message_feedback(
 
 
 # =============================================================================
-# > === Multi-modal images support grouping ===
+# > === 多模态图片支持分组 ===
 # =============================================================================
 
 
 @chat.post("/image/upload", response_model=ImageUploadResponse)
 async def upload_image(file: UploadFile = File(...), current_user: User = Depends(get_required_user)):
     """
-    Upload and process images and return base64-encoded image data
+    上传并处理图片，返回base64编码的图片数据
     """
     try:
-        # Verify file type
+        # 验证文件类型
         if not file.content_type or not file.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Chỉ hỗ trợ tải lên tệp hình ảnh")
 
-        # Read file contents
+        # 读取文件内容
         image_data = await file.read()
 
-        # Check file size (10MB limit, will be compressed to 5MB after exceeding)
+        # 检查文件大小（10MB限制，超过后会压缩到5MB）
         if len(image_data) > 10 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="Tệp hình ảnh quá lớn, vui lòng tải lên hình ảnh nhỏ hơn 10MB")
+            raise HTTPException(status_code=400, detail="Tệp hình ảnh quá lớn, vui lòng tải lên hình ảnh dưới 10MB")
 
-        # Process pictures
+        # 处理图片
         result = process_uploaded_image(image_data, file.filename)
 
         if not result["success"]:
             raise HTTPException(status_code=400, detail=f"Xử lý hình ảnh thất bại: {result['error']}")
 
         logger.info(
-            f"user {current_user.id} Image uploaded successfully: {file.filename}, "
-            f"size: {result['width']}x{result['height']}, "
-            f"Format: {result['format']}, "
-            f"size: {result['size_bytes']} bytes"
+            f"用户 {current_user.id} 成功上传图片: {file.filename}, "
+            f"尺寸: {result['width']}x{result['height']}, "
+            f"格式: {result['format']}, "
+            f"大小: {result['size_bytes']} bytes"
         )
 
         return ImageUploadResponse(**result)
@@ -697,5 +599,5 @@ async def upload_image(file: UploadFile = File(...), current_user: User = Depend
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Image upload processing failed: {str(e)}, {traceback.format_exc()}")
+        logger.error(f"图片上传处理失败: {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Xử lý hình ảnh thất bại: {str(e)}")

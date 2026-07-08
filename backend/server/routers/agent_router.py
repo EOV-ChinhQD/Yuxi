@@ -20,11 +20,11 @@ from yuxi.services.agent_run_service import (
     cancel_agent_run_view,
     create_agent_run_view,
     get_active_run_by_thread,
-    get_agent_run_result_view,
+    get_agent_run_result,
     get_agent_run_view,
     stream_agent_run_events,
 )
-from yuxi.services.agent_eval_run_service import run_agent_eval
+from yuxi.services.input_message_service import build_chat_input_message
 from yuxi.storage.postgres.models_business import User
 
 agent_router = APIRouter(prefix="/agent", tags=["agent"])
@@ -55,14 +55,13 @@ class AgentUpdate(BaseModel):
 
 class AgentRunCreate(BaseModel):
     query: str | None = Field(None, description="Câu hỏi của người dùng")
-    agent_id: str = Field(..., description="ID Agent")
+    agent_slug: str = Field(..., description="Slug của agent")
     thread_id: str = Field(..., description="ID thread hội thoại")
     meta: dict = Field(default_factory=dict, description="Tùy chọn, thông tin theo dõi yêu cầu, ví dụ request_id")
     image_content: str | None = Field(None, description="Tùy chọn, nội dung hình ảnh base64")
     model_spec: str | None = Field(None, description="Tùy chọn, ghi đè mô hình ở cấp độ hội thoại, độ ưu tiên cao hơn cấu hình agent")
     resume: Any | None = Field(None, description="Tùy chọn, khôi phục đầu vào của run bị gián đoạn")
-    parent_run_id: str | None = Field(None, description="Tùy chọn, ID run được khôi phục")
-    resume_request_id: str | None = Field(None, description="Tùy chọn, khóa lũy đẳng resume")
+    created_by_run_id: str | None = Field(None, description="Tùy chọn, ID run được khôi phục/ID run cha tạo ra run này")
 
 
 class AgentEvaluationContext(BaseModel):
@@ -137,7 +136,7 @@ async def list_agents(
 ):
     repo = AgentRepository(db)
     await repo.ensure_default_agent()
-    items = await repo.list_visible(user=current_user, include_subagents=include_subagents)
+    items = await repo.list_visible(user=current_user, include_subagent_definitions=include_subagents)
     backend_info_cache: dict[tuple[str, bool, str], dict] = {}
     agents = [await _serialize_agent(repo, item, current_user, backend_info_cache=backend_info_cache) for item in items]
     return {"agents": agents}
@@ -185,7 +184,8 @@ async def create_agent(
 @agent_router.get("/{agent_id}")
 async def get_agent(agent_id: str, current_user: User = Depends(get_required_user), db: AsyncSession = Depends(get_db)):
     repo = AgentRepository(db)
-    item = await repo.get_visible_by_slug(slug=agent_id, user=current_user, include_subagents=True)
+    agent_slug = agent_id  # 兼容既有路径参数名；这里实际是 Agent.slug。
+    item = await repo.get_visible_by_slug(slug=agent_slug, user=current_user, kind="any")
     if not item:
         raise HTTPException(status_code=404, detail="Agent không tồn tại")
     return {"agent": await _serialize_agent(repo, item, current_user, include_configurable_items=True)}
@@ -199,7 +199,8 @@ async def update_agent(
     db: AsyncSession = Depends(get_db),
 ):
     repo = AgentRepository(db)
-    item = await repo.get_visible_by_slug(slug=agent_id, user=current_user, include_subagents=True)
+    agent_slug = agent_id  # 兼容既有路径参数名；这里实际是 Agent.slug。
+    item = await repo.get_visible_by_slug(slug=agent_slug, user=current_user, kind="any")
     if not item:
         raise HTTPException(status_code=404, detail="Agent không tồn tại")
     if not user_can_manage_agent(current_user, item):
@@ -236,7 +237,8 @@ async def delete_agent(
     agent_id: str, current_user: User = Depends(get_required_user), db: AsyncSession = Depends(get_db)
 ):
     repo = AgentRepository(db)
-    item = await repo.get_visible_by_slug(slug=agent_id, user=current_user, include_subagents=True)
+    agent_slug = agent_id  # 兼容既有路径参数名；这里实际是 Agent.slug。
+    item = await repo.get_visible_by_slug(slug=agent_slug, user=current_user, kind="any")
     if not item:
         raise HTTPException(status_code=404, detail="Agent không tồn tại")
     if not user_can_manage_agent(current_user, item):
@@ -254,7 +256,8 @@ async def set_agent_default(
     db: AsyncSession = Depends(get_db),
 ):
     repo = AgentRepository(db)
-    item = await repo.get_by_slug(agent_id)
+    agent_slug = agent_id  # 兼容既有路径参数名；这里实际是 Agent.slug。
+    item = await repo.get_by_slug(agent_slug)
     if not item:
         raise HTTPException(status_code=404, detail="Agent không tồn tại")
     try:
@@ -270,36 +273,19 @@ async def create_agent_run(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
+    input_message = None
+    if payload.resume is None and payload.query:
+        input_message = build_chat_input_message(payload.query, payload.image_content)
     return await create_agent_run_view(
-        query=payload.query,
-        agent_id=payload.agent_id,
+        input_message=input_message,
+        agent_slug=payload.agent_slug,
         thread_id=payload.thread_id,
         meta=dict(payload.meta or {}),
-        image_content=payload.image_content,
         model_spec=payload.model_spec,
         current_uid=str(current_user.uid),
         db=db,
         resume=payload.resume,
-        parent_run_id=payload.parent_run_id,
-        resume_request_id=payload.resume_request_id,
-    )
-
-
-@agent_router.post("/eval/runs")
-async def create_agent_eval_run(
-    payload: AgentEvalRunCreate,
-    current_user: User = Depends(get_required_user),
-    db: AsyncSession = Depends(get_db),
-):
-    return await run_agent_eval(
-        query=payload.query,
-        agent_slug=payload.agent_slug,
-        evaluation=payload.evaluation.model_dump(exclude_none=True),
-        meta=dict(payload.meta or {}),
-        image_content=payload.image_content,
-        model_spec=payload.model_spec,
-        current_user=current_user,
-        db=db,
+        created_by_run_id=payload.created_by_run_id,
     )
 
 
@@ -311,10 +297,10 @@ async def get_agent_run(
 
 
 @agent_router.get("/runs/{run_id}/result")
-async def get_agent_run_result(
+async def get_agent_run_result_route(
     run_id: str, current_user: User = Depends(get_required_user), db: AsyncSession = Depends(get_db)
 ):
-    return await get_agent_run_result_view(run_id=run_id, current_uid=str(current_user.uid), db=db)
+    return await get_agent_run_result(run_id=run_id, current_uid=str(current_user.uid), db=db)
 
 
 @agent_router.post("/runs/{run_id}/cancel")

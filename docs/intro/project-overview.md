@@ -1,78 +1,78 @@
-# Giới thiệu dự án
+# 项目简介
 
-Yuxi (Phân tích ngôn ngữ) Nó là một cơ sở tri thức thông minh và biểu đồ tri thức Agent Nền tảng phát triển，Có thể giúp bạn xây dựng một thế hệ nâng cao truy xuất kết hợp (RAG) Lập luận ở cấp độ sản xuất với biểu đồ tri thức AI ứng dụng。Nền tảng này dựa trên LangGraph、Vue.js 3、FastAPI、Milvus và Neo4j xây dựng，Tạo cuộc trò chuyện AI Điều phối các tác nhân theo yêu cầu của hệ thống、thu hồi kiến thức、Lập luận đồ thị、Cuộc gọi công cụ và khả năng của hệ thống tập tin。
+Yuxi (语析) 是一个智能知识库和知识图谱 Agent 开发平台，能够帮助你构建结合检索增强生成 (RAG) 与知识图谱推理的生产级 AI 应用。该平台基于 LangGraph、Vue.js 3、FastAPI、Milvus 和 Neo4j 构建，提供创建对话式 AI 系统所需的智能体编排、知识检索、图谱推理、工具调用和文件系统能力。
 
-## khái niệm thiết kế
+## 设计理念
 
-Mục tiêu thiết kế của dự án là cung cấp cho các nhà phát triển một công cụ dễ sử dụng、mạnh mẽ AI khung phát triển ứng dụng。Chúng tôi tuân thủ các nguyên tắc sau：
+项目的设计目标是为开发者提供一个易于上手、功能强大的 AI 应用开发框架。我们坚持以下原则：
 
-- **Ngăn xếp công nghệ đơn giản**：Chọn công nghệ chủ đạo và trưởng thành，Giảm chi phí học tập và bảo trì
-- **MIT Thỏa thuận nguồn mở**：Nguồn mở hoàn toàn，Cho phép sử dụng miễn phí và phát triển thứ cấp
-- **Triển khai trong container**：Vượt qua Docker Compose quản lý，Đơn giản hóa quá trình triển khai
+- **技术栈简洁**：选择主流且成熟的技术，降低学习和维护成本
+- **MIT 开源协议**：完全开源，允许自由使用和二次开发
+- **容器化部署**：通过 Docker Compose 管理，简化部署流程
 
-## Kiến trúc kỹ thuật
+## 技术架构
 
-| Hệ thống phân cấp | Công nghệ | Mục đích |
+| 层级 | 技术 | 用途 |
 |------|------|------|
-| giao diện người dùng | Vue.js 3, Vite, Ant Design Vue | Đáp ứng hiện đại UI Thư viện khung và thành phần |
-| Quản lý trạng thái | Pinia | Quản lý trạng thái tập trung phía trước |
-| phụ trợ API | FastAPI, Uvicorn | Hiệu suất cao không đồng bộ Python Web khung |
-| Agent khung | LangGraph | Agent Sắp xếp、quản lý trạng thái và checkpoint |
-| cơ sở tri thức | Milvus（Có thể xây dựng và lưu trữ cơ sở dữ liệu）、Dify / Notion（trình kết nối chỉ đọc） | cơ sở kiến thức vector RAG Truy xuất bằng các nguồn dữ liệu chỉ đọc bên ngoài |
-| cơ sở dữ liệu đồ thị | Neo4j | Milvus Lưu trữ và truy vấn biểu đồ tri thức trong cơ sở tri thức |
-| Xử lý tài liệu | MinerU, PaddleX, RapidOCR | Phân tích tài liệu đa định dạng và OCR |
-| hàng đợi nhiệm vụ | Redis, PostgreSQL Workers | Xử lý tác vụ không đồng bộ |
-| lưu trữ đối tượng | MinIO | Lưu trữ tập tin và tài liệu |
-| cơ sở dữ liệu quan hệ | PostgreSQL | Tính bền vững của siêu dữ liệu và dữ liệu người dùng |
-| triển khai | Docker, Docker Compose | Triển khai và điều phối trong container |
+| 前端 | Vue.js 3, Vite, Ant Design Vue | 现代响应式 UI 框架与组件库 |
+| 状态管理 | Pinia | 前端集中式状态管理 |
+| 后端 API | FastAPI, Uvicorn | 高性能异步 Python Web 框架 |
+| Agent 框架 | LangGraph | Agent 编排、状态管理与 checkpoint |
+| 知识库 | Milvus（可建库入库）、Dify / Notion（只读连接器） | 向量知识库 RAG 与外部只读数据源检索 |
+| 图数据库 | Neo4j | Milvus 知识库内知识图谱存储与查询 |
+| 文档处理 | MinerU, PaddleX, RapidOCR | 多格式文档解析与 OCR |
+| 任务队列 | Redis, PostgreSQL Workers | 异步任务处理 |
+| 对象存储 | MinIO | 文件与文档存储 |
+| 关系型数据库 | PostgreSQL | 元数据与用户数据持久化 |
+| 部署 | Docker, Docker Compose | 容器化部署与编排 |
 
 
-## năng lực cốt lõi
+## 核心能力
 
-Yuxi Năng lực cốt lõi không nằm ở“Mang theo mô hình lớn”，Nhưng đó là về việc đặt **Phát triển đại lý、cơ sở tri thức/RAG、Sơ đồ tri thức** Đặt nó vào cùng một hệ thống，và để chúng thực sự làm việc cùng nhau trong thời gian chạy。
+Yuxi 的核心能力不在于“把大模型接进来”，而在于把 **智能体开发、知识库/RAG、知识图谱** 放进同一套系统里，并让它们在运行时真正协同工作。
 
-### 1. Phát triển thông minh cho doanh nghiệp thực sự
+### 1. 面向真实业务的智能体开发
 
-Yuxi Dựa trên LangGraph Cung cấp khả năng phát triển đại lý thông minh，Không chỉ là lối vào hỏi đáp cố định，Đúng hơn, nó là một tập hợp các cấu hình có thể cấu hình được、có thể mở rộng Agent Chạy khung。Các nhà phát triển có thể xây dựng xung quanh cùng một Agent Cấu hình mô hình、lời nhắc、Công cụ、MCP、Skills、Đại lý phụ và phần mềm trung gian，làm“Kỹ năng đàm thoại”trở thành“Khả năng kinh doanh có thể điều phối”。
+Yuxi 基于 LangGraph 提供智能体开发能力，不只是一个固定问答入口，而是一套可配置、可扩展的 Agent 运行框架。开发者可以围绕同一个 Agent 配置模型、提示词、工具、MCP、Skills、子智能体与中间件，使“对话能力”变成“可编排的业务能力”。
 
-Lớp này là trung tâm điều khiển của dự án，Xác định cách mô hình gọi công cụ、Cách tiếp cận kiến thức、Cách truy cập hệ thống tệp và cộng tác với các tác nhân phụ khác。
+这一层是项目的控制中心，决定了模型如何调用工具、如何访问知识、如何接入文件系统以及如何与其他子智能体协作。
 
-### 2. cơ sở tri thức và RAG Khả năng tích hợp
+### 2. 知识库与 RAG 一体化能力
 
-Yuxi Cung cấp liên kết cơ sở dữ liệu kiến thức đầy đủ，Thay vì chỉ đóng gói giao diện truy xuất。Tài liệu bắt đầu bằng việc tải lên，sẽ được phân tích cú pháp、Cắt nhỏ、vector hóa、Các giai đoạn cấu hình và đánh giá truy xuất，cuối cùng đã trở thành Agent Nguồn kiến thức có thể truy cập trực tiếp。
+Yuxi 提供完整的知识入库链路，而不是只做检索接口封装。文档从上传开始，会经过解析、分块、向量化、检索配置和评估等阶段，最终成为 Agent 可直接调用的知识来源。
 
-Biến tài liệu của tổ chức bạn thành trợ lý đàm thoại thông minh。tải lên PDF Hướng dẫn sử dụng、Thông số kỹ thuật、Văn bản chính sách và tài liệu đào tạo，để tạo ra một tìm kiếm có thể、Cơ sở tri thức với khả năng suy luận，Nhân viên có thể sử dụng truy vấn ngôn ngữ tự nhiên。
-Hệ thống có thể hiểu được các vấn đề phức tạp，và cung cấp câu trả lời phù hợp với ngữ cảnh kèm theo trích dẫn nguồn。
-
-
-### 3. Đồ thị tri thức tham gia suy luận，thay vì chỉ hiển thị
-
-Yuxi Khả năng biểu đồ tri thức không phải là một mô-đun trực quan hóa riêng biệt，Nhưng với Milvus Liên kết liên kết lưu trữ cơ sở kiến thức。Hệ thống có thể lưu trữ các chunks Trích xuất các thực thể và mối quan hệ từ，viết Neo4j với PostgreSQL và là thực thể duy nhất/Sáng tạo ba lần Milvus Lập chỉ mục ngữ nghĩa；Các thực thể và bộ ba đồ thị có thể được gọi lại trong quá trình truy xuất，và với chunk Lượt kết quả hợp nhất（RRF），Hiển thị và tìm kiếm các sơ đồ con trên trang chi tiết cơ sở kiến thức。
-
-### 4. Hiểu biết tài liệu và khả năng nền tảng để triển khai sản xuất
-
-Để kiến thức thực sự có thể sử dụng được，Yuxi tích hợp MinerU、PP-Structure-V3、RapidOCR、DeepSeek OCR Khả năng phân tích，Bìa PDF、Office、Markdown、Các định dạng phổ biến như hình ảnh，Giải quyết vấn đề xử lý có cấu trúc dữ liệu thô trước khi vào hệ thống。
-
-Trên cơ sở này，Nền tảng này cũng bổ sung các khả năng kỹ thuật thường được sử dụng trong triển khai kinh doanh.，Ví dụ：
-
-- Quản lý bộ phận và thẩm quyền
-- Khả năng kiểm duyệt và bảo vệ nội dung
-- Quản lý tập tin và quản lý tác vụ
-- Docker Compose Triển khai và phát triển tải lại nóng
+将组织的文档转换为智能对话助手。上传 PDF 手册、技术规格、政策文档和培训材料，以创建可搜索、具备推理能力的知识库，员工可以使用自然语言查询。
+该系统能够理解复杂的问题，并提供带有来源引用的上下文感知答案。
 
 
-## Các tình huống áp dụng
+### 3. 知识图谱参与推理，而不只是展示
 
-Yuxi Áp dụng cho các tình huống sau：
+Yuxi 的知识图谱能力不是孤立的可视化模块，而是和 Milvus 知识库入库链路联动的。系统可以从已入库 chunks 中抽取实体和关系，写入 Neo4j 与 PostgreSQL 并为唯一实体/三元组建立 Milvus 语义索引；检索时可召回图谱实体与三元组，并与 chunk 命中结果融合（RRF），在知识库详情页展示和检索子图。
 
-- **Cơ sở tri thức doanh nghiệp**：Xây dựng hệ thống hỏi đáp kiến thức riêng
-- **Dịch vụ khách hàng thông minh**：Câu hỏi và trả lời tự động dựa trên tài liệu
-- **quản lý tri thức**：Phân tích tài liệu tự động、Phân loại、Xây dựng bản đồ
-- **AI phát triển ứng dụng**：Nhanh chóng xây dựng các nguyên mẫu ứng dụng dựa trên các mô hình lớn
+### 4. 面向生产落地的文档理解与平台能力
 
-## Bước tiếp theo
+为了让知识真正可用，Yuxi 集成了 MinerU、PP-Structure-V3、RapidOCR、DeepSeek OCR 等解析能力，覆盖 PDF、Office、Markdown、图片等常见格式，解决原始资料进入系统前的结构化处理问题。
 
-- bắt đầu nhanh：đọc [Hướng dẫn bắt đầu nhanh](./quick-start.md)
-- Cấu hình mô hình：đọc [Cấu hình mô hình](./model-config.md)
-- Cách sử dụng cơ sở kiến thức：đọc [Cơ sở tri thức và biểu đồ tri thức](./knowledge-base.md)
-- Phát triển đại lý：đọc [Phát triển đại lý](../agents/agents-config.md)
+在此基础上，平台还补齐了业务落地常用的工程能力，例如：
+
+- 部门与权限管理
+- 内容审查与守卫能力
+- 文件管理与任务管理
+- Docker Compose 部署与热重载开发
+
+
+## 适用场景
+
+Yuxi 适用于以下场景：
+
+- **企业知识库**：构建私有知识问答系统
+- **智能客服**：基于文档的自动问答
+- **知识管理**：文档自动解析、分类、构建图谱
+- **AI 应用开发**：快速构建基于大模型的应用原型
+
+## 下一步
+
+- 快速开始：阅读 [快速开始指南](./quick-start.md)
+- 模型配置：阅读 [模型配置](./model-config.md)
+- 知识库使用：阅读 [知识库与知识图谱](./knowledge-base.md)
+- 智能体开发：阅读 [智能体开发](../agents/agents-config.md)

@@ -68,11 +68,10 @@ const handleDebugModalClose = () => {
 }
 
 const getRemoteConfig = async () => {
-  if (!userStore.isAdmin) return
   try {
     await configStore.refreshConfig()
   } catch (error) {
-    console.warn('Không tải được cấu hình hệ thống:', error)
+    console.warn('加载系统配置失败:', error)
   }
 }
 
@@ -80,7 +79,7 @@ const getRemoteDatabase = async () => {
   try {
     await databaseStore.loadDatabases()
   } catch (error) {
-    console.warn('Không thể tải danh sách cơ sở kiến thức:', error)
+    console.warn('加载知识库列表失败:', error)
   }
 }
 
@@ -88,24 +87,24 @@ const getRemoteDatabase = async () => {
 const fetchGithubStars = async () => {
   try {
     isLoadingStars.value = true
-    // công khaiAPI，Có thể sử dụng trực tiếpfetch
+    // 公共API，可以直接使用fetch
     const response = await fetch('https://api.github.com/repos/xerrors/Yuxi')
     const data = await response.json()
     githubStars.value = data.stargazers_count
   } catch (error) {
-    console.error('NhậnGitHub starsthất bại:', error)
+    console.error('获取GitHub stars失败:', error)
   } finally {
     isLoadingStars.value = false
   }
 }
 
 onMounted(async () => {
-  // Tải cấu hình thông tin không phụ thuộc vào dữ liệu cơ sở tri thức，Có thể song song
+  // 加载信息配置与知识库数据无依赖，可并行
   await Promise.all([infoStore.loadInfoConfig(), getRemoteDatabase()])
   await initAgentNavigation()
-  // Chỉ quản trị viên mới tải cấu hình hệ thống và dữ liệu Trung tâm tác vụ
+  await getRemoteConfig()
+  // 仅管理员加载任务中心数据
   if (userStore.isAdmin) {
-    await getRemoteConfig()
     taskerStore.loadTasks()
     fetchGithubStars() // Fetch GitHub stars on mount
   }
@@ -122,11 +121,11 @@ const organizationName = computed(() => {
   return infoStore.organization.name || infoStore.branding.name || 'Yuxi'
 })
 
-// Dưới đây là phần menu điều hướng，Thêm mục đại lý
+// 下面是导航菜单部分，添加智能体项
 const mainList = computed(() => {
   const items = [
     {
-      name: 'Tạo cuộc trò chuyện mới',
+      name: '创建新对话',
       path: '/agent',
       icon: MessageCirclePlus,
       activeIcon: MessageCirclePlus,
@@ -136,14 +135,14 @@ const mainList = computed(() => {
   ]
 
   items.push({
-    name: 'không gian làm việc',
+    name: '工作区',
     path: '/workspace',
     icon: FolderKanban,
     activeIcon: FolderKanban
   })
 
   items.push({
-    name: 'Gia hạn đại lý',
+    name: '智能体扩展',
     path: '/extensions',
     activePaths: ['/extensions'],
     icon: LibraryBig,
@@ -151,7 +150,7 @@ const mainList = computed(() => {
   })
 
   items.push({
-    name: 'Quản lý đại lý',
+    name: '智能体管理',
     path: '/model-manage',
     icon: Box,
     activeIcon: Box
@@ -159,7 +158,7 @@ const mainList = computed(() => {
 
   if (userStore.isSuperAdmin) {
     items.push({
-      name: 'Tổng quan về dữ liệu',
+      name: '数据总览',
       path: '/dashboard',
       icon: BarChart3,
       activeIcon: BarChart3
@@ -199,7 +198,7 @@ const initAgentNavigation = async () => {
     }
     await chatThreadsStore.loadThreads()
   } catch (error) {
-    console.warn('Không tải được điều hướng cuộc trò chuyện:', error)
+    console.warn('加载对话导航失败:', error)
   }
 }
 
@@ -232,7 +231,7 @@ const handleDeleteChat = async (threadId) => {
       await router.replace({ name: 'AgentComp' })
     }
   } catch (error) {
-    console.warn('Không xóa được cuộc trò chuyện:', error)
+    console.warn('删除对话失败:', error)
   }
 }
 
@@ -240,7 +239,7 @@ const handleRenameChat = async ({ chatId, title }) => {
   try {
     await chatThreadsStore.updateThread(chatId, title)
   } catch (error) {
-    console.warn('Không đổi tên được cuộc trò chuyện:', error)
+    console.warn('重命名对话失败:', error)
   }
 }
 
@@ -254,7 +253,7 @@ const handleTogglePinChat = async (threadId) => {
       chatThreadsStore.setCurrentThreadId(currentThreadId.value)
     }
   } catch (error) {
-    console.warn('Không cập nhật được trạng thái đã ghim:', error)
+    console.warn('更新置顶状态失败:', error)
   }
 }
 
@@ -286,7 +285,7 @@ provide('settingsModal', {
           v-else
           type="button"
           class="brand-link brand-expand-button"
-          aria-label="Mở rộng thanh bên"
+          aria-label="展开侧边栏"
           @click="setSidebarCollapsed(false)"
         >
           <img :src="infoStore.organization.avatar" class="brand-avatar brand-avatar-image" />
@@ -296,7 +295,7 @@ provide('settingsModal', {
           v-if="!sidebarCollapsed"
           type="button"
           class="sidebar-toggle"
-          aria-label="Thu gọn thanh bên"
+          aria-label="折叠侧边栏"
           @click="toggleSidebar"
         >
           <PanelLeftClose size="18" />
@@ -315,7 +314,9 @@ provide('settingsModal', {
             <template #title>{{ primaryNavItem.name }}</template>
             <component
               class="icon"
-              :is="isNavItemActive(primaryNavItem) ? primaryNavItem.activeIcon : primaryNavItem.icon"
+              :is="
+                isNavItemActive(primaryNavItem) ? primaryNavItem.activeIcon : primaryNavItem.icon
+              "
               size="18"
             />
           </a-tooltip>
@@ -329,10 +330,10 @@ provide('settingsModal', {
           @click.stop="openConversationSearch"
         >
           <a-tooltip placement="right" :open="sidebarCollapsed ? undefined : false">
-            <template #title>Tìm kiếm cuộc trò chuyện</template>
+            <template #title>搜索对话</template>
             <Search class="icon" size="18" />
           </a-tooltip>
-          <span class="nav-text">Tìm kiếm cuộc trò chuyện</span>
+          <span class="nav-text">搜索对话</span>
         </button>
 
         <RouterLink
@@ -374,7 +375,7 @@ provide('settingsModal', {
       <div class="foo">
         <div class="github nav-item" @click.stop>
           <a-tooltip placement="right" :open="sidebarCollapsed ? undefined : false">
-            <template #title>chào mừng Star</template>
+            <template #title>欢迎 Star</template>
             <a href="https://github.com/xerrors/Yuxi" target="_blank" class="github-link">
               <GithubOutlined class="icon" />
               <span class="nav-text">GitHub</span>
@@ -384,16 +385,16 @@ provide('settingsModal', {
             </a>
           </a-tooltip>
         </div>
-        <!-- Thành phần thông tin người dùng -->
+        <!-- 用户信息组件 -->
         <div class="nav-item user-info" @click.stop>
           <UserInfoComponent :show-role="!sidebarCollapsed">
             <template v-if="userStore.isAdmin" #actions>
-              <a-tooltip placement="top" title="trung tâm truyền giáo">
+              <a-tooltip placement="top" title="任务中心">
                 <button
                   class="user-task-center"
                   :class="{ active: isDrawerOpen }"
                   type="button"
-                  aria-label="trung tâm truyền giáo"
+                  aria-label="任务中心"
                   @click.stop="taskerStore.openDrawer()"
                 >
                   <a-badge
@@ -429,7 +430,7 @@ provide('settingsModal', {
     <!-- Debug Modal -->
     <a-modal
       v-model:open="showDebugModal"
-      title="Bảng gỡ lỗi"
+      title="调试面板"
       width="90%"
       :footer="null"
       @cancel="handleDebugModalClose"
@@ -449,13 +450,29 @@ provide('settingsModal', {
 </template>
 
 <style lang="less" scoped>
-// Less định nghĩa biến
+// Less 变量定义
 @sidebar-width: 230px;
 @sidebar-collapsed-width: 56px;
-@sidebar-padding: 6px 8px;
+@sidebar-padding-y: 6px;
+@sidebar-padding-x: 8px;
+@sidebar-padding: @sidebar-padding-y @sidebar-padding-x;
+@sidebar-border-width: 1px;
 @sidebar-item-height: 32px;
 @sidebar-item-padding-x: 10px;
 @sidebar-icon-size: 16px;
+@brand-avatar-size: 28px;
+@sidebar-collapsed-content-width: @sidebar-collapsed-width - (2 * @sidebar-padding-x) -
+  @sidebar-border-width;
+@sidebar-collapsed-icon-padding-x: (
+  (@sidebar-collapsed-content-width - @sidebar-icon-size - (2 * @sidebar-border-width)) / 2
+);
+@sidebar-collapsed-avatar-padding-x: (
+  (@sidebar-collapsed-content-width - @sidebar-item-height - (2 * @sidebar-border-width)) / 2
+);
+@sidebar-collapsed-brand-padding-x: ((@sidebar-collapsed-content-width - @brand-avatar-size) / 2);
+@sidebar-collapsed-brand-icon-padding-x: (
+  (@sidebar-collapsed-content-width - @sidebar-icon-size) / 2
+);
 
 .app-layout {
   display: flex;
@@ -545,9 +562,9 @@ div.header,
   }
 
   .brand-avatar {
-    flex: 0 0 28px;
-    width: 28px;
-    height: 28px;
+    flex: 0 0 @brand-avatar-size;
+    width: @brand-avatar-size;
+    height: @brand-avatar-size;
     border-radius: 6px;
     object-fit: cover;
   }
@@ -815,14 +832,19 @@ div.header,
     }
 
     .brand-expand-button {
-      flex: 0 0 @sidebar-item-height;
-      justify-content: center;
-      width: @sidebar-item-height;
-      padding: 0 6px;
+      flex: 0 0 100%;
+      justify-content: flex-start;
+      width: 100%;
+      padding: 0;
       border-radius: 8px;
+
+      .brand-avatar-image {
+        margin-left: @sidebar-collapsed-brand-padding-x;
+      }
 
       .brand-expand-icon {
         display: none;
+        margin-left: @sidebar-collapsed-brand-icon-padding-x;
         width: @sidebar-icon-size;
         height: @sidebar-icon-size;
         color: var(--main-color);
@@ -850,8 +872,8 @@ div.header,
 
     .nav-item {
       justify-content: flex-start;
-      width: @sidebar-item-height;
-      padding: 0 10px;
+      width: 100%;
+      padding: 0 @sidebar-collapsed-icon-padding-x;
 
       .nav-text,
       .github-stars {
@@ -868,7 +890,13 @@ div.header,
       }
 
       &.user-info {
-        padding: 0;
+        padding: 0 @sidebar-collapsed-avatar-padding-x;
+
+        :deep(.user-info-component),
+        :deep(.user-info-dropdown) {
+          justify-content: flex-start;
+        }
+
         :deep(.user-info-actions) {
           display: none;
         }

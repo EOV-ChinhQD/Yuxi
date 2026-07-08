@@ -59,12 +59,12 @@ const normalizeAgent = (agent) => {
 }
 
 const agentModalMenuItems = computed(() => {
-  const items = [{ key: 'basic', label: 'Thông tin cơ bản', icon: Info }]
+  const items = [{ key: 'basic', label: '基本信息', icon: Info }]
   if (editingAgentId.value) {
     items.push(
-      { key: 'model', label: 'Cấu hình mô hình', icon: SlidersHorizontal },
-      { key: 'tools', label: 'Cấu hình công cụ', icon: Wrench },
-      { key: 'other', label: 'Các cấu hình khác', icon: Settings2 }
+      { key: 'model', label: '模型配置', icon: SlidersHorizontal },
+      { key: 'tools', label: '工具配置', icon: Wrench },
+      { key: 'other', label: '其他配置', icon: Settings2 }
     )
   }
   return items
@@ -104,16 +104,16 @@ const getAgentShareAllowedLevels = () => {
   return userStore.isAdmin ? ['global', 'department', 'user'] : ['user']
 }
 
-const agentModalTitle = computed(() => (editingAgentId.value ? 'Chỉnh sửa đại lý' : 'Thêm đại lý mới'))
+const agentModalTitle = computed(() => (editingAgentId.value ? '编辑智能体' : '新增智能体'))
 const agentPreviewDefaultIcon = computed(() =>
   editingAgentId.value ? generatePixelAvatar(editingAgentId.value) : ''
 )
-const agentPreviewName = computed(() => agentForm.name || editingAgentId.value || 'đại lý')
+const agentPreviewName = computed(() => agentForm.name || editingAgentId.value || '智能体')
 const selectedBackendOption = computed(() =>
   props.backendOptions.find((backend) => backend.value === agentForm.backend_id)
 )
 const selectedBackendLabel = computed(
-  () => selectedBackendOption.value?.label || agentForm.backend_id || 'Không được chọn'
+  () => selectedBackendOption.value?.label || agentForm.backend_id || '未选择'
 )
 const selectedBackendIcon = computed(() => {
   const backendText = `${agentForm.backend_id} ${selectedBackendLabel.value}`.toLowerCase()
@@ -154,7 +154,7 @@ const openEdit = async (agent) => {
 
   const detail = await agentStore.fetchAgentDetail(agentId, true)
   if (!detail?.can_manage) {
-    message.warning('Đại lý hiện tại không thể được chỉnh sửa')
+    message.warning('当前智能体不可编辑')
     return
   }
 
@@ -188,12 +188,12 @@ const closeAgentModal = async () => {
 
 const beforeAgentIconUpload = (file) => {
   if (!file.type.startsWith('image/')) {
-    message.error('Chỉ có thể tải lên tệp hình ảnh')
+    message.error('只能上传图片文件')
     return false
   }
 
   if (file.size > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
-    message.error(`Kích thước hình ảnh không thể vượt quá ${MAX_IMAGE_UPLOAD_SIZE_MB}MB`)
+    message.error(`图片大小不能超过 ${MAX_IMAGE_UPLOAD_SIZE_MB}MB`)
     return false
   }
 
@@ -206,9 +206,9 @@ const uploadAgentIcon = async (file) => {
   try {
     const data = await userApi.uploadImage(file)
     agentForm.icon = data.image_url || data.url || ''
-    message.success('Biểu tượng được tải lên thành công')
+    message.success('图标上传成功')
   } catch (error) {
-    message.error(error.message || 'Tải lên biểu tượng không thành công')
+    message.error(error.message || '图标上传失败')
   } finally {
     agentIconUploading.value = false
   }
@@ -234,7 +234,7 @@ const buildAgentPayload = () => {
 const saveAgent = async () => {
   if (!agentForm.name.trim()) {
     agentModalActiveTab.value = 'basic'
-    message.error('Vui lòng điền tên đại lý')
+    message.error('请填写智能体名称')
     return
   }
 
@@ -264,16 +264,16 @@ const saveAgent = async () => {
       const updated = await agentStore.updateAgentProfile(editingAgentId.value, payload)
       agentStore.originalAgentConfig = { ...agentStore.agentConfig }
       emit('saved', { mode: 'edit', agent: updated })
-      message.success('Đã lưu đại lý')
+      message.success('智能体已保存')
     } else {
       const created = await agentStore.createAgent(payload)
       emit('saved', { mode: 'create', agent: normalizeAgent(created) })
-      message.success('Đại lý đã được tạo')
+      message.success('智能体已创建')
     }
     showAgentModal.value = false
     await restoreChatAgentSelectionIfNeeded()
   } catch (error) {
-    message.error(error.message || 'Không lưu được đại diện')
+    message.error(error.message || '保存智能体失败')
   } finally {
     saving.value = false
   }
@@ -300,8 +300,10 @@ defineExpose({
       <div class="agent-modal-titlebar">
         <span class="agent-modal-title">{{ agentModalTitle }}</span>
         <div class="agent-modal-actions">
-          <a-button :disabled="saving" @click="closeAgentModal">Hủy bỏ</a-button>
-          <a-button type="primary" :loading="saving" @click="saveAgent">lưu lại</a-button>
+          <a-button :disabled="saving" @click="closeAgentModal">取消</a-button>
+          <a-button type="primary" :loading="saving" @click="saveAgent">
+            {{ agentStore.hasConfigChanges ? '保存（有修改）' : '保存' }}
+          </a-button>
         </div>
       </div>
     </template>
@@ -312,7 +314,7 @@ defineExpose({
         'create-mode': !editingAgentId
       }"
     >
-      <aside v-if="showAgentModalSidebar" class="agent-modal-sidebar" aria-label="Nhóm cấu hình đại lý">
+      <aside v-if="showAgentModalSidebar" class="agent-modal-sidebar" aria-label="智能体配置分组">
         <button
           v-for="item in agentModalMenuItems"
           :key="item.key"
@@ -332,7 +334,7 @@ defineExpose({
       <div class="agent-modal-main">
         <section v-show="agentModalActiveTab === 'basic'" class="agent-modal-section">
           <div class="agent-profile-header">
-            <div class="agent-icon-preview" aria-label="Biểu tượng đại lý、Tên và phụ trợ">
+            <div class="agent-icon-preview" aria-label="智能体图标、名称与后端">
               <div class="agent-profile-main">
                 <a-upload
                   :show-upload-list="false"
@@ -356,13 +358,13 @@ defineExpose({
                       kind="agent"
                       :size="56"
                       shape="rounded"
-                      :alt="`${agentForm.name || 'đại lý'}biểu tượng`"
+                      :alt="`${agentForm.name || '智能体'}图标`"
                       class="agent-icon-preview-avatar"
                     />
                     <div class="agent-icon-mask">
                       <RefreshCw v-if="agentIconUploading" :size="16" class="spinning" />
                       <Upload v-else :size="16" />
-                      <span>{{ agentForm.icon ? 'Thay đổi biểu tượng' : 'biểu tượng tải lên' }}</span>
+                      <span>{{ agentForm.icon ? '更换图标' : '上传图标' }}</span>
                     </div>
                   </div>
                 </a-upload>
@@ -372,16 +374,16 @@ defineExpose({
                     v-model="agentForm.name"
                     class="agent-inline-name-input"
                     type="text"
-                    placeholder="Click để nhập tên đại lý"
-                    aria-label="Tên đại lý"
+                    placeholder="点击输入智能体名称"
+                    aria-label="智能体名称"
                   />
                   <input
                     v-if="!editingAgentId"
                     v-model="agentForm.slug"
                     class="agent-inline-slug-input"
                     type="text"
-                    placeholder="Logo tùy chọn，Để trống để tự động tạo"
-                    aria-label="ID đại lý"
+                    placeholder="标识可选，留空自动生成"
+                    aria-label="智能体标识"
                   />
                   <span v-else class="agent-inline-slug">{{
                     agentForm.slug || editingAgentId
@@ -391,13 +393,13 @@ defineExpose({
               <div
                 class="agent-backend-summary"
                 :class="{ editable: !editingAgentId }"
-                aria-label="Phụ trợ đại lý"
+                aria-label="智能体后端"
               >
                 <span class="agent-backend-icon">
                   <component :is="selectedBackendIcon" :size="16" />
                 </span>
                 <div class="agent-backend-text">
-                  <span class="agent-backend-label">Phụ trợ đại lý</span>
+                  <span class="agent-backend-label">智能体后端</span>
                   <a-select
                     v-if="!editingAgentId"
                     v-model:value="agentForm.backend_id"
@@ -412,14 +414,19 @@ defineExpose({
           </div>
           <div class="modal-form">
             <label class="form-label full-width">
-              <span>Mô tả</span>
-              <a-textarea v-model:value="agentForm.description" :rows="3" placeholder="Tùy chọn" />
+              <span>描述</span>
+              <a-textarea
+                v-model:value="agentForm.description"
+                class="agent-description-textarea"
+                :rows="3"
+                placeholder="可选"
+              />
             </label>
           </div>
 
           <div v-if="canEditAgentShareConfig" class="share-config-block">
             <div class="section-heading">
-              <span>Quyền chia sẻ</span>
+              <span>共享权限</span>
             </div>
             <ShareConfigForm
               ref="agentShareConfigFormRef"
@@ -435,9 +442,6 @@ defineExpose({
           v-show="isRuntimeAgentModalTab(agentModalActiveTab)"
           class="agent-modal-section runtime-section"
         >
-          <div v-if="agentStore.hasConfigChanges" class="runtime-dirty-row">
-            <span class="dirty-hint">Có những thay đổi chưa được lưu</span>
-          </div>
           <AgentRuntimeConfigForm
             ref="runtimeConfigFormRef"
             :segment="runtimeConfigSegment"
@@ -470,7 +474,8 @@ defineExpose({
   gap: 8px;
 
   :deep(.ant-btn) {
-    min-width: 64px;
+    min-width: 70px;
+    height: 36px;
     border-radius: 8px;
     font-weight: 500;
   }
@@ -493,8 +498,6 @@ defineExpose({
   height: min(72vh, 640px);
   min-height: 0;
   overflow: hidden;
-  border: 1px solid var(--gray-150);
-  border-radius: 12px;
   background: var(--gray-0);
 
   &.without-sidebar {
@@ -502,20 +505,20 @@ defineExpose({
   }
 
   &.create-mode {
-    border-color: var(--gray-300);
-    box-shadow: 0 10px 28px var(--shadow-1);
+    height: auto;
+    min-height: 360px;
   }
 }
 
 .agent-modal-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   min-height: 0;
-  padding: 14px 8px;
+  padding: 14px 10px;
   overflow-y: auto;
   border-right: 1px solid var(--gray-150);
-  background: linear-gradient(180deg, var(--gray-50), var(--main-10));
+  background: transparent;
 }
 
 .agent-modal-nav-item {
@@ -523,10 +526,10 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 40px;
-  padding: 9px 10px;
+  min-height: 38px;
+  padding: 8px 10px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 7px;
   background: transparent;
   color: var(--gray-800);
   font-size: 13px;
@@ -539,7 +542,7 @@ defineExpose({
     color 0.16s ease;
 
   &:hover {
-    background: var(--gray-0);
+    background: var(--gray-50);
     color: var(--gray-900);
   }
 
@@ -550,7 +553,7 @@ defineExpose({
   }
 
   &.active {
-    background: var(--gray-0);
+    background: var(--main-30);
     color: var(--main-800);
 
     span {
@@ -585,8 +588,32 @@ defineExpose({
 .agent-modal-main {
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
-  padding: 18px 20px 20px;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
+  padding: 22px 18px 24px 24px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-300) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: var(--gray-300);
+    background-clip: content-box;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+    background-clip: content-box;
+  }
 }
 
 .agent-modal-section {
@@ -597,8 +624,7 @@ defineExpose({
 .runtime-section {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
+  min-height: 100%;
 
   :deep(.agent-runtime-config-form) {
     display: flex;
@@ -613,7 +639,7 @@ defineExpose({
     min-width: 0;
     min-height: 0;
     padding: 0;
-    overflow-y: auto;
+    overflow: visible;
   }
 }
 
@@ -661,7 +687,7 @@ defineExpose({
   overflow: hidden;
   border: 1px solid var(--gray-200);
   border-radius: 12px;
-  background: var(--gray-25);
+  background: var(--main-30);
   cursor: pointer;
   transition:
     border-color 0.16s ease,
@@ -795,7 +821,7 @@ defineExpose({
   padding: 10px 12px;
   border: 1px solid var(--gray-200);
   border-radius: 12px;
-  background: var(--gray-25);
+  background: var(--gray-10);
   color: var(--gray-700);
 
   &.editable {
@@ -860,21 +886,9 @@ defineExpose({
 }
 
 .share-config-block {
-  margin-top: 18px;
-  padding-top: 16px;
+  margin-top: 22px;
+  padding-top: 18px;
   border-top: 1px solid var(--gray-150);
-}
-
-.runtime-dirty-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
-
-.dirty-hint {
-  color: var(--color-warning-700);
-  font-size: 12px;
-  font-weight: 500;
 }
 
 .modal-form {
@@ -892,6 +906,37 @@ defineExpose({
     color: var(--gray-700);
     font-size: 12px;
     font-weight: 500;
+  }
+}
+
+.agent-description-textarea {
+  min-height: 80px;
+  padding: 10px 12px;
+  border-color: var(--gray-200);
+  border-radius: 8px;
+  background: var(--gray-10);
+  color: var(--gray-900);
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+
+  &::placeholder {
+    color: var(--gray-400);
+  }
+
+  &:hover {
+    border-color: var(--gray-300);
+    background: var(--gray-0);
+  }
+
+  &:focus {
+    border-color: var(--main-300);
+    background: var(--gray-0);
+    box-shadow: 0 0 0 3px var(--main-50);
   }
 }
 
@@ -924,5 +969,26 @@ defineExpose({
     border-right: 0;
     border-bottom: 1px solid var(--gray-150);
   }
+}
+
+:global(.agent-edit-modal .ant-modal-content) {
+  overflow: hidden;
+  padding: 0;
+  border-radius: 12px;
+}
+
+:global(.agent-edit-modal .ant-modal-header) {
+  margin: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--gray-150);
+  background: var(--gray-0);
+}
+
+:global(.agent-edit-modal .ant-modal-title) {
+  width: 100%;
+}
+
+:global(.agent-edit-modal .ant-modal-body) {
+  padding: 0;
 }
 </style>

@@ -1,13 +1,13 @@
 <template>
   <div class="chunk-params-config">
     <div class="params-info">
-      <p>Điều chỉnh các tham số phân đoạn để kiểm soát cách phân đoạn văn bản.，Ảnh hưởng đến chất lượng truy xuất và hiệu quả tải tài liệu。</p>
+      <p>调整分块参数可以控制文本的切分方式，影响检索质量和文档加载效率。</p>
     </div>
     <a-form :model="localParams" name="chunkConfig" autocomplete="off" layout="vertical">
       <a-form-item v-if="showPreset" name="chunk_preset_id">
         <template #label>
           <span class="chunk-preset-label">
-            chiến lược phân chia
+            分块策略
             <a-tooltip :title="presetDescription">
               <QuestionCircleOutlined class="chunk-preset-help-icon" />
             </a-tooltip>
@@ -16,11 +16,12 @@
         <a-select
           v-model:value="localParams.chunk_preset_id"
           :options="presetOptions"
+          :loading="chunkPresetLoading"
           style="width: 100%"
         />
         <p class="param-description">
-          Căn chỉnh chiến lược mặc định RAGFlow：General、QA、Book、Laws。
-          <span v-if="allowPresetFollowDefault">Nếu để trống, chính sách mặc định của cơ sở kiến thức sẽ được sử dụng.。</span>
+          选择适合当前文档结构的分块策略。
+          <span v-if="allowPresetFollowDefault">留空时沿用知识库默认策略。</span>
         </p>
       </a-form-item>
 
@@ -28,8 +29,8 @@
         <a-form-item v-if="showChunkSizeOverlap" name="chunk_token_num">
           <template #label>
             <span class="chunk-preset-label">
-              tối đa Token con số
-              <a-tooltip title="tối đa cho mỗi đoạn văn bản token con số，Sử dụng giá trị mặc định khi để trống 512">
+              最大 Token 数
+              <a-tooltip title="每个文本片段的最大 token 数，留空时使用默认值 512">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
@@ -38,15 +39,15 @@
             v-model:value="parserConfig.chunk_token_num"
             :min="100"
             :max="10000"
-            placeholder="Mặc định 512"
+            placeholder="默认 512"
             style="width: 100%"
           />
         </a-form-item>
         <a-form-item v-if="showChunkSizeOverlap" name="overlapped_percent">
           <template #label>
             <span class="chunk-preset-label">
-              Tỷ lệ chồng chéo (%)
-              <a-tooltip title="Nhấn các đoạn văn bản liền kề token Tỷ lệ chồng chéo tính toán số，Sử dụng giá trị mặc định khi để trống 0">
+              重叠比例 (%)
+              <a-tooltip title="相邻文本片段按 token 数计算的重叠比例，留空时使用默认值 0">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
@@ -55,22 +56,22 @@
             v-model:value="parserConfig.overlapped_percent"
             :min="0"
             :max="99"
-            placeholder="Mặc định 0"
+            placeholder="默认 0"
             style="width: 100%"
           />
         </a-form-item>
         <a-form-item v-if="showQaSplit" name="delimiter">
           <template #label>
             <span class="chunk-preset-label">
-              dấu phân cách
-              <a-tooltip title="hỗ trợ \\n、\\t Nhân vật thoát hiểm。Sử dụng dấu phân cách mặc định khi để trống \\n">
+              分隔符
+              <a-tooltip title="支持 \\n、\\t 等转义字符。留空时使用默认分隔符 \\n">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
           </template>
           <a-input
             v-model:value="parserConfig.delimiter"
-            placeholder="Mặc định \\n，Có thể nhập \\n\\n\\n hoặc ---"
+            placeholder="默认 \\n，可输入 \\n\\n\\n 或 ---"
             style="width: 100%"
           />
         </a-form-item>
@@ -80,14 +81,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
-import {
-  CHUNK_PRESET_OPTIONS,
-  CHUNK_PRESET_LABEL_MAP,
-  getChunkPresetDescription,
-  isPlainObject
-} from '@/utils/chunk_presets'
+import { useChunkPresetOptions } from '@/composables/useChunkPresetOptions'
+import { DEFAULT_CHUNK_PRESET_ID, isPlainObject } from '@/utils/chunkUtils'
 
 const props = defineProps({
   tempChunkParams: {
@@ -112,12 +109,19 @@ const props = defineProps({
   },
   databasePresetId: {
     type: String,
-    default: 'general'
+    default: DEFAULT_CHUNK_PRESET_ID
   }
 })
 
 const localParams = computed(() => props.tempChunkParams)
 const fallbackParserConfig = ref({})
+const {
+  chunkPresetSelectOptions,
+  chunkPresetLabelMap,
+  chunkPresetLoading,
+  loadChunkPresetOptions,
+  getChunkPresetDescription
+} = useChunkPresetOptions()
 
 const parserConfig = computed(() => {
   if (!isPlainObject(props.tempChunkParams.chunk_parser_config)) {
@@ -128,24 +132,31 @@ const parserConfig = computed(() => {
 
 const presetOptions = computed(() => {
   const options = []
-  const defaultPresetLabel = CHUNK_PRESET_LABEL_MAP[props.databasePresetId] || 'General'
+  const defaultPresetLabel =
+    chunkPresetLabelMap.value[props.databasePresetId] ||
+    props.databasePresetId ||
+    DEFAULT_CHUNK_PRESET_ID
 
   if (props.allowPresetFollowDefault) {
     options.push({
       value: '',
-      label: `Sử dụng mặc định cơ sở kiến thức（${defaultPresetLabel}）`
+      label: `沿用知识库默认（${defaultPresetLabel}）`
     })
   }
 
-  options.push(...CHUNK_PRESET_OPTIONS.map(({ value, label }) => ({ value, label })))
+  options.push(...chunkPresetSelectOptions.value)
 
   return options
 })
 
 const effectivePresetId = computed(
-  () => props.tempChunkParams.chunk_preset_id || props.databasePresetId || 'general'
+  () => props.tempChunkParams.chunk_preset_id || props.databasePresetId || DEFAULT_CHUNK_PRESET_ID
 )
 const presetDescription = computed(() => getChunkPresetDescription(effectivePresetId.value))
+
+onMounted(() => {
+  loadChunkPresetOptions()
+})
 </script>
 
 <style scoped>

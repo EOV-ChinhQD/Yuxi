@@ -1,35 +1,37 @@
-# Cấu hình mô hình
+# 模型配置
 
-## Tổng quan
+## 概述
 
-Hệ thống nhất trí thông qua **Cài đặt hệ thống → Cấu hình mô hình** Quản lý trang của tất cả các mô hình（mô hình đối thoại、mô hình nhúng、sắp xếp lại mô hình），Không cần sửa đổi tập tin cấu hình。
+系统统一通过 **智能体管理 → 模型供应商** 页面管理所有模型（对话模型、嵌入模型、重排模型），无需修改配置文件。
 
-## Đường dẫn cấu hình
+## 配置路径
 
 ```
-Cài đặt hệ thống → Cấu hình mô hình
+智能体管理 → 模型供应商
 ```
 
-## API Cấu hình thông tin xác thực
+模型供应商页签仅管理员可见。如果当前账号不是管理员，只能看到普通的智能体管理和个人设置入口。
 
-Hỗ trợ hai phương thức cấu hình thông tin xác thực：
+## API 凭证配置
 
-| đường | Các tình huống áp dụng |
+支持两种凭证配置方式：
+
+| 方式 | 适用场景 |
 |------|----------|
-| biến môi trường | Môi trường sản xuất có thể không được hiển thị trên giao diện Key bối cảnh |
-| Điền trực tiếp | Phát triển và gỡ lỗi，Theo đuổi sự thuận tiện về cấu hình |
+| 环境变量 | 生产环境或不愿在界面暴露 Key 的场景 |
+| 直接填写 | 开发调试，追求配置便利性 |
 
-**phương pháp biến môi trường**：Điền tên biến trong cấu hình nhà cung cấp（Chẳng hạn như `SILICONFLOW_API_KEY`），Đảm bảo môi trường thời gian chạy đã cấu hình các biến tương ứng。
+**环境变量方式**：在供应商配置中填写变量名（如 `SILICONFLOW_API_KEY`），确保运行时环境已配置对应变量。
 
-**Phương pháp điền trực tiếp**：Điền trực tiếp vào cấu hình nhà cung cấp API Key。
+**直接填写方式**：在供应商配置中直接填入 API Key。
 
-## Quản lý nhà cung cấp
+## 供应商管理
 
-### Mẫu nhà cung cấp tích hợp
+### 内置供应商模板
 
-Một bộ tích hợp sẵn provider mẫu。Mẫu chỉ cung cấp Provider ID、Base URL、Biến môi trường thông tin xác thực và địa chỉ khám phá mô hình từ xa；Tính khả dụng thực tế vẫn phụ thuộc vào việc bạn có định cấu hình thông tin xác thực hay không、Cho phép nhà cung cấp và thêm mô hình。
+系统启动时会同步一组内置 provider 模板。模板只提供 Provider ID、Base URL、凭证环境变量和远端模型发现地址；实际是否可用仍取决于你是否配置凭证、启用供应商并添加模型。
 
-| nhà cung cấp | Provider ID | Loại hỗ trợ | Biến môi trường thông tin xác thực |
+| 供应商 | Provider ID | 支持类型 | 凭证环境变量 |
 |--------|-------------|----------|--------------|
 | OpenAI | `openai` | chat | `OPENAI_API_KEY` |
 | DeepSeek | `deepseek` | chat | `DEEPSEEK_API_KEY` |
@@ -49,51 +51,51 @@ Một bộ tích hợp sẵn provider mẫu。Mẫu chỉ cung cấp Provider ID
 | MiniMax International | `minimax` | chat | `MINIMAX_API_KEY` |
 | OpenRouter | `openrouter` | chat, embedding | `OPENROUTER_API_KEY` |
 | ModelScope | `modelscope` | chat | `MODELSCOPE_ACCESS_TOKEN` |
-| OpenCode | `opencode` | chat | Không có biến môi trường mặc định |
+| OpenCode | `opencode` | chat | 无默认环境变量 |
 | SiliconFlow | `siliconflow-cn` | chat, embedding, rerank | `SILICONFLOW_API_KEY` |
 | SiliconFlow International | `siliconflow` | chat, embedding, rerank | `SILICONFLOW_GLOBAL_API_KEY` |
 
-Trong số đó `alibaba`、`siliconflow-cn` Bộ phận cài sẵn embedding / rerank người mẫu；Các nhà cung cấp khác thường cần nhập trang chi tiết và vượt qua「Nhận mô hình từ xa」hoặc「Thêm thủ công」Mô hình bổ sung。
+其中 `alibaba`、`siliconflow-cn` 预置了部分 embedding / rerank 模型；其他供应商通常需要进入详情页通过「获取远程模型」或「手动添加」补充模型。
 
-### Quá trình vận hành
+### 操作流程
 
-1. **Thêm nhà cung cấp mới**：nhấp chuột「Thêm nhà cung cấp mới」，Điền thông tin cơ bản（Provider ID、Base URL Đợi đã）
-2. **Định cấu hình thông tin xác thực**：điền vào API Key hoặc tên biến môi trường
-3. **cho phép nhà cung cấp**：Bật công tắc trạng thái nhà cung cấp
-4. **Nhận mô hình**：Nhập chi tiết nhà cung cấp，nhấp chuột「Nhận mô hình từ xa」từ API Kéo danh sách các mô hình có sẵn
+1. **新增供应商**：点击「新增供应商」，填写基本信息（Provider ID、Base URL 等）
+2. **配置凭证**：填写 API Key 或环境变量名
+3. **启用供应商**：开启供应商状态开关
+4. **获取模型**：进入供应商详情，点击「获取远程模型」从 API 拉取可用模型列表
 
-## Quản lý người mẫu
+## 模型管理
 
-### Thêm mô hình
+### 添加模型
 
-**Phương pháp một：Kéo từ xa**
+**方式一：从远端拉取**
 
-Nhập chi tiết nhà cung cấp → nhấp chuột「Nhận mô hình từ xa」→ Chọn Thêm từ Danh sách Ứng viên
+进入供应商详情 → 点击「获取远程模型」→ 从候选列表中选择添加
 
-**Phương pháp 2：Thêm thủ công**
+**方式二：手动添加**
 
-Nhập chi tiết nhà cung cấp → nhấp chuột「Thêm thủ công」→ Điền vào mô hình ID và gõ
+进入供应商详情 → 点击「手动添加」→ 填写模型 ID 和类型
 
-### Thông số cấu hình
+### 配置参数
 
-mô hình nhúng（embedding）Cần cấu hình kích thước vector，Vui lòng tham khảo thông số kỹ thuật của nhà cung cấp mô hình。
+嵌入模型（embedding）需配置向量维度，请参考模型提供商的规格说明。
 
-### Xóa mô hình
+### 移除模型
 
-Xóa các mô hình không mong muốn khỏi danh sách các mô hình được kích hoạt trong chi tiết nhà cung cấp。
+在供应商详情的已启用模型列表中移除不需要的模型。
 
-## Định dạng nhận dạng mô hình
+## 模型标识格式
 
-Sử dụng thống nhất các mô hình thời gian chạy `provider_id:model_id` định dạng，Ví dụ `siliconflow-cn:Pro/BAAI/bge-m3`。`model_id` có thể chứa `/`，Hệ thống chỉ nhấn nút đầu tiên `:` Phân biệt nhà cung cấp và mẫu mã ID。
+运行时模型统一使用 `provider_id:model_id` 格式，例如 `siliconflow-cn:Pro/BAAI/bge-m3`。`model_id` 可以包含 `/`，系统只按第一个 `:` 区分供应商与模型 ID。
 
-Phiên bản cũ `provider/model`、Cơ sở kiến thức kế thừa JSON lĩnh vực mô hình、trong tập tin cấu hình `model_names` / `embed_model_names` / `reranker_names` Không còn có sẵn dưới dạng nguồn mô hình thời gian chạy。cơ sở kiến thức lịch sử hoặc Agent Cấu hình nếu định dạng cũ vẫn được lưu，Bạn cần chọn lại phiên bản mới của mô hình trong giao diện và lưu lại.。
+旧版 `provider/model`、旧版知识库 JSON 模型字段、配置文件中的 `model_names` / `embed_model_names` / `reranker_names` 不再作为运行时模型来源。历史知识库或 Agent 配置如果仍保存旧格式，需要在界面中重新选择新版模型后保存。
 
-## Ollama hỗ trợ
+## Ollama 支持
 
-Nó không còn được tích hợp vào phiên bản hiện tại Ollama provider type，không còn có sẵn Ollama embedding Thích ứng thời gian chạy。Đã rồi Ollama embedding Cơ sở kiến thức yêu cầu quản trị viên chọn mới embedding Chỉ số mô hình và xây dựng lại，Tránh trộn lẫn các không gian vectơ khác nhau。
+当前版本不再内置 Ollama provider type，也不再提供 Ollama embedding 运行时适配。已有 Ollama embedding 知识库需要管理员选择新的 embedding 模型并重建索引，避免不同向量空间混用。
 
-## Câu hỏi thường gặp
+## 常见问题
 
-**Cảnh báo thiếu thông tin đăng nhập**：Kiểm tra API Key Nó có được cấu hình đúng không?，Hoặc xác nhận xem biến môi trường đã được đặt chưa。
+**凭证缺失警告**：检查 API Key 是否正确配置，或确认环境变量是否已设置。
 
-**Cấu hình mô hình không có hiệu lực**：Xác nhận rằng mô hình đã được thêm vào danh sách kích hoạt của nhà cung cấp。
+**模型配置未生效**：确认模型已添加至供应商的已启用列表中。

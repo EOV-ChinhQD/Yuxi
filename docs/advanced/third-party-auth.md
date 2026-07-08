@@ -1,27 +1,27 @@
-# Xác thực đăng nhập của bên thứ ba
-Yuxi Hỗ trợOIDCTruy cập xác thực đăng nhập của bên thứ ba，Thuận tiện cho người dùng doanh nghiệp tích hợp các hệ thống xác thực danh tính hiện có。
-> Tính năng này bị tắt theo mặc định，Cần phải được kích hoạt trong tệp cấu hình và cung cấp các thông số liên quan。
+# 第三方登录认证
+Yuxi 支持以OIDC接入第三方登录认证，方便企业用户集成现有的身份认证系统。
+> 此功能默认关闭，需要在配置文件中启用并提供相关参数。
 
-## Các bước cấu hình
-### 1. Điều kiện tiên quyết
-trong của bạnSSOĐăng ký một ứng dụng khách mới trong hệ thống，Nhận thông tin sau：
-- khách hàngID（Client ID）
-- khóa khách hàng（Client Secret）
+## 配置步骤
+### 1. 前提条件
+在你的SSO系统中注册一个新的客户端应用，获取以下信息：
+- 客户端ID（Client ID）
+- 客户端密钥（Client Secret）
 - ISSUER URL
 
-Điền địa chỉ gọi lại（Redirect URI）：https://<your_yuxi_host>/api/auth/oidc/callback
+填入回调地址（Redirect URI）：https://<your_yuxi_host>/api/auth/oidc/callback
 
-### 2. Cấu hìnhYuxi
-trongYuxicủa.envThêm các mục cấu hình sau vào tập tin：
+### 2. 配置Yuxi
+在Yuxi的.env文件中添加以下配置项：
 
 ```sh
-# Có bật hay không OIDC Chứng nhận (true/false)
+# 是否启用 OIDC 认证 (true/false)
 # OIDC_ENABLED=false
 
-# Tên nguồn xác thực（Văn bản hiển thị trên nút đăng nhập，Đề xuất phải ngắn gọn và dễ nhận biết, Mặc định: OIDCĐăng nhập）
-# OIDC_PROVIDER_NAME="OIDCĐăng nhập"
+# 认证源名称（显示在登录按钮上的文字，建议简短且具有辨识度, 默认: OIDC登录）
+# OIDC_PROVIDER_NAME="OIDC登录"
 
-# OIDC Provider của Issuer URL (Ví dụ: https://auth.example.com)
+# OIDC Provider 的 Issuer URL (例如: https://auth.example.com)
 # OIDC_ISSUER_URL=
 
 # OIDC Client ID
@@ -30,74 +30,74 @@ trongYuxicủa.envThêm các mục cấu hình sau vào tập tin：
 # OIDC Client Secret
 # OIDC_CLIENT_SECRET=
 
-# OIDC gọi lại URL (Tùy chọn，Mặc định được xây dựng tự động như /api/auth/oidc/callback, Không nên tùy chỉnh)
-# Điền đầy đủ địa chỉ：https://<your_yuxi_host>/api/auth/oidc/callback
-# Cần đảm bảo điều này URL trong OIDC Provider Đã đăng ký tại
+# OIDC 回调 URL (可选，默认自动构建为 /api/auth/oidc/callback, 不建议自定义)
+# 填写完整的地址：https://<your_yuxi_host>/api/auth/oidc/callback
+# 需要确保此 URL 在 OIDC Provider 中已注册
 # OIDC_REDIRECT_URI=
 
-# Điểm cuối ủy quyền (Tùy chọn，tự động từ discovery Nhận)
+# 授权端点 (可选，自动从 discovery 获取)
 # OIDC_AUTHORIZATION_ENDPOINT=
 
-# Token điểm cuối (Tùy chọn，tự động từ discovery Nhận)
+# Token 端点 (可选，自动从 discovery 获取)
 # OIDC_TOKEN_ENDPOINT=
 
-# UserInfo điểm cuối (Tùy chọn，tự động từ discovery Nhận)
+# UserInfo 端点 (可选，自动从 discovery 获取)
 # OIDC_USERINFO_ENDPOINT=
 
-# Điểm cuối đăng xuất (Tùy chọn，tự động từ discovery Nhận)
+# 登出端点 (可选，自动从 discovery 获取)
 # OIDC_END_SESSION_ENDPOINT=
 
-# Đã yêu cầu scope (Mặc định: openid profile email)
+# 请求的 scope (默认: openid profile email)
 # OIDC_SCOPES=openid profile email
 
-# Có tự động tạo người dùng hay không (true/false，Mặc định: true)
+# 是否自动创建用户 (true/false，默认: true)
 # OIDC_AUTO_CREATE_USER=true
 
-# OIDC Vai trò mặc định của người dùng (user/admin，Mặc định: user)
+# OIDC 用户的默认角色 (user/admin，默认: user)
 # OIDC_DEFAULT_ROLE=user
 
-# OIDC Tên bộ phận mặc định của người dùng (Mặc định: OIDCngười dùng)
-# OIDC_DEFAULT_DEPARTMENT=OIDCngười dùng
+# OIDC 用户的默认部门名称 (默认: OIDC用户)
+# OIDC_DEFAULT_DEPARTMENT=OIDC用户
 
-# Trường ánh xạ tên người dùng (Mặc định: preferred_username)
+# 用户名映射字段 (默认: preferred_username)
 # OIDC_USERNAME_CLAIM=preferred_username
 
-# Các trường ánh xạ hộp thư (Mặc định: email)
+# 邮箱映射字段 (默认: email)
 # OIDC_EMAIL_CLAIM=email
 
-# Trường ánh xạ tên (Mặc định: name)
+# 姓名映射字段 (默认: name)
 # OIDC_NAME_CLAIM=name
 
-# Có nên sử dụng tên người dùng ban đầu hay không（không có oidc: tiền tố），Cho phép ánh xạ tới Yuxi Tài khoản cục bộ hiện có (true/false，Mặc định: false)
-# Sau khi mở，OIDC trả lại username Nó sẽ được sử dụng trực tiếp làm ID đăng nhập doanh nghiệp. uid Đăng nhập，Quản trị viên cần tạo trước tài khoản người dùng
+# 是否使用原始用户名（不带 oidc: 前缀），允许映射到 Yuxi 已有的本地账号 (true/false，默认: false)
+# 开启后，OIDC 返回的 username 会直接作为业务登录标识 uid 登录，需要管理员提前创建好用户账号
 # OIDC_USE_RAW_USERNAME=false
 
-# Cho dù từOIDC userinfo Lấy thông tin phòng ban và tự động tạo các phòng ban liên quan (true/false，Mặc định: false)
+# 是否从OIDC userinfo 中获取部门信息并自动创建关联部门 (true/false，默认: false)
 # OIDC_FETCH_DEPARTMENT_INFO=false
 
-# Ánh xạ trường tên bộ phận (Mặc định: department)
+# 部门名称字段映射 (默认: department)
 # OIDC_DEPARTMENT_CLAIM=department
 
-# OIDC Có buộc người dùng đăng nhập lại khi đăng nhập hay không (thêm prompt=login thông số，true/false，Mặc định: true)
+# OIDC 登录时是否强制提示用户重新登录 (添加 prompt=login 参数，true/false，默认: true)
 # OIDC_FORCE_PROMPT_LOGIN=true
 
 ```
-### 3. Khởi động lạiYuxiDịch vụ giúp cấu hình hiệu quả
+### 3. 重启Yuxi服务使配置生效
 ```bash
 docker restart api-dev web-dev
 ```
 
-## Mô tả chức năng
+## 功能说明
 
-### Sử dụng tên người dùng ban đầu（OIDC_USE_RAW_USERNAME=true）
-khi bạn cần Yuxi Tài khoản cục bộ đã có trong hệ thống và OIDC SSO ràng buộc，Tùy chọn này có thể được bật。
+### 使用原始用户名（OIDC_USE_RAW_USERNAME=true）
+当你需要将 Yuxi 系统中已有的本地账号与 OIDC SSO 绑定，可以开启此选项。
 
-**Nguyên tắc ràng buộc**（Không cần sửa đổi cơ sở dữ liệu）：  
-Người dùng giữ chỗ được tạo và được đánh dấu để xóa `oidc:{sub}:{target_user_id}` ghi lại OIDC sub với Yuxi Mối quan hệ ràng buộc người dùng，Hãy chắc chắn rằng chỉ có những cái bị ràng buộc OIDC Chỉ với danh tính chính xác, bạn mới có thể đăng nhập vào tài khoản tương ứng.，**Ngăn chặn gian lận tài khoản**。Trong số đó `target_user_id` là một giá trị trong cơ sở dữ liệu `users.id`；ID đăng nhập của người dùng vẫn sử dụng chuỗi `uid`。
+**绑定原理**（无需修改数据库）：  
+系统会创建一个标记为删除的占位用户 `oidc:{sub}:{target_user_id}` 来记录 OIDC sub 与 Yuxi 用户的绑定关系，确保只有绑定过的 OIDC 身份才能登录对应的账号，**防止账号冒用**。其中 `target_user_id` 是数据库中的数值 `users.id`；用户登录标识仍使用字符串 `uid`。
 
-### Tự động lấy thông tin bộ phận（OIDC_FETCH_DEPARTMENT_INFO=true）
-Sau khi mở，Hệ thống sẽ bắt đầu từ OIDC userinfo Đọc tên bộ phận và mô tả trong，tự động vào Yuxi Tạo một bộ phận trong và liên kết người dùng với bộ phận đó。
+### 自动获取部门信息（OIDC_FETCH_DEPARTMENT_INFO=true）
+开启后，系统会从 OIDC userinfo 中读取部门名称和描述，自动在 Yuxi 中创建部门并将用户关联到该部门。
 
-- Thư từ OIDC Tên bộ phận thu được sẽ được tự động `strip()` xóa dấu cách，và cắt ngắn thành 50 nhân vật
-- Mô tả bộ phận sẽ được tự động cắt ngắn thành 255 nhân vật
-- Nếu tên bộ phận trống sau khi xử lý，sẽ quay lại sử dụng `OIDC_DEFAULT_DEPARTMENT` Bộ phận mặc định
+- 对从 OIDC 获取的部门名称会自动做 `strip()` 去空格，并截断到 50 字符
+- 部门描述会自动截断到 255 字符
+- 如果部门名称处理后为空，会回退到使用 `OIDC_DEFAULT_DEPARTMENT` 默认部门

@@ -1,12 +1,12 @@
 <template>
-  <a-modal v-model:open="visible" title="Thêm tập tin" width="800px" @cancel="handleCancel">
+  <a-modal v-model:open="visible" title="添加文件" width="800px" @cancel="handleCancel">
     <template #footer>
       <div class="footer-container">
         <a-button type="link" class="help-link-btn" @click="openDocLink">
-          <CircleHelp :size="14" /> Hướng dẫn xử lý tài liệu
+          <CircleHelp :size="14" /> 文档处理说明
         </a-button>
         <div class="footer-buttons">
-          <a-button key="back" @click="handleCancel">Hủy bỏ</a-button>
+          <a-button key="back" @click="handleCancel">取消</a-button>
           <a-button
             key="submit"
             type="primary"
@@ -14,14 +14,14 @@
             :loading="chunkLoading"
             :disabled="!canSubmit"
           >
-            Thêm vào cơ sở kiến thức
+            添加到知识库
           </a-button>
         </div>
       </div>
     </template>
 
     <div class="add-files-content">
-      <!-- 1. thanh hành động hàng đầu -->
+      <!-- 1. 顶部操作栏 -->
       <div class="top-action-bar">
         <div class="mode-switch">
           <a-segmented
@@ -31,30 +31,30 @@
           />
         </div>
         <div class="auto-index-toggle">
-          <a-checkbox v-model:checked="autoIndex">Tự động đưa vào bộ nhớ sau khi tải lên</a-checkbox>
+          <a-checkbox v-model:checked="autoIndex">上传后自动入库</a-checkbox>
         </div>
       </div>
 
-      <!-- 2. Bảng cấu hình -->
+      <!-- 2. 配置面板 -->
       <div
         class="settings-panel"
         v-if="folderTreeData.length > 0 || uploadMode !== 'url' || autoIndex"
       >
-        <!-- dòng đầu tiên：vị trí lưu trữ + OCR động cơ -->
+        <!-- 第一行：存储位置 + OCR 引擎 -->
         <div
           class="setting-row"
           v-if="folderTreeData.length > 0 || uploadMode !== 'url'"
           :class="{ 'two-cols': uploadMode !== 'url' && folderTreeData.length > 0 }"
         >
           <div class="col-item" v-if="folderTreeData.length > 0">
-            <div class="setting-label">vị trí lưu trữ</div>
+            <div class="setting-label">存储位置</div>
             <div class="setting-content flex-row">
               <a-tree-select
                 v-model:value="selectedFolderId"
                 show-search
                 class="folder-select"
                 :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
-                placeholder="Chọn thư mục đích（Mặc định là thư mục gốc）"
+                placeholder="选择目标文件夹（默认为根目录）"
                 allow-clear
                 tree-default-expand-all
                 :tree-data="folderTreeData"
@@ -62,12 +62,12 @@
               >
               </a-tree-select>
             </div>
-            <p class="param-description">Chọn thư mục đích để lưu file</p>
+            <p class="param-description">选择文件保存的目标文件夹</p>
           </div>
           <div class="col-item" v-if="uploadMode !== 'url'">
             <div class="setting-label">
-              OCR động cơ（Chỉ áp dụng cho PDF/Tệp hình ảnh）
-              <a-tooltip title="Kiểm tra trạng thái dịch vụ">
+              OCR 引擎（仅应用于 PDF/图片文件）
+              <a-tooltip title="检查服务状态">
                 <ReloadOutlined
                   class="action-icon refresh-icon"
                   :class="{ spinning: ocrHealthChecking }"
@@ -112,7 +112,7 @@
                         class="unavailable-toggle"
                         @click="toggleUnavailableOcrOptions"
                       >
-                        <span>Tùy chọn không khả dụng（{{ unavailableOcrOptions.length }}）</span>
+                        <span>不可用选项（{{ unavailableOcrOptions.length }}）</span>
                         <ChevronUp v-if="unavailableOcrExpanded" :size="14" />
                         <ChevronDown v-else :size="14" />
                       </button>
@@ -153,10 +153,10 @@
           </div>
         </div>
 
-        <!-- dòng thứ hai：Cấu hình lưu trữ tự động (Chỉ hiển thị khi bật) -->
+        <!-- 第二行：自动入库配置 (仅在开启时显示) -->
         <div class="setting-row" v-if="autoIndex">
           <div class="col-item">
-            <div class="setting-label">Cấu hình tham số kho</div>
+            <div class="setting-label">入库参数配置</div>
             <div class="setting-content">
               <ChunkParamsConfig
                 :temp-chunk-params="indexParams"
@@ -173,13 +173,13 @@
         </div>
       </div>
 
-      <!-- PDF/hình ảnhOCRnhắc nhở (AlertTối ưu hóa phong cách) -->
+      <!-- PDF/图片OCR提醒 (Alert样式优化) -->
       <div v-if="hasPdfOrImageFiles && !isOcrEnabled" class="inline-alert warning">
         <Info :size="16" />
-        <span>phát hiệnPDFhoặc tập tin hình ảnh，Khuyến nghị kích hoạt OCR để trích xuất nội dung văn bản</span>
+        <span>检测到PDF或图片文件，建议启用 OCR 以提取文本内容</span>
       </div>
 
-      <!-- Khu vực tải lên tập tin -->
+      <!-- 文件上传区域 -->
       <div class="upload-area" v-if="uploadMode === 'file' || uploadMode === 'folder'">
         <a-upload-dragger
           class="custom-dragger"
@@ -197,25 +197,25 @@
           @change="handleFileUpload"
           @drop="handleDrop"
         >
-          <p class="ant-upload-text">Nhấp hoặc kéo tập tin vào đây</p>
-          <p class="ant-upload-hint">Loại hỗ trợ: {{ uploadHint }}</p>
-          <div class="zip-tip" v-if="hasZipFiles">📦 ZIPGói sẽ được tự động giải nén và giải nén. Markdown với hình ảnh</div>
+          <p class="ant-upload-text">点击或将文件拖拽到此处</p>
+          <p class="ant-upload-hint">支持类型: {{ uploadHint }}</p>
+          <div class="zip-tip" v-if="hasZipFiles">📦 ZIP包将自动解压提取 Markdown 与图片</div>
         </a-upload-dragger>
 
         <div v-if="showAggregateProgress" class="upload-progress-card">
           <div class="progress-header">
             <div class="progress-header-left">
-              <div class="progress-title">Tiến trình tải lên</div>
+              <div class="progress-title">上传进度</div>
               <div class="progress-stats inline-in-header">
-                <div class="stat-pill">tổng cộng {{ totalUploadCount }}</div>
+                <div class="stat-pill">总计 {{ totalUploadCount }}</div>
                 <div class="stat-pill uploading" v-if="uploadingUploadCount > 0">
-                  Đang tải lên {{ uploadingUploadCount }}
+                  上传中 {{ uploadingUploadCount }}
                 </div>
                 <div class="stat-pill queued" v-if="queuedUploadCount > 0">
-                  xếp hàng {{ queuedUploadCount }}
+                  排队 {{ queuedUploadCount }}
                 </div>
                 <div class="stat-pill error" v-if="failedUploadCount > 0">
-                  thất bại {{ failedUploadCount }}
+                  失败 {{ failedUploadCount }}
                 </div>
               </div>
             </div>
@@ -227,7 +227,7 @@
                 class="toggle-progress-btn"
                 @click="progressExpanded = !progressExpanded"
               >
-                <span>{{ progressExpanded ? 'đóng' : 'Mở rộng' }}</span>
+                <span>{{ progressExpanded ? '收起' : '展开' }}</span>
                 <ChevronUp v-if="progressExpanded" :size="14" />
                 <ChevronDown v-else :size="14" />
               </a-button>
@@ -242,17 +242,17 @@
               </div>
             </div>
 
-            <div class="progress-tip" v-else>Hiện tại không có tập tin bị lỗi。</div>
+            <div class="progress-tip" v-else>当前无失败文件。</div>
 
             <div class="progress-tip" v-if="hasPendingUploads">
-              Tải lên thư mục sử dụng chế độ xếp hàng，Tải lên đồng thời tối đa {{ MAX_UPLOAD_CONCURRENCY }} tập tin。
+              文件夹上传采用队列模式，最多同时上传 {{ MAX_UPLOAD_CONCURRENCY }} 个文件。
             </div>
-            <div class="progress-tip" v-else>Hàng đợi tải lên đã hoàn tất，Có thể nhấp“Thêm vào cơ sở kiến thức”Tiếp tục đến bước tiếp theo。</div>
+            <div class="progress-tip" v-else>上传队列已完成，可点击“添加到知识库”继续下一步。</div>
           </div>
         </div>
       </div>
 
-      <!-- Vùng chọn tệp không gian làm việc -->
+      <!-- 工作区文件选择区域 -->
       <div class="workspace-area" v-if="uploadMode === 'workspace'">
         <div class="workspace-toolbar">
           <div class="workspace-summary">
@@ -261,9 +261,9 @@
               {{ workspaceCurrentPath }}
             </span>
             <span
-              >Đã chọn
+              >已选择
               {{ selectedWorkspacePaths.length }}
-              tập tin，Lưu ý rằng việc tải lên sẽ được làm phẳng，Không bảo toàn thứ bậc tập tin</span
+              个文件，注意上传会扁平化上传，不保留文件层级结构</span
             >
           </div>
           <div class="workspace-actions">
@@ -319,24 +319,24 @@
 
         <div class="url-empty-tip" v-else>
           <Info :size="16" />
-          <span>{{ workspaceLoading ? 'Đang tải tập tin không gian làm việc' : 'Không có tập tin nào trong thư mục hiện tại' }}</span>
+          <span>{{ workspaceLoading ? '正在加载工作区文件' : '当前目录暂无文件' }}</span>
         </div>
       </div>
 
-      <!-- URL khu vực đầu vào -->
+      <!-- URL 输入区域 -->
       <div class="url-area" v-if="uploadMode === 'url'">
         <div class="url-input-wrapper">
           <a-textarea
             v-model:value="newUrl"
-            placeholder="đầu vào URL，Một trên mỗi dòng&#10;https://site1.com&#10;https://site2.com"
+            placeholder="输入 URL，一行一个&#10;https://site1.com&#10;https://site2.com"
             :auto-size="{ minRows: 4, maxRows: 8 }"
             class="url-input"
             @keydown.enter.ctrl="handleFetchUrls"
           />
           <div class="url-actions">
             <span class="url-hint">
-              Hỗ trợ dán hàng loạt，Tự động lọc dòng trống。
-              <span class="warning-text">Cần cấu hình danh sách trắng，Xem tài liệu để biết chi tiết</span>
+              支持批量粘贴，自动过滤空行。
+              <span class="warning-text">需配置白名单，详见文档说明</span>
             </span>
             <a-button
               type="primary"
@@ -345,7 +345,7 @@
               :loading="fetchingUrls"
               :disabled="!newUrl.trim()"
             >
-              Tải URLs
+              加载 URLs
             </a-button>
           </div>
         </div>
@@ -372,15 +372,15 @@
         </div>
         <div class="url-empty-tip" v-else>
           <Info :size="16" />
-          <span>đầu vào URL Sau đó bấm vào để tải，Hệ thống sẽ tự động thu thập nội dung web</span>
+          <span>输入 URL 后点击加载，系统将自动抓取网页内容</span>
         </div>
       </div>
 
-      <!-- Dấu nhắc tệp có cùng tên -->
+      <!-- 同名文件提示 -->
       <div v-if="sameNameFiles.length > 0" class="conflict-files-panel">
         <div class="panel-header">
           <Info :size="14" class="icon-warning" />
-          <span>Một tập tin có cùng tên đã tồn tại ({{ sameNameFiles.length }})</span>
+          <span>已存在同名文件 ({{ sameNameFiles.length }})</span>
         </div>
         <div class="file-list-scroll">
           <div v-for="file in sameNameFiles" :key="file.file_id" class="conflict-item">
@@ -418,6 +418,7 @@
 import { ref, computed, onMounted, watch, h } from 'vue'
 import { message, Upload, Modal } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
+import { useConfigStore } from '@/stores/config'
 import { useDatabaseStore } from '@/stores/database'
 import { ocrApi } from '@/apis/system_api'
 import { fileApi, documentApi } from '@/apis/knowledge_api'
@@ -438,7 +439,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-vue-next'
-import { buildChunkParamsPayload } from '@/utils/chunk_presets'
+import { buildChunkParamsPayload } from '@/utils/chunkUtils'
 import ChunkParamsConfig from '@/components/ChunkParamsConfig.vue'
 import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
 
@@ -468,11 +469,13 @@ const props = defineProps({
 const emit = defineEmits(['update:visible', 'success'])
 
 const store = useDatabaseStore()
+const configStore = useConfigStore()
+const DEFAULT_OCR_ENGINE = 'rapid_ocr'
 
-// Lựa chọn thư mục liên quan
+// 文件夹选择相关
 const selectedFolderId = ref(null)
 const folderTreeData = computed(() => {
-  // Chuyển đổi folderTree Dữ liệu là TreeSelect định dạng bắt buộc
+  // 转换 folderTree 数据为 TreeSelect 需要的格式
   const transformData = (nodes) => {
     return nodes
       .map((node) => {
@@ -493,6 +496,8 @@ watch(
   () => props.visible,
   (newVal) => {
     if (newVal) {
+      ocrEngineTouched.value = false
+      applyDefaultOcrEngine()
       selectedFolderId.value = props.currentFolderId
       isFolderUpload.value = props.isFolderMode
       uploadMode.value = props.mode || (props.isFolderMode ? 'folder' : 'file')
@@ -539,7 +544,7 @@ const acceptedFileTypes = computed(() => {
 
 const uploadHint = computed(() => {
   if (!supportedFileTypes.value.length) {
-    return 'Đang tải...'
+    return '加载中...'
   }
   const exts = new Set(supportedFileTypes.value)
   exts.add('.zip')
@@ -566,8 +571,8 @@ const loadSupportedFileTypes = async () => {
     const data = await fileApi.getSupportedFileTypes()
     applySupportedFileTypes(data?.file_types)
   } catch (error) {
-    console.error('Không thể tải các loại tệp được hỗ trợ:', error)
-    message.warning('Không thể tải các loại tệp được hỗ trợ，Cấu hình mặc định được sử dụng')
+    console.error('获取支持的文件类型失败:', error)
+    message.warning('获取支持的文件类型失败，已使用默认配置')
     applySupportedFileTypes(DEFAULT_SUPPORTED_TYPES)
   }
 }
@@ -584,11 +589,11 @@ const visible = computed({
 const kbId = computed(() => store.kbId)
 const chunkLoading = computed(() => store.state.chunkLoading)
 
-// Chế độ tải lên
+// 上传模式
 const uploadMode = ref('file')
 const MAX_UPLOAD_CONCURRENCY = 10
 
-// danh sách tập tin
+// 文件列表
 const fileList = ref([])
 
 const uploadQueue = ref([])
@@ -635,9 +640,9 @@ const failedDetailItems = computed(() => {
       const detail = file?.response?.detail || file?.error?.message || ''
       return {
         uid,
-        name: file.name || 'tập tin không tên',
+        name: file.name || '未命名文件',
         status: rawStatus,
-        errorText: detail || 'Tải lên không thành công'
+        errorText: detail || '上传失败'
       }
     })
     .filter((item) => item.status === 'error')
@@ -658,35 +663,35 @@ const uploadModeOptions = computed(() => [
     value: 'file',
     label: h('div', { class: 'segmented-option' }, [
       h(FileUp, { size: 16, class: 'option-icon' }),
-      h('span', { class: 'option-text' }, 'Tải tập tin lên')
+      h('span', { class: 'option-text' }, '上传文件')
     ])
   },
   {
     value: 'folder',
     label: h('div', { class: 'segmented-option' }, [
       h(FolderUp, { size: 16, class: 'option-icon' }),
-      h('span', { class: 'option-text' }, 'Tải lên thư mục')
+      h('span', { class: 'option-text' }, '上传文件夹')
     ])
   },
   {
     value: 'url',
     label: h('div', { class: 'segmented-option' }, [
       h(Link, { size: 16, class: 'option-icon' }),
-      h('span', { class: 'option-text' }, 'phân tích cú pháp URL')
+      h('span', { class: 'option-text' }, '解析 URL')
     ])
   },
   {
     value: 'workspace',
     label: h('div', { class: 'segmented-option' }, [
       h(FolderOpen, { size: 16, class: 'option-icon' }),
-      h('span', { class: 'option-text' }, 'không gian làm việc')
+      h('span', { class: 'option-text' }, '工作区')
     ])
   }
 ])
 
 watch(uploadMode, (val) => {
   isFolderUpload.value = val === 'folder'
-  // Xóa nội dung đã chọn khi chuyển chế độ，tránh nhầm lẫn
+  // 切换模式时清空已选内容，避免混淆
   fileList.value = []
   sameNameFiles.value = []
   urlList.value = []
@@ -726,17 +731,17 @@ watch(fileList, (newFileList) => {
   uploadTaskProgress.value = nextProgress
 })
 
-// URL danh sách
+// URL 列表
 // Item structure: { url: string, status: 'fetching'|'success'|'error', data: object|null, error: string }
 const urlList = ref([])
 const newUrl = ref('')
 const fetchingUrls = ref(false)
-const CONTENT_EXISTS_ERROR_TEXT = 'Nội dung đã tồn tại trong cơ sở kiến thức'
+const CONTENT_EXISTS_ERROR_TEXT = '内容已存在于知识库中'
 
-// Danh sách các tập tin có cùng tên（Dùng để hiển thị gợi ý）
+// 同名文件列表（用于显示提示）
 const sameNameFiles = ref([])
 
-// URL Các chức năng liên quan
+// URL 相关功能
 const isValidUrl = (string) => {
   try {
     const url = new URL(string)
@@ -769,11 +774,11 @@ const fetchSingleUrlItem = async (item) => {
     const detailData = error.response?.data?.detail
     const detailMessage =
       (typeof detailData === 'string' ? detailData : detailData?.message) || error.message || ''
-    if (detailMessage.includes('same content') || detailMessage.includes('Cùng nội dung')) {
+    if (detailMessage.includes('same content') || detailMessage.includes('相同内容')) {
       item.error = CONTENT_EXISTS_ERROR_TEXT
       mergeSameNameFiles(detailData?.same_name_files)
     } else {
-      item.error = detailMessage || 'Tải không thành công'
+      item.error = detailMessage || '加载失败'
     }
   }
 }
@@ -788,7 +793,7 @@ const handleFetchUrls = async () => {
     .filter((l) => l)
   if (lines.length === 0) return
 
-  // 1. tiền xử lý：thêm vào danh sách
+  // 1. 预处理：添加到列表
   const newItems = []
   for (const url of lines) {
     if (!isValidUrl(url)) {
@@ -803,12 +808,12 @@ const handleFetchUrls = async () => {
 
   if (newItems.length === 0) {
     if (lines.length > 0) {
-      message.warning('Không phát hiện thấy cái mới hợp lệ nào URL')
+      message.warning('没有检测到有效的新 URL')
     }
     return
   }
 
-  newUrl.value = '' // Xóa hộp nhập liệu
+  newUrl.value = '' // 清空输入框
   fetchingUrls.value = true
 
   await Promise.all(newItems.map(fetchSingleUrlItem))
@@ -819,7 +824,7 @@ const removeUrl = (index) => {
   urlList.value.splice(index, 1)
 }
 
-// Lựa chọn tệp không gian làm việc
+// 工作区文件选择
 const workspaceLoading = ref(false)
 const workspaceItems = ref([])
 const workspaceCurrentPath = ref('/')
@@ -853,8 +858,8 @@ const loadWorkspaceFiles = async (path = workspaceCurrentPath.value) => {
     workspaceCurrentPath.value = targetPath
     workspaceItems.value = entries
   } catch (error) {
-    console.error('Không tải được tệp không gian làm việc:', error)
-    message.error('Không tải được tệp không gian làm việc: ' + (error.message || 'lỗi không xác định'))
+    console.error('加载工作区文件失败:', error)
+    message.error('加载工作区文件失败: ' + (error.message || '未知错误'))
   } finally {
     workspaceLoading.value = false
   }
@@ -882,27 +887,30 @@ const toggleWorkspacePath = (path, checked) => {
   selectedWorkspacePaths.value = selectedWorkspacePaths.value.filter((item) => item !== path)
 }
 
-// OCRTình trạng sức khỏe dịch vụ
+// OCR服务健康状态
 const ocrHealthStatus = ref({
   rapid_ocr: { status: 'unknown', message: '' },
   mineru_ocr: { status: 'unknown', message: '' },
   mineru_official: { status: 'unknown', message: '' },
   pp_structure_v3_ocr: { status: 'unknown', message: '' },
-  deepseek_ocr: { status: 'unknown', message: '' }
+  deepseek_ocr: { status: 'unknown', message: '' },
+  paddleocr_vl_1_6: { status: 'unknown', message: '' },
+  paddleocr_pp_ocrv6: { status: 'unknown', message: '' }
 })
 
-// OCRtình trạng kiểm tra sức khỏe
+// OCR健康检查状态
 const ocrHealthChecking = ref(false)
 const ocrPanelOpen = ref(false)
 const unavailableOcrExpanded = ref(false)
+const ocrEngineTouched = ref(false)
 
-// Phân tích tham số
+// 解析参数
 const processingParams = ref({
-  ocr_engine: 'disable',
+  ocr_engine: DEFAULT_OCR_ENGINE,
   ocr_engine_config: {}
 })
 
-// Liên quan đến kho bãi tự động
+// 自动入库相关
 const autoIndex = ref(false)
 const indexParams = ref({
   chunk_preset_id: '',
@@ -917,14 +925,14 @@ const buildAutoIndexParams = () => {
 
 const isFolderUpload = ref(false)
 
-// Thuộc tính tính toán：Nó đã được kích hoạt chưaOCR
+// 计算属性：是否启用了OCR
 const isOcrEnabled = computed(() => {
   return processingParams.value.ocr_engine !== 'disable'
 })
 
-// Logic liên quan đến chuyển đổi chế độ tải lên đã bị loại bỏ
+// 上传模式切换相关逻辑已移除
 
-// Thuộc tính tính toán：Có ở đó không?PDFhoặc tập tin hình ảnh
+// 计算属性：是否有PDF或图片文件
 const hasPdfOrImageFiles = computed(() => {
   if (fileList.value.length === 0) {
     return false
@@ -949,7 +957,7 @@ const hasPdfOrImageFiles = computed(() => {
   })
 })
 
-// Thuộc tính tính toán：Có ở đó không?ZIPtập tin
+// 计算属性：是否有ZIP文件
 const hasZipFiles = computed(() => {
   if (fileList.value.length === 0) {
     return false
@@ -973,8 +981,8 @@ const hasZipFiles = computed(() => {
 const ocrEngineOptions = [
   {
     value: 'disable',
-    label: 'Chưa bật',
-    description: 'Chưa bật OCR，Chỉ xử lý tệp văn bản'
+    label: '不启用',
+    description: '不启用 OCR，仅处理文本文件'
   },
   {
     value: 'rapid_ocr',
@@ -1000,18 +1008,51 @@ const ocrEngineOptions = [
     value: 'deepseek_ocr',
     label: 'DeepSeek OCR',
     description: 'DeepSeek OCR (SiliconFlow)'
+  },
+  {
+    value: 'paddleocr_vl_1_6',
+    label: 'PaddleOCR-VL-1.6',
+    description: 'PaddleOCR-VL-1.6 API'
+  },
+  {
+    value: 'paddleocr_pp_ocrv6',
+    label: 'PP-OCRv6',
+    description: 'PaddleOCR PP-OCRv6 API'
   }
 ]
 
+const resolveDefaultOcrEngine = () => {
+  const configuredEngine = String(
+    configStore.config?.default_ocr_engine || DEFAULT_OCR_ENGINE
+  ).trim()
+  return ocrEngineOptions.some((option) => option.value === configuredEngine)
+    ? configuredEngine
+    : DEFAULT_OCR_ENGINE
+}
+
+const applyDefaultOcrEngine = () => {
+  processingParams.value.ocr_engine = resolveDefaultOcrEngine()
+}
+
+watch(
+  () => configStore.config?.default_ocr_engine,
+  () => {
+    if (props.visible && !ocrEngineTouched.value) {
+      applyDefaultOcrEngine()
+    }
+  }
+)
+
 const ocrStatusLabels = {
-  local: 'Chưa bật',
-  healthy: 'Có sẵn',
-  unavailable: 'Không có sẵn',
-  unhealthy: 'bất thường',
-  timeout: 'hết thời gian chờ',
-  error: 'bất thường',
-  checking: 'Đang được kiểm tra',
-  unknown: 'Trạng thái không xác định'
+  local: '不启用',
+  healthy: '可用',
+  configured: '已配置',
+  unavailable: '不可用',
+  unhealthy: '异常',
+  timeout: '超时',
+  error: '异常',
+  checking: '检查中',
+  unknown: '状态未知'
 }
 
 const getOcrStatus = (engine) => {
@@ -1021,26 +1062,27 @@ const getOcrStatus = (engine) => {
   return current?.status || 'unknown'
 }
 
-const getOcrStatusLabel = (engine) => ocrStatusLabels[getOcrStatus(engine)] || 'Trạng thái không xác định'
+const getOcrStatusLabel = (engine) => ocrStatusLabels[getOcrStatus(engine)] || '状态未知'
 
 const getOcrDescription = (engine) => {
   const option = ocrEngineOptions.find((item) => item.value === engine)
-  if (engine === 'disable') return option?.description || 'Chưa bật OCR，Chỉ xử lý tệp văn bản'
+  if (engine === 'disable') return option?.description || '不启用 OCR，仅处理文本文件'
 
   const messageText = ocrHealthStatus.value?.[engine]?.message
   if (messageText) return messageText
 
   const status = getOcrStatus(engine)
   const fallbackMap = {
-    healthy: 'Dịch vụ là bình thường',
-    unavailable: 'Dịch vụ không có sẵn',
-    unhealthy: 'Ngoại lệ dịch vụ',
-    timeout: 'Hết thời gian kiểm tra dịch vụ',
-    error: 'Ngoại lệ dịch vụ',
-    checking: 'Kiểm tra trạng thái dịch vụ',
-    unknown: option?.description || 'Trạng thái dịch vụ không xác định'
+    healthy: '服务正常',
+    configured: 'Token 已配置，将在解析时验证',
+    unavailable: '服务不可用',
+    unhealthy: '服务异常',
+    timeout: '服务检查超时',
+    error: '服务异常',
+    checking: '正在检查服务状态',
+    unknown: option?.description || '服务状态未知'
   }
-  return fallbackMap[status] || option?.description || 'Trạng thái dịch vụ không xác định'
+  return fallbackMap[status] || option?.description || '服务状态未知'
 }
 
 const isUnavailableOcrEngine = (engine) => ['unavailable', 'error'].includes(getOcrStatus(engine))
@@ -1056,12 +1098,13 @@ const unavailableOcrOptions = computed(() =>
 const selectedOcrEngineLabel = computed(() => {
   return (
     ocrEngineOptions.find((option) => option.value === processingParams.value.ocr_engine)?.label ||
-    'chọn OCR động cơ'
+    '选择 OCR 引擎'
   )
 })
 
 const selectOcrEngine = (engine) => {
   if (isUnavailableOcrEngine(engine)) return
+  ocrEngineTouched.value = true
   processingParams.value.ocr_engine = engine
   ocrPanelOpen.value = false
 }
@@ -1070,7 +1113,7 @@ const toggleUnavailableOcrOptions = () => {
   unavailableOcrExpanded.value = !unavailableOcrExpanded.value
 }
 
-// Xác minhOCRTính khả dụng của dịch vụ
+// 验证OCR服务可用性
 const validateOcrService = () => {
   if (!isOcrEnabled.value) {
     return true
@@ -1078,7 +1121,7 @@ const validateOcrService = () => {
 
   const engine = processingParams.value.ocr_engine
   if (isUnavailableOcrEngine(engine)) {
-    message.error(`OCRDịch vụ không có sẵn: ${getOcrDescription(engine)}`)
+    message.error(`OCR服务不可用: ${getOcrDescription(engine)}`)
     return false
   }
 
@@ -1091,7 +1134,7 @@ const handleCancel = () => {
 
 const beforeUpload = (file) => {
   if (!isSupportedExtension(file?.name)) {
-    message.error(`Các loại tệp không được hỗ trợ：${file?.name || 'tập tin không xác định'}`)
+    message.error(`不支持的文件类型：${file?.name || '未知文件'}`)
     return Upload.LIST_IGNORE
   }
   return true
@@ -1109,24 +1152,24 @@ const formatFileTime = (timestamp) => {
 
 const showSameNameFilesInUploadArea = (files) => {
   sameNameFiles.value = files
-  // Logic bổ sung có thể được thêm vào đây，Ví dụ: tự động cuộn đến vùng nhắc
+  // 可以在这里添加其他逻辑，比如自动滚动到提示区域
 }
 
 const downloadSameNameFile = async (file) => {
   try {
-    // Lấy cơ sở dữ liệu hiện tạiID
+    // 获取当前数据库ID
     const currentDbId = kbId.value
     if (!currentDbId) {
-      message.error('cơ sở tri thứcIDkhông tồn tại')
+      message.error('知识库ID不存在')
       return
     }
 
-    message.loading('Đang tải xuống tập tin...', 0)
+    message.loading('正在下载文件...', 0)
     const response = await documentApi.downloadDocument(currentDbId, file.file_id)
     message.destroy()
 
-    // Tạo liên kết tải xuống
-    const blob = await response.blob() // từ Response Trích xuất từ đối tượng Blob dữ liệu
+    // 创建下载链接
+    const blob = await response.blob() // 从 Response 对象中提取 Blob 数据
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -1136,42 +1179,42 @@ const downloadSameNameFile = async (file) => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
 
-    message.success(`tập tin ${file.filename} Tải xuống thành công`)
+    message.success(`文件 ${file.filename} 下载成功`)
   } catch (error) {
     message.destroy()
-    console.error('Tải xuống tệp không thành công:', error)
-    message.error(`Tải xuống tệp không thành công: ${error.message || 'lỗi không xác định'}`)
+    console.error('下载文件失败:', error)
+    message.error(`下载文件失败: ${error.message || '未知错误'}`)
   }
 }
 
 const deleteSameNameFile = (file) => {
   Modal.confirm({
-    title: 'Xác nhận xóa tập tin',
-    content: `Xác nhận bạn muốn xóa tập tin "${file.filename}" ?？Hoạt động này là không thể đảo ngược。`,
-    okText: 'Xóa',
+    title: '确认删除文件',
+    content: `确定要删除文件 "${file.filename}" 吗？此操作不可恢复。`,
+    okText: '删除',
     okType: 'danger',
-    cancelText: 'Hủy bỏ',
+    cancelText: '取消',
     onOk: async () => {
       try {
-        // Lấy cơ sở dữ liệu hiện tạiID
+        // 获取当前数据库ID
         const currentDbId = kbId.value
         if (!currentDbId) {
-          message.error('cơ sở tri thứcIDkhông tồn tại')
+          message.error('知识库ID不存在')
           return
         }
 
-        message.loading('Xóa tập tin...', 0)
+        message.loading('正在删除文件...', 0)
         await documentApi.deleteDocument(currentDbId, file.file_id)
         message.destroy()
 
-        // Xóa khỏi danh sách các tệp có cùng tên
+        // 从同名文件列表中移除
         sameNameFiles.value = sameNameFiles.value.filter((f) => f.file_id !== file.file_id)
 
-        message.success(`tập tin ${file.filename} Xóa thành công`)
+        message.success(`文件 ${file.filename} 删除成功`)
       } catch (error) {
         message.destroy()
-        console.error('Không thể xóa tập tin:', error)
-        message.error(`Không thể xóa tập tin: ${error.message || 'lỗi không xác định'}`)
+        console.error('删除文件失败:', error)
+        message.error(`删除文件失败: ${error.message || '未知错误'}`)
       }
     }
   })
@@ -1220,7 +1263,7 @@ const processUploadQueue = () => {
     activeUploadCount.value += 1
     runUploadTask(task)
       .catch(() => {
-        // Lỗi đã có rồi runUploadTask xử lý nội bộ，Điều này chỉ đảm bảo rằng hàng đợi tiếp tục tiêu thụ
+        // 错误已经在 runUploadTask 内处理，这里只保证队列继续消费
       })
       .finally(() => {
         activeUploadCount.value -= 1
@@ -1338,16 +1381,16 @@ const runUploadTask = (task) => {
 const handleFileUpload = (info) => {
   if (info?.file?.status === 'error') {
     const file = info.file
-    // Hãy thử nhiều cách để nhận được thông báo lỗi
+    // 尝试多种方式获取错误信息
     const detail = file?.response?.detail || file?.error?.message || ''
-    if (detail.includes('same content') || detail.includes('Cùng nội dung')) {
-      message.error(`${file.name} Đã có file nội dung tương tự，Không cần phải tải lên lại`)
+    if (detail.includes('same content') || detail.includes('相同内容')) {
+      message.error(`${file.name} 已是相同内容文件，无需重复上传`)
     } else {
-      message.error(detail || `Tải tệp lên không thành công：${file.name}`)
+      message.error(detail || `文件上传失败：${file.name}`)
     }
   }
 
-  // Kiểm tra xem có dấu nhắc tệp có cùng tên không
+  // 检查是否有同名文件提示
   if (info?.file?.status === 'done' && info.file.response) {
     const response = info.file.response
     if (response.has_same_name && response.same_name_files && response.same_name_files.length > 0) {
@@ -1360,7 +1403,7 @@ const handleFileUpload = (info) => {
 
 const handleDrop = () => {}
 
-// Logic tải lên thư mục đã bị xóa
+// 已移除文件夹上传逻辑
 
 const checkOcrHealth = async () => {
   if (ocrHealthChecking.value) return
@@ -1370,8 +1413,8 @@ const checkOcrHealth = async () => {
     const healthData = await ocrApi.getHealth()
     ocrHealthStatus.value = healthData.services
   } catch (error) {
-    console.error('OCRKiểm tra sức khỏe không thành công:', error)
-    message.error('OCRKiểm tra tình trạng dịch vụ không thành công')
+    console.error('OCR健康检查失败:', error)
+    message.error('OCR服务健康检查失败')
   } finally {
     ocrHealthChecking.value = false
   }
@@ -1399,18 +1442,18 @@ const openDocLink = () => {
 
 const chunkData = async () => {
   if (!kbId.value) {
-    message.error('Vui lòng chọn cơ sở kiến thức trước')
+    message.error('请先选择知识库')
     return
   }
 
-  // Xác minhOCRTính khả dụng của dịch vụ（Không URL chế độ）
+  // 验证OCR服务可用性（非 URL 模式下）
   if (uploadMode.value !== 'url' && !validateOcrService()) {
     return
   }
 
   if (uploadMode.value === 'workspace') {
     if (selectedWorkspacePaths.value.length === 0) {
-      message.error('Vui lòng chọn tệp không gian làm việc trước')
+      message.error('请先选择工作区文件')
       return
     }
 
@@ -1419,7 +1462,7 @@ const chunkData = async () => {
       const res = await fileApi.importWorkspaceFiles(kbId.value, selectedWorkspacePaths.value)
       const importedItems = Array.isArray(res?.items) ? res.items : []
       if (importedItems.length === 0) {
-        message.error('Nhập tệp không gian làm việc không thành công')
+        message.error('工作区文件导入失败')
         return
       }
 
@@ -1438,7 +1481,7 @@ const chunkData = async () => {
         const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase()
         if (imageExtensions.includes(ext) && !isOcrEnabled.value) {
           message.error({
-            content: 'Đã phát hiện thấy tệp hình ảnh，Phải được kích hoạt OCR Để trích xuất nội dung văn bản。',
+            content: '检测到图片文件，必须启用 OCR 才能提取文本内容。',
             duration: 5
           })
           return
@@ -1462,24 +1505,24 @@ const chunkData = async () => {
       handleCancel()
       selectedWorkspacePaths.value = []
     } catch (error) {
-      console.error('Nhập tệp không gian làm việc không thành công:', error)
-      message.error('Nhập tệp không gian làm việc không thành công: ' + (error.message || 'lỗi không xác định'))
+      console.error('工作区文件导入失败:', error)
+      message.error('工作区文件导入失败: ' + (error.message || '未知错误'))
     } finally {
       store.state.chunkLoading = false
     }
     return
   }
 
-  // URL Xử lý mẫu
+  // URL 模式处理
   if (uploadMode.value === 'url') {
-    // Lọc ra các mục thành công
+    // 过滤出成功的项
     const successfulItems = urlList.value.filter((item) => item.status === 'success' && item.data)
     if (successfulItems.length === 0) {
-      message.error('Vui lòng thêm và đợi ít nhất một URL Đã phân tích cú pháp thành công')
+      message.error('请添加并等待至少一个 URL 解析成功')
       return
     }
 
-    // Loại bỏ trùng lặp hàng loạt bằng cách băm nội dung，Tránh lưu trữ trùng lặp của cùng một lô
+    // 批内按内容哈希去重，避免同一批次重复入库
     const deduplicatedItems = []
     const seenKeys = new Set()
     let skippedDuplicates = 0
@@ -1494,12 +1537,12 @@ const chunkData = async () => {
     }
 
     if (deduplicatedItems.length === 0) {
-      message.error('URL Tất cả nội dung đều trùng lặp，Vui lòng thay đổi và thử lại')
+      message.error('URL 内容均为重复项，请更换后重试')
       return
     }
 
     if (skippedDuplicates > 0) {
-      message.warning(`phát hiện ${skippedDuplicates} lặp lại URL nội dung，Cái đầu tiên đã được giữ lại và cái còn lại đã bị bỏ qua`)
+      message.warning(`检测到 ${skippedDuplicates} 个重复 URL 内容，已保留首个并跳过其余项`)
     }
 
     try {
@@ -1510,13 +1553,13 @@ const chunkData = async () => {
         Object.assign(params, buildAutoIndexParams())
       }
 
-      // cấu trúc _preprocessed_map và items (minio urls)
+      // 构造 _preprocessed_map 和 items (minio urls)
       const items = []
       const preprocessedMap = {}
       for (const item of deduplicatedItems) {
         // item.data = { file_path: "http://minio...", content_hash: "...", filename: "...", ... }
-        // Lưu ý：fetch-url trả lại file_path Thực ra là vậy MinIO URL
-        // chúng ta cần phải vượt qua MinIO URL cho addDocuments
+        // 注意：fetch-url 返回的 file_path 其实是 MinIO URL
+        // 我们需要传递 MinIO URL 给 addDocuments
         const minioUrl = item.data.file_path
         items.push(minioUrl)
         preprocessedMap[minioUrl] = {
@@ -1528,10 +1571,10 @@ const chunkData = async () => {
       }
       params._preprocessed_map = preprocessedMap
 
-      // gọi addFiles (file mode)
+      // 调用 addFiles (file mode)
       await store.addFiles({
         items: items,
-        contentType: 'file', // quan trọng：Thay đổi ở đây thành file，Bởi vì chúng ta đã quay minio tập tin trên
+        contentType: 'file', // 重要：这里改为 file，因为我们已经转成了 minio 上的文件
         params,
         parentId: selectedFolderId.value
       })
@@ -1541,18 +1584,18 @@ const chunkData = async () => {
       urlList.value = []
       newUrl.value = ''
     } catch (error) {
-      console.error('URL Gửi không thành công:', error)
-      message.error('URL Gửi không thành công: ' + (error.message || 'lỗi không xác định'))
+      console.error('URL 提交失败:', error)
+      message.error('URL 提交失败: ' + (error.message || '未知错误'))
     } finally {
       store.state.chunkLoading = false
     }
     return
   }
 
-  // Xử lý chế độ tập tin
+  // 文件模式处理
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif']
 
-  // Trích xuất thông tin tập tin đã tải lên
+  // 提取已上传的文件信息
   const items = []
   const content_hashes = {}
   const file_sizes = {}
@@ -1566,11 +1609,11 @@ const chunkData = async () => {
     if (content_hash) content_hashes[file_path] = content_hash
     if (Number.isFinite(file.response?.size)) file_sizes[file_path] = file.response.size
 
-    // Kiểm tra nếu cầnOCR
+    // 检查是否需要OCR
     const ext = file_path.substring(file_path.lastIndexOf('.')).toLowerCase()
     if (imageExtensions.includes(ext) && !isOcrEnabled.value) {
       message.error({
-        content: 'Đã phát hiện thấy tệp hình ảnh，Phải được kích hoạt OCR Để trích xuất nội dung văn bản。',
+        content: '检测到图片文件，必须启用 OCR 才能提取文本内容。',
         duration: 5
       })
       return
@@ -1578,7 +1621,7 @@ const chunkData = async () => {
   }
 
   if (items.length === 0) {
-    message.error('Vui lòng tải tập tin lên trước')
+    message.error('请先上传文件')
     return
   }
 
@@ -1602,8 +1645,8 @@ const chunkData = async () => {
     fileList.value = []
     sameNameFiles.value = []
   } catch (error) {
-    console.error('Tải tệp lên không thành công:', error)
-    message.error('Tải tệp lên không thành công: ' + (error.message || 'lỗi không xác định'))
+    console.error('文件上传失败:', error)
+    message.error('文件上传失败: ' + (error.message || '未知错误'))
   } finally {
     store.state.chunkLoading = false
   }
@@ -1872,7 +1915,8 @@ const chunkData = async () => {
 }
 
 .ocr-engine-status.status-local,
-.ocr-engine-status.status-healthy {
+.ocr-engine-status.status-healthy,
+.ocr-engine-status.status-configured {
   color: var(--color-success-700);
 }
 

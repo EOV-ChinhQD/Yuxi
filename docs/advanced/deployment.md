@@ -1,70 +1,83 @@
-# Hướng dẫn triển khai sản xuất
+# 生产部署指南
 
-Tài liệu này mô tả cách triển khai trong môi trường sản xuất Yuxi。
+本文档介绍如何在生产环境中部署 Yuxi。
 
-## Điều kiện tiên quyết
+## 前置要求
 
 - Docker Engine (v24.0+)
 - Docker Compose (v2.20+)
-- NVIDIA Container Toolkit（Nếu bạn cần sử dụng GPU dịch vụ）
+- NVIDIA Container Toolkit（如需使用 GPU 服务）
 
-::: warning Những điều cần lưu ý
-1. Nên sử dụng các loại máy khác nhau cho môi trường sản xuất và môi trường phát triển，Tránh xung đột cổng và tài nguyên
-2. Mặc dù có tên「môi trường sản xuất」，Nhưng đây chỉ là cấu hình cơ bản，Việc ra mắt thực tế cần phải được điều chỉnh theo tình hình thực tế.
-3. Có một bảng gỡ lỗi ở mặt trước（Được kích hoạt bằng cách nhấn và giữ thanh bên），Đề nghị đóng cửa môi trường sản xuất
+::: warning 注意事项
+1. 生产环境和开发环境建议使用不同的机器，避免端口和资源冲突
+2. 虽然名为「生产环境」，但这只是基本配置，真正上线需要根据实际情况调整
+3. 前端有调试面板（长按侧边栏触发），生产环境建议关闭
 :::
 
-## Các bước triển khai
+## 部署步骤
 
-### 1. Chuẩn bị tập tin cấu hình
+### 1. 准备配置文件
 
-Để tránh xung đột với môi trường phát triển，Đề xuất cho môi trường sản xuất `.env.prod` tập tin：
+为避免与开发环境冲突，生产环境建议使用 `.env.prod` 文件：
 
 ```bash
 cp .env.template .env.prod
 ```
 
-Chỉnh sửa `.env.prod`，Đặt mật khẩu mạnh và cần thiết API chìa khóa：
+编辑 `.env.prod`，设置强密码和必要的 API 密钥：
 
-- `NEO4J_PASSWORD`：Thay đổi mật khẩu mặc định
-- `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY`：Sửa đổi khóa mặc định
-- `SILICONFLOW_API_KEY` khóa mô hình bằng nhau
+- `NEO4J_PASSWORD`：修改默认密码
+- `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY`：修改默认密钥
+- `SILICONFLOW_API_KEY` 等模型密钥
 
-### 2. Bắt đầu dịch vụ
+### 2. 启动服务
 
-Bắt đầu sử dụng tệp cấu hình môi trường sản xuất：
+使用生产环境配置文件启动：
 
 ```bash
-# Chỉ bắt đầu các dịch vụ cốt lõi（CPU chế độ）
+# 仅启动核心服务（CPU 模式）
 docker compose -f docker-compose.prod.yml up -d --build
 
-# Bắt đầu tất cả các dịch vụ（chứa GPU OCR）
+# 启动所有服务（包含 GPU OCR）
 docker compose -f docker-compose.prod.yml --profile all up -d --build
 ```
 
-### 3. Xác minh triển khai
+### 3. 验证部署
 
-- Web chuyến thăm：http://localhost（vượt qua trực tiếp 80 hải cảng）
-- API kiểm tra sức khỏe：`curl http://localhost/api/system/health`
+- Web 访问：http://localhost（直接通过 80 端口）
+- API 健康检查：`curl http://localhost/api/system/health`
 
-## Bảo trì và cập nhật
+## 跨域（CORS）配置
 
-### Cập nhật mã
+`docker-compose.prod.yml` 默认把 `YUXI_ENV` 设为 `production`，后端在该环境下会按 `YUXI_CORS_ORIGINS` 显式声明允许的来源。**未配置时返回空列表，浏览器跨域请求会被拒绝**。生产部署前请根据前端与 API 的相对位置选择策略：
+
+| 部署形态 | 推荐配置 |
+|----------|----------|
+| 前端与 API 同源（Nginx 同端口反代） | 不需要设置，留空即可 |
+| 前端与 API 跨域部署 | `YUXI_CORS_ORIGINS=https://your-frontend.example.com` |
+| 多个前端域名 | 逗号分隔，如 `https://a.example.com,https://b.example.com` |
+| 完全放开（不推荐） | `YUXI_CORS_ORIGINS=*`，会自动关闭 credentials，登录态/JWT 无法跨域携带 |
+
+开发环境（`YUXI_ENV=development` 且未设置该变量）默认允许 `http://localhost:5173` 与 `http://127.0.0.1:5173`，方便本地前后端独立启动调试。从 0.7.0 升级到 0.7.1 时，如果此前是跨域部署但未显式声明来源，必须补上 `YUXI_CORS_ORIGINS`，否则前端跨域请求会被拒绝。
+
+## 维护与更新
+
+### 更新代码
 
 ```bash
-# Kéo mã mới nhất
+# 拉取最新代码
 git pull
 
-# Xây dựng lại và bắt đầu
+# 重新构建并启动
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-### Xem nhật ký
+### 查看日志
 
 ```bash
-# API Nhật ký
+# API 日志
 docker logs -f api-prod
 
-# Nginx nhật ký truy cập
+# Nginx 访问日志
 docker logs -f web-prod
 ```

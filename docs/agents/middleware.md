@@ -1,94 +1,97 @@
-# hệ thống phần mềm trung gian
+# 中间件系统
 
-phần mềm trung gian là Yuxi Cơ chế chính để mở rộng hành vi hoạt động của các tác nhân。nó hoạt động ở LangGraph Agent cuộc gọi người mẫu、Cuộc gọi công cụ、Cập nhật trạng thái và đường dẫn truy cập hệ thống tệp，cơ sở tri thức、Skills、Phụ kiện、chất phụ、Nén bối cảnh và truy cập quan sát chạy cùng một liên kết thực thi。
+中间件是 Yuxi 扩展智能体运行行为的主要机制。它工作在 LangGraph Agent 的模型调用、工具调用、状态更新和文件系统访问路径上，用来把知识库、Skills、附件、子智能体、上下文压缩和运行观测接入同一条执行链路。
 
-Tích hợp sẵn `ChatbotAgent` với `SubAgentBackend` sẽ ở đó `get_graph()` Xây dựng danh sách phần mềm trung gian trong。Lọc tài nguyên chạy trước không còn dựa vào phần mềm trung gian cấu hình thời gian chạy cũ nữa，nhưng việc tạo ra Graph trước đây `prepare_agent_runtime_context` Hoàn thành。
+内置 `ChatbotAgent` 与 `SubAgentBackend` 都会在 `get_graph()` 中构建中间件列表。运行前的资源过滤不再依赖旧版运行时配置中间件，而是在创建 Graph 前由 `prepare_agent_runtime_context` 完成。
 
-## Chuẩn bị thời gian chạy
+## 运行时准备
 
-Chuẩn bị thời gian chạy không phải là phần mềm trung gian，Nhưng nó xác định những tài nguyên mà phần mềm trung gian tiếp theo có thể nhìn thấy。Tích hợp sẵn Agent tạo ra Graph Các bước sau đây sẽ được thực hiện trước：
+运行时准备不是中间件，但它决定后续中间件能看到什么资源。内置 Agent 创建 Graph 前会先执行以下步骤：
 
-- `prepare_agent_runtime_context`：Lọc công cụ theo quyền của người dùng hiện tại、cơ sở tri thức、MCP、Skills và đại lý phụ，và bắt nguồn `_visible_knowledge_bases`、`_prompt_skills`、`_readable_skills`
-- `build_prompt_with_context`：Dựa trên Context Tạo các từ nhắc hệ thống
-- `load_chat_model(context.model)`：Tải mô hình chính
-- `resolve_configured_runtime_tools(context)`：Tải các công cụ tích hợp đã được cấu hình và MCP Công cụ
+- `prepare_agent_runtime_context`：按当前用户权限过滤工具、知识库、MCP、Skills 和子智能体，并派生 `_visible_knowledge_bases`、`_prompt_skills`、`_readable_skills`
+- `build_prompt_with_context`：基于 Context 生成系统提示词
+- `load_chat_model(context.model)`：加载主模型
+- `resolve_configured_runtime_tools(context)`：加载已配置的内置工具和 MCP 工具
 
-Điều này có nghĩa là phần mềm trung gian không chịu trách nhiệm đánh giá lại“Liệu người dùng có thể truy cập tài nguyên hay không”。Những gì họ tiêu thụ được bình thường hóa runtime context。
+这意味着中间件不负责重新判断“用户是否能访问某个资源”。它们消费的是已经归一化后的 runtime context。
 
-## Liên kết phần mềm trung gian tích hợp
+## 内置中间件链路
 
-Hiện đang được xây dựng ở `ChatbotAgent` Trình tự phần mềm trung gian như sau：
+当前内置 `ChatbotAgent` 的中间件顺序如下：
 
-| phần mềm trung gian | chức năng |
+| 中间件 | 作用 |
 | --- | --- |
-| `create_agent_filesystem_middleware` | Truy cập hệ thống tệp hộp cát、Không gian làm việc của người dùng、chủ đề uploads/outputs với chế độ chỉ đọc Skills định tuyến，Và viết nội dung khi kết quả tool quá lớn `outputs/large_tool_results` |
-| `save_attachments_to_fs` / `AttachmentMiddleware` | từ LangGraph state của `uploads` Đọc đường dẫn đính kèm，Đưa các đường dẫn có thể đọc được vào lời nhắc hệ thống，Mô hình nhắc nhở để sử dụng khi cần thiết `read_file` |
-| `SkillsMiddleware` | Có thể nhìn thấy tiêm Skill phần nhắc nhở，Nghe các bài đọc `SKILL.md` sau này Skill kích hoạt，và nối thêm các công cụ và phần phụ thuộc MCP Công cụ；Các công cụ cơ sở tri thức được tích hợp sẵn `knowledge-base` Skill Tải theo yêu cầu |
-| `YuxiSubAgentMiddleware` | chỉ chính Agent Được gắn khi có các tác nhân phụ hiển thị，cung cấp `task` công cụ gọi sub thật Agent graph |
-| `YuxiSummarizationMiddleware` | Dựa trên DeepAgents `SummarizationMiddleware` Thực hiện nén ngữ cảnh dài，Và làm sạch kết quả công cụ trong lịch sử tóm tắt |
-| `TodoListMiddleware` | Cung cấp trạng thái việc cần làm，Làm cho bảng trạng thái giao diện người dùng có thể hiển thị được Agent Tiến độ chạy |
-| `PatchToolCallsMiddleware` | Đã sửa một số mẫu tin nhắn cuộc gọi công cụ，Cải thiện khả năng tương thích gọi công cụ |
-| `ModelRetryMiddleware` | Thử lại như đã định cấu hình khi cuộc gọi mô hình không thành công |
-| `TokenUsageMiddleware` | trong LangGraph state Viết vòng này token Sử dụng ảnh chụp nhanh，Để xem bằng bảng trạng thái giao diện người dùng |
+| `create_agent_filesystem_middleware` | 接入沙盒文件系统、用户工作区、线程 uploads/outputs 与只读 Skills 路由，并在工具结果过大时把内容写入 `outputs/large_tool_results` |
+| `save_attachments_to_fs` / `AttachmentMiddleware` | 从 LangGraph state 的 `uploads` 读取附件路径，把可读路径注入系统提示，提示模型按需使用 `read_file` |
+| `SkillsMiddleware` | 注入可见 Skill 的提示段，监听读取 `SKILL.md` 后的 Skill 激活，并按依赖追加工具和 MCP 工具；知识库工具由内置 `knowledge-base` Skill 按需加载 |
+| `YuxiSubAgentMiddleware` | 仅主 Agent 在存在可见子智能体时挂载，提供 `task` 工具调用真实子 Agent graph |
+| `YuxiSummarizationMiddleware` | 基于 DeepAgents `SummarizationMiddleware` 做长上下文压缩，并清洗被摘要历史里的工具结果 |
+| `TodoListMiddleware` | 提供待办状态，让前端状态面板可展示 Agent 运行进度 |
+| `PatchToolCallsMiddleware` | 修正部分工具调用消息形态，提升工具调用兼容性 |
+| `ModelRetryMiddleware` | 在模型调用失败时按配置重试 |
+| `TokenUsageMiddleware` | 在 LangGraph state 写入本轮 token 使用快照，供前端状态面板查看 |
 
-`SubAgentBackend` Sử dụng cùng một bộ năng lực cốt lõi，nhưng sẽ không gắn kết `YuxiSubAgentMiddleware`，và lọc bổ sung `present_artifacts`、`ask_user_question`、`install_skill` và các công cụ khác không phù hợp để đại lý phụ sử dụng trực tiếp。
+`SubAgentBackend` 使用同一组核心能力，但不会挂载 `YuxiSubAgentMiddleware`，并额外过滤 `present_artifacts`、`ask_user_question`、`install_skill` 等不适合子智能体直接使用的工具。
 
-## Công cụ cơ sở tri thức
+## 知识库工具
 
-Khả năng truy cập cơ sở kiến thức được tích hợp sẵn `knowledge-base` Skill。Agent đọc `/home/gem/skills/knowledge-base/SKILL.md` kích hoạt cái này Skill sau，`SkillsMiddleware` Sẽ được nối thêm theo phụ thuộc `list_kbs`、`query_kb`、`find_kb_document`、`open_kb_document`、`get_mindmap` công cụ cơ sở tri thức。
+知识库访问能力沉淀为内置 `knowledge-base` Skill。Agent 读取 `/home/gem/skills/knowledge-base/SKILL.md` 激活该 Skill 后，`SkillsMiddleware` 会按依赖追加 `list_kbs`、`query_kb`、`find_kb_document`、`open_kb_document`、`get_mindmap` 等知识库工具。
 
-Cơ sở kiến thức hữu hình thực tế vẫn bao gồm `prepare_agent_runtime_context` Dựa trên người dùng hiện tại và Agent Ghi cấu hình `_visible_knowledge_bases`，Khi công cụ này được thực thi, nó sẽ chỉ tìm kiếm trong loạt cơ sở kiến thức này.。`context.knowledges` là phạm vi tài nguyên，Không Skill chính nó。
+实际可见知识库仍由 `prepare_agent_runtime_context` 根据当前用户和 Agent 配置写入 `_visible_knowledge_bases`，工具执行时只会在这批知识库中检索。`context.knowledges` 是资源范围，不是 Skill 本身。
 
-Hệ thống sẽ không đưa cây file cơ sở tri thức vào sandbox。Agent Để truy cập nội dung cơ sở kiến thức bạn nên sử dụng `query_kb`、`find_kb_document` và `open_kb_document`，thay vì đi ngang qua `/home/gem/kbs` Những con đường cũ như vậy。
+系统不会把知识库文件树挂进沙盒。Agent 访问知识库内容应使用 `query_kb`、`find_kb_document` 和 `open_kb_document`，而不是遍历 `/home/gem/kbs` 这类旧路径。
 
-## Skills Tiêm và kích hoạt
+## Skills 注入与激活
 
-`SkillsMiddleware` Làm việc theo hai bước：
+`SkillsMiddleware` 分两步工作：
 
-1. Đọc trước khi gọi mô hình `_prompt_skills`，làm cho có thể nhìn thấy Skill tên、mô tả và `SKILL.md` Đường dẫn được thêm vào dấu nhắc hệ thống。
-2. Sau khi công cụ được gọi, hãy kiểm tra xem mô hình đã được đọc chưa `/home/gem/skills/<slug>/SKILL.md`。Nếu Skill trong `_readable_skills` trong phạm vi，Chỉ cần viết nó `activated_skills`，và nối thêm các công cụ đã khai báo của nó và MCP phụ thuộc vào。
+1. 模型调用前读取 `_prompt_skills`，把可见 Skill 的名称、描述和 `SKILL.md` 路径追加到系统提示。
+2. 工具调用后检查模型是否读取了 `/home/gem/skills/<slug>/SKILL.md`。如果该 Skill 在 `_readable_skills` 范围内，就把它写入 `activated_skills`，并在后续模型调用中追加它声明的工具和 MCP 依赖。
 
-Thiết kế này cho phép Skill Nó có thể được hiển thị đầu tiên dưới dạng mô tả，Chỉ mở rộng bộ công cụ sau khi mô hình đã thực sự được đọc và kích hoạt，Tránh nhồi nhét tất cả các công cụ phụ thuộc vào ngữ cảnh ngay từ đầu。
+这种设计让 Skill 可以先作为说明可见，只有模型真正读取并激活后才扩展工具集，避免一开始就把所有依赖工具塞进上下文。
 
-## Tệp đính kèm và hệ thống tệp
+## 附件与文件系统
 
-Sau khi tệp đính kèm được tải lên, trước tiên nó sẽ được đặt trong hệ thống tệp luồng.，Và trong LangGraph state kỷ lục trung bình `uploads`。`AttachmentMiddleware` Chỉ đưa tên tệp và đường dẫn có thể đọc được vào từ nhắc，Toàn bộ nội dung file sẽ không được chèn vào ngữ cảnh mô hình.。Khi mô hình cần xem tệp đính kèm，nên vượt qua `read_file` Đọc đường dẫn tương ứng。
+附件上传后会先落盘到线程文件系统，并在 LangGraph state 中记录 `uploads`。`AttachmentMiddleware` 只把文件名和可读路径注入提示词，不会把文件内容整体塞进模型上下文。模型需要查看附件时，应通过 `read_file` 读取对应路径。
 
-Phần mềm trung gian của hệ thống tập tin chịu trách nhiệm sandbox backend、chủ đề uploads/outputs、Không gian làm việc của người dùng và chỉ đọc Skills kết hợp thành Agent Hệ thống tập tin ảo có thể truy cập。Bình thường Agent Theo mặc định, hiện tại `thread_id` như phạm vi tập tin；Sử dụng chất phụ child `thread_id` làm checkpoint，Đồng thời, luồng cha uploads/outputs，và sử dụng phụ Agent sở hữu Skills Phạm vi。
+文件系统中间件负责把 sandbox backend、线程 uploads/outputs、用户工作区和只读 Skills 组合成 Agent 可访问的虚拟文件系统。普通 Agent 默认使用当前 `thread_id` 作为文件作用域；子智能体使用 child `thread_id` 做 checkpoint，同时沿用父线程的 uploads/outputs，并使用子 Agent 自己的 Skills 作用域。
 
-## Nhiệm vụ của đại lý phụ
+## 子智能体任务
 
-Chúa ơi Agent Nếu các tác nhân phụ hiển thị được định cấu hình，Sẽ gắn kết `YuxiSubAgentMiddleware` và nhận được `task` Công cụ。Công cụ này sẽ không gọi độc lập cũ SubAgents bàn，Thay vào đó hãy tìm `agents.is_subagent=true` Và phần phụ trợ là `SubAgentBackend` của thực tế Agent Cấu hình，Sau đó bắt đầu con tương ứng Agent graph。
+主 Agent 如果配置了可见子智能体，会挂载 `YuxiSubAgentMiddleware` 并获得 `task` 工具。这个工具不会调用旧版独立 SubAgents 表，而是查找 `agents.is_subagent=true` 且后端为 `SubAgentBackend` 的真实 Agent 配置，然后启动对应子 Agent graph。
 
-Tác nhân phụ sẽ giành được sự độc lập khi thực hiện child thread、độc lập checkpoint và `agent_runs(run_type=subagent)` ghi lại；Kết quả công cụ sẽ trả về child thread ID，Việc này có thể được thực hiện sau ID trở về `task` Tiếp tục nhiệm vụ phụ tương tự。Bản thân tác nhân phụ sẽ không gắn kết lớp tiếp theo `task` phần mềm trung gian，Tránh hình thành các liên kết tác nhân phụ lồng nhau。
+子智能体执行时会获得独立 child thread、独立 checkpoint 和 `agent_runs(run_type=subagent)` 记录；工具结果会返回 child thread ID，后续可以把该 ID 传回 `task` 继续同一个子任务。子智能体自身不会再挂载下一层 `task` 中间件，避免形成嵌套子智能体链路。
 
-## Summary Nén ngữ cảnh
+## Summary 上下文压缩
 
-Những cuộc hội thoại dài được nén bởi Yuxi đóng gói `YuxiSummarizationMiddleware` chịu trách nhiệm。nó dựa trên DeepAgents của `SummarizationMiddleware`，Nhưng đối với Yuxi Việc xử lý bổ sung đã được thực hiện trên các kết quả tìm kiếm cơ sở kiến ​​thức và gọi công cụ.。
+长对话压缩由 Yuxi 封装的 `YuxiSummarizationMiddleware` 负责。它基于 DeepAgents 的 `SummarizationMiddleware`，但针对 Yuxi 的知识库检索和工具调用结果做了额外处理。
 
-Điều kiện kích hoạt xuất phát từ Agent Context：
+触发条件来自 Agent Context：
 
-| trường | Mô tả |
+| 字段 | 说明 |
 | --- | --- |
-| `summary_threshold` | bối cảnh ngoài đó K token Tóm tắt kích hoạt sau ngưỡng |
-| `summary_keep_messages` | Giữ số lượng tin nhắn gần đây sau khi tiêu hóa |
-| `summary_prompt` | Các từ nhắc nhở được sử dụng bởi các mô hình tóm tắt |
-| `summary_tool_result_token_limit` | Xem trước kết quả công cụ trong lịch sử tóm tắt token giới hạn trên |
+| `summary_threshold` | 上下文超过该 K token 阈值后触发摘要；L2 摘要模型的待摘要历史输入上限也使用同一阈值 |
+| `summary_keep_messages` | 摘要后保留最近消息数 |
+| `summary_prompt` | 摘要模型使用的提示词 |
+| `summary_tool_result_token_limit` | 工具结果 offload 阈值和预览 token 上限 |
+| `summary_l2_trigger_ratio` | L1 后进入 L2 summary 的触发比例，建议 `0.1~1.0`，默认 `0.4` |
 
-Sử dụng phán đoán kích hoạt Yuxi xấp xỉ riêng token Kết quả tính toán，Trả lại mà không sử dụng mô hình `usage_metadata.total_tokens` như một tác nhân kích hoạt，tránh provider Tầm cỡ thanh toán、Tầm cỡ tích lũy hoặc báo cáo bất thường dẫn đến việc nén sớm các cuộc trò chuyện ngắn。
+触发判断使用 Yuxi 自己的近似 token 计算结果，不使用模型返回的 `usage_metadata.total_tokens` 作为触发依据，避免 provider 的计费口径、累计口径或异常上报导致短对话过早压缩。
 
-Sau khi kích hoạt，Phần mềm trung gian sẽ nén tin nhắn trước đó thành một summary message，và giữ lại tin nhắn gốc trong cửa sổ gần đây。Tóm tắt kết quả công cụ lịch sử，nó sẽ không hoàn thành `ToolMessage.content` Gửi trực tiếp summary prompt，Thay vào đó hãy viết dòng điện Agent có thể nhìn thấy `outputs/large_tool_results`，Tái sử dụng tên công cụ、Khoảng token con số、Đường dẫn kết quả đầy đủ và nội dung kết quả công cụ thay thế xem trước có giới hạn。
+触发后，中间件先执行 L1 结构精简：在本次模型调用的临时消息视图里截断旧 `write_file`/`edit_file` 工具调用的大参数；`ToolMessage.content` 估算 token 数超过 `summary_tool_result_token_limit` 时，会写入当前 Agent 可见的 `outputs/large_tool_results`，消息内替换为工具名、近似 token 数、完整结果路径和不超过同一 token 上限的预览。未超过该上限的工具结果保持原样。这个步骤不修改 LangGraph state 中的原始消息。
 
-Điều này đặc biệt quan trọng đối với việc truy xuất cơ sở tri thức：`query_kb`、`open_kb_document`、`find_kb_document` Các công cụ khác có thể trả về các đoạn dài hơn、Nội dung trích dẫn và tài liệu。Summary Giai đoạn dành riêng“Bạn đã kiểm tra những gì?、kết quả ở đâu、Xem trước khóa là gì”，Đồng thời, tránh đưa nhiều lần một số lượng lớn văn bản gốc được truy xuất vào phần tóm tắt.，Giảm ô nhiễm bối cảnh và token áp lực。
+L1 后会重新计算上下文大小；如果仍超过入口阈值乘以 `summary_l2_trigger_ratio`，才进入 L2 summary，把较早的 L1 视图消息压缩成一条 summary message，并保留最近窗口内的原始消息。比例越小越容易进入 L2；`1.0` 表示 L1 后仍超过原始触发阈值才进入 L2。L2 传给摘要模型的待摘要历史上限等于 `summary_threshold` 对应的 token 数，避免用过小的固定窗口丢掉早期关键信息。L2 不再对工具结果做第二轮 offload，只写入 `_summarization_event`，后续调用仍由 DeepAgents 的 cutoff 语义重建 effective messages。
 
-Không được kích hoạt summary Các cuộc gọi mô hình thông thường không làm sạch thêm kết quả công cụ trong cửa sổ gần đây；Việc lập ngân sách kết quả công cụ thông thường chủ yếu được xử lý bởi phần mềm trung gian của hệ thống tệp trong giai đoạn trả lại công cụ。
+这对知识库检索尤其重要：`query_kb`、`open_kb_document`、`find_kb_document` 等工具可能返回较长的片段、引用和文档内容。Summary 阶段保留“查过什么、结果在哪里、关键预览是什么”，同时避免把大量检索原文反复卷入摘要，减少上下文污染和 token 压力。
 
-## Phần mềm trung gian tùy chỉnh
+未达到入口阈值的常规模型调用不会额外清洗工具结果；达到入口阈值但 L1 后低于 L2 门槛时，会直接用 L1 精简后的临时视图调用模型，不生成 summary event。
 
-Khi thêm phần mềm trung gian，Đưa việc thực hiện vào `backend/package/yuxi/agents/middlewares`，Cụ thể hơn Agent của `get_graph()` Tham gia `middleware` danh sách。Trước khi thêm một cái mới, hãy xác nhận trách nhiệm của nó.：
+## 自定义中间件
 
-- Lọc tài nguyên、Sự hội tụ quyền và lựa chọn tài nguyên mặc định nên được đặt trong `prepare_agent_runtime_context` một loại Graph Logic trước khi sáng tạo。
-- Tiêm gợi ý mô hình、Công cụ bổ sung động、xử lý kết quả công cụ và state Cập nhật phù hợp để được thực hiện LangChain Agent middleware。
-- Đọc và ghi tập tin、Kết quả công cụ gỡ cài đặt và artifacts Màn hình nên được ưu tiên sử dụng lại `create_agent_filesystem_middleware` với hộp cát backend。
+新增中间件时，将实现放入 `backend/package/yuxi/agents/middlewares`，再在具体 Agent 的 `get_graph()` 中加入 `middleware` 列表。新增前先确认它属于哪一种职责：
 
-vẫn còn trong kho `DynamicToolMiddleware`，Nhưng hiện tại được xây dựng trong Agent công cụ và MCP Việc tải đã được thực hiện bởi `resolve_configured_runtime_tools(context)` với `SkillsMiddleware` giả sử。Theo mặc định, khi thêm các tính năng mới, không sử dụng lại phần mềm trung gian công cụ động cũ，Trừ khi thực sự cần thiết“Lọc theo yêu cầu sau khi đăng ký trước”chế độ。
+- 资源过滤、权限收敛和默认资源选择应放在 `prepare_agent_runtime_context` 一类的 Graph 创建前逻辑中。
+- 模型提示注入、工具动态追加、工具结果处理和 state 更新适合做成 LangChain Agent middleware。
+- 文件读写、工具结果卸载和 artifacts 展示应优先复用 `create_agent_filesystem_middleware` 与沙盒 backend。
+
+仓库中仍保留 `DynamicToolMiddleware`，但当前内置 Agent 的工具和 MCP 加载已经由 `resolve_configured_runtime_tools(context)` 与 `SkillsMiddleware` 承担。新增功能时不要默认复用旧的动态工具中间件，除非确实需要“预注册后按请求筛选”的模式。

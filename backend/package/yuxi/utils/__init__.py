@@ -1,9 +1,16 @@
-import hashlib
 import os
-import time
-import uuid
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
+from yuxi.utils.hash_utils import hashstr as hashstr
 from yuxi.utils.logging_config import logger
+
+_VN_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
+
+
+def vietnam_now() -> datetime:
+    """Trả về thời gian hiện tại theo múi giờ Việt Nam (Asia/Ho_Chi_Minh, UTC+7)."""
+    return datetime.now(_VN_TZ)
 
 
 def is_text_pdf(pdf_path):
@@ -18,39 +25,13 @@ def is_text_pdf(pdf_path):
     for page_num in range(total_pages):
         page = doc.load_page(page_num)
         text = page.get_text()
-        if text.strip():  # Check if there is text content
+        if text.strip():  # 检查是否有文本内容
             text_pages += 1
 
-    # Calculate the proportion of pages with text content
+    # 计算有文本内容的页面比例
     text_ratio = text_pages / total_pages
-    # If more than 50% of the page has text content, it is considered a text PDF
+    # 如果超过50%的页面有文本内容，则认为是文本PDF
     return text_ratio > 0.5
-
-
-def hashstr(input_string, length=None, with_salt=False, salt=None):
-    """generatecharacter string of hash value
-    Args:
-        input_string: input character string
-        length: intercept length, default is None, surface means not to intercept
-        with_salt: Whether to add salt, the default is False
-    """
-    try:
-        # Try encoding directly
-        encoded_string = str(input_string).encode("utf-8")
-    except UnicodeEncodeError:
-        # If encoding fails, replace invalid characters
-        encoded_string = str(input_string).encode("utf-8", errors="replace")
-
-    if with_salt:
-        if not salt:
-            # Use a combination of timestamp + random number as salt to ensure uniqueness
-            salt = f"{time.time()}_{uuid.uuid4().hex[:8]}"
-        encoded_string = (encoded_string.decode("utf-8") + salt).encode("utf-8")
-
-    hash = hashlib.sha256(encoded_string).hexdigest()
-    if length:
-        return hash[:length]
-    return hash
 
 
 def get_docker_safe_url(base_url):
@@ -58,7 +39,7 @@ def get_docker_safe_url(base_url):
         return base_url
 
     if os.getenv("RUNNING_IN_DOCKER") == "true":
-        # Replace all possible local address forms
+        # 替换所有可能的本地地址形式
         base_url = base_url.replace("http://localhost", "http://host.docker.internal")
         base_url = base_url.replace("http://127.0.0.1", "http://host.docker.internal")
         logger.info(f"Running in docker, using {base_url} as base url")

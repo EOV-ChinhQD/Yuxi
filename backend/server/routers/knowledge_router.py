@@ -10,16 +10,19 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from starlette.responses import StreamingResponse
 from yuxi import config, knowledge_base
+from yuxi.knowledge.chunking.ragflow_like.presets import get_chunk_preset_options
 from yuxi.knowledge.factory import KnowledgeBaseFactory
 from yuxi.knowledge.graphs.milvus_graph_service import GRAPH_TASK_TYPE, MilvusGraphService
 from yuxi.knowledge.parser import SUPPORTED_FILE_EXTENSIONS, Parser, is_supported_file_extension
 from yuxi.knowledge.utils import calculate_content_hash, is_minio_url, parse_minio_url
 from yuxi.knowledge.utils.mindmap_utils import (
+    batch_remove_files_from_mindmap,
     generate_database_mindmap,
     get_database_mindmap_data,
     get_mindmap_database_files,
     get_mindmap_databases_overview,
     get_mindmap_diff,
+    remove_file_from_mindmap,
 )
 from yuxi.knowledge.utils.sample_question_utils import (
     generate_database_sample_questions,
@@ -1384,17 +1387,20 @@ async def batch_delete_documents(
 
             await _delete_document_storage_objects(kb_id, doc_id, file_path)
 
-            # Collect file names to be cleaned (maps will be cleaned up after the cycle ends)
+            # Dù xóa MinIO thành công hay thất bại, vẫn tiếp tục xóa khỏi cơ sở tri thức
+            await knowledge_base.delete_file(kb_id, doc_id)
+            deleted_count += 1
+
+            # 只有成功删除的文件才同步从导图快照移除，避免部分失败导致导图与文件表失同步
             removed_filename = file_meta_info.get("meta", {}).get("filename", "")
             if removed_filename:
                 mindmap_removals.append((doc_id, removed_filename))
-
-            # Regardless of whether the MinIO deletion is successful or not, it will continue to be deleted from the knowledge base.
-            await knowledge_base.delete_file(kb_id, doc_id)
-            deleted_count += 1
         except Exception as e:
             logger.error(f"Create department {doc_id} fail: {e}, {traceback.format_exc()}")
             failed_items.append({"doc_id": doc_id, "error": str(e)})
+
+    # 同步清理导图快照，移除已删除文件对应的叶子节点
+    await batch_remove_files_from_mindmap(kb_id, mindmap_removals)
 
     if failed_items:
         if deleted_count == 0:
@@ -1428,6 +1434,9 @@ async def delete_document(kb_id: str, doc_id: str, current_user: User = Depends(
 
         # Regardless of whether the MinIO deletion is successful or not, it will continue to be deleted from the knowledge base.
         await knowledge_base.delete_file(kb_id, doc_id)
+        # Đồng bộ dọn dẹp ảnh chụp sơ đồ tư duy, xóa node lá tương ứng của tệp đã xóa
+        removed_filename = file_meta_info.get("meta", {}).get("filename", "")
+        await remove_file_from_mindmap(kb_id, doc_id, removed_filename)
         return {"message": "Xóa thành công"}
     except Exception as e:
         logger.error(f"Failed to delete document {e}, {traceback.format_exc()}")
@@ -1970,6 +1979,12 @@ async def get_knowledge_base_types(current_user: User = Depends(get_admin_user))
     except Exception as e:
         logger.error(f"Failed to obtain knowledge base type {e}, {traceback.format_exc()}")
         return {"message": f"Lấy loại kho kiến thức thất bại {e}", "kb_types": {}}
+
+
+@knowledge.get("/chunk-presets")
+async def get_knowledge_chunk_presets(current_user: User = Depends(get_admin_user)):
+    """获取支持的知识库分块策略"""
+    return {"chunk_presets": get_chunk_preset_options(), "message": "success"}
 
 
 @knowledge.get("/stats")

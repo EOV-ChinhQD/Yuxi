@@ -1,19 +1,21 @@
 import { nextTick } from 'vue'
 
 /**
- * Công cụ điều khiển cuộn
+ * 滚动控制工具类
  */
 export class ScrollController {
   constructor(containerSelector = '.chat', options = {}) {
     this.containerSelector = containerSelector
     this.options = {
-      threshold: 100,
+      threshold: 40,
       scrollDelay: 100,
       retryDelays: [50, 150],
       ...options
     }
 
     this.scrollTimer = null
+    this.scrollRetryTimers = []
+    this.programmaticScrollTimer = null
     this.isUserScrolling = false
     this.shouldAutoScroll = true
     this.isProgrammaticScroll = false
@@ -23,15 +25,21 @@ export class ScrollController {
   }
 
   /**
-   * Nhận thùng chứa cuộn
+   * 获取滚动容器
    * @returns {Element|null}
    */
   getContainer() {
-    return document.querySelector(this.containerSelector)
+    if (typeof this.containerSelector === 'function') {
+      return this.containerSelector()
+    }
+    if (typeof this.containerSelector === 'string') {
+      return document.querySelector(this.containerSelector)
+    }
+    return this.containerSelector || null
   }
 
   /**
-   * Kiểm tra xem nó có ở dưới cùng không
+   * 检查是否在底部
    * @returns {boolean}
    */
   isAtBottom() {
@@ -39,146 +47,147 @@ export class ScrollController {
     if (!container) return false
 
     const { threshold } = this.options
-    return container.scrollHeight - container.scrollTop - container.clientHeight <= threshold
+    return this.getBottomOffset(container) <= threshold
+  }
+
+  getBottomOffset(container = this.getContainer()) {
+    if (!container) return Number.POSITIVE_INFINITY
+    return Math.max(0, container.scrollHeight - container.scrollTop - container.clientHeight)
+  }
+
+  cancelPendingScrolls() {
+    this.scrollRetryTimers.forEach((timer) => clearTimeout(timer))
+    this.scrollRetryTimers = []
+  }
+
+  markProgrammaticScroll() {
+    if (this.programmaticScrollTimer) {
+      clearTimeout(this.programmaticScrollTimer)
+    }
+    this.isProgrammaticScroll = true
+    this.programmaticScrollTimer = setTimeout(() => {
+      this.isProgrammaticScroll = false
+      this.programmaticScrollTimer = null
+    }, this.options.scrollDelay)
   }
 
   /**
-   * Xử lý các sự kiện cuộn
+   * 处理滚动事件
    */
   handleScroll() {
     if (this.scrollTimer) {
       clearTimeout(this.scrollTimer)
     }
 
-    // Nếu đó là cuộn theo chương trình，Bỏ qua sự kiện này
+    // 如果是程序性滚动，仍根据当前位置同步状态，避免标记滞留后误吞用户上滚。
     if (this.isProgrammaticScroll) {
+      const atBottom = this.isAtBottom()
+      this.shouldAutoScroll = atBottom
       this.isProgrammaticScroll = false
+      if (this.programmaticScrollTimer) {
+        clearTimeout(this.programmaticScrollTimer)
+        this.programmaticScrollTimer = null
+      }
+      if (!atBottom) {
+        this.cancelPendingScrolls()
+        this.isUserScrolling = true
+        this.scrollTimer = setTimeout(() => {
+          this.isUserScrolling = false
+        }, this.options.scrollDelay)
+      }
       return
     }
 
-    // Người dùng gắn cờ đang cuộn
+    this.cancelPendingScrolls()
+
+    // 标记用户正在滚动
     this.isUserScrolling = true
 
-    // Kiểm tra xem nó có ở dưới cùng không
+    // 检查是否在底部
     this.shouldAutoScroll = this.isAtBottom()
 
-    // Đặt lại trạng thái cuộn của người dùng một thời gian sau khi quá trình cuộn kết thúc
+    // 滚动结束后一段时间重置用户滚动状态
     this.scrollTimer = setTimeout(() => {
       this.isUserScrolling = false
     }, this.options.scrollDelay)
   }
 
   /**
-   * chờ đã DOM Bố cục ổn định
+   * 等待 DOM 布局稳定
    * @returns {Promise<void>}
    */
   async waitForLayoutStable() {
-    // sử dụng requestAnimationFrame đảm bảo DOM Kết xuất hoàn tất
+    // 使用 requestAnimationFrame 确保 DOM 渲染完成
     await new Promise((resolve) => requestAnimationFrame(resolve))
-    // Chờ một thời gian ngắn để đảm bảo CSS Bố cục đã hoàn thành
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+  }
+
+  scrollContainerToBottom(container, behavior = 'auto') {
+    if (!container) return
+    this.markProgrammaticScroll()
+    container.scrollTo({
+      top: Math.max(0, container.scrollHeight - container.clientHeight),
+      behavior
+    })
   }
 
   /**
-   * Cuộn thông minh xuống dưới cùng
-   * @param {boolean} force - Có buộc cuộn hay không
+   * 智能滚动到底部
+   * @param {boolean} force - 是否强制滚动
    */
   async scrollToBottom(force = false) {
     await nextTick()
-    // chờ đã DOM Bố cục ổn định
+    // 等待 DOM 布局稳定
     await this.waitForLayoutStable()
 
-    // Chỉ được thực thi khi tính năng tự động cuộn được cho là sẽ xảy ra（trừ khi bị ép buộc）
+    // 只有在应该自动滚动时才执行（除非强制）
     if (!force && !this.shouldAutoScroll) return
 
     const container = this.getContainer()
     if (!container) return
 
-    // Được đánh dấu để cuộn theo chương trình
-    this.isProgrammaticScroll = true
+    this.cancelPendingScrolls()
 
-    // Ghi lại chiều cao của container trước khi cuộn
-    const initialHeight = container.scrollHeight
+    this.scrollContainerToBottom(container, 'auto')
 
-    const scrollOptions = {
-      top: container.scrollHeight,
-      behavior: 'smooth'
-    }
-
-    // Cuộn ngay bây giờ
-    container.scrollTo(scrollOptions)
-
-    // Thử lại nhiều lần để đảm bảo cuộn thành công，Bao gồm cả việc chờ hoàn thành bố cục của các phần tử động như hộp nhập liệu
-    const retryDelays = [50, 100, 200, 400]
-    retryDelays.forEach((delay, index) => {
-      setTimeout(() => {
+    // 动态内容仍可能在下一帧补齐高度，保留少量重试，但用户手动滚动会立即取消。
+    this.options.retryDelays.forEach((delay) => {
+      const timer = setTimeout(() => {
         if (force || this.shouldAutoScroll) {
-          this.isProgrammaticScroll = true
-          const behavior = index === retryDelays.length - 1 ? 'auto' : 'smooth'
-
-          // Nếu chiều cao thay đổi，Cho biết rằng có thể có nội dung động đang được hiển thị，đợi lại
-          if (container.scrollHeight !== initialHeight && index < retryDelays.length - 1) {
-            this.waitForLayoutStable().then(() => {
-              container.scrollTo({
-                top: container.scrollHeight,
-                behavior
-              })
-            })
-          } else {
-            container.scrollTo({
-              top: container.scrollHeight,
-              behavior
-            })
-          }
+          this.scrollContainerToBottom(container, 'auto')
         }
       }, delay)
+      this.scrollRetryTimers.push(timer)
     })
   }
 
   async scrollToBottomStaticForce() {
-    await nextTick()
-    await this.waitForLayoutStable()
     const container = this.getContainer()
     if (!container) return
 
-    // Được đánh dấu để cuộn theo chương trình
-    this.isProgrammaticScroll = true
-
-    const scrollOptions = {
-      top: container.scrollHeight,
-      behavior: 'auto'
-    }
-
-    container.scrollTo(scrollOptions)
-
-    const retryDelays = [50, 150]
-    retryDelays.forEach((delay) => {
-      setTimeout(() => {
-        this.isProgrammaticScroll = true
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: 'auto'
-        })
-      }, delay)
-    })
+    this.cancelPendingScrolls()
+    await nextTick()
+    await this.waitForLayoutStable()
+    this.scrollContainerToBottom(container, 'auto')
+    this.shouldAutoScroll = true
   }
 
   /**
-   * Bật tính năng tự động cuộn
+   * 启用自动滚动
    */
   enableAutoScroll() {
     this.shouldAutoScroll = true
   }
 
   /**
-   * Tắt tính năng tự động cuộn
+   * 禁用自动滚动
    */
   disableAutoScroll() {
     this.shouldAutoScroll = false
   }
 
   /**
-   * Nhận trạng thái cuộn
+   * 获取滚动状态
    */
   getScrollState() {
     return {
@@ -189,17 +198,22 @@ export class ScrollController {
   }
 
   /**
-   * Hẹn giờ dọn dẹp
+   * 清理定时器
    */
   cleanup() {
     if (this.scrollTimer) {
       clearTimeout(this.scrollTimer)
       this.scrollTimer = null
     }
+    if (this.programmaticScrollTimer) {
+      clearTimeout(this.programmaticScrollTimer)
+      this.programmaticScrollTimer = null
+    }
+    this.cancelPendingScrolls()
   }
 
   /**
-   * Đặt lại trạng thái cuộn
+   * 重置滚动状态
    */
   reset() {
     this.cleanup()
@@ -210,7 +224,7 @@ export class ScrollController {
 }
 
 /**
- * Tạo một phiên bản bộ điều khiển cuộn mặc định
+ * 创建默认的滚动控制器实例
  */
 export const createScrollController = (containerSelector, options) => {
   return new ScrollController(containerSelector, options)

@@ -1,116 +1,118 @@
-# Cơ sở tri thức và biểu đồ tri thức
+# 知识库与知识图谱
 
-Yuxi Cung cấp nền tảng kiến thức tài liệu、tìm kiếm véc tơ、Khả năng xây dựng bản đồ tri thức và đồ thị tri thức。Hiện được hỗ trợ Milvus cơ sở tri thức、Milvus Xây dựng đồ thị trong cơ sở tri thức/hiển thị/Tìm kiếm，và Dify Dataset、Notion Data Source Tìm kiếm chỉ đọc。
+Yuxi 提供文档知识库、向量检索、知识导图和知识图谱构建能力。当前支持 Milvus 知识库、Milvus 知识库内的图谱构建/展示/检索，以及 Dify Dataset、Notion Data Source 只读检索。
 
-## Tại sao bạn cần một nền tảng kiến thức
+## 为什么需要知识库
 
-Trong các kịch bản ứng dụng mô hình lớn，Chỉ dựa vào kiến ​​thức nội bộ của mô hình thường không đủ chính xác và toàn diện。Bằng cách xây dựng nền tảng kiến thức，chúng ta có thể：
+在大模型应用场景中，仅依靠模型的内部知识往往不够准确和全面。通过构建知识库，我们可以：
 
-- **Truyền đạt kiến thức riêng tư**：Cho phép mô hình trả lời câu hỏi dựa trên tài liệu riêng tư
-- **Giảm ảo giác**：Nội dung câu trả lời có thể được truy nguyên từ tài liệu gốc
-- **Tái sử dụng kiến thức**：tải lên một lần，Được sử dụng nhiều lần trong nhiều vòng đối thoại
+- **注入私有知识**：让模型能够回答基于私有文档的问题
+- **降低幻觉**：回答内容可追溯到原始文档
+- **知识复用**：一次上传，多轮对话中重复使用
 
-## Loại cơ sở tri thức
+## 知识库类型
 
-| Loại | Tính năng | Các tình huống áp dụng |
+| 类型 | 特点 | 适用场景 |
 |------|------|----------|
-| **Milvus** | Truy xuất vectơ hiệu suất cao，Hỗ trợ lưu trữ tài liệu、Kiểm tra truy xuất、Bản đồ kiến thức、Đánh giá và xây dựng đồ thị kiến thức | Cơ sở kiến thức tài liệu tự xây dựng và phục hồi sản xuất |
-| **Dify** | kết nối Dify Dataset Tìm kiếm API，trình kết nối chỉ đọc | Tái sử dụng hiện có Dify Tập dữ liệu |
-| **Notion** | kết nối Notion Data Source Tìm kiếm API，trình kết nối chỉ đọc | Tái sử dụng hiện có Notion Nội dung trang |
+| **Milvus** | 高性能向量检索，支持文档入库、检索测试、知识导图、评估和知识图谱构建 | 自建文档知识库与生产检索 |
+| **Dify** | 连接 Dify Dataset 检索 API，只读连接器 | 复用已有 Dify 数据集 |
+| **Notion** | 连接 Notion Data Source 检索 API，只读连接器 | 复用已有 Notion 页面内容 |
 
-trình kết nối chỉ đọc（Dify、Notion）Chỉ để truy xuất，Tải lên và lưu trữ không được hỗ trợ；lịch sử LightRAG Loại không còn được hiển thị hoặc tạo dưới dạng loại được hỗ trợ。
+只读连接器（Dify、Notion）仅用于检索，不支持上传与入库；历史 LightRAG 类型不再作为受支持类型展示或创建。
 
-## Tạo nền tảng kiến thức
+## 创建知识库
 
-chuyến thăm Web Giao diện「cơ sở tri thức」Trang，nhấp chuột「Tạo nền tảng kiến thức mới」：
+访问 Web 界面的「知识库」页面，点击「新建知识库」：
 
-1. Điền tên cơ sở kiến thức và mô tả
-2. Chọn loại cơ sở tri thức（Milvus、Dify hoặc Notion）
-3. Milvus Định cấu hình mô hình nhúng và chiến lược chunking；trình kết nối chỉ đọc（Dify、Notion）Tự động hiển thị các tham số kết nối theo loại（Chẳng hạn như API URL、Token、Dataset ID Đợi đã）
-4. Định cấu hình quyền truy cập
-5. lưu lại
+1. 填写知识库名称和描述
+2. 选择知识库类型（Milvus、Dify 或 Notion）
+3. Milvus 配置嵌入模型和分块策略；只读连接器（Dify、Notion）按类型动态渲染连接参数（如 API URL、Token、Dataset ID 等）
+4. 配置访问权限
+5. 保存
 
-::: tip Mẹo
-Tên và mô tả của cơ sở tri thức được tác nhân sử dụng để xác định khi nào nên sử dụng cơ sở tri thức này để truy xuất.，Vì vậy hãy mô tả nó càng chi tiết càng tốt。
+::: tip 提示
+知识库的名称和描述会被智能体用来判断何时应该使用这个知识库进行检索，所以请尽量详细地描述。
 :::
 
-## Luồng xử lý tập tin
+## 文件处理流程
 
-Milvus Các tập tin có thể truy xuất được từ việc tải lên，Trải qua ba giai đoạn：
+Milvus 文件从上传到可检索，经历三个阶段：
 
-### 1. Giai đoạn tải lên
+### 1. 上传阶段
 
-Tải tập tin cục bộ lên máy chủ。Các tập tin được lưu trữ ở định dạng ban đầu。
+将本地文件上传到服务器。文件保持原始格式存储。
 
-### 2. giai đoạn phân tích cú pháp
+### 2. 解析阶段
 
-Hệ thống chuyển đổi tập tin thành Markdown định dạng：
+系统将文件转换为 Markdown 格式：
 
-- Trích xuất nội dung văn bản
-- Hình ảnh được tải lên MinIO，Và trong Markdown Trung Quốc sử dụng URL Trích dẫn
-- bàn、Cố gắng giữ các công thức, v.v. càng có cấu trúc càng tốt
+- 提取文本内容
+- 图片上传到 MinIO，并在 Markdown 中用 URL 引用
+- 表格、公式等尽量保持结构化
 
-### 3. Giai đoạn nhập kho
+### 3. 入库阶段
 
-cặp hệ thống Markdown nội dung đoạn，sẽ chunk Nội dung và siêu dữ liệu được ghi vào PostgreSQL của `knowledge_chunks` bàn，và viết vectơ Milvus。
+系统对 Markdown 内容进行分块，将 chunk 内容与元数据双写到 PostgreSQL 的 `knowledge_chunks` 表，并将向量写入 Milvus。
 
-Trong giao diện phía trước，Hai giai đoạn đầu tiên sẽ được hoàn thành tự động theo mặc định.。Nếu bạn cần tự động lưu trữ，Kiểm tra「Tự động đưa vào bộ nhớ sau khi tải lên」Tùy chọn；Nếu không, bạn cần nhấp vào nút nhập kho theo cách thủ công。
+在前端界面中，默认会自动完成前两个阶段。如果需要自动入库，勾选「上传后自动入库」选项；否则需要手动点击入库按钮。
 
-## Bản đồ kiến thức và câu hỏi mẫu
+## 知识导图与示例问题
 
-Milvus Được cung cấp trên trang chi tiết cơ sở kiến thức「Bản đồ kiến thức」Tab，Được sử dụng để sắp xếp danh sách tệp cơ sở kiến ​​thức thành cấu trúc phân cấp。khi được tạo ra，Phần phụ trợ sẽ đọc siêu dữ liệu tệp của cơ sở kiến thức hiện tại，Đặt tên tệp và loại cho thế hệ mô hình mặc định JSON cây，và lưu vào cơ sở kiến thức `mindmap` trường。Khi số lượng tập tin lớn，Việc thực hiện hiện nay là tiến tới cao nhất 20 các tập tin tham gia vào thế hệ，Tránh nhắc từ quá dài。Agent Bạn cũng có thể vượt qua `get_mindmap` Công cụ đọc cấu trúc này，Được sử dụng để nhanh chóng xác định thông tin cơ bản chứa đựng trong cơ sở kiến ​​thức。
+Milvus 知识库详情页提供「知识导图」Tab，用来把知识库文件列表整理成层次化结构。生成时，后端会读取当前知识库的文件元数据，把文件名和类型交给默认模型生成 JSON 树，并保存到知识库的 `mindmap` 字段。文件数量较多时，当前实现最多取前 20 个文件参与生成，避免一次提示词过长。Agent 运行时也可以通过 `get_mindmap` 工具读取这份结构，用来快速判断知识库大致包含哪些资料。
 
-Cơ sở kiến thức cũng hỗ trợ việc tạo ra các câu hỏi mẫu。Khả năng này tạo ra các câu hỏi phù hợp cho việc kiểm tra truy xuất dựa trên danh sách các tệp，và lưu vào `sample_questions` trường；Khu vực kiểm tra truy xuất front-end sẽ ưu tiên sử dụng những câu hỏi này làm ví dụ truy vấn.。Vấn đề mẫu chỉ dựa vào siêu dữ liệu của tệp，Nó không tương đương với việc tóm tắt toàn văn từng tài liệu.；Nếu bạn muốn trả lời cụ thể xung quanh cuộc trò chuyện，vẫn nên vượt qua `query_kb`、`find_kb_document` và `open_kb_document` Truy xuất bản gốc chunk hoặc đoạn tài liệu。
+导图支持增量更新：详情页的「增量更新」按钮会先调用 `GET /api/knowledge/databases/{kb_id}/mindmap/diff` 检测当前文件列表与已追踪文件之间的变化，再通过 `POST /api/knowledge/databases/{kb_id}/mindmap/generate?incremental=true` 仅处理新增/删除的文件。纯删除场景不需要 AI 调用，直接对现有树做递归手术；新增文件时由 AI 整合进现有分类结构。单文件删除与批量删除接口成功后也会同步移除导图快照中对应的叶子节点，不需要再手动触发增量更新。
 
-## Kiểm soát quyền cơ sở kiến thức
+知识库还支持生成示例问题。该能力会基于文件列表生成适合检索测试的问题，并保存到 `sample_questions` 字段；前端检索测试区域会优先使用这些问题作为查询示例。示例问题只依赖文件元数据，不等同于对每个文档全文做总结；如果要在对话中围绕具体内容回答，仍应通过 `query_kb`、`find_kb_document` 和 `open_kb_document` 检索原始 chunk 或文档片段。
 
-Mỗi cơ sở kiến thức có thể được cấu hình với quyền truy cập độc lập：
+## 知识库权限控制
 
-- **chia sẻ toàn cầu**：Có thể truy cập được cho tất cả người dùng
-- **Chia sẻ khoa**：Có thể truy cập vào các bộ phận được chỉ định，Và phải bao gồm bộ phận nơi người dùng hiện tại đang ở
-- **người được chỉ định**：Chỉ người sáng tạo、Có thể truy cập bởi quản trị viên và nhân viên được ủy quyền rõ ràng
+每个知识库可以配置独立的访问权限：
 
-Quy tắc cấp phép：
+- **全局共享**：所有用户可访问
+- **部门共享**：指定部门可访问，且必须包含当前用户所在部门
+- **指定人**：仅创建者、管理员及被明确授权的人员可访问
 
-- Siêu quản trị viên có quyền truy cập vào tất cả các cơ sở kiến thức
-- Quản trị viên có thể truy cập cơ sở tri thức được chia sẻ và cơ sở tri thức của bộ phận
-- Người dùng thông thường chỉ có thể truy cập cơ sở kiến thức được ủy quyền
+权限规则：
 
-## Sơ đồ tri thức
+- 超级管理员可访问所有知识库
+- 管理员可访问共享知识库和本部门的知识库
+- 普通用户只能访问已授权的知识库
 
-Milvus Được cung cấp trên trang chi tiết cơ sở kiến thức「Sơ đồ tri thức」Tab。Quá trình xây dựng đồ thị sẽ bắt đầu từ chunks Trích xuất các thực thể và mối quan hệ từ，sẽ entity/triple Bản thể học và chunk Viết tài liệu tham khảo Neo4j và PostgreSQL，và là thực thể duy nhất/Sáng tạo ba lần Milvus Lập chỉ mục ngữ nghĩa；Các thực thể và bộ ba đồ thị có thể được gọi lại trong quá trình truy xuất，và với chunk Lượt kết quả hợp nhất（RRF）。
+## 知识图谱
 
-Khả năng chính：
+Milvus 知识库详情页提供「知识图谱」Tab。图谱构建流程会从已入库 chunks 中抽取实体和关系，将 entity/triple 本体与 chunk 引用写入 Neo4j 和 PostgreSQL，并为唯一实体/三元组建立 Milvus 语义索引；检索时可召回图谱实体与三元组，并与 chunk 命中结果融合（RRF）。
 
-- Cấu hình LLM máy vắt，Nhiều phương pháp chiết xuất đang được phát triển
-- Xây dựng để được lập chỉ mục chunks Các thực thể và mối quan hệ của đồ thị
-- Xem trạng thái xây dựng、Nhãn và số liệu thống kê
-- Tìm kiếm và hiển thị hình ảnh phụ trên trang chi tiết cơ sở kiến thức
-- Đặt lại cấu hình biểu đồ và dữ liệu được xây dựng
+主要能力：
 
-Neo4j vẫn như Milvus Lưu giữ dịch vụ lưu trữ bản đồ，nhưng không còn mang lại sự độc lập `/graph` Trang đầu，Tải lên không còn được hỗ trợ JSONL bộ ba vào bản đồ toàn cầu mặc định。
+- 配置 LLM 抽取器，更多抽取方式拓展中
+- 构建待索引 chunks 的图谱实体与关系
+- 查看构建状态、标签和统计信息
+- 在知识库详情页搜索和展示子图
+- 重置图谱配置与已构建数据
 
-### Neo4j Cấu hình
+Neo4j 仍作为 Milvus 图谱存储服务保留，但不再提供独立 `/graph` 前端页面，也不再支持上传 JSONL 三元组到默认全局图谱。
 
-Neo4j Thông tin kết nối có thể được tìm thấy tại `.env` Cấu hình trung bình：
+### Neo4j 配置
 
-- Tài khoản mặc định：`neo4j`
-- mật khẩu mặc định：`0123456789`
-- Giao diện quản lý：http://localhost:7474
-- địa chỉ kết nối：bolt://localhost:7687
+Neo4j 连接信息可以在 `.env` 中配置：
 
-## API sử dụng
+- 默认账户：`neo4j`
+- 默认密码：`0123456789`
+- 管理界面：http://localhost:7474
+- 连接地址：bolt://localhost:7687
 
-Nếu bạn cần xử lý hàng loạt tệp thông qua một chương trình，Các giao diện sau có thể được sử dụng：
+## API 使用
+
+如果需要通过程序批量处理文件，可以使用以下接口：
 
 ```bash
-# 1. Tải tập tin lên
-POST /api/knowledge/files/upload?kb_id=<cơ sở tri thứcID>
-# Trở lại file_path và content_hash
+# 1. 上传文件
+POST /api/knowledge/files/upload?kb_id=<知识库ID>
+# 返回 file_path 和 content_hash
 
-# 2. Phân tích và hợp nhất vào cơ sở dữ liệu
+# 2. 解析并入库
 POST /api/knowledge/databases/{kb_id}/documents
-# Trở lại status=queued và task_id
+# 返回 status=queued 和 task_id
 ```
 
-Hệ thống sẽ tự động loại bỏ trùng lặp：Xác định xem tệp tương tự đã tồn tại hay chưa dựa trên hàm băm nội dung。
+系统会自动去重：基于内容哈希判断是否已存在相同文件。

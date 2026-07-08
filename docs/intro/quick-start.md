@@ -1,41 +1,41 @@
-# Hướng dẫn bắt đầu nhanh
+# 快速开始指南
 
-Chào mừng Yuxi（Phân tích ngôn ngữ），Đây là cơ sở tri thức thông minh và biểu đồ tri thức Agent Nền tảng phát triển。
-Hướng dẫn này sẽ giúp bạn thiết lập và chạy hệ thống của mình trong vài phút，cho phép bạn tận dụng LangGraph、RAG Xây dựng đồ thị công nghệ và tri thức AI Ứng dụng kiến thức định hướng。
+欢迎使用 Yuxi（语析），这是一个智能知识库和知识图谱 Agent 开发平台。
+本指南将帮助你在几分钟内启动并运行系统，使你能够利用 LangGraph、RAG 技术和知识图谱构建 AI 驱动的知识应用。
 
-![Sơ đồ kiến trúc hệ thống](https://xerrors.oss-cn-shanghai.aliyuncs.com/github/arch.png)
+![系统架构图](https://xerrors.oss-cn-shanghai.aliyuncs.com/github/arch.png)
 
 
-::: tip Mẹo
-Ngoài trang tài liệu này，Bạn cũng có thể ghé thăm [Zread](https://zread.ai/xerrors/Yuxi) hoặc [DeepWiki](https://deepwiki.com/xerrors/Yuxi) Xem tài liệu dự án chi tiết được tạo tự động。
+::: tip 提示
+除了此文档网站外，你还可以访问 [Zread](https://zread.ai/xerrors/Yuxi) 或 [DeepWiki](https://deepwiki.com/xerrors/Yuxi) 查看自动生成的详细项目文档。
 :::
 
-## Yêu cầu về môi trường
+## 环境要求
 
-Dự án áp dụng thiết kế kiến trúc microservice，Dịch vụ mặc định không cần thiết GPU hỗ trợ。Nếu cần sử dụng OCR chức năng，Các dịch vụ bên ngoài có thể được cấu hình thông qua các biến môi trường。
+项目采用微服务架构设计，默认服务无需 GPU 支持。如果需要使用 OCR 功能，可以通过环境变量配置外部服务。
 
-## Cài đặt nhanh
+## 快速安装
 
-### bước một：Nhận mã dự án
+### 步骤一：获取项目代码
 
 ```bash
-# Sao chép phiên bản mới nhất
-git clone --branch v0.7.0 --depth 1 https://github.com/xerrors/Yuxi.git
+# 克隆最新版本
+git clone --branch v0.7.1.beta1 --depth 1 https://github.com/xerrors/Yuxi.git
 cd Yuxi
 ```
 
-`--depth 1` cờ sẽ tạo một bản sao nông，Chỉ bao gồm các cam kết mới nhất，do đó giảm đáng kể thời gian tải xuống và sử dụng đĩa。Bảng sau đây cung cấp hướng dẫn về lựa chọn phiên bản。
+`--depth 1` 标志会创建一个浅克隆，仅包含最新的提交，从而显著减少下载时间和磁盘使用量。下表提供了版本选择的指导。
 
-| Phiên bản | Các tình huống áp dụng |
+| 版本 | 适用场景 |
 |------|----------|
-| v0.7.0 | Phiên bản ổn định hiện tại，Khuyến nghị sử dụng cho sản xuất |
-| main | phiên bản phát triển，Chứa các tính năng mới nhất（Có thể không ổn định） |
+| v0.7.0 | 当前稳定版本，推荐生产使用 |
+| main | 开发版本，包含最新特性（可能不稳定） |
 
-### Bước 2：Cấu hình các biến môi trường
+### 步骤二：配置环境变量
 
-**Phương pháp một：Sử dụng tập lệnh khởi tạo（Được đề xuất）**
+**方式一：使用初始化脚本（推荐）**
 
-Chúng tôi cung cấp các kịch bản tự động hóa，Giúp bạn hoàn thành cấu hình môi trường và Docker Kéo hình ảnh：
+我们提供了自动化脚本，帮你完成环境配置和 Docker 镜像拉取：
 
 ```bash
 # Linux/macOS
@@ -45,103 +45,103 @@ Chúng tôi cung cấp các kịch bản tự động hóa，Giúp bạn hoàn t
 .\scripts\init.ps1
 ```
 
-Tập lệnh sẽ hướng dẫn bạn cấu hình sau：
-- tạo ra `.env` Tệp cấu hình
-- cài đặt `SILICONFLOW_API_KEY`（bắt buộc，Dùng để gọi các mô hình lớn）
-- cài đặt `TAVILY_API_KEY`（Tùy chọn，cho các dịch vụ tìm kiếm）
-- Tự động kéo yêu cầu Docker gương
+脚本会引导你完成以下配置：
+- 创建 `.env` 配置文件
+- 设置 `SILICONFLOW_API_KEY`（必需，用于调用大模型）
+- 设置 `TAVILY_API_KEY`（可选，用于搜索服务）
+- 自动拉取必需的 Docker 镜像
 
-::: tip API Key Nhận
-- **dòng chảy dựa trên silicon**：chuyến thăm [cloud.siliconflow.cn](https://cloud.siliconflow.cn/i/Eo5yTHGJ)，Đăng ký và được chứng nhận 16 Hạn ngạch nhân dân tệ
-- **Tavily**：chuyến thăm [app.tavily.com](https://app.tavily.com/) Nhận tìm kiếm API Key（Tùy chọn）
+::: tip API Key 获取
+- **硅基流动**：访问 [cloud.siliconflow.cn](https://cloud.siliconflow.cn/i/Eo5yTHGJ)，注册认证即送 16 元额度
+- **Tavily**：访问 [app.tavily.com](https://app.tavily.com/) 获取搜索 API Key（可选）
 :::
 
-**Phương pháp 2：Cấu hình thủ công**
+**方式二：手动配置**
 
-Nếu cấu hình thủ công được ưu tiên：
+如果偏好手动配置：
 
 ```bash
-# Sao chép mẫu biến môi trường
+# 复制环境变量模板
 cp .env.template .env
 
-# Chỉnh sửa .env tập tin，điền vào của bạn API Key
+# 编辑 .env 文件，填入你的 API Key
 ```
 
-### Bước 3：Bắt đầu dịch vụ
+### 步骤三：启动服务
 
 ```bash
-# Xây dựng và bắt đầu tất cả các dịch vụ
+# 构建并启动所有服务
 docker compose up --build -d
 ```
 
-Khi dịch vụ được khởi động lần đầu tiên, nó cần đợi hình ảnh được kéo và biên dịch.，xin hãy kiên nhẫn 2-3 phút。
+服务首次启动需要等待镜像拉取和编译，请耐心等待 2-3 分钟。
 
-::: tip Chế độ nhẹ（Lite Mode）
-Nếu bạn không cần cơ sở kiến thức và các hàm biểu đồ tri thức，Có thể bắt đầu sử dụng chế độ nhẹ，bỏ qua Milvus、Neo4j、etcd Đang chờ dịch vụ，Tiết kiệm tài nguyên hệ thống：
+::: tip 轻量模式（Lite Mode）
+如果你不需要知识库和知识图谱功能，可以使用轻量模式启动，跳过 Milvus、Neo4j、etcd 等服务，节省系统资源：
 
 ```bash
 make up-lite  # macOS or Linux
 ```
 
-Chế độ nhẹ chỉ khởi động các dịch vụ cốt lõi（giao diện người dùng、phụ trợ、PostgreSQL、Redis、MinIO），Thanh bên ở giao diện người dùng sẽ tự động ẩn cơ sở kiến ​​thức và lối vào biểu đồ。Để chuyển về chế độ đầy đủ, chỉ cần chạy `make up`。
+轻量模式仅启动核心服务（前端、后端、PostgreSQL、Redis、MinIO），前端侧边栏会自动隐藏知识库和图谱入口。切换回完整模式只需运行 `make up`。
 :::
 
-### Bước 4：hệ thống truy cập
+### 步骤四：访问系统
 
-Sau khi dịch vụ bắt đầu，Hãy đến địa chỉ sau：
+服务启动后，访问以下地址：
 
-| dịch vụ | địa chỉ |
+| 服务 | 地址 |
 |------|------|
-| Web giao diện | http://localhost:5173 |
-| API Tài liệu | http://localhost:5050/docs |
+| Web 界面 | http://localhost:5173 |
+| API 文档 | http://localhost:5050/docs |
 
-trong chuyến thăm đầu tiên，Hệ thống sẽ yêu cầu bạn thiết lập tài khoản và mật khẩu quản trị viên cấp cao，Hãy giữ nó đúng cách。
+首次访问时，系统会要求你设置超级管理员账号和密码，请妥善保存。
 
-## Khắc phục sự cố
+## 故障排除
 
-### Kiểm tra trạng thái dịch vụ
+### 查看服务状态
 
 ```bash
-# Xem tất cả trạng thái vùng chứa
+# 查看所有容器状态
 docker ps
 
-# Xem nhật ký phụ trợ trong thời gian thực
+# 实时查看后端日志
 docker logs api-dev -f
 
-# Xem nhật ký giao diện người dùng trong thời gian thực
+# 实时查看前端日志
 docker logs web-dev -f
 ```
 
-### Câu hỏi thường gặp
+### 常见问题
 
 <details>
-<summary><strong>Docker Kéo hình ảnh không thành công</strong></summary>
+<summary><strong>Docker 镜像拉取失败</strong></summary>
 
-Nếu việc kéo hình ảnh không thành công vì lý do mạng，có thể thử：
+如果网络原因导致镜像拉取失败，可以尝试：
 
 ```bash
-# Kéo hình ảnh cơ sở theo cách thủ công
-bash scripts/pull_image.sh python:3.12-slim
+# 手动拉取基础镜像
+bash scripts/pull_image.sh python:3.13-slim
 ```
 
-**Giải pháp triển khai môi trường ngoại tuyến**：
+**离线环境部署方案**：
 
 ```bash
-# Xuất hình ảnh trong môi trường mạng，Chú ý kiểm tra danh sách gương，Không nhất thiết phải là mới nhất。
+# 在有网络的环境导出镜像，注意检查镜像列表，不一定是最新的。
 bash docker/save_docker_images.sh
 
-# Chuyển đến máy mục tiêu
+# 传输到目标机器
 scp docker_images_xxx.tar user@host:/path/
 
-# Nhập hình ảnh
+# 导入镜像
 docker load -i docker_images_xxx.tar
 ```
 </details>
 
 <details>
-<summary><strong>Xây dựng không thành công</strong></summary>
+<summary><strong>构建失败</strong></summary>
 
-Hầu hết các lỗi xây dựng là do sự cố mạng。Hãy thử định cấu hình proxy：
+多数构建失败是由于网络问题。尝试配置代理：
 
 ```bash
 # Linux/macOS
@@ -153,26 +153,26 @@ $env:HTTP_PROXY="http://IP:PORT"
 $env:HTTPS_PROXY="http://IP:PORT"
 ```
 
-Nếu không thành công sau khi định cấu hình proxy，Hãy thử xóa proxy và thử lại。
+如果配置代理后反而失败，尝试移除代理后重试。
 </details>
 
 <details>
-<summary><strong>Milvus Khởi động dịch vụ không thành công</strong></summary>
+<summary><strong>Milvus 服务启动失败</strong></summary>
 
 ```bash
-# Khởi động lại Milvus dịch vụ
+# 重启 Milvus 服务
 docker compose up milvus -d
 docker restart api-dev
 ```
 </details>
 
-::: tip Bảng gỡ lỗi
-Giao diện người dùng cung cấp bảng gỡ lỗi（Tìm thấy trong menu hình đại diện），Thông tin chi tiết về yêu cầu và phản hồi có thể được xem。Nên tắt tính năng này trong môi trường sản xuất。
+::: tip 调试面板
+前端提供了调试面板（在头像菜单中可找到），可以查看详细的请求和响应信息。生产环境建议关闭此特性。
 :::
 
-## Bước tiếp theo
+## 下一步
 
-- Tìm hiểu cách định cấu hình mô hình của bạn：đọc [Cấu hình mô hình](./model-config.md)
-- Khám phá các tính năng cơ sở kiến thức：đọc [Cơ sở tri thức và biểu đồ tri thức](./knowledge-base.md)
-- Phát triển đại lý học tập：đọc [Phát triển đại lý](../agents/agents-config.md)
-- Tìm hiểu thêm về hệ thống cấu hình：đọc [Giải thích chi tiết về hệ thống cấu hình](../advanced/configuration.md)
+- 了解如何配置模型：阅读 [模型配置](./model-config.md)
+- 探索知识库功能：阅读 [知识库与知识图谱](./knowledge-base.md)
+- 学习智能体开发：阅读 [智能体开发](../agents/agents-config.md)
+- 深入了解配置系统：阅读 [配置系统详解](../advanced/configuration.md)

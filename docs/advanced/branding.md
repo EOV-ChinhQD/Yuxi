@@ -1,44 +1,44 @@
-# Tùy chỉnh thương hiệu
+# 品牌自定义
 
-Yuxi Hỗ trợ tùy chỉnh thương hiệu hoàn chỉnh，bao gồm Logo、Tên tổ chức、Thông tin bản quyền、Thỏa thuận đăng nhập, v.v.，Tạo điều kiện tùy biến thương hiệu cho người dùng doanh nghiệp。
+Yuxi 支持完整的品牌自定义，包括 Logo、组织名称、版权信息、登录协议等，方便企业用户进行品牌定制。
 
-## Cấu hình thông tin thương hiệu
+## 品牌信息配置
 
-### bước 1：Sao chép tập tin mẫu
+### 步骤 1：复制模板文件
 
 ```bash
 cp backend/package/yuxi/config/static/info.template.yaml backend/package/yuxi/config/static/info.local.yaml
 ```
 
-### bước 2：Chỉnh sửa thông tin thương hiệu
+### 步骤 2：编辑品牌信息
 
-trong `backend/package/yuxi/config/static/info.local.yaml` Định cấu hình thông tin thương hiệu của bạn trong：
+在 `backend/package/yuxi/config/static/info.local.yaml` 中配置你的品牌信息：
 
-- Tên ứng dụng
-- Tên tổ chức
+- 应用名称
+- 组织名称
 - Logo
-- Thông tin bản quyền
-- Thỏa thuận người dùng trang đăng nhập/Liên kết chính sách quyền riêng tư
+- 版权信息
+- 登录页用户协议/隐私协议链接
 
-### bước 3：Chỉ định tập tin cấu hình
+### 步骤 3：指定配置文件
 
-trong `.env` Chỉ định đường dẫn tệp cấu hình trong：
+在 `.env` 中指定配置文件路径：
 
 ```env
 YUXI_BRAND_FILE_PATH=backend/package/yuxi/config/static/info.local.yaml
 ```
 
-::: tip Định cấu hình mức độ ưu tiên
-`info.local.yaml` > `info.template.yaml`（Mặc định）
+::: tip 配置优先级
+`info.local.yaml` > `info.template.yaml`（默认）
 :::
 
-## Cấu hình giao thức đăng nhập
+## 登录协议配置
 
-Trang đăng nhập hỗ trợ đọc các liên kết thỏa thuận người dùng và thỏa thuận quyền riêng tư từ cấu hình thương hiệu.。
+登录页支持从品牌配置中读取用户协议与隐私协议链接。
 
-### Các mục cấu hình
+### 配置项
 
-trong `backend/package/yuxi/config/static/info.local.yaml` của `footer` Thêm các trường sau bên dưới：
+在 `backend/package/yuxi/config/static/info.local.yaml` 的 `footer` 下新增以下字段：
 
 ```yaml
 footer:
@@ -47,40 +47,40 @@ footer:
   privacy_policy_url: "/protocols/privacy-policy.template.html"
 ```
 
-### Hiển thị quy tắc
+### 显示规则
 
-- Khi nào `user_agreement_url` và `privacy_policy_url` Khi cả hai đều có giá trị，Trang đăng nhập sẽ hiển thị tùy chọn kiểm tra giao thức。
-- Khi bất kỳ trường nào trống，Trang đăng nhập không hiển thị tùy chọn kiểm tra giao thức。
-- Khi thỏa thuận không được kiểm tra，Gửi thông tin đăng nhập/Việc khởi tạo sẽ nhắc người dùng đồng ý với thỏa thuận thông qua tin nhắn.。
+- 当 `user_agreement_url` 和 `privacy_policy_url` 都有值时，登录页会显示协议勾选项。
+- 任一字段为空时，登录页不显示协议勾选项。
+- 未勾选协议时，提交登录/初始化会通过消息提示用户先同意协议。
 
-### File mẫu thỏa thuận
+### 协议模板文件
 
-Hệ thống mặc định cung cấp hai HTML tập tin mẫu：
+系统默认提供两个 HTML 模板文件：
 
 - `web/public/protocols/user-agreement.template.html`
 - `web/public/protocols/privacy-policy.template.html`
 
-Bạn có thể chỉnh sửa trực tiếp nội dung giao thức trong hai tệp này，và thay thế phần giữ chỗ（Chẳng hạn như `{{ORG_NAME}}`、`{{PRODUCT_NAME}}`、`{{EFFECTIVE_DATE}}`）。
+你可以直接编辑这两个文件中的协议内容，并替换占位符（如 `{{ORG_NAME}}`、`{{PRODUCT_NAME}}`、`{{EFFECTIVE_DATE}}`）。
 
-Nếu bạn có trang thỏa thuận của riêng mình，Bạn cũng có thể `user_agreement_url` và `privacy_policy_url` Trỏ tới một đường dẫn tùy chỉnh hoặc liên kết bên ngoài。
+如果你有自己的协议页面，也可以将 `user_agreement_url` 和 `privacy_policy_url` 指向自定义路径或外部链接。
 
-### Icon tùy chỉnh
+### Icon 定制
 
-Hệ thống cài sẵn nhiều loại Icon，Để biết thêm biểu tượng，Có thể lấy được từ `lucide-vue-next` được giới thiệu ở。
+系统预设了多种 Icon，如需更多图标，可以从 `lucide-vue-next` 中引入。
 
-## Tùy chỉnh phong cách
+## 样式定制
 
-Hệ thống hỗ trợ tùy chỉnh màu sắc chủ đề hoàn chỉnh。Tệp cấu hình được đặt tại `web/src/assets/css/base.css`，và `web/src/assets/css/base.dark.css`：
+系统支持完整的主题色定制。配置文件位于 `web/src/assets/css/base.css`，以及 `web/src/assets/css/base.dark.css`：
 
 ```css
 :root {
-  --main-color: #1890ff;        /* màu chủ đạo */
-  --main-1000: #f0f2f5;          /* mẫu màu */
-  --main-900: #e6f7ff;           /* mẫu màu */
-  /* ... Bảng màu khác */
+  --main-color: #1890ff;        /* 主色调 */
+  --main-1000: #f0f2f5;          /* 色板 */
+  --main-900: #e6f7ff;           /* 色板 */
+  /* ... 其他色板 */
 }
 ```
 
-Sau khi sửa đổi các biến khớp màu，Giao diện sẽ được cập nhật theo thời gian thực，Không cần khởi động lại dịch vụ。
+修改配色变量后，界面会实时更新，无需重启服务。
 
-Ngoài ra，`web/src/stores/theme.js` trong `colorPrimary` Cũng cần phải sửa đổi đồng bộ。
+此外，`web/src/stores/theme.js` 中的 `colorPrimary` 也需要同步修改。

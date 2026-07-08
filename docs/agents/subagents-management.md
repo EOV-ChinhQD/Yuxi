@@ -1,117 +1,140 @@
-# chất phụ
+# 子智能体
 
-Yuxi Đại lý phụ là Agent-backed hình thức：nó vẫn còn `agents` cấp một trong bảng Agent，Chỉ với thêm `is_subagent=true` đánh dấu，và sử dụng một chương trình phụ trợ chuyên dụng `SubAgentBackend`。Đại lý phụ không còn có lối vào tạo độc lập、Bảng độc lập hoặc giao diện quản lý độc lập。
+Yuxi 的子智能体是 Agent-backed 形态：它仍然是 `agents` 表中的一级 Agent，只是额外带有 `is_subagent=true` 标记，并使用专用后端 `SubAgentBackend`。子智能体不再有独立的创建入口、独立表或独立管理接口。
 
-## Quan điểm của người dùng
+## 用户视角
 
-### Đại lý phụ có thể giải quyết những vấn đề gì?
+### 子智能体能解决什么问题
 
-Khi nhiệm vụ phức tạp、Khi cần phân công lao động，Chúa ơi Agent có thể vượt qua `task` Công cụ gán một nhiệm vụ con cho một tác nhân phụ。Ví dụ：
+当任务复杂、需要分工处理时，主 Agent 可以通过 `task` 工具把一个子任务交给子智能体。例如：
 
-- Nhiệm vụ chung chung：Để nó ở chế độ tích hợp sẵn `general-purpose` chất phụ，Phân tích quy trình bằng cấu hình chạy mặc định、tổ chức、Viết hoặc xử lý tài liệu。
-- nhiệm vụ nghiên cứu：Tập trung vào việc truy xuất và tổ chức dữ liệu。
-- xem xét nhiệm vụ phụ：Xem xét dự thảo về cấu trúc và chất lượng。
-- Nhiệm vụ phụ của miền：Sử dụng mô hình được chỉ định、Công cụ、cơ sở tri thức hoặc Skills Giải quyết các vấn đề về tên miền cụ thể。
+- 通用型子任务：交给内置 `general-purpose` 子智能体，使用默认运行配置处理分析、整理、写作或文件处理。
+- 研究型子任务：聚焦检索和资料整理。
+- 评审型子任务：对草稿进行结构和质量审查。
+- 领域型子任务：使用指定模型、工具、知识库或 Skills 处理特定领域问题。
 
-### Nơi tạo và chỉnh sửa
+### 在哪里创建和编辑
 
-Đại lý phụ và thông thường Agent Sử dụng cùng một cổng quản lý：Nhập cấu hình mô hình“đại lý”Trang quản lý，Bấm để thêm đại lý mới，và chọn loại phụ trợ `SubAgentBackend`。
+子智能体与普通 Agent 使用同一个管理入口：进入模型配置中的“智能体”管理页，点击新增智能体，并在后端类型中选择 `SubAgentBackend`。
 
-Tạo và chỉnh sửa các quy trình với thông thường Agent Hãy nhất quán：
+创建和编辑流程与普通 Agent 保持一致：
 
-- hiển thị thông tin、Quyền chia sẻ、Các từ nhắc hệ thống và cấu hình đang chạy được lưu trong cùng một bản sao Agent Cấu hình。
-- người mẫu、Công cụ、cơ sở tri thức、MCP và Skills Vẫn vượt qua Agent runtime config Cấu hình biểu mẫu。
-- Đại lý phụ sẽ không xuất hiện trên trang trò chuyện Agent Danh sách chuyển đổi nhanh。
-- Các đại lý phụ không còn có thể định cấu hình hoặc gọi các đại lý phụ khác。
+- 展示信息、共享权限、系统提示词和运行配置都保存在同一份 Agent 配置中。
+- 模型、工具、知识库、MCP 和 Skills 仍通过 Agent runtime config 表单配置。
+- 子智能体不会出现在聊天页的 Agent 快速切换列表中。
+- 子智能体不能再配置或调用其他子智能体。
 
-### Làm sao để Chúa Agent Gọi đại lý phụ
+### 如何让主 Agent 调用子智能体
 
-Chúa ơi Agent sẽ vượt qua runtime config của“chất phụ”Trường được xác định `task` Phạm vi của các tác nhân phụ mà công cụ có thể gọi。
+主 Agent 会通过 runtime config 的“子智能体”字段确定 `task` 工具可调用的子智能体范围。
 
-`subagents` Trường đại diện cho mục chính hiện tại Agent danh sách cho phép：
+`subagents` 字段表示当前主 Agent 的允许列表：
 
-- Khi không có lựa chọn hoặc danh sách trống nào được lưu，Theo mặc định, cho phép tất cả các đại lý phụ hiển thị với người dùng hiện tại，Bao gồm tích hợp `general-purpose`。
-- Sau khi lựa chọn rõ ràng，Chỉ cho phép cuộc gọi đến các đại lý phụ được chọn。
-- Chỉ những cuộc gọi mà người dùng hiện tại có thể truy cập được và `is_subagent=true` của Agent。
-- Mỗi tác nhân phụ sử dụng chính nó `config_json.context`，bao gồm các mô hình、Công cụ、cơ sở tri thức、MCP、Skills và các từ nhắc nhở của hệ thống。
+- 未选择或保存空列表时，默认启用当前用户可见的全部子智能体，包括内置 `general-purpose`。
+- 显式选择后，只允许调用所选子智能体。
+- 只会调用当前用户可访问且 `is_subagent=true` 的 Agent。
+- 每个子智能体使用自己的 `config_json.context`，包括模型、工具、知识库、MCP、Skills 和系统提示词。
 
-Tích hợp sẵn `general-purpose` của `config_json.context` trống rỗng，Khi chạy nhấn `SubAgentContext` và `BaseContext` Mô hình phân tích giá trị mặc định、Công cụ、cơ sở tri thức、MCP với Skills。
+内置 `general-purpose` 的 `config_json.context` 为空，运行时会按 `SubAgentContext` 和 `BaseContext` 默认值解析模型、工具、知识库、MCP 与 Skills。
 
-## Quan điểm của nhà phát triển
+## 开发者视角
 
-### mô hình dữ liệu
+### 数据模型
 
-Tái sử dụng chất phụ `agents` bàn，Các lĩnh vực cốt lõi bao gồm：
+子智能体复用 `agents` 表，核心字段包括：
 
-| trường | Mô tả |
+| 字段 | 说明 |
 |------|------|
-| `backend_id` | Đại lý phụ sử dụng cố định `SubAgentBackend` |
-| `is_subagent` | Thẻ đại lý phụ，`SubAgentBackend` Phải tương ứng `true` |
-| `config_json.context` | Cấu hình chạy riêng của tác nhân phụ |
-| `share_config` | Quyền hiển thị và quản lý，Kế thừa Agent Mô hình chia sẻ |
+| `backend_id` | 子智能体固定使用 `SubAgentBackend` |
+| `is_subagent` | 子智能体标记，`SubAgentBackend` 必须对应 `true` |
+| `config_json.context` | 子智能体自己的运行配置 |
+| `share_config` | 可见性与管理权限，沿用 Agent 共享模型 |
 
-Phần phụ trợ sẽ xác minh `backend_id` với `is_subagent` nhất quán：Bình thường Agent Không thể giả vờ là một đại lý phụ，`SubAgentBackend` Cũng không thể coi nó là bình thường Agent Bảo quản hình dạng。Đại lý phụ không thể được đặt làm mặc định Agent。
+后端会校验 `backend_id` 与 `is_subagent` 一致：普通 Agent 不能伪装成子智能体，`SubAgentBackend` 也不能以普通 Agent 形态保存。子智能体不能被设置为默认 Agent。
 
-### API với ngữ nghĩa danh sách
+### API 与列表语义
 
-Đại lý phụ kế thừa `/api/agent` CRUD：
+子智能体沿用 `/api/agent` CRUD：
 
-- `GET /api/agent` Theo mặc định, chỉ có thể trò chuyện bình thường Agent。
-- `GET /api/agent?include_subagents=true` Điền đầy đủ thông tin cần thiết để quay lại trang quản lý Agent danh sách。
-- Tạo hoặc cập nhật `SubAgentBackend` thời gian，payload có thể mang hoặc lấy được `is_subagent=true`。
-- Chi tiết、Cập nhật và xóa vẫn trải qua quá trình tương tự Agent Giao diện quản lý，và sử dụng lại các bộ lọc quyền hiện có。
+- `GET /api/agent` 默认只返回聊天可用的普通 Agent。
+- `GET /api/agent?include_subagents=true` 返回管理页需要的完整 Agent 列表。
+- 创建或更新 `SubAgentBackend` 时，payload 会携带或推导 `is_subagent=true`。
+- 详情、更新和删除仍走同一套 Agent 管理接口，并复用现有权限过滤。
 
-nền độc lập cũ SubAgent Liên kết quản lý đã bị xóa，Không còn duy trì trạng thái bắt đầu và dừng riêng biệt、khởi tạo tích hợp hoặc spec bộ nhớ đệm。
+旧的独立 SubAgent 管理链路已经移除，不再维护单独的启停状态、内置初始化或 spec 缓存。
 
-### Chuỗi cuộc gọi thời gian chạy
+### 运行时调用链
 
-Chúa ơi Agent Khi soạn một bức tranh，Sẽ đặt nó lên hàng đầu `context.subagents` Được chuẩn hóa thành danh sách được phép hiển thị cho người dùng hiện tại；Cho phép gắn kết khi danh sách không trống Yuxi của task middleware。middleware Một danh sách các tác nhân phụ được phép sẽ được đưa vào gợi ý mô hình，và phơi bày một `task` Công cụ。
+主 Agent 构图时，会先把 `context.subagents` 归一化为当前用户可见的允许列表；允许列表非空时挂载 Yuxi 的 task middleware。middleware 会把允许的子智能体列表注入模型提示，并暴露一个 `task` 工具。
 
-Các thông số của công cụ là：
+工具参数为：
 
 ```python
 class TaskToolSchema(BaseModel):
     description: str
-    subagent_type: str
+    subagent_slug: str
     thread_id: str | None = None
 ```
 
-`thread_id` là một chủ đề tác nhân phụ tùy chọn ID。Nhiệm vụ mới không cần phải điền；Nếu bạn muốn tiếp tục nhiệm vụ đại lý phụ tương tự，nên sử dụng cuối cùng `task` trong kết quả công cụ `Chủ đề đại lý phụ ID`。
+`thread_id` 是可选的子智能体线程 ID。新任务不需要填写；如果要继续之前同一个子智能体任务，应使用上一次 `task` 工具结果中的 `子智能体线程 ID`。
 
-Các quy trình chính trong quá trình thực hiện：
+执行时的关键流程：
 
-1. từ cha Agent của `context.subagents` Đọc các tác nhân phụ được phép slug；Không được định cấu hình rõ ràng hoặc danh sách trống sẽ được mở rộng cho tất cả các đại lý phụ hiển thị cho người dùng hiện tại.。
-2. sử dụng `AgentRepository` Đang tải được hiển thị cho người dùng hiện tại và `is_subagent=true` của Agent。
-3. Một nhiệm vụ mới sẽ được tạo cho cuộc gọi này child checkpoint thread id，Ví dụ `<parent_thread_id>_sub_<slug>_<uuid8>`；Nhiệm vụ tiếp tục sẽ xác minh và sử dụng lại dữ liệu đến `thread_id`。
-4. Sử dụng của đại lý phụ `SubAgentContext` và `config_json.context` xây dựng thực tế Agent graph。
-5. Sau khi cuộc gọi kết thúc，chủ đề đại lý phụ ID và cuối cùng assistant văn bản như `task` Kết quả công cụ được trả về chính Agent。
+1. 从父 Agent 的 `context.subagents` 读取允许的子智能体 slug；未显式配置或空列表会展开为当前用户可见的全部子智能体。
+2. 使用 `AgentRepository` 加载当前用户可见且 `is_subagent=true` 的 Agent。
+3. 新任务会为本次调用生成 child checkpoint thread id，例如 `<parent_thread_id>_sub_<slug>_<uuid8>`；续跑任务会校验并复用传入的 `thread_id`。
+4. 使用子智能体自己的 `SubAgentContext` 和 `config_json.context` 构建真实 Agent graph。
+5. 调用结束后，把子智能体线程 ID 和最终 assistant 文本作为 `task` 工具结果返回给主 Agent。
 
-`SubAgentBackend` Tái sử dụng bình thường Agent Quá trình chuẩn hóa tài nguyên thời gian chạy，nhưng sẽ không gắn kết task middleware；nó `subagents` Các trường bị ẩn và trống theo mặc định，Do đó, các cuộc gọi tác nhân phụ lồng nhau không được hình thành。
+`SubAgentBackend` 复用普通 Agent 的运行时资源归一化流程，但不会挂载 task middleware；它的 `subagents` 字段隐藏且默认为空，因此不会形成嵌套子智能体调用。
 
-### Hệ thống tập tin và phạm vi hộp cát
+### 同步调用与异步调用
 
-Đại lý phụ và chủ Agent Sử dụng phạm vi phân chia khi chia sẻ hệ thống tệp：
+`task` 是同步工具：父智能体调用后会阻塞等待子智能体 run 走到终态，再拿到最终 assistant 文本。这种模式适合短任务，例如父智能体必须立即依赖子智能体结果继续推理时。
 
-| con đường/Phạm vi | Bình thường Agent | chất phụ |
+但当子任务耗时较长或可以并行多个时，同步等待会让父智能体长时间停在工具调用上，无法继续工作。因此 middleware 还同时暴露一组异步子智能体生命周期工具：
+
+| 工具 | 作用 | 关键参数 |
+|------|------|----------|
+| `subagent_start` | 异步启动子智能体 run，立即返回 `run_id` 和 `thread_id` | `description`、`subagent_slug`、可选 `thread_id` |
+| `subagent_status` | 按 `run_id` 查询状态，附带最近 3 条可读进度摘要；run 终态时返回最终结果 | `run_id` |
+| `subagent_events` | 按运行 Redis 流游标读取增量事件 | `run_id`、可选 `after_seq`（默认 `0-0`）、`limit`（1-50） |
+| `subagent_cancel` | 取消运行中的子智能体 run | `run_id` |
+| `subagent_await` | 阻塞等待子智能体 run 终态并返回最终结果；超时返回当前快照和 `wait_timed_out` 标志 | `run_id` |
+
+调用约束：
+
+- 长任务或多个可并行任务优先使用 `subagent_start`，让父智能体继续推进主流程；短任务需要立即拿到结果时继续使用 `task`。
+- `thread_id` 是子智能体的长期上下文 ID，同一个 `thread_id` 终态后可以再创建新的 run 续跑。若同线程已有运行中的 run，`subagent_start` 会返回 busy 结构，不会隐藏排队。
+- `subagent_status`、`subagent_events`、`subagent_cancel`、`subagent_await` 都按 `run_id` 操作，并校验该 run 是否归属当前父 run 创建的子智能体，避免越权访问其它子任务。
+- 父智能体不应通过 shell、curl 或 HTTP API 间接调用子智能体，所有调用必须走上述工具。
+
+异步子智能体在状态面板的「子智能体」分组中按 `run_id` 展示运行身份；状态/事件轮询工具不会渲染成独立 Agent 卡片，弹窗会随子智能体条目补齐 `run_id` 后订阅对应 SSE，已完成的子智能体改为直接读取持久化 Message 历史。
+
+### 文件系统与沙盒作用域
+
+子智能体与主 Agent 共享文件系统时使用拆分作用域：
+
+| 路径/作用域 | 普通 Agent | 子智能体 |
 |------|------|------|
-| LangGraph checkpoint | hiện tại `thread_id` | child `thread_id` |
-| `/home/gem/user-data/workspace` | hiện tại `uid` không gian làm việc chung | giống nhau `uid` không gian làm việc chung |
-| `/home/gem/user-data/uploads` | Phạm vi tệp phiên hiện tại | phiên họp phụ huynh `file_thread_id` |
-| `/home/gem/user-data/outputs` | Phạm vi tệp phiên hiện tại | phiên họp phụ huynh `file_thread_id` |
-| `/home/gem/skills` | hiện tại Agent của Skills Phạm vi | của đại lý phụ `skills_thread_id` |
+| LangGraph checkpoint | 当前 `thread_id` | child `thread_id` |
+| `/home/gem/user-data/workspace` | 当前 `uid` 的共享工作区 | 同一 `uid` 的共享工作区 |
+| `/home/gem/user-data/uploads` | 当前会话文件作用域 | 父会话 `file_thread_id` |
+| `/home/gem/user-data/outputs` | 当前会话文件作用域 | 父会话 `file_thread_id` |
+| `/home/gem/skills` | 当前 Agent 的 Skills 作用域 | 子智能体自己的 `skills_thread_id` |
 
-Điều này đảm bảo rằng tác nhân con có thể đọc phiên tải lên của cha mẹ、Các tạo phẩm cũng được trả về phiên cha mẹ artifacts trong，Đồng thời, đại lý phụ Skills Sẽ không làm ô uế Chúa Agent。
+这保证子智能体可以读取父会话上传、产物也会回到父会话 artifacts 中，同时子智能体的 Skills 不会污染主 Agent。
 
-## Câu hỏi thường gặp
+## 常见问题
 
-### Tại sao các đại lý phụ được tạo ra?，Chúa ơi Agent Vẫn không gọi？
+### 为什么创建了子智能体，主 Agent 仍不会调用？
 
-Chúa ơi Agent Chỉ các tác nhân phụ mà người dùng hiện tại có thể truy cập mới được gọi。Nếu chính Agent Danh sách cho phép đại lý phụ được lưu rõ ràng，Các đại lý phụ mới cần được thêm vào danh sách này；Không được định cấu hình rõ ràng hoặc danh sách trống sẽ sử dụng tất cả các tác nhân phụ hiển thị cho người dùng hiện tại。
+主 Agent 只会调用当前用户可访问的子智能体。如果主 Agent 显式保存了子智能体允许列表，新建子智能体需要被加入该列表；未显式配置或空列表会使用当前用户可见的全部子智能体。
 
-### tại sao lại trò chuyện Agent Đại lý phụ không thể được nhìn thấy trong danh sách？
+### 为什么聊天 Agent 列表里看不到子智能体？
 
-Đây là hành vi được mong đợi。Đại lý con là chủ Agent Cấu hình phụ trợ được gọi là，Không trực tiếp vào cuộc trò chuyện Agent；Trang quản trị sử dụng danh sách các đại lý con。
+这是预期行为。子智能体是被主 Agent 调用的后端配置，不是直接进入聊天的 Agent；管理页会使用包含子智能体的列表。
 
-### Tác nhân con có thể kế thừa cái chính không? Agent mô hình hoặc công cụ？
+### 子智能体能否继承主 Agent 的模型或工具？
 
-Tác nhân phụ sử dụng chính nó Agent Cấu hình。Khi thực sự cần sự nhất quán，Mô hình tương tự phải được chọn rõ ràng trong cấu hình đại lý phụ、công cụ hoặc Skills；Thời gian chạy chỉ kế thừa phạm vi phiên cha mẹ cần thiết，Ví dụ uploads/outputs。
+子智能体运行时使用自己的 Agent 配置。确实需要一致时，应在子智能体配置中显式选择相同模型、工具或 Skills；运行时只继承必要的父会话作用域，例如 uploads/outputs。

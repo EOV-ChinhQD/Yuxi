@@ -528,8 +528,16 @@ export const typeApi = {
   },
 
   /**
-   * Nhận số liệu thống kê cơ sở kiến thức
-   * @returns {Promise} - Thống kê
+   * Lấy cấu hình phân mảnh (chunk presets) được hỗ trợ
+   * @returns {Promise} - Danh sách cấu hình phân mảnh
+   */
+  getChunkPresets: async () => {
+    return apiAdminGet('/api/knowledge/chunk-presets')
+  },
+
+  /**
+   * Lấy thông tin thống kê của cơ sở tri thức
+   * @returns {Promise} - Thông tin thống kê
    */
   getStatistics: async () => {
     return apiAdminGet('/api/knowledge/stats')

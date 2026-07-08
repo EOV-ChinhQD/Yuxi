@@ -1,25 +1,25 @@
-# Skills hệ thống quản lý
+# Skills 管理系统
 
-Skills Có Yuxi hệ thống mở rộng Agent cơ chế quan trọng của khả năng。Vượt qua Skills，Nhà phát triển có thể thêm các công cụ cụ thể、Các mẫu từ gợi ý hoặc kiến ​​thức miền được đóng gói thành các gói kỹ năng có thể sử dụng lại，hãy để Agent Khả năng sử dụng những khả năng bổ sung này trong các cuộc trò chuyện。
+Skills 是 Yuxi 系统中用于扩展 Agent 能力的重要机制。通过 Skills，开发者可以将特定的工具、提示词模板或领域知识打包成可复用的技能包，让 Agent 在对话过程中能够调用这些额外能力。
 
-## tại sao cần thiết Skills
+## 为什么需要 Skills
 
-Trong các tình huống kinh doanh thực tế，Chúng tôi thường gặp một số nhu cầu cụ thể：Chẳng hạn như cần Agent Khả năng truy vấn cụ thể API、Gọi dịch vụ bên ngoài、Hoặc sử dụng các mẫu lời nhắc cụ thể để hoàn thành các nhiệm vụ cụ thể。Cách tiếp cận truyền thống là mã hóa cứng các chức năng này trong mã，Nhưng điều này sẽ khiến hệ thống ngày càng trở nên cồng kềnh，và khó tái sử dụng。
+在实际业务场景中，我们常常会遇到一些特定的需求：比如需要 Agent 能够查询特定的 API、调用某个外部服务、或者使用特定的提示词模板来完成特定任务。传统的做法是在代码中硬编码这些功能，但这样会导致系统变得越来越臃肿，且难以复用。
 
-Skills Ý tưởng thiết kế của hệ thống là kết hợp loại"có thể cắm được"Khả năng được đóng gói thành các gói kỹ năng độc lập。mỗi Skill Chứa các tệp và siêu dữ liệu triển khai hoàn chỉnh，Agent Các kỹ năng cần thiết có thể được tải động dựa trên cấu hình，Cho phép kết hợp linh hoạt các khả năng。
+Skills 系统的设计理念就是将这类"可插拔"的能力封装成独立的技能包。每个 Skill 包含完整的实现文件和元数据，Agent 可以根据配置动态加载所需的技能，实现能力的灵活组合。
 
-## thiết kế kiến trúc
+## 架构设计
 
-Skills Áp dụng hệ thống「Nội dung lưu trữ hệ thống tập tin，Chỉ mục kiểm kê dữ liệu」kiến trúc tách biệt：
+Skills 系统采用「文件系统存内容，数据库存索引」的分离架构：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Skills Kiến trúc lưu trữ                         │
+│                      Skills 存储架构                         │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│   /app/saves/skills/          chỉ mục cơ sở dữ liệu                    │
+│   /app/saves/skills/          数据库索引                    │
 │   ├── skill-a/               ┌──────────────┐              │
-│   │   ├── SKILL.md           │ skills bàn    │              │
+│   │   ├── SKILL.md           │ skills 表    │              │
 │   │   ├── tools/             │ - slug       │              │
 │   │   └── prompts/           │ - name       │              │
 │   └── skill-b/               │ - description│              │
@@ -33,318 +33,318 @@ Skills Áp dụng hệ thống「Nội dung lưu trữ hệ thống tập tin，
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### cấu trúc lưu trữ
+### 存储结构
 
-- **hệ thống tập tin**：`/app/saves/skills` dưới thư mục，mỗi Skill chiếm một thư mục con
-- **chỉ mục cơ sở dữ liệu**：`skills` Siêu dữ liệu lưu trữ bảng（slug、name、description、Nguồn、Phạm vi chia sẻ、Trạng thái đã bật、Sự phụ thuộc, v.v.）
-- **cơ chế liên kết**：Vượt qua `dir_path` Các trường liên kết thư mục hệ thống tệp với các bản ghi cơ sở dữ liệu
+- **文件系统**：`/app/saves/skills` 目录下，每个 Skill 占用一个子目录
+- **数据库索引**：`skills` 表存储元数据（slug、name、description、来源、共享范围、启用状态、依赖关系等）
+- **关联机制**：通过 `dir_path` 字段关联文件系统目录与数据库记录
 
-::: tip Không thể tạo trực tiếp trong hệ thống tập tin
-do Skills Siêu dữ liệu cần được ghi vào cơ sở dữ liệu，Vì vậy nó không thể được tạo trực tiếp trong hệ thống tập tin Skill。Việc này phải được thực hiện thông qua chức năng nhập hoặc cài đặt của hệ thống，Hệ thống tự động xử lý việc tạo hồ sơ cơ sở dữ liệu。
+::: tip 不能直接在文件系统创建
+由于 Skills 的元数据需要写入数据库，因此不能直接在文件系统中创建 Skill。必须通过系统的导入或安装功能来完成，系统会自动处理数据库记录的创建。
 :::
 
-## Cách tạo
+## 创建方式
 
-Hệ thống cung cấp các phương pháp sau để tạo hoặc cài đặt Skills：
+系统提供以下方式创建或安装 Skills：
 
-1. **Được đề xuất Skill Cài đặt**：trong Skills Đề xuất click nhóm trên trang quản lý `+`，Hệ thống sẽ kéo nguồn remote tương ứng và tạo ra bản nháp cài đặt
-2. **ZIP / SKILL.md tải lên**：Sau khi tải lên, đầu tiên nó được phân tích thành bản nháp cài đặt.，Xác nhận phạm vi chia sẻ trước khi viết bài chính thức Skills Lưu trữ và cơ sở dữ liệu
-3. **Lắp đặt kho từ xa**：điền vào skills Địa chỉ kho、ModelScope Skill Địa chỉ hoặc địa chỉ nhận hàng，Cuộc gọi phụ trợ `npx skills` Tải xuống và phân tích dưới dạng bản nháp cài đặt，Sau khi xác nhận thì import vào hệ thống
-4. **Chỉnh sửa trực tuyến**：hiện có và có thể quản lý được Skill Tạo danh mục trực tuyến、Chỉnh sửa tập tin và duy trì sự phụ thuộc
-5. **Agent Cài đặt bên trong**：Đại lý chính có thể vượt qua `install_skill` Công cụ，từ đường dẫn hộp cát hoặc Git Nguồn cài đặt người dùng hiện tại riêng tư Skill；Tác nhân con vô hiệu hóa công cụ
+1. **推荐 Skill 安装**：在 Skills 管理页的推荐分组点击 `+`，系统会拉取对应远程来源并生成安装草稿
+2. **ZIP / SKILL.md 上传**：上传后先解析为安装草稿，确认共享范围后再写入正式 Skills 存储和数据库
+3. **远程仓库安装**：填写 skills 仓库地址、ModelScope Skill 地址或合集地址，后端调用 `npx skills` 下载并解析为安装草稿，确认后导入系统
+4. **在线编辑**：对已有且可管理的 Skill 在线创建目录、编辑文件和维护依赖
+5. **Agent 内安装**：主智能体可通过 `install_skill` 工具，从沙盒路径或 Git 来源安装当前用户私有 Skill；子智能体禁用该工具
 
-Không nên trực tiếp vận hành cơ sở dữ liệu hoặc nhập hệ thống tệp Skill。Viết tập tin trực tiếp sẽ không tự động tạo ra `skills` bảng ghi，Cũng không thể tham gia vào quyền、Phụ thuộc và gắn hộp cát。
+不建议直接操作数据库或文件系统导入 Skill。直接写文件不会自动生成 `skills` 表记录，也无法参与权限、依赖和沙盒挂载。
 
-## Skills Nguồn
+## Skills 来源
 
-Skills Về cơ bản là một gói các từ và công cụ nhắc nhở，Sau đây là một số để tham khảo Skills nhận ra：
+Skills 本质上是提示词和工具的封装，以下是一些可以参考的 Skills 实现：
 
-- **Anthropic chính thức Tools**：https://github.com/anthropics/skills Bạn có thể tham khảo nó skills Cách tổ chức và thiết kế lời nhắc
-- **ModelScope Skill thị trường**：https://modelscope.cn/skills Hỗ trợ đơn Skill địa chỉ，Nó cũng hỗ trợ kéo hàng loạt địa chỉ bộ sưu tập.
-- **MiniMax-AI CLI**：https://github.com/MiniMax-AI/cli văn bản、hình ảnh、video、Tạo lời nói và âm nhạc + Web Tìm kiếm（Có thể vượt qua `MiniMax-AI/cli` Cài đặt từ xa）
-- **cộng đồng Skills**：Được chia sẻ bởi nhiều nền tảng khác nhau Agent mẫu lời nhắc
-- **Phát triển tùy chỉnh**：Tự phát triển theo nhu cầu kinh doanh
+- **Anthropic 官方 Tools**：https://github.com/anthropics/skills 可以参考其 skills 的组织方式和提示词设计
+- **ModelScope Skill 市场**：https://modelscope.cn/skills 支持单个 Skill 地址，也支持合集地址批量拉取
+- **MiniMax-AI CLI**：https://github.com/MiniMax-AI/cli 文本、图片、视频、语音和音乐生成 + Web 搜索（可通过 `MiniMax-AI/cli` 远程安装）
+- **社区 Skills**：各平台分享的 Agent 提示词模板
+- **自定义开发**：根据业务需求自行开发
 
-## bắt đầu nhanh
+## 快速开始
 
-### Tạo đầu tiên của bạn Skill
+### 创建你的第一个 Skill
 
-một tiêu chuẩn Skill Cấu trúc thư mục như sau：
+一个标准的 Skill 目录结构如下：
 
 ```
 my-awesome-skill/
-├── SKILL.md              # Bắt buộc，Skill tập tin định nghĩa cốt lõi
-├── tools/                # Tùy chọn，Tập lệnh công cụ liên quan
+├── SKILL.md              # 必选，Skill 的核心定义文件
+├── tools/                # 可选，相关的工具脚本
 │   └── helper.py
-└── prompts/              # Tùy chọn，mẫu lời nhắc
+└── prompts/              # 可选，提示词模板
     └── system.md
 ```
 
-Trong số đó `SKILL.md` là mọi Skill Các tập tin cốt lõi phải được bao gồm，nó sử dụng Markdown + Frontmatter định dạng：
+其中 `SKILL.md` 是每个 Skill 必须包含的核心文件，它采用 Markdown + Frontmatter 格式：
 
 ```markdown
 ---
 name: My Awesome Skill
 slug: my-awesome-skill
-description: Đây là một kỹ năng được sử dụng để xử lý một nhiệm vụ cụ thể
+description: 这是一个用于处理特定任务的技能
 ---
 
-# Skill Hướng dẫn sử dụng
+# Skill 使用说明
 
-Dưới đây là tài liệu sử dụng chi tiết của kỹ năng，Agent Sẽ đọc phần này để tìm hiểu cách sử dụng kỹ năng này。
+这里是技能的详细使用文档，Agent 会读取这部分内容来了解如何使用这个技能。
 
-## Danh sách tính năng
+## 功能列表
 
-1. Chức năng một：xxx
-2. Chức năng hai：yyy
+1. 功能一：xxx
+2. 功能二：yyy
 
-## Ví dụ sử dụng
+## 使用示例
 
-khi người dùng xxx thời gian，Kỹ năng này có thể được gọi...
+当用户 xxx 时，可以调用此技能...
 ```
 
-**Frontmatter Mô tả trường：**
+**Frontmatter 字段说明：**
 
-| trường | Bắt buộc | Mô tả |
+| 字段 | 必填 | 说明 |
 |------|------|------|
-| `name` | Có | Skill tên hiển thị，Một tên dễ đọc hơn có thể được sử dụng（Chẳng hạn như `Word / DOCX`） |
-| `slug` | Không | Skill mã định danh duy nhất，Phải là chữ thường、con số、sự kết hợp của dấu gạch ngang，và không thể chứa dấu gạch ngang liên tiếp（Chẳng hạn như `my-skill`）。Tương thích với định dạng cũ khi không điền，Hệ thống sẽ sử dụng `name` như slug，tại thời điểm này `name` cũng phải thỏa mãn slug quy tắc |
-| `description` | Có | Skill Mô tả chức năng，sẽ ở trong Agent Hiển thị trong quá trình cấu hình |
+| `name` | 是 | Skill 展示名称，可使用更易读的名称（如 `Word / DOCX`） |
+| `slug` | 否 | Skill 唯一标识，必须是小写字母、数字、短横线的组合，且不能连续短横线（如 `my-skill`）。未填写时兼容旧格式，系统会使用 `name` 作为 slug，此时 `name` 也必须满足 slug 规则 |
+| `description` | 是 | Skill 的功能描述，会在 Agent 配置时展示 |
 
-### nhập khẩu Skill
+### 导入 Skill
 
-Nó có thể được nhập hoặc cài đặt thông qua Skill：
+可以通过以下方式导入或安装 Skill：
 
-**Phương pháp một：Cài đặt từ danh sách được đề xuất**
+**方式一：从推荐列表安装**
 
-1. thiết lập trong hệ thống「Skills quản lý」Lượt xem trang「Được đề xuất」Nhóm
-2. Đề xuất chưa được cài đặt Skill Sẽ coi nó như bình thường Skill Hiển thị kiểu thẻ，Hiển thị bên phải `+`
-3. Bấm vào thẻ giới thiệu hoặc `+` sau，Hệ thống sẽ sử dụng điều này Skill Kéo nội dung từ các nguồn từ xa
-4. Sau khi kéo thành công, một bản nháp cài đặt sẽ bật lên.，Hoàn tất cài đặt sau khi xác nhận phạm vi chia sẻ
+1. 在系统设置的「Skills 管理」页面查看「推荐」分组
+2. 未安装的推荐 Skill 会以普通 Skill 卡片样式展示，右侧显示 `+`
+3. 点击推荐卡片或 `+` 后，系统会使用该 Skill 的远程来源拉取内容
+4. 拉取成功后会弹出安装草稿，确认共享范围后完成安装
 
-Đề xuất đã cài đặt Skill sẽ không còn xuất hiện trong「Được đề xuất」Trong nhóm。
+已安装的推荐 Skill 不会继续显示在「推荐」分组中。
 
-**Phương pháp 2：Vượt qua ZIP gói hoặc SKILL.md tải lên**
+**方式二：通过 ZIP 包或 SKILL.md 上传**
 
-1. sẽ Skill Thư mục được đóng gói thành ZIP tập tin（Lưu ý：ZIP Thư mục gốc là Skill Thư mục）
-2. thiết lập trong hệ thống「Skills quản lý」Trang，nhấp chuột「tải lên Skill」
-3. tải lên ZIP tập tin hoặc đơn `SKILL.md`
-4. Hệ thống phân tích nội dung tải lên và trả về bản nháp cài đặt
-5. Hoàn tất cài đặt sau khi xác nhận phạm vi chia sẻ；Bạn cũng có thể loại bỏ bản nháp
+1. 将 Skill 目录打包成 ZIP 文件（注意：ZIP 的根目录就是 Skill 目录）
+2. 在系统设置的「Skills 管理」页面，点击「上传 Skill」
+3. 上传 ZIP 文件或单个 `SKILL.md`
+4. 系统解析上传内容并返回安装草稿
+5. 确认共享范围后完成安装；也可以放弃草稿
 
-Hệ thống sẽ tự động：
-- Xác minh ZIP Bảo mật nội dung và đường dẫn
-- Kiểm tra slug xung đột（Nếu có xung đột, nó sẽ được thêm tự động. `-v2` v.v. hậu tố）
-- phân tích cú pháp SKILL.md của frontmatter và lưu trữ trong cơ sở dữ liệu
-- Xác minh phạm vi chia sẻ có thể lựa chọn dựa trên vai trò người dùng hiện tại
+系统会自动：
+- 校验 ZIP 内容和路径安全性
+- 检查 slug 冲突（如有冲突会自动追加 `-v2` 等后缀）
+- 解析 SKILL.md 的 frontmatter 并存储到数据库
+- 按当前用户角色校验可选择的共享范围
 
-**Phương pháp ba：Cài đặt từ nguồn từ xa**
+**方式三：从远程来源安装**
 
-1. trong Skills Bấm vào trang quản lý「Cài đặt từ xa」
-2. trong“Kéo theo kho”Điền nguồn，Ví dụ：
+1. 在 Skills 管理页面点击「远程安装」
+2. 在“按仓库拉取”中填写来源，例如：
    - `anthropics/skills`
    - `https://github.com/anthropics/skills`
    - `https://modelscope.cn/skills/@anthropics/pdf`
    - `https://modelscope.cn/collections/MiniMax/MiniMax-Office-skills`
-3. nhấp chuột“Kỹ năng kéo”Có thể được khám phá trong nguồn này Skills danh sách
-4. độc thân Skill Địa chỉ thường được chọn tự động；Bạn có thể kiểm tra một hoặc nhiều địa chỉ kho hoặc địa chỉ nhận hàng trong danh sách Skills
-5. nhấp chuột“Phân tích và xác nhận”，Hệ thống quay về bản nháp cài đặt，Sau khi xác nhận phạm vi chia sẻ, quá trình cài đặt được chính thức hóa.
+3. 点击“拉取技能”获取该来源中可发现的 Skills 列表
+4. 单个 Skill 地址通常会自动选中；仓库或合集地址可在列表中勾选一个或多个 Skills
+5. 点击“解析并确认”，系统返回安装草稿，确认共享范围后正式安装
 
-Bạn cũng có thể chuyển sang“Khám phá tìm kiếm toàn cầu”，Nhập từ khóa tìm kiếm skills.sh Nguồn mở trên Skills，Sau đó chọn kết quả để cài đặt。
+也可以切换到“全局搜索发现”，输入关键字检索 skills.sh 上的开源 Skills，再选择结果安装。
 
-Hệ thống sẽ ở chế độ phụ trợ：
-- gọi `npx skills add <source> --list` Xác minh nguồn và tìm có thể cài đặt skills
-- Sử dụng cách ly tạm thời `HOME` thi hành `npx skills add <source> --skill <name> -g -y --copy`
-- Trích xuất thư từ thư mục tạm thời skill，Sau đó tạo bản nháp theo quy trình nhập hiện có；Viết sau khi xác nhận `/app/saves/skills` với cơ sở dữ liệu
+系统会在后端：
+- 调用 `npx skills add <source> --list` 校验来源并发现可安装的 skills
+- 使用隔离的临时 `HOME` 执行 `npx skills add <source> --skill <name> -g -y --copy`
+- 从临时目录中提取对应 skill，再按现有导入流程生成草稿；确认后写入 `/app/saves/skills` 与数据库
 
-::: tip ModelScope Bộ sưu tập phù hợp cho việc cài đặt hàng loạt
-ModelScope Địa chỉ bộ sưu tập có thể được điền vào dưới dạng nguồn từ xa，Ví dụ `https://modelscope.cn/collections/MiniMax/MiniMax-Office-skills`。Sau khi kéo, kiểm tra những cái cần thiết trong danh sách Skills，Sau đó thống nhất phân tích thành dự thảo lắp đặt。
+::: tip ModelScope 合集适合批量安装
+ModelScope 合集地址可以作为远程来源填写，例如 `https://modelscope.cn/collections/MiniMax/MiniMax-Office-skills`。拉取后在列表中勾选需要的 Skills，再统一解析为安装草稿。
 :::
 
-**Phương pháp bốn：Chỉnh sửa trực tuyến đã tồn tại Skill**
+**方式四：在线编辑已有 Skill**
 
-trong Skills Trang quản lý，bạn có thể：
-- Tạo một thư mục hoặc tập tin mới
-- Chỉnh sửa tập tin văn bản trực tuyến（hỗ trợ .md、.py、.js、.json định dạng vv）
-- Sửa đổi trực tiếp trên trang web SKILL.md nội dung
+在 Skills 管理页面，你可以：
+- 新建目录或文件
+- 在线编辑文本文件（支持 .md、.py、.js、.json 等格式）
+- 直接在网页上修改 SKILL.md 内容
 
-Chỉ khi bạn có `can_manage` Chỉ những người dùng có quyền được ủy quyền mới có thể chỉnh sửa tệp.、phụ thuộc vào、Phạm vi chia sẻ và trạng thái kích hoạt。
+只有具备 `can_manage` 权限的用户才能编辑文件、依赖、共享范围和启用状态。
 
-::: tip Cài đặt từ xa sẽ không ~/.agents/skills Là bộ lưu trữ chính của hệ thống
-Chỉ cài đặt từ xa `skills.sh` CLI như“Trình tải xuống”sử dụng。Yuxi Vẫn với `/app/saves/skills + skills bàn` là nguồn chính thức，Điều này sẽ cho phép các quyền hiện có được、Khả năng hiển thị luồng và cơ chế gắn hộp cát vẫn nhất quán。
+::: tip 远程安装不会把 ~/.agents/skills 作为系统主存储
+远程安装只把 `skills.sh` CLI 作为“下载器”使用。Yuxi 仍然以 `/app/saves/skills + skills 表` 作为正式来源，这样才能与现有的权限、线程可见性和沙盒挂载机制保持一致。
 :::
 
-## Phụ thuộc vào hệ thống
+## 依赖系统
 
-Skills Sự phụ thuộc có thể được thiết lập giữa，Hình thành một mạng lưới kỹ năng gắn kết lỏng lẻo。
+Skills 之间可以建立依赖关系，形成一个松耦合的技能网络。
 
-### loại phụ thuộc
+### 依赖类型
 
-mỗi Skill Ba loại phụ thuộc có thể được khai báo：
+每个 Skill 可以声明三类依赖：
 
-| loại phụ thuộc | Mô tả | Thời gian tải |
+| 依赖类型 | 说明 | 加载时机 |
 |----------|------|----------|
-| `tool_dependencies` | Các công cụ tích hợp cần thiết | Tải theo yêu cầu sau khi kích hoạt |
-| `mcp_dependencies` | cần thiết MCP dịch vụ | Tải theo yêu cầu sau khi kích hoạt |
-| `skill_dependencies` | Phụ thuộc vào người khác Skill | Có hiệu lực ngay khi phiên bắt đầu |
+| `tool_dependencies` | 需要的内置工具 | 激活后按需加载 |
+| `mcp_dependencies` | 需要的 MCP 服务 | 激活后按需加载 |
+| `skill_dependencies` | 依赖的其他 Skill | 会话启动即生效 |
 
-### Cơ chế tải lũy tiến
+### 渐进式加载机制
 
-Hệ thống áp dụng chiến lược tải lũy tiến ba cấp độ，Đảm bảo sử dụng hiệu quả các nguồn lực：
+系统采用三级渐进式加载策略，确保资源的高效利用：
 
-**Giai đoạn một：bắt đầu phiên**
+**阶段一：会话启动**
 
-Khi nào Agent Khi phiên bắt đầu，Hệ thống sẽ：
-1. Tạo Graph Đọc đã lọc `context.skills` danh sách
-2. Mở rộng đệ quy `skill_dependencies`，bắt nguồn từ `_prompt_skills` và `_readable_skills`
-3. sẽ `_prompt_skills` Mô tả kỹ năng tương ứng được đưa vào từ nhắc nhở của hệ thống
+当 Agent 会话启动时，系统会：
+1. 在创建 Graph 前读取已过滤的 `context.skills` 列表
+2. 递归展开 `skill_dependencies`，派生 `_prompt_skills` 和 `_readable_skills`
+3. 将 `_prompt_skills` 对应的技能说明注入到系统提示词中
 
-điều này có nghĩa：Miễn là nhất định Skill，sự phụ thuộc của nó Skill Bạn sẽ nhập ngay từ nhắc và sandbox `/home/gem/skills` phạm vi chỉ đọc。
+这意味着：只要配置了某个 Skill，它的依赖 Skill 就会立即进入提示词和沙盒 `/home/gem/skills` 只读范围。
 
-**Giai đoạn 2：Kích hoạt kỹ năng**
+**阶段二：技能激活**
 
-Khi nào Agent Vượt qua `read_file` đọc công cụ `/home/gem/skills/<slug>/SKILL.md` thời gian，coi là"kích hoạt"kỹ năng。Hệ thống sẽ：
-1. Xác minh rằng kỹ năng có trong danh sách hiển thị
-2. thêm nó vào `activated_skills` danh sách
-3. Các cuộc gọi mô hình tiếp theo sẽ sử dụng danh sách kích hoạt để tải các phần phụ thuộc
+当 Agent 通过 `read_file` 工具读取 `/home/gem/skills/<slug>/SKILL.md` 时，视为"激活"该技能。系统会：
+1. 验证该技能在可见列表中
+2. 将其添加到 `activated_skills` 列表
+3. 后续的模型调用会使用激活列表来加载依赖
 
-**Giai đoạn ba：Tải theo yêu cầu**
+**阶段三：按需加载**
 
-mỗi khi mô hình được gọi，Hệ thống sẽ：
-1. Kiểm tra `activated_skills` kỹ năng trong
-2. Thu thập những kỹ năng này `tool_dependencies` và `mcp_dependencies`
-3. Động lực sẽ yêu cầu các công cụ và MCP Dịch vụ được thêm vào bộ công cụ có sẵn
+每次模型调用时，系统会：
+1. 检查 `activated_skills` 中的技能
+2. 收集这些技能的 `tool_dependencies` 和 `mcp_dependencies`
+3. 动态将需要的工具和 MCP 服务添加到可用工具集中
 
-Ưu điểm của thiết kế này là：Không phải tất cả các công cụ đều được tải khi bắt đầu phiên，nhưng dựa trên Agent Việc sử dụng thực tế được tải theo yêu cầu，Tiết kiệm tài nguyên và đảm bảo tốc độ phản hồi。
+这种设计的好处是：不会在会话开始时加载所有工具，而是根据 Agent 实际使用情况按需加载，既节省资源又保证响应速度。
 
-### Ví dụ khai báo phụ thuộc
+### 依赖声明示例
 
-Giả sử chúng ta có ba Skills：
+假设我们有三个 Skills：
 
-- **base-skill**：kỹ năng cơ bản，Không phụ thuộc
-- **advanced-skill**：phụ thuộc vào `base-skill`
-- **pro-skill**：phụ thuộc vào `advanced-skill`
+- **base-skill**：基础技能，无依赖
+- **advanced-skill**：依赖 `base-skill`
+- **pro-skill**：依赖 `advanced-skill`
 
-dangzai Agent Chỉ chọn trong cấu hình `pro-skill` thời gian：
-1. giai đoạn khởi động：`_readable_skills` = [`pro-skill`, `advanced-skill`, `base-skill`]（Tự động mở rộng chuỗi phụ thuộc）
-2. Agent Lần đầu tiên bất kỳ skill thời gian：cả ba Skill Mọi người đều có thể đọc được
-3. Khi nào Agent đọc `pro-skill/SKILL.md` thời gian：kích hoạt kích hoạt，công cụ và MCP Các phần phụ thuộc đã được tải
+当在 Agent 配置中只选择 `pro-skill` 时：
+1. 启动阶段：`_readable_skills` = [`pro-skill`, `advanced-skill`, `base-skill`]（自动展开依赖链）
+2. Agent 首次调用任何 skill 时：所有三个 Skill 都可读
+3. 当 Agent 读取 `pro-skill/SKILL.md` 时：触发激活，工具和 MCP 依赖被加载
 
-## Quản lý quyền
+## 权限管理
 
-Skills sử dụng `source_type`、`share_config` và `enabled` nguồn điều khiển、Phạm vi chia sẻ và trạng thái kích hoạt。
+Skills 使用 `source_type`、`share_config` 和 `enabled` 控制来源、共享范围和启用状态。
 
-| trường | Mô tả |
+| 字段 | 说明 |
 |------|------|
-| `source_type` | `builtin`、`upload` hoặc `remote` |
-| `share_config.access_level` | `global`、`department` hoặc `user` |
-| `enabled` | Có được phép không Agent Cấu hình và sử dụng thời gian chạy |
+| `source_type` | `builtin`、`upload` 或 `remote` |
+| `share_config.access_level` | `global`、`department` 或 `user` |
+| `enabled` | 是否允许在 Agent 配置与运行时使用 |
 
-Quy tắc truy cập và quản lý：
+访问与管理规则：
 
-| người dùng | có thể nhìn thấy / Có sẵn | Có thể quản lý được |
+| 用户 | 可见 / 可用 | 可管理 |
 |------|-------------|--------|
-| siêu quản trị viên / Quản trị viên | Có thể xem có thể quản lý hoặc kích hoạt và có thể truy cập Skills | Có thể quản lý tất cả những thứ không tích hợp sẵn Skills；Tích hợp khởi động và dừng Skills |
-| Người dùng thông thường | Có thể xem được kích hoạt và có thể truy cập được cho bạn Skills，Bạn cũng có thể cài đặt riêng của bạn Skill | Có thể quản lý các tập tin không tích hợp do chính bạn tạo Skills |
-| Tích hợp sẵn Skills | Được chia sẻ trên toàn cầu và được bật theo mặc định | Quản trị viên có thể bắt đầu và dừng；Không được phép xóa hoặc chỉnh sửa trực tiếp các tập tin |
+| 超级管理员 / 管理员 | 可查看可管理或已启用且可访问的 Skills | 可管理所有非内置 Skills；可启停内置 Skills |
+| 普通用户 | 可查看已启用且对自己可访问的 Skills，也可安装自己的私有 Skill | 可管理自己创建的非内置 Skills |
+| 内置 Skills | 默认全局共享并启用 | 管理员可启停；不允许删除或直接编辑文件 |
 
-Giới hạn phạm vi chia sẻ：
+共享范围限制：
 
-- `global`：Có thể truy cập được cho tất cả người dùng
-- `department`：Có thể truy cập được đối với người dùng ở các phòng ban được chỉ định
-- `user`：Có thể truy cập được đối với người dùng được chỉ định；Người dùng thông thường chỉ có thể chọn phạm vi cá nhân khi cài đặt.
+- `global`：所有用户可访问
+- `department`：指定部门用户可访问
+- `user`：指定用户可访问；普通用户安装时只能选择个人范围
 
-Quản trị viên và người dùng thông thường đang tạo hoặc chỉnh sửa Agent thời gian，chỉ có thể được truy cập và kích hoạt từ Skills khả năng lựa chọn。
+管理员和普通用户在创建或编辑 Agent 时，都只能从自己可访问且启用的 Skills 中选择能力。
 
-## hành vi thời gian chạy
+## 运行时行为
 
-### Agent Cách sử dụng Skills
+### Agent 如何使用 Skills
 
-1. **Nhắc từ**：Tính năng tiêm động có sẵn cho hệ thống mỗi khi một mô hình được yêu cầu Skills Mô tả（Yêu cầu tiêm mức độ，tránh ô nhiễm runtime context）
-2. **truy cập tập tin**：Skills Thư mục được gắn ở chế độ chỉ đọc vào `/home/gem/skills/<slug>/...`
-3. **Cuộc gọi công cụ**：Khi nào Agent cần sử dụng một Skill thời gian，tương ứng SKILL.md Tìm hiểu cách sử dụng
+1. **提示词注入**：系统在每次模型请求时动态注入可用 Skills 的描述（请求级注入，避免污染 runtime context）
+2. **文件访问**：Skills 目录以只读方式挂载到 `/home/gem/skills/<slug>/...`
+3. **工具调用**：当 Agent 需要使用某个 Skill 时，会先读取对应的 SKILL.md 了解使用方法
 
-### Hạn chế thao tác tập tin
+### 文件操作限制
 
-thời gian chạy `/home/gem/skills` Đường dẫn có những hạn chế sau：
-- **chỉ đọc**：Agent Chỉ có thể đọc nội dung tập tin
-- **Tắt tính năng viết**：không thể tạo、Sửa đổi hoặc xóa tập tin
-- **con đường an toàn**：Tất cả các đường dẫn đều được xác minh an toàn，Ngăn chặn các cuộc tấn công truyền tải thư mục
+运行时 `/home/gem/skills` 路径有以下限制：
+- **只读**：Agent 只能读取文件内容
+- **禁止写入**：不能创建、修改或删除文件
+- **路径安全**：所有路径都经过安全校验，防止目录穿越攻击
 
-::: tip Hạn chế của hệ thống tệp ảo
-hiện tại Skills Thư mục được gắn dưới dạng hệ thống tệp ảo，**Không được hỗ trợ shell thực thi lệnh**。Skill Tập lệnh trong chỉ để tham khảo từ nhắc nhở，Agent Các tập lệnh này không thể được thực thi trực tiếp。Nếu bạn cần thực hiện một chức năng cụ thể，Đề nghị vượt qua MCP Triển khai công cụ hoặc công cụ tùy chỉnh。
+::: tip 虚拟文件系统限制
+当前 Skills 目录挂载为虚拟文件系统，**不支持 shell 命令执行**。Skill 中的脚本仅作为提示词参考，Agent 无法直接执行这些脚本。如果需要执行特定功能，建议通过 MCP 工具或自定义工具实现。
 :::
 
-### cách ly phiên
+### 会话隔离
 
-mỗi Agent Các phiên độc lập Skills bộ hiển thị：
-- Các phiên khác nhau có thể được cấu hình với các phiên khác nhau Skills
-- Chỉnh sửa trong cùng một phiên `context.skills` Sẽ kích hoạt việc xây dựng lại ảnh chụp nhanh
-- Sửa đổi nền Skills Sau nội dung，Các phiên hiện tại sẽ không được tự động làm mới
+每个 Agent 会话都有独立的 Skills 可见集：
+- 不同会话可以配置不同的 Skills
+- 同一会话内修改 `context.skills` 会触发快照重建
+- 后台修改 Skills 内容后，已有会话不会自动刷新
 
-## thực tiễn tốt nhất
+## 最佳实践
 
-### Skill Quy ước đặt tên
+### Skill 命名规范
 
-- `slug` Sử dụng chữ thường、Số và dấu gạch ngang，Không thể có dấu gạch ngang liên tục
-- `slug` nên mang tính mô tả，Chẳng hạn như `weather-query`、`sql-reporter`
-- `name` để trưng bày，Có thể so sánh `slug` tự nhiên hơn，Ví dụ `Word / DOCX`
-- tránh quá dài `name` và `slug`
+- `slug` 使用小写字母、数字和短横线，不能连续短横线
+- `slug` 应具有描述性，如 `weather-query`、`sql-reporter`
+- `name` 用于展示，可比 `slug` 更自然，例如 `Word / DOCX`
+- 避免过长的 `name` 和 `slug`
 
-### Lời khuyên quản lý sự phụ thuộc
+### 依赖管理建议
 
-- **Giữ chuỗi phụ thuộc đơn giản**：Mức độ không nên quá sâu，trung bình 1-2 lớp thích hợp
-- **Tránh phụ thuộc vòng tròn**：Hệ thống phát hiện và ngăn chặn sự phụ thuộc vòng tròn
-- **Làm rõ sự cần thiết của sự phụ thuộc**：Chỉ xây dựng các phần phụ thuộc khi thực sự cần khả năng chia sẻ
+- **保持依赖链简洁**：层级不宜过深，一般 1-2 层为宜
+- **避免循环依赖**：系统会检测并阻止循环依赖
+- **明确依赖必要性**：只在真正需要共享能力时才建立依赖
 
-### SKILL.md Kỹ năng viết
+### SKILL.md 编写技巧
 
 ```markdown
 ---
 name: example-skill
-description: Mô tả ngắn gọn chức năng kỹ năng
+description: 简短描述技能功能
 ---
 
-# Tên kỹ năng
+# 技能名称
 
-Dưới đây là hướng dẫn sử dụng chi tiết...
+这里是详细的使用说明...
 
-## Khi nào nên sử dụng
+## 何时使用
 
-Mô tả tình huống nên sử dụng kỹ năng này...
+描述在什么场景下应该使用这个技能...
 
-## Cách sử dụng
+## 使用方法
 
-1. bước đầu tiên...
-2. Bước 2...
+1. 第一步...
+2. 第二步...
 
-## Ví dụ
+## 示例
 
 ```
-Ví dụ sử dụng cụ thể...
+具体的使用示例...
 ```
 ```
 
-## Câu hỏi thường gặp
+## 常见问题
 
-**Q：Tại sao tôi cấu hình Skill Không hiệu quả？**
+**Q：为什么我配置的 Skill 没有生效？**
 
-A：Vui lòng kiểm tra các điểm sau：
-1. Skill của slug Nó có được cấu hình đúng không? Agent của `context.skills` trong
-2. SKILL.md Liệu nó có tồn tại và frontmatter Định dạng đúng
-3. Nếu phụ thuộc được sử dụng，Đảm bảo chuỗi phụ thuộc đã hoàn tất
+A：请检查以下几点：
+1. Skill 的 slug 是否正确配置在 Agent 的 `context.skills` 中
+2. SKILL.md 是否存在且 frontmatter 格式正确
+3. 如果使用了依赖，确保依赖链完整
 
-**Q：Cách cập nhật một bản đã nhập Skill？**
+**Q：如何更新已导入的 Skill？**
 
-A：Điều này có thể được thực hiện theo những cách sau：
-1. Xuất hiện tại Skill，Nhập lại sau khi sửa đổi
-2. trong Skills Chỉnh sửa file trực tuyến trên trang quản lý
-3. từ một nguồn từ xa Skill Có thể được phân tích lại và xác nhận để cài đặt，Tạo kết quả nhập mới
+A：可以通过以下方式：
+1. 导出当前 Skill，修改后重新导入
+2. 在 Skills 管理页面在线编辑文件
+3. 远程来源的 Skill 可重新解析并确认安装，形成新的导入结果
 
-**Q：Skill Công cụ phụ thuộc/MCP Phải làm gì nếu nó không tồn tại？**
+**Q：Skill 依赖的工具/MCP 不存在怎么办？**
 
-A：Hệ thống sẽ xác minh cấu hình phụ thuộc khi lưu nó，Nếu công cụ được tham chiếu hoặc MCP không tồn tại，Sẽ báo lỗi và ngăn chặn việc lưu。
+A：系统会在保存依赖配置时进行校验，如果引用的工具或 MCP 不存在，会报错并阻止保存。
 
 ---
 
-Vượt qua Skills cơ chế，Yuxi cho Agent cung cấp một cách linh hoạt、Khung mở rộng khả năng mở rộng。Bạn có thể sử dụng kiến thức kinh doanh tích lũy của mình、Khả năng của công cụ được gói gọn trong Skills，làm khác đi Agent Tái sử dụng những khả năng này，Cải thiện đáng kể khả năng bảo trì và tái sử dụng của hệ thống。
+通过 Skills 机制，Yuxi 为 Agent 提供了一个灵活、可扩展的能力扩展框架。你可以将自己积累的业务知识、工具能力封装成 Skills，让不同的 Agent 复用这些能力，极大地提升了系统的可维护性和复用性。

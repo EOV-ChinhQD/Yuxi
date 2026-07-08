@@ -24,6 +24,10 @@ Phân tích ngôn ngữ（Yuxi）Nó là một nền tảng phát triển tác n
 
 Điều hướng：[Giới thiệu dự án](https://xerrors.github.io/Yuxi/) ｜ [bắt đầu nhanh](https://xerrors.github.io/Yuxi/intro/quick-start) ｜ [Lộ trình phát triển](https://xerrors.github.io/Yuxi/develop-guides/roadmap) | [0.7 Đặc điểm phiên bản](http://xhslink.com/o/5Y6QWnmjF2d)；Tin tức phát triển mới nhất，Xem chi tiết [changelog](https://xerrors.github.io/Yuxi/develop-guides/changelog)。
 
+> 📢 Tìm việc: Tác giả là nghiên cứu sinh Tiến sĩ ngành Kỹ thuật Phần mềm tại Đại học Giang Nam, hướng nghiên cứu AI Agent, Đồ thị tri thức và Ứng dụng LLM, dự kiến tốt nghiệp năm 2027, hiện đang tìm kiếm cơ hội thực tập/toàn thời gian, liên hệ: wenjie.zhang@stu.jiangnan.edu.cn
+
+---
+
 🩷 Nhà tài trợ
 
 <table>
@@ -38,8 +42,8 @@ Phân tích ngôn ngữ（Yuxi）Nó là một nền tảng phát triển tác n
     </td>
     <td style="padding: 8px 8px 8px 0; vertical-align: middle;">
       <p style="margin: 0 0 4px 0;">
-        Cảm ơn <a href="https://sui-xiang.com/">Những suy nghĩ ngẫu nhiênAIcửa ngõ</a > Tài trợ cho dự án này！
-        Những suy nghĩ ngẫu nhiênAIcửa ngõ Đây là một công ty đáng tin cậy và hiệu quả API Nhà cung cấp dịch vụ chuyển tiếp，cung cấp Claude、Codex、Gemini dịch vụ chuyển tiếp。Một trung tâm chuyển tiếp tập trung vào quyền riêng tư·Không bán lại dữ liệu·Không có mô hình trộn với nước，Quyền riêng tư，Minh bạch，Dịch vụ hậu mãi cực kỳ nhanh chóng。Đăng ký tài khoản mới và nhận quà miễn phí nếu bạn đăng nhập mỗi ngày 0.5 Số tiền kiểm tra meta，Số tiền nạp 1:1，Không cần đăng ký，Thanh toán khi bạn đi。
+        Cảm ơn <a href="https://sui-xiang.com/">随想AI中转站 (Sui Xiang AI Gateway)</a > đã tài trợ cho dự án này!
+        随想AI中转站 là nhà cung cấp dịch vụ trung chuyển API tin cậy và hiệu quả, cung cấp dịch vụ trung chuyển cho Claude, Codex, Gemini... Tập trung vào quyền riêng tư, không bán lại dữ liệu, không pha trộn mô hình, minh bạch, dịch vụ hậu mãi cực kỳ nhanh chóng. Đăng ký tài khoản mới và điểm danh mỗi ngày sẽ được tặng 0.5 NDT để thử nghiệm, tỷ lệ nạp 1:1, không cần đăng ký định kỳ, trả tiền theo mức sử dụng.
       </p >
     </td>
   </tr>
@@ -63,7 +67,7 @@ Phân tích ngôn ngữ（Yuxi）Nó là một nền tảng phát triển tác n
 **1. Sao chép mã và khởi tạo nó**
 
 ```bash
-git clone --branch v0.7.0 --depth 1 https://github.com/xerrors/Yuxi.git
+git clone --branch v0.7.1.beta1 --depth 1 https://github.com/xerrors/Yuxi.git
 cd Yuxi
 
 # Linux/macOS

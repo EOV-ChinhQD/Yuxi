@@ -1,20 +1,20 @@
-# MCP Tích hợp
+# MCP 集成
 
-MCP（Model Context Protocol）Đó là một cách quan trọng để mở rộng khả năng của các tác nhân thông minh.。Hệ thống hỗ trợ cấu hình động thông qua giao diện quản lý MCP máy chủ，Không cần sửa đổi mã。
+MCP（Model Context Protocol）是扩展智能体能力的重要方式。系统支持通过管理界面动态配置 MCP 服务器，无需修改代码。
 
-Tích hợp sẵn MCP Máy chủ sử dụng mã làm nguồn sự thật：Các mục còn thiếu sẽ được tự động điền khi hệ thống khởi động.，Và ghi đè định nghĩa cơ sở dữ liệu bằng các trường hiển thị và kết nối mới nhất trong mã；liệu“Đã thêm”và danh sách bị vô hiệu hóa ở cấp công cụ vẫn giữ trạng thái cơ sở dữ liệu。
+内置 MCP 服务器以代码为事实源：系统启动时会自动补齐缺失项，并用代码中的最新连接与展示字段覆盖数据库定义；是否“已添加”以及工具级禁用列表仍保留数据库状态。
 
-## Các giao thức truyền tải được hỗ trợ
+## 支持的传输协议
 
-| thỏa thuận | Mô tả | Các tình huống áp dụng |
+| 协议 | 说明 | 适用场景 |
 |------|------|----------|
-| Streamable HTTP | phát trực tuyến HTTP kết nối | từ xa MCP dịch vụ |
-| SSE | Server-Sent Events | Tiêu chuẩn HTTP kết nối dài |
-| Stdio | đầu vào và đầu ra tiêu chuẩn | quy trình cục bộ |
+| Streamable HTTP | 流式 HTTP 连接 | 远程 MCP 服务 |
+| SSE | Server-Sent Events | 标准 HTTP 长连接 |
+| Stdio | 标准输入输出 | 本地进程 |
 
-## Ví dụ cấu hình
+## 配置示例
 
-### từ xa MCP dịch vụ
+### 远程 MCP 服务
 
 ```json
 {
@@ -24,7 +24,7 @@ Tích hợp sẵn MCP Máy chủ sử dụng mã làm nguồn sự thật：Các
 }
 ```
 
-### địa phương Python quá trình
+### 本地 Python 进程
 
 ```json
 {
@@ -39,13 +39,13 @@ Tích hợp sẵn MCP Máy chủ sử dụng mã làm nguồn sự thật：Các
 }
 ```
 
-## Quản lý máy chủ
+## 服务器管理
 
-Sử dụng giao diện quản lý“thêm / Xóa”Quản lý ngữ nghĩa MCP máy chủ：
+管理界面使用“添加 / 移除”语义管理 MCP 服务器：
 
-- Đã thêm：`enabled=true`，sẽ được tải vào bộ đệm thời gian chạy và có sẵn Agent sử dụng
-- Có thể được thêm vào：`enabled=false`，Các bản ghi được giữ lại nhưng không được đưa vào thời gian chạy
+- 已添加：`enabled=true`，会加载到运行时缓存并可供 Agent 使用
+- 可添加：`enabled=false`，记录保留但不会进入运行时
 
-## Quản lý công cụ
+## 工具管理
 
-MCP Công cụ hỗ trợ điều khiển chi tiết：Quản trị viên có thể bật hoặc tắt riêng một MCP Các công cụ cụ thể dưới máy chủ，Thực hiện quản lý quyền tinh tế。
+MCP 工具支持粒度控制：管理员可以单独启用或禁用某个 MCP 服务器下的特定工具，实现精细化的权限管理。

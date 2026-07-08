@@ -16,296 +16,306 @@
       @success="onFileUploadSuccess"
     />
 
-    <div class="detail-top-bar">
-      <button class="detail-back-btn" type="button" @click="backToDatabase">
-        <ArrowLeft :size="16" />
-        <span>Trở lại</span>
-      </button>
-      <div class="detail-title-area">
-        <div class="detail-icon">
-          <component :is="kbTypeIcon" :size="18" />
-        </div>
-        <div class="detail-title-text">
-          <h2>{{ database.name || 'Tải cơ sở kiến thức' }}</h2>
-          <span class="detail-subtitle">{{ databaseSubtitle }}</span>
-        </div>
-      </div>
-      <div class="detail-actions">
-        <a-space :size="8">
-          <button
-            type="button"
-            class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
-            @click="copyDatabaseId"
-          >
-            <Copy :size="14" />
-            <span>Sao chép ID</span>
-          </button>
-          <button
-            type="button"
-            class="lucide-icon-btn extension-panel-action extension-panel-action-primary"
-            @click="showEditModal"
-          >
-            <Pencil :size="14" />
-            <span>Chỉnh sửa</span>
-          </button>
-        </a-space>
-      </div>
+    <div v-if="detailLoading" class="database-detail-loading">
+      <a-spin tip="加载知识库信息..." />
     </div>
 
-    <div class="database-detail-body">
-      <div class="database-tab-bar" aria-label="Điều hướng chức năng cơ sở kiến thức">
-        <nav class="database-tab-list" aria-label="Thẻ tính năng cơ sở kiến thức" role="tablist">
-          <button
-            v-for="tab in visibleTabs"
-            :key="tab.key"
-            type="button"
-            class="database-tab-item"
-            :class="{ active: activeTab === tab.key }"
-            role="tab"
-            :aria-selected="activeTab === tab.key"
-            @click="activeTab = tab.key"
-          >
-            <component :is="tab.icon" :size="17" />
-            <span>{{ tab.label }}</span>
-          </button>
-        </nav>
+    <template v-else>
+      <div class="detail-top-bar">
+        <button class="detail-back-btn" type="button" @click="backToDatabase">
+          <ArrowLeft :size="16" />
+          <span>返回</span>
+        </button>
+        <div class="detail-title-area">
+          <div class="detail-icon">
+            <component :is="kbTypeIcon" :size="18" />
+          </div>
+          <div class="detail-title-text">
+            <h2>{{ database.name || '知识库加载中' }}</h2>
+            <span class="detail-subtitle">{{ databaseSubtitle }}</span>
+          </div>
+        </div>
+        <div class="detail-actions">
+          <a-space :size="8">
+            <button
+              type="button"
+              class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
+              @click="copyDatabaseId"
+            >
+              <Copy :size="14" />
+              <span>复制 ID</span>
+            </button>
+            <button
+              type="button"
+              class="lucide-icon-btn extension-panel-action extension-panel-action-primary"
+              @click="showEditModal"
+            >
+              <Pencil :size="14" />
+              <span>编辑</span>
+            </button>
+          </a-space>
+        </div>
       </div>
 
-      <main class="database-tab-content">
-        <div v-if="isMilvus" v-show="activeTab === 'filetable'" class="tab-panel file-panel">
-          <div class="file-management-info">
-            <div class="file-info-title">
-              <div class="file-info-title-row">
-                <button
-                  type="button"
-                  class="lucide-icon-btn extension-panel-action extension-panel-action-primary"
-                  @click="showAddFilesModal()"
-                >
-                  <FileUp :size="14" />
-                  <span>tải lên</span>
-                </button>
-                <button
-                  type="button"
-                  class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
-                  @click="showCreateFolderModal"
-                >
-                  <FolderPlus :size="14" />
-                  <span>Tạo thư mục mới</span>
-                </button>
-              </div>
-            </div>
-            <div class="file-panel-status">
-              <button
-                v-if="pendingParseCount > 0"
-                type="button"
-                class="file-stat-card file-stat-action file-stat-summary"
-                :disabled="store.state.chunkLoading"
-                @click="confirmBatchParse"
-              >
-                <FileText :size="16" />
-                <div class="file-stat-inline">
-                  <strong>{{ pendingParseCount }}</strong>
-                  <span>Để được phân tích cú pháp</span>
-                </div>
-              </button>
-              <button
-                v-if="pendingIndexCount > 0"
-                type="button"
-                class="file-stat-card file-stat-action file-stat-summary"
-                :disabled="store.state.chunkLoading"
-                @click="confirmBatchIndex"
-              >
-                <DatabaseIcon :size="16" />
-                <div class="file-stat-inline">
-                  <strong>{{ pendingIndexCount }}</strong>
-                  <span>Để được dự trữ</span>
-                </div>
-              </button>
-              <div class="file-stat-card file-stat-summary">
-                <FileText :size="16" />
-                <div class="file-stat-inline">
-                  <strong>{{ fileStats.count }}</strong>
-                  <span>tập tin</span>
-                </div>
-              </div>
-              <div v-if="fileStats.sizeText" class="file-stat-card file-stat-summary">
-                <DatabaseIcon :size="16" />
-                <div class="file-stat-inline">
-                  <strong>{{ fileStats.sizeText }}</strong>
-                  <span>tổng kích thước</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                class="file-stat-card file-stat-summary file-stat-repair"
-                :disabled="statsRepairing"
-                :aria-busy="statsRepairing"
-                aria-label="sửa lỗi thiếu Chunk/Token thống kê"
-                title="sửa lỗi thiếu Chunk/Token thống kê"
-                @click="repairDatabaseStats"
-              >
-                <LoaderCircle v-if="statsRepairing" :size="16" class="file-stat-spinner" />
-                <DatabaseIcon v-else :size="16" />
-                <div class="file-stat-inline">
-                  <strong>{{ fileStats.chunkText }}</strong>
-                  <span>Chunks</span>
-                </div>
-              </button>
-              <button
-                type="button"
-                class="file-stat-card file-stat-summary file-stat-repair"
-                :disabled="statsRepairing"
-                :aria-busy="statsRepairing"
-                aria-label="sửa lỗi thiếu Chunk/Token thống kê"
-                title="sửa lỗi thiếu Chunk/Token thống kê"
-                @click="repairDatabaseStats"
-              >
-                <LoaderCircle v-if="statsRepairing" :size="16" class="file-stat-spinner" />
-                <Hash v-else :size="16" />
-                <div class="file-stat-inline">
-                  <strong>{{ fileStats.tokenText }}</strong>
-                  <span>Tokens</span>
-                </div>
-              </button>
-            </div>
-          </div>
-          <FileTable ref="fileTableRef" />
+      <div class="database-detail-body">
+        <div class="database-tab-bar" aria-label="知识库功能导航">
+          <nav class="database-tab-list" aria-label="知识库功能标签" role="tablist">
+            <button
+              v-for="tab in visibleTabs"
+              :key="tab.key"
+              type="button"
+              class="database-tab-item"
+              :class="{ active: activeTab === tab.key }"
+              role="tab"
+              :aria-selected="activeTab === tab.key"
+              @click="activeTab = tab.key"
+            >
+              <component :is="tab.icon" :size="17" />
+              <span>{{ tab.label }}</span>
+            </button>
+          </nav>
         </div>
 
-        <div v-show="activeTab === 'query'" class="tab-panel query-config-panel">
-          <div class="query-config-layout">
-            <div class="query-test-pane">
-              <QuerySection ref="querySectionRef" :visible="true" @toggle-visible="() => {}" />
-            </div>
-            <aside class="query-config-pane" aria-label="Truy xuất cấu hình">
-              <div class="search-config-wrapper">
-                <div class="search-config-header">
-                  <div>
-                    <h3>Truy xuất cấu hình</h3>
-                    <p>Điều chỉnh các tham số tìm kiếm của cơ sở tri thức hiện tại。</p>
-                  </div>
+        <main class="database-tab-content">
+          <div v-if="isMilvus" v-show="activeTab === 'filetable'" class="tab-panel file-panel">
+            <div class="file-management-info">
+              <div class="file-info-title">
+                <div class="file-info-title-row">
                   <button
                     type="button"
                     class="lucide-icon-btn extension-panel-action extension-panel-action-primary"
-                    :disabled="searchConfigSaving"
-                    @click="handleInlineSearchConfigSave"
+                    @click="showAddFilesModal()"
                   >
-                    <Save :size="14" />
-                    <span>lưu lại</span>
+                    <FileUp :size="14" />
+                    <span>上传</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
+                    @click="showCreateFolderModal"
+                  >
+                    <FolderPlus :size="14" />
+                    <span>新建文件夹</span>
                   </button>
                 </div>
-                <div class="search-config-body">
-                  <SearchConfigPanel
-                    ref="searchConfigPanelRef"
-                    :kb-id="kbId"
-                    @save="handleSearchConfigSave"
-                  />
-                </div>
               </div>
-            </aside>
+              <div class="file-panel-status">
+                <button
+                  v-if="pendingParseCount > 0"
+                  type="button"
+                  class="file-stat-card file-stat-action file-stat-summary"
+                  :disabled="store.state.chunkLoading"
+                  @click="confirmBatchParse"
+                >
+                  <FileText :size="16" />
+                  <div class="file-stat-inline">
+                    <strong>{{ pendingParseCount }}</strong>
+                    <span>待解析</span>
+                  </div>
+                </button>
+                <button
+                  v-if="pendingIndexCount > 0"
+                  type="button"
+                  class="file-stat-card file-stat-action file-stat-summary"
+                  :disabled="store.state.chunkLoading"
+                  @click="confirmBatchIndex"
+                >
+                  <DatabaseIcon :size="16" />
+                  <div class="file-stat-inline">
+                    <strong>{{ pendingIndexCount }}</strong>
+                    <span>待入库</span>
+                  </div>
+                </button>
+                <div class="file-stat-card file-stat-summary">
+                  <FileText :size="16" />
+                  <div class="file-stat-inline">
+                    <strong>{{ fileStats.count }}</strong>
+                    <span>文件</span>
+                  </div>
+                </div>
+                <div v-if="fileStats.sizeText" class="file-stat-card file-stat-summary">
+                  <DatabaseIcon :size="16" />
+                  <div class="file-stat-inline">
+                    <strong>{{ fileStats.sizeText }}</strong>
+                    <span>总大小</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="file-stat-card file-stat-summary file-stat-repair"
+                  :disabled="statsRepairing"
+                  :aria-busy="statsRepairing"
+                  aria-label="修复缺失的 Chunk/Token 统计"
+                  title="修复缺失的 Chunk/Token 统计"
+                  @click="repairDatabaseStats"
+                >
+                  <LoaderCircle v-if="statsRepairing" :size="16" class="file-stat-spinner" />
+                  <DatabaseIcon v-else :size="16" />
+                  <div class="file-stat-inline">
+                    <strong>{{ fileStats.chunkText }}</strong>
+                    <span>Chunks</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  class="file-stat-card file-stat-summary file-stat-repair"
+                  :disabled="statsRepairing"
+                  :aria-busy="statsRepairing"
+                  aria-label="修复缺失的 Chunk/Token 统计"
+                  title="修复缺失的 Chunk/Token 统计"
+                  @click="repairDatabaseStats"
+                >
+                  <LoaderCircle v-if="statsRepairing" :size="16" class="file-stat-spinner" />
+                  <Hash v-else :size="16" />
+                  <div class="file-stat-inline">
+                    <strong>{{ fileStats.tokenText }}</strong>
+                    <span>Tokens</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+            <FileTable ref="fileTableRef" />
           </div>
-        </div>
 
-        <div v-if="isMilvus && activeTab === 'graph'" class="tab-panel">
-          <KnowledgeGraphSection
-            :visible="true"
-            :active="activeTab === 'graph'"
-            @toggle-visible="() => {}"
-          />
-        </div>
-
-        <div v-if="isMilvus && activeTab === 'mindmap'" class="tab-panel">
-          <MindMapSection v-if="kbId" :kb-id="kbId" ref="mindmapSectionRef" />
-        </div>
-
-        <div v-if="isMilvus && activeTab === 'evaluation'" class="tab-panel">
-          <RAGEvaluationTab
-            v-if="kbId"
-            :kb-id="kbId"
-            @switch-to-benchmarks="activeTab = 'benchmarks'"
-          />
-        </div>
-
-        <div v-if="isMilvus && activeTab === 'benchmarks'" class="tab-panel">
-          <div class="benchmark-management-container">
-            <div class="benchmark-content">
-              <EvaluationBenchmarks
-                v-if="kbId && isEvaluationSupported"
-                :kb-id="kbId"
-                @benchmark-selected="activeTab = 'evaluation'"
-              />
+          <div v-show="activeTab === 'query'" class="tab-panel query-config-panel">
+            <div class="query-config-layout">
+              <div class="query-test-pane">
+                <QuerySection ref="querySectionRef" :visible="true" @toggle-visible="() => {}" />
+              </div>
+              <aside class="query-config-pane" aria-label="检索配置">
+                <div class="search-config-wrapper">
+                  <div class="search-config-header">
+                    <div>
+                      <h3>检索配置</h3>
+                      <p>调整当前知识库的检索参数。</p>
+                    </div>
+                    <button
+                      type="button"
+                      class="lucide-icon-btn extension-panel-action extension-panel-action-primary"
+                      :disabled="searchConfigSaving"
+                      @click="handleInlineSearchConfigSave"
+                    >
+                      <Save :size="14" />
+                      <span>保存</span>
+                    </button>
+                  </div>
+                  <div class="search-config-body">
+                    <SearchConfigPanel
+                      ref="searchConfigPanelRef"
+                      :kb-id="kbId"
+                      @save="handleSearchConfigSave"
+                    />
+                  </div>
+                </div>
+              </aside>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
 
-    <a-modal v-model:open="editModalVisible" title="Chỉnh sửa thông tin cơ sở kiến thức" width="700px">
+          <div v-if="isMilvus && activeTab === 'graph'" class="tab-panel">
+            <KnowledgeGraphSection
+              :visible="true"
+              :active="activeTab === 'graph'"
+              @toggle-visible="() => {}"
+            />
+          </div>
+
+          <div v-if="isMilvus && activeTab === 'mindmap'" class="tab-panel">
+            <MindMapSection v-if="kbId" :kb-id="kbId" ref="mindmapSectionRef" />
+          </div>
+
+          <div v-if="isMilvus && activeTab === 'evaluation'" class="tab-panel">
+            <RAGEvaluationTab
+              v-if="kbId"
+              :kb-id="kbId"
+              @switch-to-benchmarks="activeTab = 'benchmarks'"
+            />
+          </div>
+
+          <div v-if="isMilvus && activeTab === 'benchmarks'" class="tab-panel">
+            <div class="benchmark-management-container">
+              <div class="benchmark-content">
+                <EvaluationBenchmarks
+                  v-if="kbId && isEvaluationSupported"
+                  :kb-id="kbId"
+                  @benchmark-selected="activeTab = 'evaluation'"
+                />
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </template>
+
+    <a-modal v-model:open="editModalVisible" title="编辑知识库信息" width="700px">
       <template #footer>
         <a-button danger @click="deleteDatabase" style="margin-right: auto; margin-left: 0">
           <template #icon>
             <Trash2 :size="16" style="vertical-align: -3px; margin-right: 4px" />
           </template>
-          Xóa cơ sở dữ liệu
+          删除数据库
         </a-button>
-        <a-button key="back" @click="editModalVisible = false">Hủy bỏ</a-button>
-        <a-button key="submit" type="primary" @click="handleEditSubmit">được rồi</a-button>
+        <a-button key="back" @click="editModalVisible = false">取消</a-button>
+        <a-button key="submit" type="primary" @click="handleEditSubmit">确定</a-button>
       </template>
       <a-form :model="editForm" :rules="rules" ref="editFormRef" layout="vertical">
-        <a-form-item label="Tên cơ sở kiến thức" name="name" required>
-          <a-input v-model:value="editForm.name" placeholder="Vui lòng nhập tên cơ sở kiến thức" />
+        <a-form-item label="知识库名称" name="name" required>
+          <a-input v-model:value="editForm.name" placeholder="请输入知识库名称" />
         </a-form-item>
-        <a-form-item label="Mô tả cơ sở kiến thức" name="description">
+        <a-form-item label="知识库描述" name="description">
           <AiTextarea
             v-model="editForm.description"
             :name="editForm.name"
             :files="fileList"
-            placeholder="Vui lòng nhập mô tả cơ sở kiến thức"
+            placeholder="请输入知识库描述"
             action-placement="header"
             :rows="4"
           />
         </a-form-item>
 
-        <a-form-item v-if="!isConnector" label="Tự động tạo câu hỏi" name="auto_generate_questions">
+        <a-form-item v-if="!isConnector" label="自动生成问题" name="auto_generate_questions">
           <a-switch
             v-model:checked="editForm.auto_generate_questions"
-            checked-children="bật lên"
-            un-checked-children="đóng"
+            checked-children="开启"
+            un-checked-children="关闭"
           />
           <span style="margin-left: 8px; font-size: 12px; color: var(--gray-500)">
-            Tự động tạo câu hỏi kiểm tra sau khi tải file lên
+            上传文件后自动生成测试问题
           </span>
         </a-form-item>
 
         <a-form-item v-if="!isConnector" name="chunk_preset_id">
           <template #label>
             <span class="chunk-preset-label">
-              chiến lược phân chia
+              分块策略
               <a-tooltip :title="editPresetDescription">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
           </template>
-          <a-select v-model:value="editForm.chunk_preset_id" :options="chunkPresetOptions" />
+          <a-select
+            v-model:value="editForm.chunk_preset_id"
+            :options="chunkPresetOptions"
+            :loading="chunkPresetLoading"
+          />
         </a-form-item>
 
         <template v-if="isDifyKb">
           <a-form-item label="Dify API URL" name="dify_api_url">
             <a-input
               v-model:value="editForm.dify_api_url"
-              placeholder="Ví dụ: https://api.dify.ai/v1"
+              placeholder="例如: https://api.dify.ai/v1"
             />
           </a-form-item>
           <a-form-item label="Dify Token" name="dify_token">
             <a-input-password
               v-model:value="editForm.dify_token"
-              placeholder="Vui lòng nhập Dify API Token"
+              placeholder="请输入 Dify API Token"
             />
           </a-form-item>
           <a-form-item label="Dataset ID" name="dify_dataset_id">
             <a-input
               v-model:value="editForm.dify_dataset_id"
-              placeholder="Vui lòng nhập Dify dataset_id"
+              placeholder="请输入 Dify dataset_id"
             />
           </a-form-item>
         </template>
@@ -314,13 +324,13 @@
           <a-form-item label="Notion Token" name="notion_token">
             <a-input-password
               v-model:value="editForm.notion_token"
-              placeholder="Để trống để giữ hiện tại Token hoặc sử dụng biến môi trường"
+              placeholder="留空则保持现有 Token 或使用环境变量"
             />
           </a-form-item>
           <a-form-item label="Data Source ID" name="notion_data_source_id">
             <a-input
               v-model:value="editForm.notion_data_source_id"
-              placeholder="Vui lòng nhập Notion data_source_id"
+              placeholder="请输入 Notion data_source_id"
             />
           </a-form-item>
           <a-form-item label="Notion API Version" name="notion_version">
@@ -328,7 +338,7 @@
           </a-form-item>
         </template>
 
-        <a-form-item v-if="canEditShareConfig" label="Cài đặt chia sẻ" name="share_config">
+        <a-form-item v-if="canEditShareConfig" label="共享设置" name="share_config">
           <a-form-item-rest>
             <ShareConfigForm
               ref="shareConfigFormRef"
@@ -339,7 +349,7 @@
         </a-form-item>
         <a-form-item
           v-else-if="database.share_config"
-          label="Cài đặt chia sẻ"
+          label="共享设置"
           name="share_config_readonly"
         >
           <div class="share-config-readonly">
@@ -394,7 +404,8 @@ import ShareConfigForm from '@/components/ShareConfigForm.vue'
 import { databaseApi } from '@/apis/knowledge_api'
 import { departmentApi } from '@/apis/department_api'
 import { authApi } from '@/apis/auth_api'
-import { CHUNK_PRESET_OPTIONS, getChunkPresetDescription } from '@/utils/chunk_presets'
+import { useChunkPresetOptions } from '@/composables/useChunkPresetOptions'
+import { DEFAULT_CHUNK_PRESET_ID } from '@/utils/chunkUtils'
 import { formatFileSize } from '@/utils/file_utils'
 import { getKbTypeIcon, getKbTypeLabel, kbUtils } from '@/utils/kb_utils'
 
@@ -403,6 +414,12 @@ const router = useRouter()
 const store = useDatabaseStore()
 const taskerStore = useTaskerStore()
 const userStore = useUserStore()
+const {
+  chunkPresetSelectOptions: chunkPresetOptions,
+  chunkPresetLoading,
+  loadChunkPresetOptions,
+  getChunkPresetDescription
+} = useChunkPresetOptions()
 
 const kbId = computed(() => store.kbId)
 const database = computed(() => store.database)
@@ -421,28 +438,28 @@ const kbTypeIcon = computed(() => getKbTypeIcon(kbType.value || 'milvus'))
 
 const databaseSubtitle = computed(() => {
   const typeLabel = getKbTypeLabel(kbType.value || 'milvus')
-  if (!isCurrentDatabaseLoaded.value) return 'Đang tải thông tin cơ sở kiến thức'
+  if (!isCurrentDatabaseLoaded.value) return '正在加载知识库信息'
 
   const description = database.value.description?.trim()
   if (description) return description
 
-  if (isConnector.value) return `${typeLabel} đầu nối`
-  return `${typeLabel} cơ sở tri thức · ${database.value.row_count || 0} tập tin`
+  if (isConnector.value) return `${typeLabel} 连接器`
+  return `${typeLabel} 知识库 · ${database.value.row_count || 0} 文件`
 })
 
 const tabs = computed(() => {
   if (isMilvus.value) {
     return [
-      { key: 'filetable', label: 'Quản lý tập tin', icon: FileText },
-      { key: 'query', label: 'Kiểm tra truy xuất', icon: Search },
-      { key: 'graph', label: 'Sơ đồ tri thức', icon: Network },
-      { key: 'mindmap', label: 'Bản đồ kiến thức', icon: MapIcon },
-      { key: 'evaluation', label: 'RAG Đánh giá', icon: BarChart3 },
-      { key: 'benchmarks', label: 'Đường cơ sở đánh giá', icon: ClipboardList }
+      { key: 'filetable', label: '文件管理', icon: FileText },
+      { key: 'query', label: '检索测试', icon: Search },
+      { key: 'graph', label: '知识图谱', icon: Network },
+      { key: 'mindmap', label: '知识导图', icon: MapIcon },
+      { key: 'evaluation', label: 'RAG 评估', icon: BarChart3 },
+      { key: 'benchmarks', label: '评估基准', icon: ClipboardList }
     ]
   }
 
-  return [{ key: 'query', label: 'Kiểm tra truy xuất', icon: Search }]
+  return [{ key: 'query', label: '检索测试', icon: Search }]
 })
 
 const visibleTabs = computed(() => tabs.value)
@@ -508,14 +525,14 @@ const repairDatabaseStats = async () => {
     const updatedChunkFiles = Number(result?.updated_chunk_files || 0)
     if (updatedTokenFiles || updatedChunkFiles) {
       message.success(
-        `Đã sửa ${updatedTokenFiles} một Token thống kê，${updatedChunkFiles} một Chunk thống kê`
+        `已修复 ${updatedTokenFiles} 个 Token 统计，${updatedChunkFiles} 个 Chunk 统计`
       )
     } else {
-      message.info('Số liệu thống kê được cập nhật')
+      message.info('统计已是最新')
     }
   } catch (error) {
     console.error(error)
-    message.error(error.message || 'Sửa chữa thống kê không thành công')
+    message.error(error.message || '统计修复失败')
   } finally {
     statsRepairing.value = false
   }
@@ -528,15 +545,15 @@ const pendingIndexCount = computed(() => {
 const confirmBatchParse = () => {
   const count = pendingParseCount.value
   if (count <= 0) {
-    message.info('Không có tài liệu để phân tích')
+    message.info('没有待解析文档')
     return
   }
 
   Modal.confirm({
-    title: 'Phân tích các tập tin cần phân tích',
-    content: `sẽ nộp ${formatStatNumber(count)} các tập tin được phân tích cú pháp，Các tác vụ sẽ được xử lý theo đợt trong nền，Tiến trình có thể được xem trong trung tâm tác vụ。`,
-    okText: 'Gửi phân tích',
-    cancelText: 'Hủy bỏ',
+    title: '解析待解析文件',
+    content: `将提交 ${formatStatNumber(count)} 个待解析文件，任务会在后台按批处理，可在任务中心查看进度。`,
+    okText: '提交解析',
+    cancelText: '取消',
     onOk: () => store.parsePendingFiles(count)
   })
 }
@@ -544,13 +561,13 @@ const confirmBatchParse = () => {
 const confirmBatchIndex = () => {
   const count = pendingIndexCount.value
   if (count <= 0) {
-    message.info('Không có tài liệu nào được thêm vào cơ sở dữ liệu')
+    message.info('没有待入库文档')
     return
   }
 
   const opened = fileTableRef.value?.startPendingIndex?.(count)
   if (!opened) {
-    message.error('Danh sách tập tin chưa được tải，Vui lòng thử lại sau')
+    message.error('文件列表尚未加载完成，请稍后再试')
   }
 }
 
@@ -578,6 +595,7 @@ const currentFolderId = ref(null)
 const isFolderUploadMode = ref(false)
 const addFilesMode = ref('file')
 const isInitialLoad = ref(true)
+const detailLoading = ref(true)
 const fileTableRef = ref(null)
 
 const showAddFilesModal = (options = {}) => {
@@ -625,11 +643,16 @@ watch(
   () => route.params.kbId,
   async (nextKbId) => {
     isInitialLoad.value = true
+    detailLoading.value = true
     store.kbId = nextKbId
     resetFileSelectionState()
     store.stopAutoRefresh()
-    await store.getDatabaseInfo(nextKbId, false)
-    store.startAutoRefresh()
+    try {
+      await store.getDatabaseInfo(nextKbId, false)
+      store.startAutoRefresh()
+    } finally {
+      detailLoading.value = false
+    }
   },
   { immediate: true }
 )
@@ -684,13 +707,13 @@ const backToDatabase = () => {
 
 const copyDatabaseId = async () => {
   if (!database.value.kb_id) {
-    message.warning('cơ sở tri thứcIDtrống rỗng')
+    message.warning('知识库ID为空')
     return
   }
 
   try {
     await navigator.clipboard.writeText(database.value.kb_id)
-    message.success('cơ sở tri thứcIDĐã sao chép vào bảng nhớ tạm')
+    message.success('知识库ID已复制到剪贴板')
   } catch {
     const textArea = document.createElement('textarea')
     textArea.value = database.value.kb_id
@@ -698,7 +721,7 @@ const copyDatabaseId = async () => {
     textArea.select()
     document.execCommand('copy')
     document.body.removeChild(textArea)
-    message.success('cơ sở tri thứcIDĐã sao chép vào bảng nhớ tạm')
+    message.success('知识库ID已复制到剪贴板')
   }
 }
 
@@ -711,7 +734,7 @@ const editForm = reactive({
   name: '',
   description: '',
   auto_generate_questions: false,
-  chunk_preset_id: 'general',
+  chunk_preset_id: DEFAULT_CHUNK_PRESET_ID,
   dify_api_url: '',
   dify_token: '',
   dify_dataset_id: '',
@@ -721,10 +744,9 @@ const editForm = reactive({
 })
 
 const rules = {
-  name: [{ required: true, message: 'Vui lòng nhập tên cơ sở kiến thức' }]
+  name: [{ required: true, message: '请输入知识库名称' }]
 }
 
-const chunkPresetOptions = CHUNK_PRESET_OPTIONS.map(({ label, value }) => ({ label, value }))
 const editPresetDescription = computed(() => getChunkPresetDescription(editForm.chunk_preset_id))
 const fileList = computed(() => {
   return (store.documentFiles || []).map((f) => f.filename).filter(Boolean)
@@ -736,34 +758,34 @@ const shareConfigDisplay = computed(() => {
   const shareConfig = database.value?.share_config || { access_level: 'global' }
   if (shareConfig.access_level === 'department') {
     const departmentIds = shareConfig.department_ids || []
-    const names = departmentIds.map((id) => getDepartmentName(id)).join('、') || 'không có'
+    const names = departmentIds.map((id) => getDepartmentName(id)).join('、') || '无'
     return {
       color: 'blue',
-      label: 'Chia sẻ khoa',
-      detail: `${departmentIds.length} các bộ phận có thể truy cập：${names}`
+      label: '部门共享',
+      detail: `${departmentIds.length} 个部门可访问：${names}`
     }
   }
 
   if (shareConfig.access_level === 'user') {
     const userUids = shareConfig.user_uids || []
-    const names = userUids.map((uid) => getUserName(uid)).join('、') || 'không có'
+    const names = userUids.map((uid) => getUserName(uid)).join('、') || '无'
     return {
       color: 'purple',
-      label: 'người được chỉ định',
-      detail: `${userUids.length} Người dùng có thể truy cập：${names}`
+      label: '指定人',
+      detail: `${userUids.length} 个用户可访问：${names}`
     }
   }
 
   return {
     color: 'green',
-    label: 'chia sẻ toàn cầu',
-    detail: 'Có thể truy cập được cho tất cả người dùng'
+    label: '全局共享',
+    detail: '所有用户可访问'
   }
 })
 
 const getDepartmentName = (id) => {
   const dept = departments.value.find((item) => Number(item.id) === Number(id))
-  return dept?.name || `Sở${id}`
+  return dept?.name || `部门${id}`
 }
 
 const getUserName = (uid) => {
@@ -793,7 +815,8 @@ const showEditModal = () => {
   editForm.description = database.value.description || ''
   editForm.auto_generate_questions =
     database.value.additional_params?.auto_generate_questions || false
-  editForm.chunk_preset_id = database.value.additional_params?.chunk_preset_id || 'general'
+  editForm.chunk_preset_id =
+    database.value.additional_params?.chunk_preset_id || DEFAULT_CHUNK_PRESET_ID
   editForm.dify_api_url = database.value.additional_params?.dify_api_url || ''
   editForm.dify_token = database.value.additional_params?.dify_token || ''
   editForm.dify_dataset_id = database.value.additional_params?.dify_dataset_id || ''
@@ -834,11 +857,11 @@ const handleEditSubmit = () => {
           !editForm.dify_token?.trim() ||
           !editForm.dify_dataset_id?.trim()
         ) {
-          message.error('Vui lòng điền đầy đủ Dify API URL、Token và Dataset ID')
+          message.error('请完整填写 Dify API URL、Token 和 Dataset ID')
           return
         }
         if (!editForm.dify_api_url.trim().endsWith('/v1')) {
-          message.error('Dify API URL Phải là /v1 kết thúc')
+          message.error('Dify API URL 必须以 /v1 结尾')
           return
         }
         updateData.additional_params = {
@@ -848,7 +871,7 @@ const handleEditSubmit = () => {
         }
       } else if (isNotionKb.value) {
         if (!editForm.notion_data_source_id?.trim()) {
-          message.error('Vui lòng điền vào Notion Data Source ID')
+          message.error('请填写 Notion Data Source ID')
           return
         }
         updateData.additional_params = {
@@ -861,7 +884,7 @@ const handleEditSubmit = () => {
       } else {
         updateData.additional_params = {
           auto_generate_questions: editForm.auto_generate_questions,
-          chunk_preset_id: editForm.chunk_preset_id || 'general'
+          chunk_preset_id: editForm.chunk_preset_id || DEFAULT_CHUNK_PRESET_ID
         }
       }
 
@@ -869,7 +892,7 @@ const handleEditSubmit = () => {
       editModalVisible.value = false
     })
     .catch((err) => {
-      console.error('Xác thực biểu mẫu không thành công:', err)
+      console.error('表单验证失败:', err)
     })
 }
 
@@ -878,6 +901,7 @@ const deleteDatabase = () => {
 }
 
 onMounted(() => {
+  loadChunkPresetOptions()
   loadDepartments()
   loadUsers()
 })
@@ -909,6 +933,15 @@ onMounted(() => {
   flex-direction: column;
   background: var(--gray-10);
   overflow: hidden;
+}
+
+.database-detail-loading {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-10);
 }
 
 .database-tab-bar {
@@ -1330,7 +1363,7 @@ onMounted(() => {
   }
 }
 
-/* Phong cách toàn cầu như một dự phòng */
+/* 全局样式作为备用方案 */
 .ant-popover .query-params-compact {
   width: 220px;
 }

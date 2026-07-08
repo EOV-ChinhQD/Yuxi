@@ -8,7 +8,7 @@ from yuxi import config, get_version
 from yuxi.storage.postgres.models_business import User
 from yuxi.utils.logging_config import logger
 
-from server.utils.auth_middleware import get_admin_user
+from server.utils.auth_middleware import get_admin_user, get_required_user
 
 system = APIRouter(prefix="/system", tags=["system"])
 
@@ -54,8 +54,8 @@ async def discovery():
 
 
 @system.get("/config")
-async def get_config(current_user: User = Depends(get_admin_user)):
-    """Get system configuration"""
+async def get_config(current_user: User = Depends(get_required_user)):
+    """Lấy cấu hình hệ thống"""
     return config.dump_config()
 
 
@@ -66,15 +66,21 @@ async def update_config_single(key=Body(...), value=Body(...), current_user: Use
         raise HTTPException(status_code=400, detail=f"Mục cấu hình không xác định: {key}")
     if not config.can_update(key):
         raise HTTPException(status_code=400, detail=f"Mục cấu hình không thể sửa đổi: {key}")
-    setattr(config, key, value)
+    try:
+        config.set_value(key, value)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     config.save()
     return config.dump_config()
 
 
 @system.post("/config/update")
 async def update_config_batch(items: dict = Body(...), current_user: User = Depends(get_admin_user)) -> dict:
-    """Update configuration items in batches"""
-    config.update(items)
+    """Cập nhật hàng loạt mục cấu hình"""
+    try:
+        config.update(items)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     config.save()
     return config.dump_config()
 

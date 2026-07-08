@@ -15,6 +15,7 @@ export * from './skill_api' // Skills API
 export * from './tool_api' // Công cụ API
 export * from './mention_api' // đề cập đến tìm kiếm API
 export * from './user_api' // Tài nguyên người dùng API
+export * from './user_config_api' // Cấu hình người dùng API
 
 // Xuất các chức năng công cụ cơ bản
 export {

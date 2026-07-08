@@ -26,7 +26,7 @@ export const configApi = {
    * Nhận cấu hình hệ thống
    * @returns {Promise} - Cấu hình hệ thống
    */
-  getConfig: async () => apiAdminGet('/api/system/config'),
+  getConfig: async () => apiGet('/api/system/config'),
 
   /**
    * Cập nhật một mục cấu hình

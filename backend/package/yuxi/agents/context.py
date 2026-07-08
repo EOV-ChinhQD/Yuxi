@@ -11,7 +11,8 @@ from yuxi.utils.logging_config import logger
 WORKSPACE_AGENTS_PROMPT_MAX_BYTES = 64 * 1024
 DEFAULT_SUMMARY_THRESHOLD_K = 100  # 100K tokens
 DEFAULT_SUMMARY_KEEP_MESSAGES = 10
-DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT = 500
+DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT = 300
+DEFAULT_SUMMARY_L2_TRIGGER_RATIO = 0.4
 DEFAULT_MAX_EXECUTION_STEPS = 300
 DEFAULT_TOOL_RESULT_EVICTION_K_TOKENS = 3
 DEFAULT_YUXI_SUMMARY_PROMPT = """Bạn là trợ lý nén ngữ cảnh hội thoại.
@@ -264,6 +265,27 @@ class BaseContext:
             "description": (
                 "Khi tóm tắt ngữ cảnh làm sạch lịch sử kết quả công cụ, kết quả đầy đủ sẽ được ghi vào outputs, và nội dung ToolMessage sẽ được thay thế bằng đường dẫn và phần xem trước không quá số token "
                 f"này, mặc định là {DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT}."
+=======
+            "name": "摘要工具结果 token 上限",
+            "description": (
+                "上下文摘要 L1 清洗历史工具结果时，超过该 token 数的 ToolMessage 会写入 outputs，"
+                "并在上下文中保留不超过该 token 数的预览；未超过则保持原样。默认 "
+                f"{DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT}。"
+            ),
+            "type": "number",
+            "auth": "admin",
+        },
+    )
+
+    summary_l2_trigger_ratio: float = field(
+        default=DEFAULT_SUMMARY_L2_TRIGGER_RATIO,
+        metadata={
+            "name": "L2 摘要触发比例",
+            "description": (
+                "L1 结构精简后，剩余上下文超过 摘要触发阈值 * 该比例 时才进入 L2 summary。"
+                "建议范围 0.1 到 1.0，值越小越容易触发 L2，默认 "
+                f"{DEFAULT_SUMMARY_L2_TRIGGER_RATIO}。"
+>>>>>>> auth_upstream/main
             ),
             "type": "number",
             "auth": "admin",

@@ -5,154 +5,154 @@ import { withBase } from 'vitepress'
 const GITHUB = 'https://github.com/xerrors/Yuxi'
 const DEMO = 'https://www.bilibili.com/video/BV1TZEx6NEit/'
 
-// nhân vật chủ chốt（Trình giữ chỗ，Sau đó được thay thế bằng dữ liệu thực）
+// 关键数字（占位，后续替换为真实数据）
 const stats = [
-  { value: '15+', label: 'nhà cung cấp mô hình' },
-  { value: '7', label: 'Harness khả năng' },
-  { value: 'MIT', label: 'Thỏa thuận nguồn mở' },
-  { value: 'v0.7', label: 'Phiên bản hiện tại' }
+  { value: '15+', label: '模型供应商' },
+  { value: '7', label: 'Harness 能力' },
+  { value: 'MIT', label: '开源协议' },
+  { value: 'v0.7', label: '当前版本' }
 ]
 
-// Harness trung tâm khả năng（bento）
+// Harness 能力中枢（bento）
 const capabilities = [
   {
     icon: 'box', span: true,
-    title: 'hệ thống tập tin hộp cát',
-    desc: 'Mỗi phiên có một hệ thống tệp ảo độc lập（workspace / uploads / outputs），Vị trí tự động sản phẩm thông minh，văn bản hỗ trợ、hình ảnh、PDF、HTML Xem trước và tải xuống trực tuyến。',
-    tags: ['Xem trước', 'Tải xuống', 'Artifacts sản phẩm'],
+    title: '沙盒文件系统',
+    desc: '每个会话拥有独立的虚拟文件系统（workspace / uploads / outputs），智能体产物自动落盘，支持文本、图片、PDF、HTML 在线预览与下载。',
+    tags: ['预览', '下载', 'Artifacts 产物'],
     shot: 'https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260604203704426.png'
   },
   {
     icon: 'sparkles',
-    title: 'Skills Hệ thống kỹ năng',
-    desc: 'Tạo hình ảnh tích hợp、Báo cáo chuyên sâu、Báo cáo dữ liệu và các kỹ năng khác，Hỗ trợ tải lên và cài đặt từ xa，「phân tích dự thảo → Xác nhận cài đặt」。',
-    tags: ['Tích hợp sẵn', 'tải lên', 'từ xa']
+    title: 'Skills 技能系统',
+    desc: '内置图像生成、深度报告、数据报表等技能，支持上传与远程安装，「解析草稿 → 确认安装」。',
+    tags: ['内置', '上传', '远程']
   },
   {
     icon: 'plug',
-    title: 'MCP Tích hợp',
-    desc: 'Vượt qua Model Context Protocol Giao thức chuẩn để truy cập các dịch vụ công cụ bên ngoài，Thống nhất bắt đầu, dừng và quản lý quyền。',
-    tags: ['giao thức chuẩn']
+    title: 'MCP 集成',
+    desc: '通过 Model Context Protocol 标准协议接入外部工具服务，统一启停与权限管理。',
+    tags: ['标准协议']
   },
   {
     icon: 'wrench',
-    title: 'Công cụ tích hợp',
-    desc: 'present_artifacts Giao sản phẩm、Câu hỏi ngắt đang chờ người dùng、Cài đặt kỹ năng theo yêu cầu、Tìm kiếm mạng và nhiều tính năng khác có thể được sử dụng ngay lập tức。',
-    tags: ['Sẵn sàng ra khỏi hộp']
+    title: '内置工具',
+    desc: 'present_artifacts 交付产物、提问中断等待用户、按需安装技能、联网检索等开箱即用。',
+    tags: ['开箱即用']
   },
   {
     icon: 'fork',
-    title: 'chất phụ SubAgents',
-    desc: 'Tác nhân chính có thể điều phối các tác nhân phụ bị cô lập，độc lập child thread Thực hiện các nhiệm vụ phức tạp và trả lại sản phẩm。',
-    tags: ['dàn nhạc biệt lập']
+    title: '子智能体 SubAgents',
+    desc: '主智能体可编排隔离的子智能体，独立 child thread 执行复杂子任务并回传产物。',
+    tags: ['隔离编排']
   },
   {
     icon: 'layers',
-    title: 'Điều phối phần mềm trung gian',
-    desc: 'Nội dung tìm kiếm cơ sở kiến thức、Xử lý tệp đính kèm、tóm tắt lịch sử offload、Phần mềm trung gian như chèn công cụ động có thể được kết hợp và sắp xếp。',
-    tags: ['Có thể kết hợp']
+    title: '中间件编排',
+    desc: '知识库检索注入、附件处理、历史摘要 offload、动态工具注入等中间件可组合编排。',
+    tags: ['可组合']
   },
   {
     icon: 'cpu',
-    title: 'không đồng bộ Worker',
-    desc: 'Dựa trên ARQ nhiệm vụ nền，Thực hiện không đồng bộ các tác vụ tiêu tốn thời gian từ vài phút đến hàng giờ，Hỗ trợ đầu ra hủy và phát trực tuyến。',
-    tags: ['nhiệm vụ dài', 'Có thể hủy', 'phát trực tuyến']
+    title: '异步 Worker',
+    desc: '基于 ARQ 的后台任务，将分钟到小时级长耗时任务异步执行，支持取消与流式输出。',
+    tags: ['长任务', '可取消', '流式']
   }
 ]
 
-// cỗ máy tri thức：khả năng chuyển đổi tab，Chuyển phương tiện ở bên phải với các tùy chọn đã chọn
+// 知识引擎：可切换的能力 tab，右侧媒体随选中项切换
 const engineTabs = [
   {
-    key: 'parse', icon: 'scan', title: 'Phân tích cú pháp đa định dạng',
-    desc: 'MinerU、PaddleX、RapidOCR Phân tích thống nhất PDF、Office、Hình ảnh, v.v. được cấu trúc Markdown。',
+    key: 'parse', icon: 'scan', title: '多格式解析',
+    desc: 'MinerU、PaddleX、RapidOCR 统一解析 PDF、Office、图片等为结构化 Markdown。',
     shot: 'https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260605205221908.png'
   },
   {
     key: 'retrieval', icon: 'database', title: 'Agentic RAG',
-    desc: 'Tác nhân xác định độc lập thời gian truy xuất và truy vấn，Nhiều vòng truy xuất vector + Rerank，Trả lời với trích dẫn có thể theo dõi。',
+    desc: '智能体自主决定检索时机与查询，多轮向量检索 + Rerank，回答带可溯源引用。',
     shot: 'https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260604205342546.png'
   },
   {
-    key: 'graph', icon: 'share', title: 'Sơ đồ tri thức',
-    desc: 'Trích xuất các thực thể và mối quan hệ để xây dựng biểu đồ tri thức，Tăng cường tham gia truy xuất đồ thị con，và hỗ trợ khám phá trực quan。',
+    key: 'graph', icon: 'share', title: '知识图谱',
+    desc: '抽取实体与关系构建知识图谱，子图检索参与增强，并支持可视化探索。',
     shot: 'https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260604204056298.png'
   },
   {
-    key: 'eval', icon: 'chart', title: 'Đánh giá tìm kiếm',
-    desc: 'Đánh giá chất lượng tìm kiếm tích hợp，Hỗ trợ các lần chạy được đặt tên và so sánh chỉ báo，Định lượng việc thu hồi và trả lời hiệu quả。',
+    key: 'eval', icon: 'chart', title: '检索评估',
+    desc: '内置检索质量评估，支持命名运行与指标对比，量化召回与回答效果。',
     shot: 'https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260604210111977.png'
   },
   {
-    key: 'sources', icon: 'plug', title: 'Tiếp cận nhiều nguồn kiến thức',
-    desc: 'hỗ trợ Dify、Notion、Feishu（Đang quy hoạch）Chờ nguồn tri thức bên ngoài truy cập，Tìm kiếm và trích dẫn thống nhất。',
+    key: 'sources', icon: 'plug', title: '多知识源接入',
+    desc: '支持 Dify、Notion、飞书（规划中）等外部知识源接入，统一检索与引用。',
     shot: 'https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260604205611168.png'
   }
 ]
 const activeEngine = ref(0)
 const currentEngine = computed(() => engineTabs[activeEngine.value])
 
-// Tường nhà cung cấp mẫu（vùng chọn ngang，Hai hàng bị lệch và cuộn ngược lại）
+// 模型供应商墙（横向跑马灯，两行错位反向滚动）
 const ICON_BASE = 'https://registry.npmmirror.com/@lobehub/icons-static-svg/latest/files/icons'
 const providers = [
   { name: 'OpenAI', icon: `${ICON_BASE}/openai.svg` },
   { name: 'DeepSeek', icon: `${ICON_BASE}/deepseek-color.svg` },
-  { name: 'Tongyi Qianwen', icon: `${ICON_BASE}/bailian-color.svg` },
-  { name: 'Phổ trí tuệ AI', icon: `${ICON_BASE}/zhipu-color.svg` },
+  { name: '通义千问', icon: `${ICON_BASE}/bailian-color.svg` },
+  { name: '智谱 AI', icon: `${ICON_BASE}/zhipu-color.svg` },
   { name: 'Moonshot', icon: `${ICON_BASE}/moonshot.svg` },
   { name: 'MiniMax', icon: `${ICON_BASE}/minimax-color.svg` },
   { name: 'SiliconFlow', icon: `${ICON_BASE}/siliconcloud-color.svg` },
   { name: 'OpenRouter', icon: `${ICON_BASE}/openrouter.svg` },
   { name: 'ModelScope', icon: `${ICON_BASE}/modelscope-color.svg` },
   { name: 'OpenCode', icon: `${ICON_BASE}/opencode.svg` },
-  { name: 'Xiaomi MiMo', icon: `${ICON_BASE}/xiaomimimo.svg` }
+  { name: '小米 MiMo', icon: `${ICON_BASE}/xiaomimimo.svg` }
 ]
-// Thay đổi thứ tự bắt đầu của dòng thứ hai để tạo ra sự sai lệch；Tạo một bản sao của mỗi dòng để lặp liền mạch
+// 第二行换个起始顺序以形成错位；每行内容复制一份用于无缝循环
 const providersTop = [...providers, ...providers]
 const providersBottom = (() => {
   const rotated = [...providers.slice(5), ...providers.slice(0, 5)]
   return [...rotated, ...rotated]
 })()
 
-// Nguyên tắc làm việc
+// 工作原理
 const steps = [
-  { n: '01', title: 'Cấu hình cơ sở', desc: 'Nhà cung cấp mô hình truy cập quản trị viên、Xây dựng cơ sở tri thức và biểu đồ tri thức、Phân chia quyền của người dùng và bộ phận。' },
-  { n: '02', title: 'đại lý dàn xếp', desc: 'cho Agent gắn kết Skills、MCP、Tools với các đại lý phụ，Kết hợp các khả năng của phần mềm trung gian cần thiết。' },
-  { n: '03', title: 'Truy xuất và lý luận', desc: 'Tích hợp truy xuất vectơ và suy luận biểu đồ tri thức trong hội thoại，Công cụ hộp cát thực hiện các tác vụ thực tế。' },
-  { n: '04', title: 'Giao sản phẩm', desc: 'Trả lại câu trả lời có trích dẫn，và có thể được xem trước、Kết quả phân phối thẻ sản phẩm có thể tải xuống。' }
+  { n: '01', title: '配置底座', desc: '管理员接入模型供应商、构建知识库与知识图谱、划分用户与部门权限。' },
+  { n: '02', title: '编排智能体', desc: '为 Agent 挂载 Skills、MCP、Tools 与子智能体，组合所需中间件能力。' },
+  { n: '03', title: '检索与推理', desc: '对话中融合向量检索与知识图谱推理，沙盒工具执行真实任务。' },
+  { n: '04', title: '交付产物', desc: '返回带引用来源的回答，并以可预览、可下载的产物卡片交付结果。' }
 ]
 
-// Tổng quan về ảnh chụp màn hình sản phẩm
+// 产品截图一览
 const shots = [
-  { title: 'Bàn làm việc đối thoại', desc: 'lớp học ChatGPT Đối thoại đại lý thông minh và phân phối sản phẩm' },
-  { title: 'Cấu hình đại lý', desc: 'gắn kết Skills / MCP / Đại lý phụ và phần mềm trung gian' },
-  { title: 'Trực quan hóa biểu đồ tri thức', desc: 'Hiển thị trích xuất mối quan hệ thực thể và truy xuất sơ đồ con' },
-  { title: 'Mở rộng đại lý', desc: 'Quản lý thống nhất Skills với MCP dịch vụ' }
+  { title: '对话工作台', desc: '类 ChatGPT 的智能体对话与产物交付' },
+  { title: '智能体配置', desc: '挂载 Skills / MCP / 子智能体与中间件' },
+  { title: '知识图谱可视化', desc: '实体关系抽取与子图检索展示' },
+  { title: '智能体拓展', desc: '统一管理 Skills 与 MCP 服务' }
 ]
 
-// Cấp doanh nghiệp
+// 企业级
 const enterprise = [
-  { icon: 'shield', title: 'Nhiều quyền thuê nhà và quyền', desc: 'người dùng / Cách ly cấp khoa，Cơ sở tri thức hỗ trợ toàn cầu、Sở、Chia sẻ ba cấp độ cho những người được chỉ định。' },
-  { icon: 'key', title: 'API Key Tích hợp', desc: 'phát hành khóa độc lập，cho các hệ thống bên ngoài API Cách gọi các khả năng của nền tảng một cách an toàn。' },
-  { icon: 'rocket', title: 'LITE Khởi động nhẹ', desc: 'make up-lite Bỏ qua sự phụ thuộc nặng nề và khởi động nguội nhanh chóng，Docker Compose Sẵn sàng ra khỏi hộp。' }
+  { icon: 'shield', title: '多租户与权限', desc: '用户 / 部门级隔离，知识库支持全局、部门、指定人三档共享。' },
+  { icon: 'key', title: 'API Key 集成', desc: '签发独立密钥，供外部系统以 API 方式安全调用平台能力。' },
+  { icon: 'rocket', title: 'LITE 轻量启动', desc: 'make up-lite 跳过重依赖快速冷启动，Docker Compose 开箱即用。' }
 ]
 
-// Kịch bản ứng dụng
+// 应用场景
 const cases = [
-  { title: 'Trợ lý hỏi đáp kiến thức doanh nghiệp', desc: 'Làm cho dữ liệu nội bộ có thể tìm kiếm được、tài sản tri thức hợp lý，Trả lời có trích dẫn nguồn。' },
-  { title: 'Báo cáo nghiên cứu khoa học và nghiên cứu ngành', desc: 'Với sự giúp đỡ của deep-reporter Kỹ năng tạo các báo cáo dài phân tích chuyên sâu có cấu trúc。' },
-  { title: 'nội bộ AI Cơ sở khả năng', desc: 'Cung cấp khả năng quản lý cho từng hệ thống kinh doanh、Dịch vụ đại lý hợp nhất có thể mở rộng。' }
+  { title: '企业知识问答助手', desc: '将内部资料沉淀为可检索、可推理的知识资产，回答带来源引用。' },
+  { title: '科研与行业调研报告', desc: '借助 deep-reporter 技能生成结构化的深度分析长报告。' },
+  { title: '内部 AI 能力底座', desc: '为各业务系统提供可管理、可扩展的统一智能体服务。' }
 ]
 
-// Phân lớp ngăn xếp công nghệ
+// 技术栈分层
 const techStack = [
-  { group: 'giao diện người dùng', items: ['Vue 3', 'Vite', 'Pinia'] },
-  { group: 'phụ trợ', items: ['FastAPI', 'LangGraph', 'ARQ'] },
-  { group: 'lưu trữ', items: ['PostgreSQL', 'Redis', 'MinIO', 'Milvus', 'Neo4j'] },
-  { group: 'phân tích cú pháp', items: ['MinerU', 'PaddleX', 'RapidOCR'] },
-  { group: 'triển khai', items: ['Docker Compose'] }
+  { group: '前端', items: ['Vue 3', 'Vite', 'Pinia'] },
+  { group: '后端', items: ['FastAPI', 'LangGraph', 'ARQ'] },
+  { group: '存储', items: ['PostgreSQL', 'Redis', 'MinIO', 'Milvus', 'Neo4j'] },
+  { group: '解析', items: ['MinerU', 'PaddleX', 'RapidOCR'] },
+  { group: '部署', items: ['Docker Compose'] }
 ]
 
-// Lời cảm ơn về nguồn mở
+// 开源致谢
 const credits = [
   { name: 'LightRAG', url: 'https://github.com/HKUDS/LightRAG' },
   { name: 'DeepAgents', url: 'https://github.com/langchain-ai/deepagents' },
@@ -162,7 +162,7 @@ const credits = [
   { name: 'QwenPaw', url: 'https://github.com/agentscope-ai/QwenPaw' }
 ]
 
-// lucide đường dẫn biểu tượng phong cách（stroke 1.5）
+// lucide 风格图标路径（stroke 1.5）
 const icons = {
   box: '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
   sparkles: '<path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"/>',
@@ -180,7 +180,7 @@ const icons = {
   chart: '<path d="M3 3v18h18"/><path d="M7 16v-5"/><path d="M12 16V8"/><path d="M17 16v-3"/>'
 }
 
-// Lệnh nhập cuộn
+// 滚动进场指令
 const vReveal = {
   mounted(el) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
@@ -209,31 +209,31 @@ const vReveal = {
         <div class="yx-grid"></div>
       </div>
       <div class="yx-container yx-hero__inner">
-        <span class="yx-badge">v0.7.0 · MIT Nguồn mở · LangGraph lái xe</span>
-        <h1 class="yx-hero__title">Phân tích ngôn ngữ <span class="yx-accent">Yuxi</span></h1>
-        <p class="yx-hero__subtitle">Sự kết hợp RAG Tác nhân thông minh với biểu đồ tri thức Harness nền tảng</p>
+        <span class="yx-badge">v0.7.0 · MIT 开源 · LangGraph 驱动</span>
+        <h1 class="yx-hero__title">语析 <span class="yx-accent">Yuxi</span></h1>
+        <p class="yx-hero__subtitle">融合 RAG 与知识图谱的智能体 Harness 平台</p>
         <p class="yx-hero__desc">
-          Cơ sở kiến thức cấu hình quản trị viên、Mô hình và quyền，Người dùng trong lớp ChatGPT trong giao diện，
-          và có thể gắn được Skills、MCP、Đối thoại đại lý giữa đại lý phụ và công cụ hộp cát，
-          Nhận nguồn có trích dẫn、Lập luận về biểu đồ tri thức và các câu trả lời về sản phẩm có thể phân phối được。
+          管理员配置知识库、模型与权限，用户在类 ChatGPT 的界面中，
+          与可挂载 Skills、MCP、子智能体与沙盒工具的智能体对话，
+          获得带引用来源、知识图谱推理与可交付产物的回答。
         </p>
         <div class="yx-hero__actions">
-          <a class="yx-btn yx-btn--primary" :href="withBase('/intro/quick-start')">bắt đầu nhanh</a>
-          <a class="yx-btn yx-btn--ghost" :href="GITHUB" target="_blank" rel="noreferrer">trong GitHub Xem</a>
-          <a class="yx-btn yx-btn--text" :href="DEMO" target="_blank" rel="noreferrer">▷ Video giới thiệu</a>
+          <a class="yx-btn yx-btn--primary" :href="withBase('/intro/quick-start')">快速开始</a>
+          <a class="yx-btn yx-btn--ghost" :href="GITHUB" target="_blank" rel="noreferrer">在 GitHub 查看</a>
+          <a class="yx-btn yx-btn--text" :href="DEMO" target="_blank" rel="noreferrer">▷ 演示视频</a>
         </div>
         <div class="yx-hero__shot">
           <img
             class="yx-hero__img"
             src="https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260608002434299.png"
-            alt="Phân tích ngôn ngữ Yuxi Xem trước giao diện sản phẩm"
+            alt="语析 Yuxi 产品界面预览"
             loading="lazy"
           />
         </div>
       </div>
     </section>
 
-    <!-- ===== dải dữ liệu ===== -->
+    <!-- ===== 数据条 ===== -->
     <section class="yx-stats">
       <div class="yx-container yx-stats__inner">
         <div v-for="s in stats" :key="s.label" class="yx-stat">
@@ -243,13 +243,13 @@ const vReveal = {
       </div>
     </section>
 
-    <!-- ===== Harness trung tâm khả năng ===== -->
+    <!-- ===== Harness 能力中枢 ===== -->
     <section class="yx-section">
       <div class="yx-container">
         <header v-reveal class="yx-head">
-          <span class="yx-head__eyebrow">Thời gian chạy đại lý</span>
-          <h2 class="yx-head__title">Không chỉ là một cuộc trò chuyện，Thực hiện và phân phối tốt hơn</h2>
-          <p class="yx-head__sub">Yuxi Tích hợp sẵn một bộ hoàn chỉnh Harness——hộp cát、Kỹ năng、Công cụ、Đại lý phụ và phần mềm trung gian，Hãy để đại lý thực sự hoàn thành nhiệm vụ。</p>
+          <span class="yx-head__eyebrow">智能体运行时</span>
+          <h2 class="yx-head__title">不止于对话，更能执行与交付</h2>
+          <p class="yx-head__sub">Yuxi 内置一套完整的 Harness——沙盒、技能、工具、子智能体与中间件，让智能体真正动手完成任务。</p>
         </header>
         <div class="yx-bento">
           <article
@@ -273,12 +273,12 @@ const vReveal = {
       </div>
     </section>
 
-    <!-- ===== cỗ máy tri thức ===== -->
+    <!-- ===== 知识引擎 ===== -->
     <section class="yx-section yx-section--soft">
       <div class="yx-container yx-split">
         <div v-reveal class="yx-split__text">
-          <span class="yx-head__eyebrow">cỗ máy tri thức</span>
-          <h2 class="yx-head__title">Từ tài liệu đến tài sản tri thức hợp lý</h2>
+          <span class="yx-head__eyebrow">知识引擎</span>
+          <h2 class="yx-head__title">从文档到可推理的知识资产</h2>
           <ul class="yx-tabs">
             <li
               v-for="(t, i) in engineTabs"
@@ -313,9 +313,9 @@ const vReveal = {
                 :key="currentEngine.key"
                 class="yx-engine-frame yx-engine-ph"
                 role="img"
-                :aria-label="currentEngine.title + ' Xem trước'"
+                :aria-label="currentEngine.title + ' 预览'"
               >
-                <span>{{ currentEngine.title }} · Xem trước</span>
+                <span>{{ currentEngine.title }} · 预览</span>
               </div>
             </Transition>
           </div>
@@ -323,13 +323,13 @@ const vReveal = {
       </div>
     </section>
 
-    <!-- ===== Tường nhà cung cấp mẫu ===== -->
+    <!-- ===== 模型供应商墙 ===== -->
     <section class="yx-section">
       <div class="yx-container">
         <header v-reveal class="yx-head">
-          <span class="yx-head__eyebrow">nhà cung cấp mô hình</span>
-          <h2 class="yx-head__title">Truy cập ở một nơi，Chuyển đổi mọi nơi</h2>
-          <p class="yx-head__sub">thống nhất <code>provider_id:model_id</code> Cấu hình，Bao gồm các nhà cung cấp mô hình chính thống，và hỗ trợ tùy biến provider。</p>
+          <span class="yx-head__eyebrow">模型供应商</span>
+          <h2 class="yx-head__title">一处接入，随处切换</h2>
+          <p class="yx-head__sub">统一 <code>provider_id:model_id</code> 配置，覆盖主流模型供应商，并支持自定义 provider。</p>
         </header>
         <div v-reveal class="yx-marquee">
           <div class="yx-marquee__row">
@@ -352,12 +352,12 @@ const vReveal = {
       </div>
     </section>
 
-    <!-- ===== Nguyên tắc làm việc ===== -->
+    <!-- ===== 工作原理 ===== -->
     <section class="yx-section yx-section--soft">
       <div class="yx-container">
         <header v-reveal class="yx-head">
-          <span class="yx-head__eyebrow">Nguyên tắc làm việc</span>
-          <h2 class="yx-head__title">Xây dựng ứng dụng đại lý thông minh của bạn theo bốn bước</h2>
+          <span class="yx-head__eyebrow">工作原理</span>
+          <h2 class="yx-head__title">四步搭建你的智能体应用</h2>
         </header>
         <div class="yx-steps">
           <div v-for="(st, i) in steps" :key="st.n" v-reveal class="yx-step">
@@ -370,16 +370,16 @@ const vReveal = {
       </div>
     </section>
 
-    <!-- ===== Tổng quan về sản phẩm ===== -->
+    <!-- ===== 产品一览 ===== -->
     <section class="yx-section">
       <div class="yx-container">
         <header v-reveal class="yx-head">
-          <span class="yx-head__eyebrow">Tổng quan về sản phẩm</span>
-          <h2 class="yx-head__title">một bàn làm việc，Bao quát toàn bộ quá trình</h2>
+          <span class="yx-head__eyebrow">产品一览</span>
+          <h2 class="yx-head__title">一个工作台，覆盖全流程</h2>
         </header>
         <div class="yx-shots">
           <figure v-for="sh in shots" :key="sh.title" v-reveal class="yx-shot">
-            <div class="yx-placeholder" role="img" :aria-label="sh.title + ' Trình giữ chỗ ảnh chụp màn hình'">
+            <div class="yx-placeholder" role="img" :aria-label="sh.title + ' 截图占位'">
               <span>{{ sh.title }} · 16:9</span>
             </div>
             <figcaption>
@@ -391,12 +391,12 @@ const vReveal = {
       </div>
     </section>
 
-    <!-- ===== Cấp doanh nghiệp ===== -->
+    <!-- ===== 企业级 ===== -->
     <section class="yx-section yx-section--soft">
       <div class="yx-container">
         <header v-reveal class="yx-head">
-          <span class="yx-head__eyebrow">Cấp doanh nghiệp và có thể tích hợp</span>
-          <h2 class="yx-head__title">Từ xác minh nguyên mẫu đến triển khai nhóm</h2>
+          <span class="yx-head__eyebrow">企业级与可集成</span>
+          <h2 class="yx-head__title">从原型验证到团队落地</h2>
         </header>
         <div class="yx-cards3">
           <article v-for="e in enterprise" :key="e.title" v-reveal class="yx-card">
@@ -410,12 +410,12 @@ const vReveal = {
       </div>
     </section>
 
-    <!-- ===== Kịch bản ứng dụng ===== -->
+    <!-- ===== 应用场景 ===== -->
     <section class="yx-section">
       <div class="yx-container">
         <header v-reveal class="yx-head">
-          <span class="yx-head__eyebrow">Kịch bản ứng dụng</span>
-          <h2 class="yx-head__title">Thích ứng với hoạt động kinh doanh thực sự của bạn</h2>
+          <span class="yx-head__eyebrow">应用场景</span>
+          <h2 class="yx-head__title">适配你的真实业务</h2>
         </header>
         <div class="yx-cards3">
           <article v-for="c in cases" :key="c.title" v-reveal class="yx-card yx-card--case">
@@ -426,12 +426,12 @@ const vReveal = {
       </div>
     </section>
 
-    <!-- ===== ngăn xếp công nghệ ===== -->
+    <!-- ===== 技术栈 ===== -->
     <section class="yx-section yx-section--soft">
       <div class="yx-container">
         <header v-reveal class="yx-head">
-          <span class="yx-head__eyebrow">ngăn xếp công nghệ</span>
-          <h2 class="yx-head__title">Nền tảng kỹ thuật hiện đại và vững chắc</h2>
+          <span class="yx-head__eyebrow">技术栈</span>
+          <h2 class="yx-head__title">现代而稳健的工程基座</h2>
         </header>
         <div class="yx-tech">
           <div v-for="t in techStack" :key="t.group" v-reveal class="yx-tech__row">
@@ -444,40 +444,40 @@ const vReveal = {
       </div>
     </section>
 
-    <!-- ===== bắt đầu nhanh ===== -->
+    <!-- ===== 快速开始 ===== -->
     <section class="yx-section">
       <div class="yx-container">
         <header v-reveal class="yx-head">
-          <span class="yx-head__eyebrow">bắt đầu nhanh</span>
-          <h2 class="yx-head__title">Ba bước để bắt đầu chạy cục bộ</h2>
+          <span class="yx-head__eyebrow">快速开始</span>
+          <h2 class="yx-head__title">三步本地跑起来</h2>
         </header>
         <div v-reveal class="yx-quick">
-          <pre class="yx-code"><code><span class="yx-c-cmt"># 1. Sao chép và khởi tạo</span>
-git clone --branch v0.7.0 --depth 1 https://github.com/xerrors/Yuxi.git
+          <pre class="yx-code"><code><span class="yx-c-cmt"># 1. 克隆并初始化</span>
+git clone --branch v0.7.1.beta1 --depth 1 https://github.com/xerrors/Yuxi.git
 cd Yuxi && ./scripts/init.sh
 
-<span class="yx-c-cmt"># 2. sử dụng Docker bắt đầu</span>
+<span class="yx-c-cmt"># 2. 使用 Docker 启动</span>
 docker compose up --build
 
-<span class="yx-c-cmt"># 3. Truy cập trình duyệt</span>
+<span class="yx-c-cmt"># 3. 浏览器访问</span>
 open http://localhost:5173</code></pre>
-          <p class="yx-quick__tip">Không cần nền tảng kiến thức / Sơ đồ tri thức và các phụ thuộc nặng nề khác，Có sẵn <code>make up-lite</code> để LITE Chế độ nhẹ khởi động nhanh。</p>
+          <p class="yx-quick__tip">无需知识库 / 知识图谱等重依赖时，可用 <code>make up-lite</code> 以 LITE 轻量模式快速启动。</p>
         </div>
       </div>
     </section>
 
-    <!-- ===== Người đóng góp & Lời cảm ơn ===== -->
+    <!-- ===== 贡献者 & 致谢 ===== -->
     <section class="yx-section yx-section--soft">
       <div class="yx-container yx-center">
         <header v-reveal class="yx-head">
-          <span class="yx-head__eyebrow">cộng đồng</span>
-          <h2 class="yx-head__title">Được xây dựng bởi cộng đồng nguồn mở</h2>
+          <span class="yx-head__eyebrow">社区</span>
+          <h2 class="yx-head__title">由开源社区共同构建</h2>
         </header>
         <a v-reveal :href="GITHUB + '/graphs/contributors'" target="_blank" rel="noreferrer" class="yx-contrib">
-          <img src="https://contrib.rocks/image?repo=xerrors/Yuxi&max=60&columns=12" alt="Yuxi Tường hình đại diện của người đóng góp" loading="lazy" />
+          <img src="https://contrib.rocks/image?repo=xerrors/Yuxi&max=60&columns=12" alt="Yuxi 贡献者头像墙" loading="lazy" />
         </a>
         <p v-reveal class="yx-credits">
-          Đứng trên vai người khổng lồ ——
+          站在巨人的肩上 ——
           <template v-for="(c, i) in credits" :key="c.name">
             <a :href="c.url" target="_blank" rel="noreferrer">{{ c.name }}</a><span v-if="i < credits.length - 1"> · </span>
           </template>
@@ -485,14 +485,14 @@ open http://localhost:5173</code></pre>
       </div>
     </section>
 
-    <!-- ===== cuối cùng CTA ===== -->
+    <!-- ===== 最终 CTA ===== -->
     <section class="yx-cta">
       <div class="yx-container yx-cta__inner" v-reveal>
-        <h2>Bắt đầu xây dựng đại lý của bạn ngay bây giờ</h2>
-        <p>Nguồn mở、Có thể tự lưu trữ、Đối với các tình huống kinh doanh thực tế。</p>
+        <h2>立即开始构建你的智能体</h2>
+        <p>开源、可自托管、面向真实业务场景。</p>
         <div class="yx-hero__actions yx-cta__actions">
-          <a class="yx-btn yx-btn--primary" :href="withBase('/intro/quick-start')">bắt đầu nhanh</a>
-          <a class="yx-btn yx-btn--ghost" :href="GITHUB" target="_blank" rel="noreferrer">đi tới GitHub ★</a>
+          <a class="yx-btn yx-btn--primary" :href="withBase('/intro/quick-start')">快速开始</a>
+          <a class="yx-btn yx-btn--ghost" :href="GITHUB" target="_blank" rel="noreferrer">前往 GitHub ★</a>
         </div>
       </div>
     </section>
@@ -521,11 +521,11 @@ open http://localhost:5173</code></pre>
 .yx-center { text-align: center; }
 .yx-accent { color: var(--yx-brand); }
 
-/* nhịp điệu đoạn văn */
+/* 段落节奏 */
 .yx-section { padding: 96px 0; }
 .yx-section--soft { background: var(--vp-c-bg-soft); }
 
-/* khối tiêu đề */
+/* 标题块 */
 .yx-head { max-width: 720px; margin: 0 auto 48px; text-align: center; }
 .yx-head__eyebrow {
   display: inline-block;
@@ -547,7 +547,7 @@ open http://localhost:5173</code></pre>
 .yx-hero { padding: 88px 0 64px; text-align: center; position: relative; overflow: hidden; }
 .yx-hero__inner { position: relative; z-index: 1; }
 
-/* nền khí quyển：quả cầu ánh sáng nổi + lưới mesh */
+/* 氛围背景：浮动光球 + 网格 mesh */
 .yx-ambient { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .yx-orb { position: absolute; border-radius: 50%; filter: blur(70px); will-change: transform; }
 .yx-orb--1 {
@@ -590,7 +590,7 @@ open http://localhost:5173</code></pre>
 .yx-hero__desc { max-width: 640px; margin: 18px auto 0; color: var(--vp-c-text-2); font-size: 17px; }
 .yx-hero__actions { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 32px; }
 
-/* nút */
+/* 按钮 */
 .yx-btn {
   display: inline-flex; align-items: center; gap: 6px;
   height: 44px; padding: 0 22px; border-radius: 10px;
@@ -612,7 +612,7 @@ open http://localhost:5173</code></pre>
   box-shadow: 0 24px 60px -28px rgba(0, 0, 0, .25);
 }
 
-/* hình ảnh giữ chỗ */
+/* 占位图 */
 .yx-placeholder {
   aspect-ratio: 16 / 9; width: 100%;
   display: flex; align-items: center; justify-content: center;
@@ -627,7 +627,7 @@ open http://localhost:5173</code></pre>
   box-shadow: 0 24px 60px -28px rgba(0, 0, 0, .25);
 }
 
-/* ===== dải dữ liệu ===== */
+/* ===== 数据条 ===== */
 .yx-stats { border-top: 1px solid var(--vp-c-divider); border-bottom: 1px solid var(--vp-c-divider); }
 .yx-stats__inner { display: grid; grid-template-columns: repeat(4, 1fr); }
 .yx-stat { text-align: center; padding: 32px 16px; }
@@ -670,7 +670,7 @@ open http://localhost:5173</code></pre>
   border-radius: 12px; border: 1px solid var(--vp-c-divider);
 }
 
-/* ===== Split（cỗ máy tri thức）===== */
+/* ===== Split（知识引擎）===== */
 .yx-split { display: grid; grid-template-columns: 0.82fr 1.18fr; gap: 48px; align-items: start; }
 .yx-split .yx-head__eyebrow { display: inline-block; }
 .yx-split .yx-head__title { text-align: left; font-size: 30px; }
@@ -703,7 +703,7 @@ open http://localhost:5173</code></pre>
 }
 .yx-tab--active .yx-tab__desc p { margin-top: 4px; }
 
-/* Khu vực truyền thông Công cụ Tri thức（4:3，Theo dõi tab chuyển đổi） */
+/* 知识引擎媒体区（4:3，随 tab 切换） */
 .yx-engine-media {
   position: relative; width: 100%; aspect-ratio: 4 / 3; margin-top: 40px;
   border-radius: 14px; overflow: hidden; border: 1px solid var(--vp-c-divider);
@@ -718,7 +718,7 @@ img.yx-engine-frame { object-fit: cover; }
 .yx-fade-enter-active, .yx-fade-leave-active { transition: opacity .25s ease; }
 .yx-fade-enter-from, .yx-fade-leave-to { opacity: 0; }
 
-/* ===== Tường nhà cung cấp mẫu（vùng chọn）===== */
+/* ===== 模型供应商墙（跑马灯）===== */
 .yx-marquee {
   display: flex; flex-direction: column; gap: 18px;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
@@ -745,7 +745,7 @@ img.yx-engine-frame { object-fit: cover; }
   to { transform: translateX(-50%); }
 }
 
-/* ===== Nguyên tắc làm việc ===== */
+/* ===== 工作原理 ===== */
 .yx-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--yx-gap); }
 .yx-step { position: relative; padding: 28px 24px; border: 1px solid var(--vp-c-divider); border-radius: 16px; background: var(--vp-c-bg); }
 .yx-step__n { font-size: 26px; font-weight: 800; color: var(--yx-brand); font-variant-numeric: tabular-nums; }
@@ -756,14 +756,14 @@ img.yx-engine-frame { object-fit: cover; }
   color: var(--vp-c-text-3); font-size: 18px; z-index: 1;
 }
 
-/* ===== Tổng quan về sản phẩm ===== */
+/* ===== 产品一览 ===== */
 .yx-shots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; }
 .yx-shot { margin: 0; }
 .yx-shot figcaption { margin-top: 14px; }
 .yx-shot figcaption strong { font-size: 16px; }
 .yx-shot figcaption span { display: block; color: var(--vp-c-text-2); font-size: 14px; margin-top: 2px; }
 
-/* ===== Ba thẻ（Cấp doanh nghiệp / bối cảnh）===== */
+/* ===== 三卡（企业级 / 场景）===== */
 .yx-cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--yx-gap); }
 .yx-card {
   border: 1px solid var(--vp-c-divider); border-radius: 16px;
@@ -775,7 +775,7 @@ img.yx-engine-frame { object-fit: cover; }
 .yx-card p { margin: 0; color: var(--vp-c-text-2); font-size: 14.5px; }
 .yx-card--case { border-left: 3px solid var(--yx-lime); }
 
-/* ===== ngăn xếp công nghệ ===== */
+/* ===== 技术栈 ===== */
 .yx-tech { max-width: 860px; margin: 0 auto; }
 .yx-tech__row { display: grid; grid-template-columns: 100px 1fr; gap: 24px; align-items: center; padding: 18px 0; }
 .yx-tech__row + .yx-tech__row { border-top: 1px solid var(--vp-c-divider); }
@@ -786,7 +786,7 @@ img.yx-engine-frame { object-fit: cover; }
   background: var(--vp-c-bg-soft); border: 1px solid var(--vp-c-divider);
 }
 
-/* ===== bắt đầu nhanh ===== */
+/* ===== 快速开始 ===== */
 .yx-quick { max-width: 760px; margin: 0 auto; }
 .yx-code {
   margin: 0; padding: 24px; border-radius: 14px;
@@ -799,24 +799,24 @@ img.yx-engine-frame { object-fit: cover; }
 .yx-c-cmt { color: #6a9955; }
 .yx-quick__tip { margin: 18px 0 0; text-align: center; color: var(--vp-c-text-2); font-size: 14px; }
 
-/* ===== cộng đồng ===== */
+/* ===== 社区 ===== */
 .yx-contrib { display: block; max-width: 720px; margin: 0 auto; }
 .yx-contrib img { width: 100%; border-radius: 12px; }
 .yx-credits { margin: 32px 0 0; color: var(--vp-c-text-2); font-size: 14.5px; }
 .yx-credits a { color: var(--yx-brand); text-decoration: none; }
 .yx-credits a:hover { text-decoration: underline; }
 
-/* ===== cuối cùng CTA ===== */
+/* ===== 最终 CTA ===== */
 .yx-cta { padding: 96px 0; text-align: center; border-top: 1px solid var(--vp-c-divider); }
 .yx-cta__inner h2 { font-size: 34px; font-weight: 800; margin: 0; letter-spacing: -.01em; }
 .yx-cta__inner p { margin: 14px 0 0; color: var(--vp-c-text-2); font-size: 17px; }
 .yx-cta__actions { margin-top: 28px; }
 
-/* ===== Hoạt ảnh nhập cảnh ===== */
+/* ===== 进场动画 ===== */
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
 .reveal.in-view { opacity: 1; transform: none; }
 
-/* ===== đáp ứng ===== */
+/* ===== 响应式 ===== */
 @media (max-width: 1024px) {
   .yx-bento { grid-template-columns: repeat(2, 1fr); }
   .yx-cap--lg { grid-column: span 2; grid-row: auto; }

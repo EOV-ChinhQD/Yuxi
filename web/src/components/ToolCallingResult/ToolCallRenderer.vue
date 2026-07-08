@@ -28,6 +28,7 @@ import OpenKbDocumentTool from './tools/OpenKbDocumentTool.vue'
 import CalculatorTool from './tools/CalculatorTool.vue'
 import TodoListTool from './tools/TodoListTool.vue'
 import TaskTool from './tools/TaskTool.vue'
+import SubagentLifecycleTool from './tools/SubagentLifecycleTool.vue'
 import ImageTool from './tools/ImageTool.vue'
 import WriteFileTool from './tools/WriteFileTool.vue'
 import ReadFileTool from './tools/ReadFileTool.vue'
@@ -42,6 +43,7 @@ import MysqlDescribeTableTool from './tools/MysqlDescribeTableTool.vue'
 import MysqlListTablesTool from './tools/MysqlListTablesTool.vue'
 import AskUserQuestionTool from './tools/AskUserQuestionTool.vue'
 import ExecuteTool from './tools/ExecuteTool.vue'
+import OcrParseFileTool from './tools/OcrParseFileTool.vue'
 import { getToolCallId, isHiddenToolCall } from './toolRegistry'
 
 const props = defineProps({
@@ -78,6 +80,7 @@ const TOOL_RENDERERS = {
   mysql_describe_table: MysqlDescribeTableTool,
   mysql_list_tables: MysqlListTablesTool,
   mysql_query: MysqlQueryTool,
+  ocr_parse_file: OcrParseFileTool,
   open_kb_document: OpenKbDocumentTool,
   query_kb: QueryKbTool,
   read_file: ReadFileTool,
@@ -85,6 +88,11 @@ const TOOL_RENDERERS = {
   run_shell_command: ExecuteTool,
   search_file: SearchFileTool,
   search_file_content: SearchFileContentTool,
+  subagent_await: SubagentLifecycleTool,
+  subagent_cancel: SubagentLifecycleTool,
+  subagent_events: SubagentLifecycleTool,
+  subagent_start: SubagentLifecycleTool,
+  subagent_status: SubagentLifecycleTool,
   task: TaskTool,
   tavily_search: WebSearchTool,
   text_to_img_qwen_image: ImageTool,

@@ -1,20 +1,20 @@
-# Đánh giá đại lý
+# 智能体评估
 
-Yuxi Đánh giá tác nhân được sử dụng để trả lời một câu hỏi cụ thể：ai đó Agent Bạn có thể hoàn thành một cách nhất quán một nhóm nhiệm vụ cố định không?。nó không có ở đó Yuxi Bộ dữ liệu đánh giá bảo trì nội bộ、Quy tắc chấm điểm hoặc báo cáo so sánh，Đúng hơn, những khả năng này được trao cho Langfuse；Yuxi Chỉ chịu trách nhiệm về sự thật Agent Chạy link thực hiện từng mẫu，và ghi lại kết quả vào Langfuse experiment。
+Yuxi 的智能体评估用于回答一个具体问题：某个 Agent 在一组固定任务上能不能稳定完成工作。它不在 Yuxi 内部维护评估数据集、评分规则或对比报表，而是把这些能力交给 Langfuse；Yuxi 只负责按真实 Agent 运行链路执行每条样例，并把结果回写到 Langfuse experiment。
 
-## ranh giới áp dụng
+## 适用边界
 
-Chức năng này dành cho Agent Đánh giá hành vi từ đầu đến cuối，Không phải là đánh giá chỉ số truy xuất cơ sở kiến thức。Nếu bạn muốn đánh giá RAG Thu hồi tìm kiếm、Trả lời chính xác và điểm chuẩn cơ sở kiến thức，Vui lòng sử dụng「Đánh giá cơ sở kiến thức」。Nếu bạn muốn đánh giá một Agent Lập trình、Nghiên cứu、Cuộc gọi công cụ、Hiệu suất thực tế khi lập kế hoạch hoặc thực hiện các nhiệm vụ nhiều bước，sau đó sử dụng những cái được giới thiệu trên trang này Langfuse dataset experiment quá trình。
+这个功能面向 Agent 端到端行为评估，不是知识库检索指标评估。如果你要评估 RAG 检索召回、答案准确率和知识库基准，请使用「知识库评估」。如果你要评估一个 Agent 在编程、研究、工具调用、规划或多步骤任务上的真实表现，则使用本页介绍的 Langfuse dataset experiment 流程。
 
-Đánh giá liên kết duy trì ba ranh giới：
+评估链路保持三个边界：
 
-- Langfuse chịu trách nhiệm dataset、experiment、score、So sánh và hình dung。
-- Yuxi Phần phụ trợ chịu trách nhiệm tạo ra giao diện bình thường conversation và AgentRun，và tái sử dụng worker Liên kết thực thi。
-- `yuxi` CLI Chỉ chịu trách nhiệm đọc Langfuse dataset、chạy experiment、gọi Yuxi eval API，không chịu trách nhiệm tạo hoặc tải lên dataset。
+- Langfuse 负责 dataset、experiment、score、对比和可视化。
+- Yuxi 后端负责创建正常 conversation 和 AgentRun，并复用 worker 执行链路。
+- `yuxi` CLI 只负责读取 Langfuse dataset、运行 experiment、调用 Yuxi eval API，不负责创建或上传 dataset。
 
-## Điều kiện tiên quyết
+## 前置条件
 
-1. Yuxi Chương trình phụ trợ đã được kích hoạt Langfuse tracing，Và trong `.env` Cấu hình trung bình：
+1. Yuxi 后端已经启用 Langfuse tracing，并在 `.env` 中配置：
 
 ```bash
 LANGFUSE_PUBLIC_KEY=...
@@ -22,38 +22,38 @@ LANGFUSE_SECRET_KEY=...
 LANGFUSE_BASE_URL=https://cloud.langfuse.com
 ```
 
-2. máy cục bộ CLI Môi trường cũng có thể đọc cùng một nhóm Langfuse biến môi trường。`yuxi agent eval` Cần gọi trực tiếp Langfuse SDK đọc dataset và tạo ra experiment。
+2. 本机 CLI 环境也能读取同一组 Langfuse 环境变量。`yuxi agent eval` 需要直接调用 Langfuse SDK 读取 dataset 和创建 experiment。
 
-3. Đã đăng nhập Yuxi CLI：
+3. 已经登录 Yuxi CLI：
 
 ```bash
 yuxi remote add local http://localhost:5173
 yuxi login --browser
 ```
 
-Các lệnh đánh giá phải sử dụng hiện tại remote Trạng thái đăng nhập，Không được hỗ trợ trong `yuxi agent eval` Tải lên trực tiếp token。CI Môi trường trước tiên cũng phải thực hiện bước đăng nhập，Ví dụ：
+评估命令必须使用当前 remote 的登录态，不支持在 `yuxi agent eval` 上直接传 token。CI 环境也必须先执行登录步骤，例如：
 
 ```bash
 yuxi login --api-key "$YUXI_API_KEY"
 ```
 
-4. được đánh giá Agent đã tồn tại，và hiện tại CLI Người dùng đã đăng nhập có quyền truy cập vào đây Agent。Lệnh được sử dụng là Agent slug，Ví dụ `default-chatbot`。
+4. 要评估的 Agent 已经存在，并且当前 CLI 登录用户有权限访问该 Agent。命令使用的是 Agent slug，例如 `default-chatbot`。
 
-## chuẩn bị Langfuse Dataset
+## 准备 Langfuse Dataset
 
-Bộ dữ liệu đánh giá trước tiên phải được Langfuse sẵn sàng vào。CLI Không có khả năng tải lên được cung cấp，Tránh trộn lẫn trách nhiệm quản lý tập dữ liệu vào các lệnh chạy。
+评估数据集必须先在 Langfuse 中准备好。CLI 不提供上传能力，避免把数据集管理职责混进运行命令。
 
-Dataset item của `input` Bạn nên sử dụng bất kỳ trường nào sau đây để mang văn bản nhiệm vụ：
+Dataset item 的 `input` 推荐使用下面任一字段承载任务文本：
 
 ```json
-{"input": "Vui lòng sử dụng Python Hoàn thành nhiệm vụ và đưa ra câu trả lời cuối cùng：..."}
+{"input": "请用 Python 完成任务并给出最终答案：..."}
 ```
 
-Cũng tương thích `query`、`question`、`prompt`。`expected_output` Có thể viết câu trả lời chuẩn，Theo dõi trong Langfuse UI hoặc evaluator được sử dụng trong。
+也兼容 `query`、`question`、`prompt`。`expected_output` 可以写标准答案，后续在 Langfuse UI 或 evaluator 中使用。
 
-## Chạy đánh giá
+## 运行评估
 
-tải lên dataset sau，sử dụng dataset name chạy：
+上传 dataset 后，用 dataset name 运行：
 
 ```bash
 yuxi agent eval \
@@ -64,25 +64,25 @@ yuxi agent eval \
   --timeout-seconds 900
 ```
 
-Quá trình thực hiện lệnh：
+命令执行流程：
 
-1. từ Langfuse đọc dataset。
-2. cho mỗi dataset item Trích xuất văn bản nhiệm vụ。
-3. gọi `POST /api/agent/eval/runs`。
-4. Yuxi Việc tạo backend là bình thường conversation và AgentRun。
-5. worker nhấn đúng Agent Nhiệm vụ thực hiện liên kết。
-6. Giao diện bị chặn run Trở về trạng thái cuối cùng sau trạng thái cuối cùng assistant output。
-7. CLI sẽ output viết lại Langfuse experiment item。
+1. 从 Langfuse 读取 dataset。
+2. 对每条 dataset item 提取任务文本。
+3. 调用 `POST /api/agent-invocation/eval/runs`。
+4. Yuxi 后端创建正常 conversation 和 AgentRun。
+5. worker 按真实 Agent 链路执行任务。
+6. 接口阻塞到 run 终态后返回最终 assistant output。
+7. CLI 将 output 写回 Langfuse experiment item。
 
-`--max-concurrency` kiểm soát Langfuse experiment runner số lượng đồng thời。phức tạp Agent Hoặc môi trường phát triển cục bộ được khuyến khích bắt đầu từ `1` bắt đầu，Tránh đồng thời áp đảo các dịch vụ mô hình、worker hoặc hộp cát。
+`--max-concurrency` 控制 Langfuse experiment runner 的并发数。复杂 Agent 或本地开发环境建议从 `1` 开始，避免同时压垮模型服务、worker 或沙盒。
 
-## Xem kết quả
+## 查看结果
 
-Sau khi việc đánh giá hoàn tất，trong Langfuse Bảng điều khiển mở tương ứng dataset，Bạn có thể thấy cái mới được tạo experiment run。mỗi item Lần này sẽ được lưu lại Yuxi Agent Đầu ra cuối cùng của。Yuxi Phần phụ trợ cũng sẽ ghi vào quá trình đánh giá `agent_evaluation` đánh dấu，Thuận tiện trong Langfuse traces Bộ lọc trung bình：
+评估完成后，在 Langfuse 控制台打开对应 dataset，可以看到刚创建的 experiment run。每条 item 会保存本次 Yuxi Agent 的最终输出。Yuxi 后端会在运行内部使用 `agent_invocation_meta.evaluation` 保存评估上下文，并给 Langfuse trace 写入 `agent_evaluation` 标记，方便筛选：
 
 - `source=agent_evaluation`
 - `evaluation_dataset_name=<dataset name>`
 - `evaluation_dataset_item_id=<item id>`
 - `evaluation_experiment_name=<experiment name>`
 
-nếu không nhìn thấy experiment，Xác nhận đầu tiên CLI trong môi trường Langfuse key và dataset name Có đúng không?。nếu experiment Có ghi chép nhưng Yuxi trace Thiếu，Kiểm tra `api-dev` Liệu container có đọc cùng một nhóm hay không Langfuse Cấu hình。
+如果没有看到 experiment，先确认 CLI 环境中的 Langfuse key 和 dataset name 是否正确。如果 experiment 有记录但 Yuxi trace 缺失，检查 `api-dev` 容器是否读取到了同一组 Langfuse 配置。

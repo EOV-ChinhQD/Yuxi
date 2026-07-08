@@ -1,7 +1,16 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { Plus, RefreshCw, Trash2, SquarePen, Bot, MoreVertical } from 'lucide-vue-next'
+import {
+  Plus,
+  RefreshCw,
+  Trash2,
+  SquarePen,
+  Bot,
+  MoreVertical,
+  MessageCirclePlus
+} from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
 
 import { agentApi } from '@/apis/agent_api'
 import AgentEditModal from '@/components/model-management/AgentEditModal.vue'
@@ -13,6 +22,7 @@ import ExtensionCardGrid from '@/components/extensions/ExtensionCardGrid.vue'
 import { generatePixelAvatar } from '@/utils/pixelAvatar'
 
 const agentStore = useAgentStore()
+const router = useRouter()
 const agentLoading = ref(false)
 const searchQuery = ref('')
 
@@ -54,8 +64,8 @@ const groupedAgents = computed(() => {
   const agents = filteredAgents.value.filter((agent) => !agent.is_subagent)
   const subagents = filteredAgents.value.filter((agent) => agent.is_subagent)
   return [
-    { key: 'agents', title: 'đại lý', agents },
-    { key: 'subagents', title: 'chất phụ', agents: subagents }
+    { key: 'agents', title: '智能体', agents },
+    { key: 'subagents', title: '子智能体', agents: subagents }
   ].filter((group) => group.agents.length > 0)
 })
 
@@ -68,10 +78,6 @@ const agentStats = computed(() => ({
 }))
 const canManageAgent = (agent) => !!agent?.can_manage
 const getAgentDefaultIconSrc = (agent) => (agent.id ? generatePixelAvatar(agent.id) : '')
-const getAgentTags = (agent) => [
-  ...(!agent?.can_manage ? [{ name: 'chỉ đọc', color: 'default' }] : []),
-  ...(agent?.backend_id ? [{ name: agent.backend_id, color: 'blue' }] : [])
-]
 
 // ============ Agent Operations ============
 const loadAgentBackends = async () => {
@@ -82,7 +88,7 @@ const loadAgentBackends = async () => {
       value: backend.backend_id
     }))
   } catch (error) {
-    message.error(error.message || 'Không thể tải phần phụ trợ tác nhân')
+    message.error(error.message || '加载智能体后端失败')
   }
 }
 
@@ -92,7 +98,7 @@ const loadAgents = async () => {
     const response = await agentApi.getAgents({ includeSubagents: true })
     managedAgents.value = (response.agents || []).map(normalizeAgent)
   } catch (error) {
-    message.error(error.message || 'Không thể tải đại lý')
+    message.error(error.message || '加载智能体失败')
   } finally {
     agentLoading.value = false
   }
@@ -107,28 +113,33 @@ const openEditAgentModal = (agent) => {
   agentEditModalRef.value?.openEdit(agent)
 }
 
+const openAgentChat = (agent) => {
+  if (!agent?.id || agent.is_subagent) return
+  router.push({ name: 'AgentComp', query: { agent_id: agent.id } })
+}
+
 const refreshAgentLists = async () => {
   await Promise.all([loadAgents(), agentStore.fetchAgents()])
 }
 
 const deleteAgent = async (agent) => {
   if (isBuiltinAgent(agent)) {
-    message.warning('Không thể xóa tác nhân tích hợp')
+    message.warning('内置智能体不能删除')
     return
   }
   Modal.confirm({
-    title: `Xóa ${agent.name}`,
-    content: 'Không thể phục hồi sau khi xóa，Các cuộc hội thoại lịch sử đã ràng buộc đại lý vẫn giữ nguyên thông tin ràng buộc ban đầu。',
-    okText: 'Xóa',
+    title: `删除 ${agent.name}`,
+    content: '删除后不可恢复，已绑定该智能体的历史对话仍保留原始绑定信息。',
+    okText: '删除',
     okType: 'danger',
-    cancelText: 'Hủy bỏ',
+    cancelText: '取消',
     async onOk() {
       try {
         await agentApi.deleteAgent(agent.id)
         await refreshAgentLists()
-        message.success('Đại lý đã bị xóa')
+        message.success('智能体已删除')
       } catch (error) {
-        message.error(error.message || 'Không thể xóa đại lý')
+        message.error(error.message || '删除智能体失败')
       }
     }
   })
@@ -147,11 +158,11 @@ defineExpose({
 
 <template>
   <div class="agent-manage-panel">
-    <PageShoulder v-model:search="searchQuery" search-placeholder="Đại lý tìm kiếm...">
+    <PageShoulder v-model:search="searchQuery" search-placeholder="搜索智能体...">
       <template #actions>
         <a-button type="primary" class="lucide-icon-btn" @click="openCreateAgentModal">
           <Plus :size="14" />
-          Thêm đại lý mới
+          新增智能体
         </a-button>
         <a-button class="lucide-icon-btn" @click="loadAgents" :loading="agentLoading">
           <RefreshCw :size="14" :class="{ spinning: agentLoading }" />
@@ -160,7 +171,7 @@ defineExpose({
     </PageShoulder>
 
     <div v-if="groupedAgents.length === 0" class="agent-empty-state">
-      <a-empty :image="false" :description="searchQuery ? 'Không có đại lý phù hợp' : 'Chưa có đại lý'" />
+      <a-empty :image="false" :description="searchQuery ? '没有匹配的智能体' : '暂无智能体'" />
     </div>
 
     <template v-else>
@@ -174,9 +185,9 @@ defineExpose({
             :key="agent.id"
             :title="agent.name"
             :subtitle="agent.slug || agent.id"
-            :description="agent.description || 'Chưa có mô tả'"
+            :description="agent.description || '暂无描述'"
             :default-icon="Bot"
-            :tags="getAgentTags(agent)"
+            :tags="[]"
             class="config-card agent-card"
             @click="canManageAgent(agent) && openEditAgentModal(agent)"
           >
@@ -190,7 +201,7 @@ defineExpose({
                 kind="agent"
                 :size="40"
                 shape="rounded"
-                :alt="`${agent.name || 'đại lý'}biểu tượng`"
+                :alt="`${agent.name || '智能体'}图标`"
               />
             </template>
 
@@ -201,7 +212,7 @@ defineExpose({
                     <a-menu-item key="edit" @click.stop="openEditAgentModal(agent)">
                       <span class="agent-card-menu-item">
                         <SquarePen :size="14" />
-                        Chỉnh sửa đại lý
+                        编辑智能体
                       </span>
                     </a-menu-item>
                     <a-menu-item
@@ -214,7 +225,7 @@ defineExpose({
                         :class="{ danger: !isBuiltinAgent(agent) }"
                       >
                         <Trash2 :size="14" />
-                        Xóa đại lý
+                        删除智能体
                       </span>
                     </a-menu-item>
                   </a-menu>
@@ -223,12 +234,26 @@ defineExpose({
                   type="text"
                   size="small"
                   class="agent-card-menu-trigger"
-                  aria-label="Hoạt động đại lý"
+                  aria-label="智能体操作"
                   @click.stop
                 >
                   <MoreVertical :size="16" />
                 </a-button>
               </a-dropdown>
+            </template>
+
+            <template v-if="group.key === 'agents'" #tags>
+              <div class="agent-card-actions">
+                <a-button
+                  type="primary"
+                  size="small"
+                  class="lucide-icon-btn agent-chat-entry"
+                  @click.stop="openAgentChat(agent)"
+                >
+                  <MessageCirclePlus :size="14" />
+                  去对话
+                </a-button>
+              </div>
             </template>
           </InfoCard>
         </ExtensionCardGrid>
@@ -280,6 +305,11 @@ defineExpose({
   border: 0;
 }
 
+.agent-card :deep(.info-card-tags) {
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
 .agent-card-menu-trigger {
   display: inline-flex;
   align-items: center;
@@ -296,12 +326,34 @@ defineExpose({
 }
 
 .agent-card-menu-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  min-height: 22px;
   gap: 8px;
+  line-height: 1;
 
   &.danger {
     color: var(--color-error-700);
+  }
+}
+
+.agent-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: auto;
+}
+
+.agent-chat-entry {
+  min-width: 78px;
+  border: 0;
+  box-shadow: none;
+  font-size: 12px;
+
+  &:hover,
+  &:focus {
+    border: 0;
+    box-shadow: none;
   }
 }
 

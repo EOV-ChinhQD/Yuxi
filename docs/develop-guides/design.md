@@ -1,291 +1,291 @@
-# Thông số thiết kế giao diện
+# 界面设计规范
 
-Tài liệu này định nghĩa Yuxi Thông số thiết kế cơ bản cho giao diện front-end，Áp dụng cho `web/src` trang mới bên dưới、Các thành phần mới và hiện có UI điều chỉnh。Nó nhắm đến cả các nhà phát triển con người và AI coding agent：Đọc trang này trước khi sửa đổi giao diện，Ưu tiên tái sử dụng các thành phần hiện có、CSS Các biến và chế độ tương tác。
+本文档定义 Yuxi 前端界面的基础设计规范，适用于 `web/src` 下的新页面、新组件和现有 UI 调整。它同时面向人类开发者和 AI coding agent：修改界面前先阅读本页，优先复用现有组件、CSS 变量和交互模式。
 
-## 1. khí chất thị giác
+## 1. 视觉气质
 
-Yuxi là một cơ sở kiến thức、Sơ đồ tri thức và Agent Nền tảng phát triển，Giao diện nên được hạn chế、rõ ràng、Kỹ thuật。Được thiết kế để đọc nhiều giờ、Cấu hình、Gỡ lỗi và quản lý dữ liệu，Không trang trí trang tiếp thị。
+Yuxi 是知识库、知识图谱与 Agent 开发平台，界面应保持克制、清晰、工程化。设计服务于长时间阅读、配置、调试和数据管理，不做营销页式装饰。
 
-nguyên tắc cốt lõi：
+核心原则：
 
-- Chức năng đầu tiên：Hệ thống phân cấp trực quan giúp người dùng hiểu nhiệm vụ、Trạng thái và các bước tiếp theo，Đừng hy sinh mật độ thông tin để trang trí。
-- ưu tiên nhất trí：Các chức năng tương tự sử dụng cùng một bố cục、Màu sắc、Phản hồi trạng thái và tương tác。
-- Nhẹ đầu tiên：Sử dụng nền、biên giới、Cỡ chữ và khoảng trắng tạo nên thứ bậc，tránh bóng tối nặng nề、Độ dốc quá mức và hình ảnh động không có chức năng。
-- Bảo trì đầu tiên：Phong cách mới phải dựa trên phong cách hiện có token và mẫu thành phần，Không giới thiệu một hệ thống thiết kế mới cho một yêu cầu duy nhất。
+- 功能优先：视觉层级帮助用户理解任务、状态和下一步操作，不为装饰牺牲信息密度。
+- 一致优先：相似功能使用相同布局、颜色、状态和交互反馈。
+- 轻量优先：用背景、边框、字号和留白建立层级，避免重阴影、夸张渐变和非功能性动效。
+- 可维护优先：新增样式必须基于现有 token 和组件模式，不为单次需求引入新的设计体系。
 
-## 2. Màu sắc và Token
+## 2. 颜色与 Token
 
-Màu sắc phải được sử dụng đầu tiên `web/src/assets/css/base.css` và `web/src/assets/css/base.dark.css` được định nghĩa trong CSS biến。Không tùy tiện thêm các giá trị màu hardcode vào thành phần；Khi bạn thực sự cần thêm giá trị màu chung，Bổ sung đầu tiên token và giải thích công dụng。
+颜色必须优先使用 `web/src/assets/css/base.css` 和 `web/src/assets/css/base.dark.css` 中定义的 CSS 变量。不要在组件中随意新增硬编码色值；确需新增全局色值时，先补充 token 并说明用途。
 
-### màu chủ đạo
+### 主色
 
-`--main-*` và `--main-color` Được sử dụng cho màu sắc chính của thương hiệu và các tương tác chính：
+`--main-*` 和 `--main-color` 用于品牌主色与关键交互：
 
-| Token | kịch bản sử dụng |
+| Token | 使用场景 |
 | --- | --- |
-| `--main-color` | nút chính、Trạng thái đã chọn、Liên kết chính、biểu tượng chìa khóa |
-| `--main-700` / `--main-600` / `--main-500` | Văn bản màu chính、hover、active、Nhấn mạnh vào trạng thái |
-| `--main-50` / `--main-30` / `--main-10` | Nền sáng màu chủ đạo、Nền hàng đã chọn、Nền nhắc nhở nhẹ |
+| `--main-color` | 主按钮、选中态、重点链接、关键图标 |
+| `--main-700` / `--main-600` / `--main-500` | 主色文字、hover、active、强调状态 |
+| `--main-50` / `--main-30` / `--main-10` | 主色浅背景、选中行背景、轻量提示背景 |
 
-Màu sắc chủ đạo chỉ dùng để biểu đạt“Lựa chọn hiện tại、Hoạt động chính、lối vào chính”。Không sử dụng màu chủ đạo làm màu trang trí thông thường trên thiệp hoặc nền có diện tích lớn。
+主色只用于表达“当前选择、主要操作、关键入口”。不要把主色当作普通装饰色铺在卡片或大面积背景上。
 
-### màu sắc trung tính
+### 中性色
 
-`--gray-*` Là bộ khung giao diện mặc định，cho nền、văn bản、Biên giới và đường phân chia：
+`--gray-*` 是默认界面骨架，用于背景、文本、边框和分割线：
 
-| Token | kịch bản sử dụng |
+| Token | 使用场景 |
 | --- | --- |
-| `--gray-0` | Nền chính của trang và thẻ |
-| `--gray-10` / `--gray-25` / `--gray-50` | bối cảnh thứ cấp、hover nền、Nền phân vùng yếu |
-| `--gray-100` / `--gray-150` / `--gray-200` | đường phân chia、Đường viền hộp nhập liệu、biên giới thẻ |
-| `--gray-900` / `--gray-1000` | Tiêu đề và văn bản chính |
-| `--gray-600` / `--gray-500` / `--gray-400` | Hướng dẫn phụ trợ、văn bản giữ chỗ、Tắt văn bản |
+| `--gray-0` | 页面和卡片主背景 |
+| `--gray-10` / `--gray-25` / `--gray-50` | 次级背景、hover 背景、弱分区背景 |
+| `--gray-100` / `--gray-150` / `--gray-200` | 分割线、输入框边框、卡片边框 |
+| `--gray-900` / `--gray-1000` | 标题和主要正文 |
+| `--gray-600` / `--gray-500` / `--gray-400` | 辅助说明、占位文本、禁用文本 |
 
-Văn bản cũng có thể được sử dụng Ant Design Tương thích với các biến ngữ nghĩa：`--color-text`、`--color-text-secondary`、`--color-text-tertiary`。Thích các biến ngữ nghĩa trong các thành phần；Sử dụng nó khi bạn cần một mức độ chi tiết hơn `--gray-*`。
+文本也可以使用 Ant Design 兼容语义变量：`--color-text`、`--color-text-secondary`、`--color-text-tertiary`。组件内优先选语义变量；需要更细层级时再使用 `--gray-*`。
 
-### màu sắc ngữ nghĩa
+### 语义色
 
-Màu ngữ nghĩa chỉ được sử dụng cho trạng thái và phản hồi，Không dùng để trang trí：
+语义色只用于状态和反馈，不用于装饰：
 
-| Token nhóm | kịch bản sử dụng |
+| Token 组 | 使用场景 |
 | --- | --- |
-| `--color-success-*` | sự thành công、Đã hoàn thành、Kết nối vẫn bình thường |
-| `--color-error-*` | Lỗi、Hoạt động nguy hiểm、Xóa、thất bại |
-| `--color-warning-*` | cảnh báo、Đang chờ xử lý、Cần chú ý nhưng không thất bại |
-| `--color-info-*` | Lời nhắc thông tin、trạng thái mô tả |
-| `--color-accent-*` | Một lượng nhỏ sự nhấn mạnh phụ trợ，Không thể thay thế màu chính |
+| `--color-success-*` | 成功、已完成、连接正常 |
+| `--color-error-*` | 错误、危险操作、删除、失败 |
+| `--color-warning-*` | 警告、待处理、需要注意但未失败 |
+| `--color-info-*` | 信息提示、说明性状态 |
+| `--color-accent-*` | 少量辅助强调，不能替代主色 |
 
-Nên sử dụng nền sáng cho nhãn trạng thái + văn bản sâu，Ví dụ `background: var(--color-success-50); color: var(--color-success-700);`。Đừng chỉ dựa vào màu sắc để truyền đạt trạng thái，Sử dụng văn bản hoặc biểu tượng khi cần thiết。
+状态标签建议使用浅背景 + 深文字，例如 `background: var(--color-success-50); color: var(--color-success-700);`。不要只依靠颜色传达状态，必要时配合文字或图标。
 
-### màu biểu đồ
+### 图表色
 
-Ưu tiên biểu đồ và trực quan hóa thống kê `--chart-palette-*`。Đừng sử dụng lại màu sai、Màu cảnh báo để phân loại biểu đồ chung，Tránh nhầm lẫn với phản hồi trạng thái。
+图表和统计可视化优先使用 `--chart-palette-*`。不要复用错误色、警告色做普通图表分类，避免与状态反馈混淆。
 
-### chế độ tối
+### 暗色模式
 
-Yuxi Vượt qua `:root.dark` Ghi đè cùng tên token。Mới UI Phải sử dụng CSS Giá trị ánh sáng thay đổi thay vì cố định，và kiểm tra màu sáng、Hai bộ màu tối。
+Yuxi 通过 `:root.dark` 覆盖同名 token。新增 UI 必须使用 CSS 变量而不是固定浅色值，并检查浅色、暗色两套表现。
 
-Khi thêm một thành phần, hãy kiểm tra ít nhất：
+新增组件时至少检查：
 
-- nền、thẻ、Hộp đầu vào không xuất hiện với màu tối do mã hóa cứng màu trắng tinh.。
-- Văn bản và đường viền vẫn có đủ độ tương phản ở chế độ tối。
-- hover、focus、disabled、selected、error v.v. các trạng thái hiển thị ở chế độ tối。
-- biểu đồ、Các khối mã và thành phần của bên thứ ba cần được chuyển vào một cách rõ ràng theme thời gian，sử dụng `useThemeStore()` mô hình hiện có。
+- 背景、卡片、输入框不出现纯白硬编码导致的暗色穿帮。
+- 文本和边框在暗色模式下仍有足够对比度。
+- hover、focus、disabled、selected、error 等状态在暗色模式下可辨认。
+- 图表、代码块和第三方组件需要显式传入 theme 时，使用 `useThemeStore()` 的现有模式。
 
-## 3. Phông chữ và cấp độ văn bản
+## 3. 字体与文本层级
 
-Ngăn xếp phông chữ chung được xác định trong `web/src/assets/css/main.css`，Khi thêm thành phần mới, không giới thiệu phông chữ mới một cách riêng tư。mã、lệnh、Đường mòn và dấu hiệu kỹ thuật có sẵn monospace，Ưu tiên tái sử dụng những gì hiện có `@mono-font` hoặc hệ thống monospace chồng。
+全局字体栈定义在 `web/src/assets/css/main.css`，新增组件不要私自引入新字体。代码、命令、路径和技术标识可使用 monospace，优先复用现有 `@mono-font` 或系统 monospace 栈。
 
-Mức độ đề xuất：
+建议层级：
 
-| vai trò | Kiểu được đề xuất | kịch bản sử dụng |
+| 角色 | 建议样式 | 使用场景 |
 | --- | --- | --- |
-| Tiêu đề trang | 20-24px，600 | Tiêu đề chính của trang、Tiêu đề chính của cửa sổ bật lên |
-| Tiêu đề nhóm | 16-18px，600 | tiêu đề thẻ、Tiêu đề nhóm biểu mẫu |
-| văn bản | 14-15px，400 | Hướng dẫn chung、Liệt kê nội dung |
-| Hướng dẫn phụ trợ | 12-13px，400 | helper text、Thông tin meta、thời gian、Mô tả thống kê |
-| nhãn/Trạng thái | 12px，500 | tag、chip、biểu tượng trạng thái |
-| mã/con đường | 12-14px，monospace | đường dẫn tập tin、lệnh、đoạn mã |
+| 页面标题 | 20-24px，600 | 页面主标题、弹窗主标题 |
+| 分组标题 | 16-18px，600 | 卡片标题、表单分组标题 |
+| 正文 | 14-15px，400 | 常规说明、列表内容 |
+| 辅助说明 | 12-13px，400 | helper text、元信息、时间、统计说明 |
+| 标签/状态 | 12px，500 | tag、chip、状态徽标 |
+| 代码/路径 | 12-14px，monospace | 文件路径、命令、代码片段 |
 
-đặc tả văn bản：
+文本规范：
 
-- Giữ tiêu đề ngắn gọn，Ưu tiên mô tả đối tượng，Đừng viết khẩu hiệu tiếp thị。
-- Sử dụng các hành động rõ ràng trong bản sao nút，Chẳng hạn như“Lưu cấu hình”“Kiểm tra lại”“Xóa tập tin”。
-- Những hoạt động nguy hiểm phải cho phép người viết quảng cáo trực tiếp bày tỏ hậu quả，Chẳng hạn như“Xóa cơ sở kiến thức”。
-- Không được sử dụng placeholder hình thức thay thế label；placeholder Ví dụ đầu vào duy nhất。
-- Không sử dụng phông chữ kerning âm hoặc tỷ lệ cho chiều rộng khung nhìn，Tránh bố cục không kiểm soát được ở màn hình rộng và nhỏ。
+- 标题要短，优先描述对象，不写营销式口号。
+- 按钮文案使用明确动作，如“保存配置”“重新检测”“删除文件”。
+- 危险操作必须让文案直接表达后果，如“删除知识库”。
+- 不使用 placeholder 替代表单 label；placeholder 只做输入示例。
+- 不使用负字距或按视口宽度缩放字体，避免宽屏和小屏出现不可控排版。
 
-## 4. Kiểu thành phần
+## 4. 组件样式
 
-### Hạn chế về ngăn xếp công nghệ
+### 技术栈约束
 
-- Trình quản lý gói：`pnpm`
-- Thư viện biểu tượng：ưu tiên sử dụng `lucide-vue-next`
-- phong cách ngôn ngữ：LESS
-- biến màu：sử dụng `base.css` / `base.dark.css` trong CSS biến
-- UI Khái niệm cơ bản：Tái sử dụng Ant Design Vue và dự án các mẫu thành phần hiện có，Tránh đóng gói các hệ thống thành phần mới cho các nhu cầu đơn lẻ
+- 包管理器：`pnpm`
+- 图标库：优先使用 `lucide-vue-next`
+- 样式语言：LESS
+- 颜色变量：使用 `base.css` / `base.dark.css` 中的 CSS 变量
+- UI 基础：复用 Ant Design Vue 和项目现有组件模式，避免为单次需求封装新组件体系
 
-### nút
+### 按钮
 
-Các nút phải được phân biệt theo mức độ ưu tiên hành động：
+按钮应按操作优先级区分：
 
-| Loại | kịch bản sử dụng | quy tắc phong cách |
+| 类型 | 使用场景 | 样式规则 |
 | --- | --- | --- |
-| nút chính | Hoạt động chính của trang、Xác nhận gửi | Sử dụng nền màu chính hoặc Ant Design primary，Không đặt nhiều nút home ở cùng một khu vực |
-| nút phụ | Trở lại、Hủy bỏ、Hoạt động bình thường | Sử dụng đường viền trung tính và nền sáng，hover Chỉ tăng cường đường viền hoặc nền |
-| văn bản/nút liên kết | Các thao tác về hàng trong bảng、Lối vào nhẹ | Giữ nó nhẹ，Không mở rộng trọng lượng thị giác |
-| nút nguy hiểm | Xóa、Hủy bỏ、Các hoạt động không thể đảo ngược như thanh toán bù trừ | sử dụng error màu sắc ngữ nghĩa，Và hợp tác với cửa sổ bật lên xác nhận hoặc bản sao rõ ràng |
-| nút biểu tượng | Thanh công cụ、gấp lại、Làm mới、Sao chép | sử dụng `lucide-icon-btn` Đảm bảo biểu tượng và văn bản được căn giữa |
+| 主按钮 | 页面主操作、确认提交 | 使用主色背景或 Ant Design primary，不在同一区域放多个主按钮 |
+| 次按钮 | 返回、取消、普通操作 | 使用中性边框和浅背景，hover 只增强边框或背景 |
+| 文本/链接按钮 | 表格行内操作、轻量入口 | 保持轻量，不扩大视觉权重 |
+| 危险按钮 | 删除、撤销、清空等不可逆操作 | 使用 error 语义色，并配合确认弹窗或明确文案 |
+| 图标按钮 | 工具栏、折叠、刷新、复制 | 使用 `lucide-icon-btn` 保证图标与文本居中 |
 
-trạng thái tương tác：
+交互状态：
 
-- hover có thể thay đổi `background`、`border-color`、`color`，Không di chuyển hoặc phóng to。
-- focus phải được nhìn thấy，Không thể xóa kiểu tiêu điểm bàn phím。
-- disabled Sử dụng văn bản và nền yếu，Không bị ràng buộc hover phản hồi mạnh mẽ。
-- loading Chiều rộng nút nên được giữ nguyên，Tránh nhảy bố cục。
+- hover 可以改变 `background`、`border-color`、`color`，不要位移或放大。
+- focus 必须可见，不能移除键盘焦点样式。
+- disabled 使用弱化文本和背景，不绑定 hover 强反馈。
+- loading 应保留按钮宽度，避免布局跳动。
 
-### Hộp và biểu mẫu đầu vào
+### 输入框与表单
 
-Các biểu mẫu cho nhiệm vụ cấu hình và quản lý，Ưu tiên khả năng đọc và phục hồi lỗi：
+表单用于配置和管理任务，优先保证可读性和错误可恢复：
 
-- Cách sử dụng nền của hộp nhập liệu `--gray-0` hoặc Ant Design Màu vùng chứa mặc định。
-- Sử dụng đường viền `--gray-150` / `--gray-200`，focus Sử dụng màu chính hoặc khung mặc định focus ring。
-- label Phải hiển thị ổn định，helper text Đặt nó bên dưới hộp nhập liệu。
-- Sử dụng thông báo lỗi `--color-error-*`，Và ghi rõ cách khắc phục。
-- Các biểu mẫu nhiều trường được nhóm lại một cách hợp lý，Tránh nhồi nhét các cài đặt không liên quan vào cùng một dòng。
+- 输入框背景使用 `--gray-0` 或 Ant Design 默认容器色。
+- 边框使用 `--gray-150` / `--gray-200`，focus 使用主色或框架默认 focus ring。
+- label 必须稳定显示，helper text 放在输入框下方。
+- 错误信息使用 `--color-error-*`，并写清楚修复方式。
+- 多字段表单按逻辑分组，避免把无关设置塞进同一行。
 
-### thẻ、Danh sách và bảng
+### 卡片、列表与表格
 
-Yuxi giao diện thông tin để cấu hình thẻ、Chủ yếu là danh sách và bảng，Sử dụng phân lớp nhẹ theo mặc định：
+Yuxi 的信息界面以配置卡片、列表和表格为主，默认使用轻量分层：
 
-- Thẻ thông thường：`background: var(--gray-0); border: 1px solid var(--gray-150); border-radius: 8px;`
-- tiểu vùng：Có sẵn `var(--gray-10)` / `var(--gray-25)` làm nền sáng。
-- Bấm vào hàng danh sách：hover Chỉ thay đổi nền hoặc đường viền，Không được sử dụng `transform`。
-- Giữ cho các hoạt động của hàng trong bảng được nhỏ gọn，Tránh nhiều nút có trọng số cao trên mỗi hàng。
-- Trạng thái trống cần được giải thích“Không có gì vào lúc này”và“Có thể làm gì tiếp theo?”，Đừng chỉ hiển thị các biểu tượng。
+- 普通卡片：`background: var(--gray-0); border: 1px solid var(--gray-150); border-radius: 8px;`
+- 次级区域：可使用 `var(--gray-10)` / `var(--gray-25)` 做轻背景。
+- 点击态列表行：hover 只改变背景或边框，不使用 `transform`。
+- 表格行内操作保持紧凑，避免每行出现多个高权重按钮。
+- 空状态要说明“当前没有什么”和“下一步可以做什么”，不要只显示图标。
 
-Bóng chỉ được sử dụng cho lớp phủ thực，Chẳng hạn như cửa sổ bật lên、ngăn kéo、trình đơn thả xuống、tooltip。Đừng sử dụng bóng để tạo các lớp trang trí trên các tấm thiệp và danh sách thông thường。
+阴影只用于真实浮层，如弹窗、抽屉、下拉菜单、tooltip。普通卡片和列表不要用阴影制造装饰性层级。
 
-### nhãn trạng thái
+### 状态标签
 
-Nhãn trạng thái sử dụng nền sáng màu ngữ nghĩa + văn bản sâu：
+状态标签使用语义色浅背景 + 深文字：
 
-| Trạng thái | Được đề xuất token |
+| 状态 | 推荐 token |
 | --- | --- |
-| sự thành công/bình thường | `--color-success-50` + `--color-success-700` |
-| thất bại/Lỗi | `--color-error-50` + `--color-error-700` |
-| cảnh báo/Đang chờ xử lý | `--color-warning-50` + `--color-warning-900` |
-| thông tin/Đang chạy | `--color-info-50` + `--color-info-700` |
-| Bình thường/không rõ | `--gray-100` + `--gray-600` |
+| 成功/正常 | `--color-success-50` + `--color-success-700` |
+| 失败/错误 | `--color-error-50` + `--color-error-700` |
+| 警告/待处理 | `--color-warning-50` + `--color-warning-900` |
+| 信息/运行中 | `--color-info-50` + `--color-info-700` |
+| 普通/未知 | `--gray-100` + `--gray-600` |
 
-Thẻ có thể được sử dụng pill góc tròn，Nhưng đừng đặt pill Hình dạng trải rộng đến tất cả các nút và thẻ。
+标签可以使用 pill 圆角，但不要把 pill 形状扩散到所有按钮和卡片。
 
-### biểu tượng
+### 图标
 
-- Sử dụng kích thước biểu tượng thông thường 16px、18px hoặc 20px。
-- Màu biểu tượng kế thừa màu văn bản theo mặc định；Sử dụng ngữ nghĩa khi cần nhấn mạnh token。
-- Đã thêm nút biểu tượng `lucide-icon-btn`，Tránh căn chỉnh sai các biểu tượng và đường trung tâm của văn bản hoặc nút。
-- Không trộn lẫn nhiều biểu tượng cho cùng một concept；Hoạt động tương tự vẫn nhất quán trên các trang khác nhau。
+- 常规图标尺寸使用 16px、18px 或 20px。
+- 图标颜色默认继承文本色；需要强调时使用语义 token。
+- 图标按钮添加 `lucide-icon-btn`，避免图标与文本或按钮中心线错位。
+- 不为同一概念混用多个图标；相同操作在不同页面保持一致。
 
-## 5. bố cục và khoảng cách
+## 5. 布局与间距
 
-Khoảng cách là 4px / 8px như nhịp điệu cơ bản：
+间距以 4px / 8px 为基础节奏：
 
-| bối cảnh | Giá trị đề xuất |
+| 场景 | 建议值 |
 | --- | --- |
-| Khoảng cách biểu tượng và văn bản | 6px / 8px |
-| Khoảng cách nội bộ của mục biểu mẫu | 6px / 8px |
-| Bên trong thẻ padding | 16px / 20px / 24px |
-| khoảng cách dòng danh sách | 8px / 12px |
-| Khoảng cách khối chính của trang | 24px / 32px |
-| Khoảng cách vùng nội dung của cửa sổ bật lên | 16px / 24px |
+| 图标与文本间距 | 6px / 8px |
+| 表单项内部间距 | 6px / 8px |
+| 卡片内部 padding | 16px / 20px / 24px |
+| 列表行间距 | 8px / 12px |
+| 页面主要区块间距 | 24px / 32px |
+| 弹窗内容区间距 | 16px / 24px |
 
-Nguyên tắc bố cục：
+布局原则：
 
-- Các trang cấu hình duy trì mật độ thông tin vừa phải，Đừng để những khoảng trống theo phong cách tiếp thị quy mô lớn。
-- Các thao tác liền kề gần với nội dung tương ứng，Các thao tác cấp trang được đặt trong khu vực tiêu đề hoặc thanh công cụ。
-- Hành động chính trong một bộ nút là rõ ràng nhất，Hủy bỏ/Trở lại trạng thái hoạt động bình thường。
-- Giới hạn độ dài văn bản trong màn hình rộng，Tránh chú thích kéo dài toàn bộ trang。
-- Ưu tiên xếp chồng dọc trên màn hình nhỏ，Tránh việc ép buộc các bảng và trường biểu mẫu。
+- 配置型页面保持适度信息密度，不做大面积营销式留白。
+- 相邻操作靠近对应内容，页面级操作放在标题区或工具栏。
+- 一组按钮中主操作在视觉上最明确，取消/返回等次操作弱化。
+- 宽屏下限制正文行长，避免说明文字横跨整个页面。
+- 小屏下优先纵向堆叠，避免强行压缩表格和表单字段。
 
-## 6. Độ sâu và cấp độ
+## 6. 深度与层级
 
-Yuxi Được sử dụng theo mặc định“nền + biên giới”mức độ nhẹ：
+Yuxi 默认采用“背景 + 边框”的轻量层级：
 
-| Hệ thống phân cấp | Phương pháp xử lý | kịch bản sử dụng |
+| 层级 | 处理方式 | 使用场景 |
 | --- | --- | --- |
-| Nền trang | `var(--gray-0)` Hoặc bố cục đã có nền | Trang chính |
-| bối cảnh thứ cấp | `var(--gray-10)` / `var(--gray-25)` | Phân vùng、gợi ý yếu、danh sách hover |
-| biên giới thẻ | `1px solid var(--gray-150)`，8px góc tròn | Cấu hình thẻ、khối nội dung |
-| lớp nổi | Tạo bóng hoặc ánh sáng mặc định trong khung `--shadow-*` | Cửa sổ bật lên、ngăn kéo、dropdown、tooltip |
-| tiêu điểm | màu chủ đạo outline / Ant Design focus ring | Điều khiển có thể truy cập bằng bàn phím |
+| 页面背景 | `var(--gray-0)` 或布局已有背景 | 主页面 |
+| 次级背景 | `var(--gray-10)` / `var(--gray-25)` | 分区、弱提示、列表 hover |
+| 卡片边界 | `1px solid var(--gray-150)`，8px 圆角 | 配置卡片、内容块 |
+| 浮层 | 框架默认阴影或轻量 `--shadow-*` | 弹窗、抽屉、dropdown、tooltip |
+| 焦点 | 主色 outline / Ant Design focus ring | 键盘可达控件 |
 
-Không sử dụng bóng đậm trên thẻ nội dung thông thường。Chỉ khi phần tử thực sự bao gồm nội dung khác、Khi cần thể hiện mối quan hệ của lớp nổi，Bóng tối chỉ được phép。
+不要在普通内容卡片上使用重阴影。只有当元素真实覆盖其他内容、需要表达浮层关系时，才允许使用阴影。
 
 ## 7. Do / Don't
 
 ### Do
 
-- sử dụng `base.css` và `base.dark.css` trong token。
-- Hoàn thành cho các tương tác mới hover、focus、disabled、loading、empty、error Đang chờ trạng thái cần thiết。
-- Sử dụng nền、biên giới、Cỡ chữ、Khoảng cách tạo ra thứ bậc。
-- Luôn có sẵn các chế độ sáng và tối。
-- Tái sử dụng `lucide-vue-next`、Ant Design Vue Và dự án đã có chế độ thành phần。
-- Giữ mô tả ngắn gọn trong các khu vực cấu hình phức tạp，Giúp người dùng hiểu tác động của cài đặt。
+- 使用 `base.css` 和 `base.dark.css` 中的 token。
+- 为新增交互补齐 hover、focus、disabled、loading、empty、error 等必要状态。
+- 用背景、边框、字号、间距建立层级。
+- 保持浅色和暗色模式一致可用。
+- 复用 `lucide-vue-next`、Ant Design Vue 和项目已有组件模式。
+- 在复杂配置区保留简短说明，帮助用户理解设置影响。
 
 ### Don't
 
-- Đừng ở đây hover Sử dụng sự dịch chuyển khi、Phóng to、Trang trí như xoay transform。
-- Đừng sử dụng bóng đậm để trang trí những tấm thiệp đơn giản。
-- Không sử dụng độ dốc quá mức hoặc diện tích lớn có nền có độ bão hòa cao。
-- Không sử dụng màu sắc ngữ nghĩa cho mục đích trang trí đơn thuần。
-- Không thêm một lần helper、Hệ thống kiểu hoặc trừu tượng không có giá trị tái sử dụng。
-- Không mã hóa cứng các giá trị màu của chế độ sáng khiến chế độ tối bị lỗi。
-- Không đặt nhiều hoạt động chính có trọng lượng hình ảnh bằng nhau trong cùng một khu vực。
+- 不要在 hover 时使用位移、放大、旋转等装饰性 transform。
+- 不要使用浓重阴影装饰普通卡片。
+- 不要使用夸张渐变或大面积高饱和背景。
+- 不要把语义色用于纯装饰。
+- 不要新增一次性 helper、样式体系或无复用价值的抽象。
+- 不要硬编码浅色模式色值导致暗色模式失效。
+- 不要在同一区域放置多个同等视觉权重的主操作。
 
-## 8. Hành vi đáp ứng
+## 8. 响应式行为
 
-Thiết kế đáp ứng với“Không mất chức năng、Thông tin không bị ép”ưu tiên：
+响应式设计以“功能不丢失、信息不挤压”为优先：
 
-- Sắp xếp theo chiều dọc các trường biểu mẫu trên màn hình nhỏ，Nhóm nút có thể quấn。
-- thanh bên、Ngăn kéo và cửa sổ bật lên phải đảm bảo nội dung trong phạm vi chiều rộng tối thiểu có thể đọc được。
-- Bảng cho phép cuộn ngang trên màn hình nhỏ；Đừng nén các trường khóa cho đến khi chúng không thể đọc được。
-- Các nút biểu tượng và hành động chính cần phải là khu vực có thể nhấp vào，Kích thước mục tiêu trên thiết bị di động không được nhỏ hơn 40px。
-- Khi sử dụng dấu chấm lửng cho văn bản dài，nên được cung cấp tooltip、title Hoặc vào cổng thông tin chi tiết để xem đầy đủ nội dung。
-- tập bản đồ、biểu đồ、Nội dung đơn băng thông của khối mã phải duy trì các chiến lược cuộn ngang hoặc chia tỷ lệ thích ứng。
+- 小屏下表单字段纵向排列，按钮组可换行。
+- 侧栏、抽屉和弹窗要保证最小宽度内内容可读。
+- 表格在小屏下允许横向滚动；不要把关键字段压缩到不可读。
+- 图标按钮和主要操作需要保持可点击区域，移动端目标尺寸尽量不小于 40px。
+- 长文本使用省略号时，应提供 tooltip、title 或详情入口查看完整内容。
+- 图谱、图表、代码块等宽内容应保留横向滚动或自适应缩放策略。
 
 ## 9. Agent Prompt Guide
 
-AI agent sửa đổi hoặc tạo ra Yuxi UI thời gian，Ưu tiên phần này。
+AI agent 修改或生成 Yuxi UI 时，优先按这一节执行。
 
 ### Quick Reference
 
-- Nền trang：`var(--gray-0)`
-- bối cảnh thứ cấp：`var(--gray-10)` / `var(--gray-25)`
-- văn bản chính：`var(--color-text)` hoặc `var(--gray-900)`
-- văn bản phụ：`var(--color-text-secondary)` hoặc `var(--gray-600)`
-- biên giới：`var(--gray-150)` / `var(--gray-200)`
-- màu chủ đạo：`var(--main-color)`
-- Thẻ được bo tròn các góc：`8px`
-- Các góc bo tròn có điều khiển nhỏ：`4px` / `6px`
-- nhãn trạng thái góc tròn：`999px`
-- Kích thước biểu tượng thông thường：`16px` / `18px` / `20px`
-- thẻ padding：`16px` / `20px` / `24px`
-- Bình thường hover：Chỉ thay đổi nền、Màu đường viền hoặc văn bản
+- 页面背景：`var(--gray-0)`
+- 次级背景：`var(--gray-10)` / `var(--gray-25)`
+- 主要文本：`var(--color-text)` 或 `var(--gray-900)`
+- 次级文本：`var(--color-text-secondary)` 或 `var(--gray-600)`
+- 边框：`var(--gray-150)` / `var(--gray-200)`
+- 主色：`var(--main-color)`
+- 卡片圆角：`8px`
+- 小控件圆角：`4px` / `6px`
+- 状态标签圆角：`999px`
+- 常规图标尺寸：`16px` / `18px` / `20px`
+- 卡片 padding：`16px` / `20px` / `24px`
+- 普通 hover：只改变背景、边框或文字颜色
 
 ### Example Prompts
 
-Triển khai thẻ cấu hình：
+实现配置卡片：
 
 ```text
-thực hiện một Yuxi Thẻ cấu hình phong cách：sử dụng nền var(--gray-0)，biên giới 1px solid var(--gray-150)，góc tròn 8px，không có bóng。Cách sử dụng tiêu đề var(--color-text)，Cách sử dụng văn bản mô tả var(--color-text-secondary)。hover Chỉ thay đổi một chút đường viền hoặc nền，Không được sử dụng transform。
+实现一个 Yuxi 风格的配置卡片：背景使用 var(--gray-0)，边框 1px solid var(--gray-150)，圆角 8px，不加阴影。标题使用 var(--color-text)，说明文字使用 var(--color-text-secondary)。hover 只轻微改变边框或背景，不使用 transform。
 ```
 
-Triển khai các nút trên thanh công cụ：
+实现工具栏按钮：
 
 ```text
-Triển khai nút thanh công cụ：ưu tiên sử dụng lucide-vue-next biểu tượng，kích thước biểu tượng 16px，nút thêm lucide-icon-btn。Sử dụng màu trung tính theo mặc định，hover được sử dụng khi var(--main-color) hoặc var(--main-10) Tăng cường，Không có sự dịch chuyển、Đừng phóng to。
+实现一个工具栏按钮：优先使用 lucide-vue-next 图标，图标尺寸 16px，按钮添加 lucide-icon-btn。默认使用中性色，hover 时使用 var(--main-color) 或 var(--main-10) 强化，不位移、不放大。
 ```
 
-Triển khai nhãn trạng thái：
+实现状态标签：
 
 ```text
-Triển khai nhãn trạng thái：sử dụng thành công var(--color-success-50) nền và var(--color-success-700) văn bản；sử dụng không đúng cách var(--color-error-50) nền và var(--color-error-700) văn bản；Cảnh báo sử dụng var(--color-warning-50) nền và var(--color-warning-900) văn bản。Sử dụng các góc bo tròn 999px，Văn bản vẫn còn 12px。
+实现状态标签：成功使用 var(--color-success-50) 背景和 var(--color-success-700) 文字；错误使用 var(--color-error-50) 背景和 var(--color-error-700) 文字；警告使用 var(--color-warning-50) 背景和 var(--color-warning-900) 文字。圆角使用 999px，文字保持 12px。
 ```
 
-### Danh sách kiểm tra thực hiện
+### 实现检查清单
 
-- Sử dụng hiện có CSS biến，Không có giá trị màu mã hóa cứng tùy ý mới。
-- Đã kiểm tra cả chế độ sáng và tối。
-- hover、focus、disabled、loading、empty、error Trạng thái phù hợp với kịch bản。
-- không được sử dụng hover Sự dịch chuyển、Phóng to、Hoạt hình xoay hoặc trang trí。
-- Thẻ thông thường không sử dụng bóng đậm。
-- biểu tượng từ `lucide-vue-next`，Kích thước và căn chỉnh phù hợp với lược đồ hiện có。
-- API giao diện、Vị trí thành phần、Ngôn ngữ phong cách tuân thủ các thông số kỹ thuật phát triển front-end。
+- 使用现有 CSS 变量，没有新增随意硬编码色值。
+- 浅色和暗色模式都检查过。
+- hover、focus、disabled、loading、empty、error 状态符合场景。
+- 没有使用 hover 位移、放大、旋转或装饰性动画。
+- 普通卡片没有使用重阴影。
+- 图标来自 `lucide-vue-next`，尺寸和对齐符合现有模式。
+- API 接口、组件位置、样式语言符合前端开发规范。
 
-## Tài liệu tham khảo
+## 参考资料
 
-- `web/src/assets/css/base.css`：chế độ ánh sáng token
-- `web/src/assets/css/base.dark.css`：chế độ tối token
-- `web/src/assets/css/main.css`：phông chữ toàn cầu、Bố cục kiểu cơ bản và `lucide-icon-btn`
-- [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md)：cho AI agent của `DESIGN.md` Bộ sưu tập mẫu
+- `web/src/assets/css/base.css`：浅色模式 token
+- `web/src/assets/css/base.dark.css`：暗色模式 token
+- `web/src/assets/css/main.css`：全局字体、布局基础样式和 `lucide-icon-btn`
+- [Awesome DESIGN.md](https://github.com/VoltAgent/awesome-design-md)：面向 AI agent 的 `DESIGN.md` 样例集合

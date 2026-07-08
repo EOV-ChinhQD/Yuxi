@@ -5,30 +5,36 @@ from typing import Any
 
 from yuxi.utils import logger
 
-CHUNK_PRESET_GENERAL = "general"
-CHUNK_PRESET_QA = "qa"
-CHUNK_PRESET_BOOK = "book"
-CHUNK_PRESET_LAWS = "laws"
-CHUNK_PRESET_SEMANTIC = "semantic"
-CHUNK_PRESET_SEPARATOR = "separator"
+DEFAULT_CHUNK_PRESET_ID = "general"
 
-CHUNK_PRESET_IDS = {
-    CHUNK_PRESET_GENERAL,
-    CHUNK_PRESET_QA,
-    CHUNK_PRESET_BOOK,
-    CHUNK_PRESET_LAWS,
-    CHUNK_PRESET_SEMANTIC,
-    CHUNK_PRESET_SEPARATOR,
+CHUNK_PRESETS: dict[str, dict[str, str]] = {
+    "general": {
+        "label": "General",
+        "description": "Phân đoạn chung: Cắt theo dấu phân cách và độ dài, phù hợp với hầu hết các tài liệu thông thường.",
+    },
+    "qa": {
+        "label": "QA",
+        "description": "Phân đoạn hỏi đáp: Ưu tiên trích xuất cấu trúc hỏi-đáp, phù hợp với FAQ, ngân hàng câu hỏi, sổ tay hỏi đáp.",
+    },
+    "book": {
+        "label": "Book",
+        "description": "Phân đoạn sách: Tăng cường nhận diện tiêu đề chương và gộp theo cấp, phù hợp với giáo trình, sổ tay, tài liệu có chương dài.",
+    },
+    "laws": {
+        "label": "Laws",
+        "description": "Phân đoạn pháp luật: Tổ chức và gộp theo cấp điều khoản, phù hợp với luật pháp, quy định, tiêu chuẩn.",
+    },
+    "semantic": {
+        "label": "Semantic",
+        "description": "Phân đoạn ngữ nghĩa: Sử dụng thuật toán nhúng và phân cụm để phân đoạn ngữ nghĩa, đồng thời tăng cường ngữ cảnh tiêu đề tự động.",
+    },
+    "separator": {
+        "label": "Separator",
+        "description": "Phân đoạn chặt chẽ: Cắt khi gặp dấu phân cách, chỉ tiếp tục cắt theo độ dài bên trong đoạn siêu dài.",
+    },
 }
 
-CHUNK_PRESET_DESCRIPTIONS: dict[str, str] = {
-    CHUNK_PRESET_GENERAL: "Phân đoạn chung: Cắt theo dấu phân cách và độ dài, phù hợp với hầu hết các tài liệu thông thường.",
-    CHUNK_PRESET_QA: "Phân đoạn hỏi đáp: Ưu tiên trích xuất cấu trúc hỏi-đáp, phù hợp với FAQ, ngân hàng câu hỏi, sổ tay hỏi đáp.",
-    CHUNK_PRESET_BOOK: "Phân đoạn sách: Tăng cường nhận diện tiêu đề chương và gộp theo cấp, phù hợp với giáo trình, sổ tay, tài liệu có chương dài.",
-    CHUNK_PRESET_LAWS: "Phân đoạn pháp luật: Tổ chức và gộp theo cấp điều khoản, phù hợp với luật pháp, quy định, tiêu chuẩn.",
-    CHUNK_PRESET_SEMANTIC: "Phân đoạn ngữ nghĩa: Sử dụng thuật toán nhúng và phân cụm để phân đoạn ngữ nghĩa, đồng thời tăng cường ngữ cảnh tiêu đề tự động.",
-    CHUNK_PRESET_SEPARATOR: "Phân đoạn chặt chẽ: Cắt khi gặp dấu phân cách, chỉ tiếp tục cắt theo độ dài bên trong đoạn siêu dài.",
-}
+CHUNK_PRESET_IDS = set(CHUNK_PRESETS)
 
 CHUNK_ENGINE_VERSION = "ragflow_like_v1"
 GENERAL_INTERNAL_PARSER_ID = "naive"
@@ -46,22 +52,22 @@ def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]
 
 def normalize_chunk_preset_id(value: str | None) -> str:
     if not value:
-        return CHUNK_PRESET_GENERAL
+        return DEFAULT_CHUNK_PRESET_ID
 
     normalized = str(value).strip().lower()
     if normalized == GENERAL_INTERNAL_PARSER_ID:
-        return CHUNK_PRESET_GENERAL
+        return DEFAULT_CHUNK_PRESET_ID
 
     if normalized in CHUNK_PRESET_IDS:
         return normalized
 
     logger.warning(f"Unknown chunk preset id '{value}', fallback to general")
-    return CHUNK_PRESET_GENERAL
+    return DEFAULT_CHUNK_PRESET_ID
 
 
 def map_to_internal_parser_id(preset_id: str) -> str:
     normalized = normalize_chunk_preset_id(preset_id)
-    if normalized == CHUNK_PRESET_GENERAL:
+    if normalized == DEFAULT_CHUNK_PRESET_ID:
         return GENERAL_INTERNAL_PARSER_ID
     return normalized
 
@@ -118,34 +124,6 @@ def resolve_chunk_processing_params(
 
 def get_chunk_preset_options() -> list[dict[str, str]]:
     return [
-        {
-            "value": CHUNK_PRESET_GENERAL,
-            "label": "General",
-            "description": CHUNK_PRESET_DESCRIPTIONS[CHUNK_PRESET_GENERAL],
-        },
-        {
-            "value": CHUNK_PRESET_QA,
-            "label": "QA",
-            "description": CHUNK_PRESET_DESCRIPTIONS[CHUNK_PRESET_QA],
-        },
-        {
-            "value": CHUNK_PRESET_BOOK,
-            "label": "Book",
-            "description": CHUNK_PRESET_DESCRIPTIONS[CHUNK_PRESET_BOOK],
-        },
-        {
-            "value": CHUNK_PRESET_LAWS,
-            "label": "Laws",
-            "description": CHUNK_PRESET_DESCRIPTIONS[CHUNK_PRESET_LAWS],
-        },
-        {
-            "value": CHUNK_PRESET_SEMANTIC,
-            "label": "Semantic",
-            "description": CHUNK_PRESET_DESCRIPTIONS[CHUNK_PRESET_SEMANTIC],
-        },
-        {
-            "value": CHUNK_PRESET_SEPARATOR,
-            "label": "Separator",
-            "description": CHUNK_PRESET_DESCRIPTIONS[CHUNK_PRESET_SEPARATOR],
-        },
+        {"value": preset_id, "label": preset["label"], "description": preset["description"]}
+        for preset_id, preset in CHUNK_PRESETS.items()
     ]

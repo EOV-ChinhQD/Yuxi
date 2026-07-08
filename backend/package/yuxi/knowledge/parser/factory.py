@@ -14,18 +14,22 @@ from yuxi.utils import logger
 # Processor instance cache
 _PROCESSOR_CACHE: dict[str, BaseDocumentProcessor] = {}
 
+# 处理器类型映射: processor_type -> (module_path, class_name)
+PROCESSOR_TYPES = {
+    "rapid_ocr": ("yuxi.knowledge.parser.rapid_ocr", "RapidOCRParser"),
+    "mineru_ocr": ("yuxi.knowledge.parser.mineru", "MinerUParser"),
+    "mineru_official": ("yuxi.knowledge.parser.mineru_official", "MinerUOfficialParser"),
+    "pp_structure_v3_ocr": ("yuxi.knowledge.parser.pp_structure_v3", "PPStructureV3Parser"),
+    "deepseek_ocr": ("yuxi.knowledge.parser.deepseek_ocr", "DeepSeekOCRParser"),
+    "paddleocr_vl_1_6": ("yuxi.knowledge.parser.paddleocr_api", "PaddleOCRVLParser"),
+    "paddleocr_pp_ocrv6": ("yuxi.knowledge.parser.paddleocr_api", "PaddleOCRPPOCRv6Parser"),
+}
+
 
 class DocumentProcessorFactory:
     """Document Processor Factory"""
 
-    # Processor type mapping: processor_type -> (module_path, class_name)
-    PROCESSOR_TYPES = {
-        "rapid_ocr": ("yuxi.knowledge.parser.rapid_ocr", "RapidOCRParser"),
-        "mineru_ocr": ("yuxi.knowledge.parser.mineru", "MinerUParser"),
-        "mineru_official": ("yuxi.knowledge.parser.mineru_official", "MinerUOfficialParser"),
-        "pp_structure_v3_ocr": ("yuxi.knowledge.parser.pp_structure_v3", "PPStructureV3Parser"),
-        "deepseek_ocr": ("yuxi.knowledge.parser.deepseek_ocr", "DeepSeekOCRParser"),
-    }
+    PROCESSOR_TYPES = PROCESSOR_TYPES
 
     @classmethod
     def _build_cache_key(cls, processor_type: str, kwargs: dict[str, Any]) -> str:
@@ -54,7 +58,9 @@ class DocumentProcessorFactory:
                 - "mineru_official": MinerU Official cloud service API document analysis
                 - "pp_structure_v3_ocr": PP-Structure-V3 Layout analysis
                 - "deepseek_ocr": DeepSeek-OCR SiliconFlow API
-            **kwargs: processor initialization parameters
+                - "paddleocr_vl_1_6": Phân tích tài liệu PaddleOCR-VL-1.6 Cloud API
+                - "paddleocr_pp_ocrv6": Nhận dạng ký tự PP-OCRv6 Cloud API
+            **kwargs: các tham số khởi tạo bộ xử lý
 
         Returns:
             BaseDocumentProcessor: Processor instance

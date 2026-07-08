@@ -40,7 +40,7 @@ def test_parser_parse_pdf_file_returns_markdown_text(tmp_path: Path):
     file_path = tmp_path / "parser_test.pdf"
     _build_pdf(file_path, "Parser PDF content")
 
-    markdown = Parser.parse(str(file_path))
+    markdown = Parser.parse(str(file_path), params={"ocr_engine": "disable"})
 
     assert isinstance(markdown, str)
     assert "Parser" in markdown
@@ -52,7 +52,7 @@ def test_parser_parse_docx_file_returns_markdown_text(tmp_path: Path, monkeypatc
     file_path = tmp_path / "parser_test.docx"
     _build_docx(file_path, "Parser DOCX content")
 
-    # Avoid testing relying on docling behavior and directly verify that the unified parser can fall back to python-docx.
+    # 避免测试依赖 docling 行为，直接验证统一 parser 可回退到 python-docx。
     def _raise_docling_error(*args, **kwargs):
         raise RuntimeError("force fallback to python-docx")
 
@@ -139,7 +139,7 @@ def test_convert_with_docling_keeps_image_placeholder_when_upload_fails(
 
     markdown = parser_unified._convert_with_docling(file_path)
 
-    assert markdown == "before\n[picture: image_1000000.png]\nafter"
+    assert markdown == "before\n[图片: image_1000000.png]\nafter"
 
 
 def test_parser_parse_png_file_returns_markdown_text_with_mocked_ocr(
@@ -194,8 +194,8 @@ def test_parse_image_ignores_enable_ocr(tmp_path: Path) -> None:
     file_path = tmp_path / "parser_test.png"
     _build_png(file_path)
 
-    with pytest.raises(ValueError, match="Image files must have OCR enabled"):
-        parser_unified.parse_image(str(file_path), params={"enable_ocr": "rapid_ocr"})
+    with pytest.raises(ValueError, match="必须启用OCR"):
+        parser_unified.parse_image(str(file_path), params={"ocr_engine": "disable", "enable_ocr": "rapid_ocr"})
 
 
 @pytest.mark.asyncio
@@ -203,7 +203,7 @@ async def test_parser_aparse_pdf_file_returns_markdown_text(tmp_path: Path):
     file_path = tmp_path / "parser_test_async.pdf"
     _build_pdf(file_path, "Async Parser PDF content")
 
-    markdown = await Parser.aparse(str(file_path))
+    markdown = await Parser.aparse(str(file_path), params={"ocr_engine": "disable"})
 
     assert isinstance(markdown, str)
     assert "Async" in markdown
@@ -211,14 +211,55 @@ async def test_parser_aparse_pdf_file_returns_markdown_text(tmp_path: Path):
     assert len(markdown.strip()) > 0
 
 
+def test_parse_pdf_uses_config_default_ocr_when_engine_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import yuxi
+
+    file_path = tmp_path / "parser_test.pdf"
+    _build_pdf(file_path, "Parser PDF content")
+    captured = {}
+
+    def _fake_process_file(processor_type, file, params=None):
+        captured["processor_type"] = processor_type
+        captured["file"] = file
+        captured["params"] = params
+        return "default OCR content"
+
+    monkeypatch.setattr(yuxi.config, "default_ocr_engine", "mineru_ocr")
+    monkeypatch.setattr(DocumentProcessorFactory, "process_file", _fake_process_file)
+
+    result = parser_unified.parse_pdf(str(file_path), params={})
+
+    assert result == "default OCR content"
+    assert captured["processor_type"] == "mineru_ocr"
+    assert captured["file"] == str(file_path)
+
+
+def test_parse_pdf_keeps_explicit_disable_when_default_ocr_enabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import yuxi
+
+    file_path = tmp_path / "parser_test.pdf"
+    _build_pdf(file_path, "Parser PDF content")
+    monkeypatch.setattr(yuxi.config, "default_ocr_engine", "mineru_ocr")
+
+    result = parser_unified.parse_pdf(str(file_path), params={"ocr_engine": "disable"})
+
+    assert "Parser PDF content" in result
+
+
 @pytest.mark.asyncio
 async def test_parser_aparse_image_file_with_mineru_when_available():
-    file_path = DATA_DIR / "hình ảnh thử nghiệm.png"
-    assert file_path.exists(), f"Test file does not exist: {file_path}"
+    file_path = DATA_DIR / "测试图片.png"
+    assert file_path.exists(), f"测试文件不存在: {file_path}"
 
     health = await asyncio.to_thread(DocumentProcessorFactory.check_health, "mineru_ocr")
     if health.get("status") != "healthy":
-        pytest.skip(f"mineru_ocr Not available: {health.get('message', 'unknown')}")
+        pytest.skip(f"mineru_ocr 不可用: {health.get('message', 'unknown')}")
 
     markdown = await Parser.aparse(
         str(file_path),

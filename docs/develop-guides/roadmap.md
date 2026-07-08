@@ -1,51 +1,55 @@
-# Lộ trình phát triển
+# 开发路线图
 
-Lộ trình có thể thay đổi thường xuyên，Nếu bạn có đề xuất mạnh mẽ，Có thể tìm thấy ở [issue](https://github.com/xerrors/Yuxi/issues) trung ti。
+路线图可能会经常变更，如果有强烈的建议，可以在 [issue](https://github.com/xerrors/Yuxi/issues) 中提。
 
-Thông số bổ sung nhật ký（For Agent）:
+项目看板（Maintainer Only）：[GitHub Project](https://github.com/users/xerrors/projects/2)
 
-
-### Kanban
-
-**cơ sở tri thức**
-- [ ] Công cụ cơ sở kiến thức mới query_keywords Công cụ，Được thiết kế đặc biệt để xếp hạng dựa trên lượt truy cập từ khóa <Badge text="v0.7.1" />
-- [ ] Nghiên cứu tính khả thi của việc ánh xạ cơ sở tri thức hiện tại vào hệ thống tệp ảo，Đầu tiên làm rõ bản đồ cây tập tin、ranh giới cho phép、Đọc nội dung và Agent Biểu mẫu gọi công cụ，Sau đó quyết định có nên thực hiện nó hay không
-- [ ] Nâng cao trải nghiệm tìm kiếm cơ sở kiến thức：nâng cao metadata、Thẻ, v.v.
-- [ ] Thêm mới dựa trên PaddleOCR người phân tích cú pháp：Truy cập PaddleOCR-VL-1.6、PP-OCRv6、PP-StructureV3，Và các lớp cơ sở được chia sẻ trừu tượng để sử dụng lại các lệnh gọi tập lệnh tương tự、Thu thập sản phẩm và xử lý cấu hình
-- [ ] Không gian làm việc cá nhân tăng khả năng tìm kiếm（Nhưng không có vector hóa） <Badge text="v0.7.1" />
+日志添加规范（For Agent）:
 
 
-**đại lý**
-- [x] Đại lý phụ thiếu cơ chế không đồng bộ <Badge text="v0.7.1" /> <Badge type="warning" text="Đang được phát triển" />
-- [ ] Thiếu đại lý phụ steer cơ chế <Badge text="v0.7.1" />
-- [ ] Giao tiếp hai chiều của các đại lý phụ，mất tích ask_for_main_agent cơ chế
-- [ ] Cơ chế giao tiếp giữa đại lý phụ và đại lý phụ
-- [ ] Tối ưu hóa Agent `read_file` Công cụ：Căn chỉnh ít nhất DeepAgents đọc hành vi
-- [ ] Skill Hiển thị nâng cao khả năng ràng buộc trên trang chi tiết：Tích hợp sẵn Skill Các công cụ chỉ đọc cũng phải được hiển thị rõ ràng/MCP/Skill Mô tả phụ thuộc
-- [x] thêm Agent Giao diện gọi độc lập，Thuận tiện cho việc đánh giá và sử dụng tiếp theo
-- [ ] hàng đợi nhiệm vụ <Badge text="v0.7.2" />
-- [x] Truy cập phản hồi vào Langfuse
+### 看板
 
-**Khác**
-- [x] Khả năng tìm kiếm mới cho các cuộc hội thoại lịch sử（[#790](https://github.com/xerrors/Yuxi/issues/790)）
-- [x] Thêm nút sao chép nhanh vào khối mã trong tin nhắn（[#790](https://github.com/xerrors/Yuxi/issues/790)）
-- [ ] Tích hợp Memory，Dựa trên deepagents Triển khai phụ trợ tệp，Cần cân nhắc việc định vị
-- [x] Tối ưu hóa Task Định vị mô-đun：Phân biệt giữa các thực thể tác vụ nền thực và các công cụ quản lý thanh tiến trình，Xác định lại trung tâm truyền giáo/Tasker Ranh giới trách nhiệm
-- [x] Các loại hình nhà cung cấp kiểu mẫu tiếp tục bổ sung cho các nhà cung cấp không OpenAI Thích ứng tương thích，và dọn dẹp những thứ không còn được hỗ trợ provider type lời nói <Badge text="v0.7.1" />
-- [ ] Tối ưu hóa Agent Hỏi người dùng về tương tác：Hỗ trợ nhập câu trả lời văn bản dài hơn，và luôn cập nhật khu vực trò chuyện trong khi phát trực tiếp đầu ra（[#753](https://github.com/xerrors/Yuxi/issues/753)）
+**知识库**
+- [ ] 知识库工具接口化与 CLI 集成：将当前知识库的主要工具（如上传、检索、建索引等）封装为后端 API 接口，并集成到 Yuxi CLI 工具中
+- [ ] 知识库 Mindmap 扩展：新增基于文件名的文件“边”构建，支持聚类算法形成社区节点，并提供思维导图 (Mindmap) 可视化结构展示
+- [ ] 知识库工具新增 query_keywords 工具，专门用于基于关键词命中的排序 <Badge text="v0.7.1" />
+- [ ] 增强知识库检索体验：增强 metadata、标签等
+- [ ] 个人工作区增加可检索能力（但是不做向量化） <Badge text="v0.7.1" />
+- [ ] 新增基于 PaddleOCR 的解析器：接入 PaddleOCR-VL-1.6、PP-OCRv6、PP-StructureV3，并抽象共用基类复用相似的脚本调用、产物收集和配置处理
 
-**Chỉ cần tưởng tượng**
-- [ ] Yuxi CLI Thêm lệnh quản lý，Sẽ được triển khai ở các phiên bản tiếp theo（Không giống như một trợ lý lập trình，Đó là một công cụ nền tảng quản lý，Đợi từng người router Sau khi tối ưu hóa giao diện）
+
+**智能体**
+- [ ] 修复不同用户安装相同 Skill 时，因目前 Skill slug 全局唯一导致无法安装、会自动新增 versiontag 的问题，排查其对安装流程 and 版本管理的影响
+- [x] 子智能体缺少异步的机制 <Badge text="v0.7.1" />
+- [ ] 子智能体缺少 steer 机制 <Badge text="v0.7.1" />
+- [ ] 子智能体的双向通信，缺少 ask_for_main_agent 的机制
+- [ ] 子智能体与子智能体的通信机制
+- [x] 优化 Agent `read_file` 工具：至少对齐 DeepAgents 的读取行为 <Badge text="v0.7.1" />
+- [ ] Skill 详情页增强绑定能力展示：内置 Skill 也应清晰展示只读的工具/MCP/Skill 依赖说明
+- [x] 添加 Agent 独立调用接口，方便后续评估使用
+- [ ] 任务队列：调研是否可以通过修改 state 实现，添加一个中间件（after agents 钩子），并支持通过 after model 触发的引导模式。 <Badge text="v0.7.2" />
+- [x] 反馈接入到 Langfuse
+
+**其他**
+- [x] 历史对话新增搜索能力（[#790](https://github.com/xerrors/Yuxi/issues/790)）
+- [x] 消息中的代码块增加快速复制按钮（[#790](https://github.com/xerrors/Yuxi/issues/790)）
+- [ ] 集成 Memory，基于 deepagents 的文件后端实现，需要考虑定位
+- [x] 优化 Task 模块定位：区分真正的后台任务实体与进度条管理工具，重新定义任务中心/Tasker 的职责边界
+- [x] 模型供应商类型继续补齐非 OpenAI 兼容适配，并清理不再支持的 provider type 字样 <Badge text="v0.7.1" />
+- [ ] 优化 Agent 向用户追问交互：支持较长文本回答输入，并在流式输出时保持聊天区跟随最新内容（[#753](https://github.com/xerrors/Yuxi/issues/753)）
+
+**仅设想**
+- [ ] Yuxi CLI 更多管理命令，放在后续版本中实现（不是类似于编程助手，而是管理平台工具，等各个 router 接口优化之后）
 
 
 ### Bugs
-- [ ] Hình ảnh trong cơ sở kiến ​​thức hiện tại có nguy cơ bị truy cập công khai
-- [ ] Khi nhấp vào một cuộc trò chuyện, bạn cần có khả năng tự động định vị cuộc trò chuyện đó ở cuối.，thay vì sự khởi đầu。
+- [ ] 目前的知识库的图片存在公开访问风险
+- [ ] 点开对话的时候要能够自动定位到尾部，而不是最开始。
 
 ---
 
-Hồ sơ phát hành phiên bản lịch sử đã được di chuyển sang [Lịch sử thay đổi phiên bản](./changelog.md)。
+历史版本发布记录已迁移到 [版本变更记录](./changelog.md)。
 
-Hướng dẫn bảo trì：
-- roadmap Chỉ giữ lại những kế hoạch tương lai（Kanban/Bugs/hướng cột mốc）。
-- Nội dung phát hành phiên bản cụ thể được duy trì thống nhất trong changelog。
+维护说明：
+- roadmap 仅保留未来规划（看板/Bugs/里程碑方向）。
+- 具体版本发布内容统一维护在 changelog。
