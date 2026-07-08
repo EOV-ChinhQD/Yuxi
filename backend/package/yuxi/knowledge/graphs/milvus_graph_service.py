@@ -227,7 +227,7 @@ class MilvusGraphService:
                         extraction_result = await self._get_chunk_extraction_result(kb_id, chunk, extractor)
                         async with write_lock:
                             if extractor.extractor_type == "event_llm":
-                                entities, events = self.write_chunk_events(
+                                entities, events, neo4j_success = self.write_chunk_events(
                                     kb_id,
                                     chunk,
                                     extraction_result,
@@ -256,8 +256,12 @@ class MilvusGraphService:
                                     chunk.chunk_id,
                                     ent_ids=[entity["entity_id"] for entity in entities],
                                 )
+                                await self.chunk_repo.update_neo4j_sync_status(
+                                    chunk.chunk_id,
+                                    "synced" if neo4j_success else "failed",
+                                )
                             else:
-                                entities, triples = await asyncio.to_thread(
+                                entities, triples, neo4j_success = await asyncio.to_thread(
                                     self.write_chunk_graph,
                                     kb_id,
                                     chunk,
@@ -279,6 +283,10 @@ class MilvusGraphService:
                                 await self.chunk_repo.mark_graph_indexed(
                                     chunk.chunk_id,
                                     ent_ids=[entity["entity_id"] for entity in entities],
+                                )
+                                await self.chunk_repo.update_neo4j_sync_status(
+                                    chunk.chunk_id,
+                                    "synced" if neo4j_success else "failed",
                                 )
                         processed += 1
                     except Exception as exc:
@@ -437,8 +445,13 @@ class MilvusGraphService:
                     extractor_type=relation_extractor_type,
                 )
 
-        neo4j_write(self.driver, query)
-        return entity_records, triple_records
+        neo4j_success = True
+        try:
+            neo4j_write(self.driver, query)
+        except Exception as e:
+            logger.warning(f"Neo4j write failed for chunk_id={chunk.chunk_id} (continuing PG/Milvus write): {e}")
+            neo4j_success = False
+        return entity_records, triple_records, neo4j_success
 
     def write_chunk_events(
         self,
@@ -509,12 +522,14 @@ class MilvusGraphService:
                     attributes=entity["attributes"],
                 )
 
+        neo4j_success = True
         try:
             neo4j_write(self.driver, query)
         except Exception as e:
             logger.warning(f"Neo4j event indexing write failed (continuing PG/Milvus write): {e}")
+            neo4j_success = False
 
-        return entity_records, [event_record]
+        return entity_records, [event_record], neo4j_success
 
     def _build_entity_records(self, kb_id: str, entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
         records = []

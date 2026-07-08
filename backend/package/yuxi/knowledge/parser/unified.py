@@ -229,14 +229,32 @@ def parse_pdf(file, params=None):
     processor_params.setdefault("image_bucket", image_bucket)
     processor_params.setdefault("image_prefix", image_prefix)
 
+    fallback_chain = [opt_ocr]
+    if opt_ocr != "rapid_ocr":
+        fallback_chain.append("rapid_ocr")
+
+    last_error = None
+    for parser_type in fallback_chain:
+        try:
+            return DocumentProcessorFactory.process_file(parser_type, file, processor_params)
+        except DocumentProcessorException as e:
+            last_error = e
+            logger.warning(f"PDF parser {parser_type} failed, trying next: {e}")
+        except Exception as e:  # noqa: BLE001
+            last_error = e
+            logger.warning(f"PDF parser {parser_type} unexpected error, trying next: {e}")
+
+    # Final fallback to text-only pdfreader
     try:
-        return DocumentProcessorFactory.process_file(opt_ocr, file, processor_params)
-    except DocumentProcessorException as e:
-        logger.error(f"Document processing failed: {e.service_name} - {str(e)}")
-        raise
+        logger.warning("All OCR parsers failed. Falling back to text-only PyPDF reader.")
+        return pdfreader(file, params=processor_params)
     except Exception as e:  # noqa: BLE001
-        logger.error(f"PDF Parsing failed: {str(e)}")
-        raise DocumentProcessorException(f"Phân tích PDF thất bại: {str(e)}", opt_ocr, "parsing_failed")
+        raise DocumentProcessorException(
+            f"Tất cả các bộ xử lý PDF đều thất bại. Lỗi cuối: {last_error}",
+            opt_ocr,
+            "all_parsers_failed"
+        ) from e
+
 
 
 def parse_image(file, params=None):

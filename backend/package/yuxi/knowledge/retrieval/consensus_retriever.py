@@ -204,70 +204,93 @@ Từ khóa:"""
         """
         Chạy Consensus Search kết hợp Naive Vector, Local Entity, Relation, và Event Multi-hop.
         """
-        t_start = time.perf_counter()
+        from yuxi.services.langfuse_service import langfuse_span
+        from yuxi.utils.logging_config import log_context
 
-        # Bước 0: Trích xuất keywords
-        keywords = await self._extract_keywords(query)
+        trace_id = log_context.get().get("request_id")
 
-        # Bước 1: Tìm kiếm Local, Relation, và Event song song
-        from yuxi.knowledge.retrieval.multi_hop_retriever import MultiHopRetriever
-        event_retriever = MultiHopRetriever(self.kb_id, self.embedding_model_spec, self.llm_model_spec)
+        async with langfuse_span(
+            trace_id=trace_id,
+            span_name="ConsensusRetrieval",
+            input_data={"query": query, "top_k_each_method": top_k_each_method, "final_k": final_k},
+            metadata={"kb_id": self.kb_id}
+        ) as span:
+            t_start = time.perf_counter()
 
-        local_map, relation_map, event_chunks = await asyncio.gather(
-            self._get_local_chunk_ids(keywords, top_k_entities=top_k_each_method),
-            self._get_relation_chunk_ids(keywords, top_k=top_k_each_method),
-            event_retriever.retrieve(query, search_mode="normal", max_hops=2, rerank_top_k=top_k_each_method)
-        )
+            # Bước 0: Trích xuất keywords
+            keywords = await self._extract_keywords(query)
 
-        naive_map = {chunk["chunk_id"]: chunk["score"] for chunk in retrieved_chunks}
-        event_map = {chunk["chunk_id"]: chunk["score"] for chunk in event_chunks}
+            # Bước 1: Tìm kiếm Local, Relation, và Event song song
+            from yuxi.knowledge.retrieval.multi_hop_retriever import MultiHopRetriever
+            event_retriever = MultiHopRetriever(self.kb_id, self.embedding_model_spec, self.llm_model_spec)
 
-        logger.info(
-            f"[Consensus] Naive={len(naive_map)}, Local={len(local_map)}, Relation={len(relation_map)}, Event={len(event_map)} chunks"
-        )
-
-        # Chuẩn hóa score maps
-        naive_norm = _normalize_map(naive_map)
-        local_norm = _normalize_map(local_map)
-        relation_norm = _normalize_map(relation_map)
-        event_norm = _normalize_map(event_map)
-
-        # Thiết lập trọng số consensus
-        W_NAIVE = self.w_naive
-        W_LOCAL = self.w_local
-        W_RELATION = self.w_relation
-        W_EVENT = self.w_event
-
-        all_ids = set(naive_map) | set(local_map) | set(relation_map) | set(event_map)
-        chunk_scores: Dict[str, float] = {}
-        gold_ids: Set[str] = set()
-        silver_ids: Set[str] = set()
-
-        for cid in all_ids:
-            score = (
-                naive_norm.get(cid, 0.0) * W_NAIVE
-                + local_norm.get(cid, 0.0) * W_LOCAL
-                + relation_norm.get(cid, 0.0) * W_RELATION
-                + event_norm.get(cid, 0.0) * W_EVENT
+            local_map, relation_map, event_chunks = await asyncio.gather(
+                self._get_local_chunk_ids(keywords, top_k_entities=top_k_each_method),
+                self._get_relation_chunk_ids(keywords, top_k=top_k_each_method),
+                event_retriever.retrieve(query, search_mode="normal", max_hops=2, rerank_top_k=top_k_each_method)
             )
-            sources_count = sum([
-                cid in naive_map,
-                cid in local_map,
-                cid in relation_map,
-                cid in event_map
-            ])
-            if sources_count == 4:
-                score += 0.3  # Platinum bonus
-                gold_ids.add(cid)
-            elif sources_count >= 2:
-                silver_ids.add(cid)
-            chunk_scores[cid] = score
 
-        # Sắp xếp chunk IDs theo score Consensus
-        sorted_ids = sorted(all_ids, key=lambda cid: chunk_scores[cid], reverse=True)
-        
-        logger.info(
-            f"[Consensus] Gold={len(gold_ids)}, Silver={len(silver_ids)} | "
-            f"Consensus search hoàn thành trong {(time.perf_counter() - t_start)*1000:.0f}ms"
-        )
-        return sorted_ids[:final_k]
+            naive_map = {chunk["chunk_id"]: chunk["score"] for chunk in retrieved_chunks}
+            event_map = {chunk["chunk_id"]: chunk["score"] for chunk in event_chunks}
+
+            logger.info(
+                f"[Consensus] Naive={len(naive_map)}, Local={len(local_map)}, Relation={len(relation_map)}, Event={len(event_map)} chunks"
+            )
+
+            if span:
+                try:
+                    span.update(metadata={
+                        "naive_chunks": len(naive_map),
+                        "local_chunks": len(local_map),
+                        "relation_chunks": len(relation_map),
+                        "event_chunks": len(event_map),
+                        "keywords": keywords,
+                    })
+                except Exception:
+                    pass
+
+            # Chuẩn hóa score maps
+            naive_norm = _normalize_map(naive_map)
+            local_norm = _normalize_map(local_map)
+            relation_norm = _normalize_map(relation_map)
+            event_norm = _normalize_map(event_map)
+
+            # Thiết lập trọng số consensus
+            W_NAIVE = self.w_naive
+            W_LOCAL = self.w_local
+            W_RELATION = self.w_relation
+            W_EVENT = self.w_event
+
+            all_ids = set(naive_map) | set(local_map) | set(relation_map) | set(event_map)
+            chunk_scores: Dict[str, float] = {}
+            gold_ids: Set[str] = set()
+            silver_ids: Set[str] = set()
+
+            for cid in all_ids:
+                score = (
+                    naive_norm.get(cid, 0.0) * W_NAIVE
+                    + local_norm.get(cid, 0.0) * W_LOCAL
+                    + relation_norm.get(cid, 0.0) * W_RELATION
+                    + event_norm.get(cid, 0.0) * W_EVENT
+                )
+                sources_count = sum([
+                    cid in naive_map,
+                    cid in local_map,
+                    cid in relation_map,
+                    cid in event_map
+                ])
+                if sources_count == 4:
+                    score += 0.3  # Platinum bonus
+                    gold_ids.add(cid)
+                elif sources_count >= 2:
+                    silver_ids.add(cid)
+                chunk_scores[cid] = score
+
+            # Sắp xếp chunk IDs theo score Consensus
+            sorted_ids = sorted(all_ids, key=lambda cid: chunk_scores[cid], reverse=True)
+            
+            logger.info(
+                f"[Consensus] Gold={len(gold_ids)}, Silver={len(silver_ids)} | "
+                f"Consensus search hoàn thành trong {(time.perf_counter() - t_start)*1000:.0f}ms"
+            )
+            return sorted_ids[:final_k]

@@ -40,14 +40,28 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """Handle requests and record access logs"""
+        import uuid
+        from yuxi.utils.logging_config import set_log_context, reset_log_context
+
+        # Extract request_id from headers or generate a new one
+        request_id = request.headers.get("x-request-id") or request.headers.get("x-correlation-id")
+        if not request_id:
+            request_id = str(uuid.uuid4())
+
+        request.state.request_id = request_id
+
         # Record request start time
         start_time = time.perf_counter()
 
         # Get client IP
         client_ip = _extract_client_ip(request)
 
-        # Handle request
-        response = await call_next(request)
+        # Handle request with logging context
+        token = set_log_context(request_id=request_id)
+        try:
+            response = await call_next(request)
+        finally:
+            reset_log_context(token)
 
         # Calculate processing time
         process_time = time.perf_counter() - start_time
@@ -63,5 +77,8 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
 
         # logging
         self.logger.info(log_message)
+
+        # Append X-Request-ID to response headers
+        response.headers["X-Request-ID"] = request_id
 
         return response

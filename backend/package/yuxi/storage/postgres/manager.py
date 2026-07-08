@@ -248,6 +248,7 @@ class PostgresManager(metaclass=SingletonMeta):
                 start_token_pos INTEGER,
                 end_token_pos INTEGER,
                 graph_indexed BOOLEAN DEFAULT FALSE,
+                neo4j_sync_status VARCHAR(20) NOT NULL DEFAULT 'pending',
                 ent_ids JSONB,
                 tags JSONB,
                 extraction_result JSONB,
@@ -256,6 +257,7 @@ class PostgresManager(metaclass=SingletonMeta):
             )
             """,
             "ALTER TABLE IF EXISTS knowledge_chunks ADD COLUMN IF NOT EXISTS extraction_result JSONB",
+            "ALTER TABLE IF EXISTS knowledge_chunks ADD COLUMN IF NOT EXISTS neo4j_sync_status VARCHAR(20) NOT NULL DEFAULT 'pending'",
             """
             CREATE TABLE IF NOT EXISTS knowledge_graph_entities (
                 id SERIAL PRIMARY KEY,

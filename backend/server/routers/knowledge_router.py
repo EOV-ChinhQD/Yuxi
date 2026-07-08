@@ -1548,7 +1548,7 @@ async def query_knowledge_base(
     """Query knowledge base"""
     logger.debug(f"Query knowledge base {kb_id}: {query}")
     try:
-        result = await knowledge_base.aquery(query, kb_id=kb_id, **meta)
+        result = await knowledge_base.aquery(query, kb_id=kb_id, caller_uid=current_user.uid, **meta)
         return {"result": result, "status": "success"}
     except Exception as e:
         logger.error(f"Knowledge base query failed {e}, {traceback.format_exc()}")
@@ -1562,7 +1562,7 @@ async def query_test(
     """Test query knowledge base"""
     logger.debug(f"Query test in {kb_id}: {query}")
     try:
-        result = await knowledge_base.aquery(query, kb_id=kb_id, **meta)
+        result = await knowledge_base.aquery(query, kb_id=kb_id, caller_uid=current_user.uid, **meta)
         return result
     except Exception as e:
         logger.error(f"Test query failed {e}, {traceback.format_exc()}")

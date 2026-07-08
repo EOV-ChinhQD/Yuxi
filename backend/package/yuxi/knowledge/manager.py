@@ -442,8 +442,24 @@ class KnowledgeBaseManager:
         kb_instance = await self._get_kb_for_database(kb_id)
         await kb_instance.update_file_params(kb_id, file_id, params, operator_id)
 
-    async def aquery(self, query_text: str, kb_id: str, **kwargs) -> str:
+    async def aquery(self, query_text: str, kb_id: str, caller_uid: str | None = None, **kwargs) -> str:
         """Asynchronous query knowledge base"""
+        if caller_uid is not None:
+            from yuxi.repositories.user_repository import UserRepository
+            user_repo = UserRepository()
+            user = await user_repo.get_by_uid(caller_uid)
+            if not user:
+                raise PermissionError(f"User {caller_uid} not found")
+            
+            user_info = {
+                "uid": user.uid,
+                "role": user.role,
+                "department_id": user.department_id,
+            }
+            accessible = await self.check_accessible(user_info, kb_id)
+            if not accessible:
+                raise PermissionError(f"User {caller_uid} does not have permission to access knowledge base {kb_id}")
+
         kb_instance = await self._get_kb_for_database(kb_id)
         return await kb_instance.aquery(query_text, kb_id, **kwargs)
 

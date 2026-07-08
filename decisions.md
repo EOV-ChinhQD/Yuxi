@@ -61,3 +61,11 @@
 - **Vấn đề cốt lõi không giải quyết được**: Qwen 2.5 7B (4.7GB, Q4) không đủ khả năng multi-step tool chaining đáng tin cậy. Model gọi được `query_kb` nhưng không nhất quán — đôi khi trả lời đúng, đôi khi trả lời generic, đôi khi output là raw JSON tool call.
 - **Cơ sở hạ tầng đã hoạt động đúng**: KB creation, document ingestion, chunking (3 chunks), vector indexing, retrieval (confirmed `text-embedding-004` và `512` được truy xuất đúng trong run 2064/Test3).
 - **Khuyến nghị**: Để E2E test pass 100%, cần dùng model mạnh hơn (Gemini 1.5 Flash hoặc GPT-4o-mini). Qwen 2.5 7B phù hợp cho conversation đơn giản, không phù hợp cho RAG tool chain phức tạp.
+
+
+## 6. Quyết định: Sửa các lỗi rủi ro kiến trúc Giai đoạn 1
+*   **Ngày quyết định**: 2026-07-09
+*   **Trạng thái**: DONE
+*   **Bối cảnh**: Phân tích rủi ro kiến trúc phát hiện một số vấn đề bảo mật và độ ổn định: rò rỉ bộ nhớ Redis Stream, lỗi Neo4j chặn PG/Milvus write, parser PDF bị kẹt khi OCR lỗi, và thiếu phân quyền truy cập KB ở tầng dữ liệu.
+*   **Giải pháp**: Giới hạn Stream MAXLEN=10000, wrap Neo4j write trong try-except và lưu neo4j_sync_status, thiết lập chuỗi fallback cho PDF parser, bổ sung caller_uid checks cho KB aquery.
+*   **Kết quả**: Đã sửa mã nguồn và viết unit test xác minh thành công 100%.

@@ -144,18 +144,19 @@ def test_normalize_payload_rejects_ollama_provider_type():
 
 def test_builtin_provider_templates_default_to_openai_provider_type():
     assert len(BUILTIN_PROVIDERS) >= 16
-    provider_types = {
-        _normalize_payload(
-            {
-                "provider_id": provider["provider_id"],
-                "display_name": provider["display_name"],
-                "base_url": provider["base_url"],
-                "provider_type": provider.get("provider_type"),
-            }
-        )["provider_type"]
-        for provider in BUILTIN_PROVIDERS
-    }
-    assert provider_types == {"openai"}
+    provider_types = set()
+    for provider in BUILTIN_PROVIDERS:
+        payload = {
+            "provider_id": provider["provider_id"],
+            "display_name": provider["display_name"],
+            "provider_type": provider.get("provider_type"),
+        }
+        if "base_url" in provider:
+            payload["base_url"] = provider["base_url"]
+        
+        normalized = _normalize_payload(payload)
+        provider_types.add(normalized["provider_type"])
+    assert provider_types == {"openai", "gemini"}
     assert all("ollama" not in provider["provider_id"] for provider in BUILTIN_PROVIDERS)
 
 

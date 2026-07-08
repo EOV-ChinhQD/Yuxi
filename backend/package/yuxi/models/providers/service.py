@@ -122,11 +122,23 @@ def _normalize_payload(data: dict[str, Any], *, partial: bool = False) -> dict[s
             raise ValueError("display_name không được để trống")
         payload["display_name"] = display_name
 
-    if not partial or "base_url" in payload:
+    provider_type = payload.get("provider_type")
+    if provider_type is None and not partial:
+        provider_type = "openai"
+        payload["provider_type"] = "openai"
+    elif provider_type is not None:
+        if provider_type not in VALID_PROVIDER_TYPES:
+            raise ValueError(f"provider_type phải là một trong {', '.join(sorted(VALID_PROVIDER_TYPES))}")
+
+    if provider_type == "gemini":
         base_url = str(payload.get("base_url") or "").strip()
-        if not base_url:
-            raise ValueError("base_url không được để trống")
         payload["base_url"] = base_url
+    else:
+        if not partial or "base_url" in payload:
+            base_url = str(payload.get("base_url") or "").strip()
+            if not base_url:
+                raise ValueError("base_url không được để trống")
+            payload["base_url"] = base_url
 
     for endpoint_field in (
         "models_endpoint",
@@ -136,13 +148,6 @@ def _normalize_payload(data: dict[str, Any], *, partial: bool = False) -> dict[s
         if endpoint_field in payload:
             endpoint = str(payload.get(endpoint_field) or "").strip()
             payload[endpoint_field] = endpoint
-
-    provider_type = payload.get("provider_type")
-    if provider_type is None and not partial:
-        payload["provider_type"] = "openai"
-    elif provider_type is not None:
-        if provider_type not in VALID_PROVIDER_TYPES:
-            raise ValueError(f"provider_type phải là một trong {', '.join(sorted(VALID_PROVIDER_TYPES))}")
 
     # In partial mode, only the incoming value is normalized, non-partial completion of the default value
     for field, default in _FIELD_DEFAULTS.items():

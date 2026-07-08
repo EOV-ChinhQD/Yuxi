@@ -99,6 +99,7 @@ class KnowledgeChunk(Base):
     start_token_pos = Column(Integer)
     end_token_pos = Column(Integer)
     graph_indexed = Column(Boolean, default=False)
+    neo4j_sync_status = Column(String(20), nullable=False, default="pending", comment="Neo4j sync status: pending/synced/failed")
     ent_ids = Column(JSON_VALUE)
     tags = Column(JSON_VALUE)
     extraction_result = Column(JSON_VALUE)

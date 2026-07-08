@@ -264,3 +264,32 @@ def flush_langfuse() -> None:
         client.flush()
     except Exception as exc:
         logger.warning(f"Failed to refresh Langfuse events: {exc}")
+
+
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def langfuse_span(trace_id: str | None, span_name: str, input_data: dict | None = None, metadata: dict | None = None):
+    client = get_langfuse_client()
+    if client is None or not trace_id:
+        yield None
+        return
+
+    span = None
+    try:
+        trace = client.trace(id=trace_id)
+        span = trace.span(
+            name=span_name,
+            input=input_data,
+            metadata=metadata
+        )
+        yield span
+    except Exception as e:
+        logger.warning(f"Failed to create Langfuse span {span_name}: {e}")
+        yield None
+    finally:
+        if span:
+            try:
+                span.end()
+            except Exception:
+                pass

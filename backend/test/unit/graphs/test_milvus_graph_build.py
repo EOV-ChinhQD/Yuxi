@@ -202,7 +202,7 @@ def test_milvus_graph_service_writes_chunk_entity_and_relation():
         end_char_pos=8,
     )
 
-    entities, triples = service.write_chunk_graph(
+    entities, triples, neo4j_success = service.write_chunk_graph(
         "kb_test",
         chunk,
         normalize_extraction_result(

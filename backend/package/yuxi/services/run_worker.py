@@ -262,14 +262,18 @@ async def _consume_stream_with_cancel(agen, run_ctx: RunContext):
 
 
 async def process_agent_run(ctx, run_id: str):
-    """执行队列中的 AgentRun，并只从 run 列和输入消息恢复运行参数。"""
+    """执行队列中的 AgentRun，并只从 run 列 và tin nhắn đầu vào để khôi phục tham số chạy."""
+    from yuxi.utils.logging_config import set_log_context, reset_log_context
+    token = set_log_context(run_id=run_id)
     run = await _get_run(run_id)
     if not run:
         logger.warning(f"Run not found: {run_id}")
+        reset_log_context(token)
         return
 
     if run.status in TERMINAL_RUN_STATUSES:
         logger.info(f"Run already terminal, skip: {run_id}, status={run.status}")
+        reset_log_context(token)
         return
 
     if not isinstance(run.input_payload, dict):
@@ -304,6 +308,7 @@ async def process_agent_run(ctx, run_id: str):
     user = await _load_user(uid)
     if not user:
         await mark_run_terminal(run_id, "failed", "user_not_found", f"user {uid} not found")
+        reset_log_context(token)
         return
 
     resume_input = None
@@ -322,6 +327,9 @@ async def process_agent_run(ctx, run_id: str):
         except ValueError as exc:
             await mark_run_terminal(run_id, "failed", "invalid_input_message", str(exc))
             return
+
+    # Update context with the resolved request_id
+    set_log_context(request_id=request_id)
 
     meta = {
         "run_id": run_id,
@@ -536,6 +544,7 @@ async def process_agent_run(ctx, run_id: str):
     finally:
         await run_ctx.close()
         await clear_cancel_signal(run_id)
+        reset_log_context(token)
 
 
 async def _load_input_message(message_id: int | None) -> Message | None:
