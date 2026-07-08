@@ -114,10 +114,11 @@ class SubAgentBackend(BaseAgent):
         )
         model_spec = resolve_chat_model_spec(context.model)
 
+        context.system_prompt = await build_prompt_with_context(context)
         return create_agent(
             model=load_chat_model(fully_specified_name=model_spec),
             tools=_filter_disabled_tools(await resolve_configured_runtime_tools(context)),
-            system_prompt=build_prompt_with_context(context),
+            system_prompt=context.system_prompt,
             middleware=await _build_middlewares(context),
             state_schema=BaseState,
             checkpointer=await self._get_checkpointer(),

@@ -31,11 +31,11 @@ class ListKBsInput(BaseModel):
     """Model input danh sách kho kiến thức người dùng có thể truy cập"""
 
     # Cơ chế inject runtime của Langchain yêu cầu phải có tham số
-    dummy: str = Field(default="", description="Dummy parameter - ignore")  # Add this
+    dummy: str | None = Field(default="", description="Dummy parameter - ignore")  # Add this
 
 
 @tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=ListKBsInput)
-async def list_kbs(dummy: str = "", runtime: ToolRuntime = None) -> str:  # Now has 2 params with defaults
+async def list_kbs(dummy: str | None = "", runtime: ToolRuntime = None) -> str:  # Now has 2 params with defaults
     """Liệt kê danh sách các kho kiến thức mà người dùng hiện tại có thể truy cập.
 
     Trả về danh sách tên các kho kiến thức mà người dùng có quyền truy cập dựa trên vai trò và phòng ban,
@@ -186,15 +186,46 @@ def _find_query_target(
     if not visible_kbs:
         return None, None, "Không thể lấy danh sách kho kiến thức có thể truy cập của phiên hội thoại hiện tại"
 
-    normalized_kb_id = str(kb_id or "").strip()
-    visible_kb_ids = {str(kb.get("kb_id") or "").strip() for kb in visible_kbs}
-    if normalized_kb_id not in visible_kb_ids:
-        return None, None, f"Tài nguyên kho kiến thức '{normalized_kb_id}' không tồn tại hoặc chưa được bật trong phiên hội thoại hiện tại"
+    normalized_input = str(kb_id or "").strip()
 
-    target_info = retrievers.get(normalized_kb_id)
-    if target_info is None:
-        return None, None, f"Tài nguyên kho kiến thức '{normalized_kb_id}' không tồn tại"
-    return target_info, normalized_kb_id, None
+    # 1. Exact kb_id match (primary path)
+    visible_kb_ids = {str(kb.get("kb_id") or "").strip() for kb in visible_kbs}
+    if normalized_input in visible_kb_ids:
+        target_info = retrievers.get(normalized_input)
+        if target_info:
+            return target_info, normalized_input, None
+
+    # 2. Fuzzy fallback — match by KB name (exact, case-insensitive)
+    input_lower = normalized_input.lower()
+    for kb in visible_kbs:
+        name = str(kb.get("name") or "").strip()
+        actual_id = str(kb.get("kb_id") or "").strip()
+        if name.lower() == input_lower and actual_id:
+            target_info = retrievers.get(actual_id)
+            if target_info:
+                logger.info(f"Fuzzy KB match: '{normalized_input}' → '{actual_id}' (matched by name)")
+                return target_info, actual_id, None
+
+    # 3. Fuzzy fallback — substring match against name or id
+    for kb in visible_kbs:
+        name = str(kb.get("name") or "").strip().lower()
+        actual_id = str(kb.get("kb_id") or "").strip()
+        if input_lower in name or name in input_lower:
+            target_info = retrievers.get(actual_id)
+            if target_info:
+                logger.info(f"Fuzzy KB match: '{normalized_input}' → '{actual_id}' (substring match)")
+                return target_info, actual_id, None
+
+    # 4. If only one KB is available, use it automatically
+    if len(visible_kbs) == 1:
+        only_kb = visible_kbs[0]
+        actual_id = str(only_kb.get("kb_id") or "").strip()
+        target_info = retrievers.get(actual_id)
+        if target_info:
+            logger.info(f"Fuzzy KB match: '{normalized_input}' → '{actual_id}' (only KB available, auto-selected)")
+            return target_info, actual_id, None
+
+    return None, None, f"Tài nguyên kho kiến thức '{normalized_input}' không tồn tại hoặc chưa được bật trong phiên hội thoại hiện tại"
 
 
 async def _build_query_output(target_kb_id: str, result: Any) -> Any:

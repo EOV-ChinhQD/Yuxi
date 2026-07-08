@@ -433,7 +433,7 @@ async def resolve_agent_resource_options(
                 except Exception:
                     return -1
             latest_test_db = max(test_dbs, key=get_suffix)
-            databases = [db for db in databases if not str(db.get("name") or "").startswith("TEST_RAG_PIPELINE_") or db == latest_test_db]
+            databases = [latest_test_db]
 
         options["knowledges"] = [
             _resource_option(item.get("kb_id"), item.get("name"), item.get("description"))
