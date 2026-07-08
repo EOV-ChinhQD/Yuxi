@@ -1354,6 +1354,14 @@ async def get_document_content(kb_id: str, doc_id: str, current_user: User = Dep
 
     try:
         info = await knowledge_base.get_file_content(kb_id, doc_id)
+        from yuxi.utils.auth_utils import AuthUtils
+        if isinstance(info, dict):
+            if "lines" in info and isinstance(info["lines"], list):
+                for line in info["lines"]:
+                    if "content" in line and isinstance(line["content"], str):
+                        line["content"] = AuthUtils.sign_markdown_images(line["content"])
+            if "content" in info and isinstance(info["content"], str):
+                info["content"] = AuthUtils.sign_markdown_images(info["content"])
         return info
     except Exception as e:
         logger.error(f"Failed to get file content, {e}, {kb_id=}, {doc_id=}, {traceback.format_exc()}")
@@ -2062,10 +2070,14 @@ async def get_knowledge_image(
     token: str = Query(..., description="Access token"),
     db: AsyncSession = Depends(get_db)
 ):
-    from server.utils.auth_middleware import get_current_user
-    user = await get_current_user(authorization=f"Bearer {token}", db=db)
-    if not user:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    from yuxi.utils.auth_utils import AuthUtils
+    is_valid_sig = AuthUtils.verify_image_token(object_name, token)
+    
+    if not is_valid_sig:
+        from server.utils.auth_middleware import get_current_user
+        user = await get_current_user(authorization=f"Bearer {token}", db=db)
+        if not user:
+            raise HTTPException(status_code=401, detail="Unauthorized")
     
     # Fetch from MinIO
     minio_client = get_minio_client()

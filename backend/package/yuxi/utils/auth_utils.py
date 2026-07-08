@@ -104,3 +104,54 @@ class AuthUtils:
             raise ValueError("Token đã hết hạn")
         except jwt.InvalidTokenError:
             raise ValueError("Token không hợp lệ")
+
+    @staticmethod
+    def generate_image_token(object_name: str, expires_in_seconds: int = 7200) -> str:
+        """Generate a signature token for a specific image object in MinIO."""
+        import hmac
+        import hashlib
+        import time
+        expires_at = int(time.time()) + expires_in_seconds
+        message = f"{object_name}:{expires_at}"
+        sig = hmac.new(_get_jwt_secret_key().encode(), message.encode(), hashlib.sha256).hexdigest()
+        return f"{sig}:{expires_at}"
+
+    @staticmethod
+    def verify_image_token(object_name: str, token: str) -> bool:
+        """Verify the signature token for a specific image object."""
+        import hmac
+        import hashlib
+        import time
+        try:
+            if ":" not in token:
+                return False
+            sig, expires_str = token.split(":", 1)
+            expires_at = int(expires_str)
+            if expires_at < time.time():
+                return False
+            message = f"{object_name}:{expires_at}"
+            expected_sig = hmac.new(_get_jwt_secret_key().encode(), message.encode(), hashlib.sha256).hexdigest()
+            return hmac.compare_digest(sig, expected_sig)
+        except Exception:
+            return False
+
+    @staticmethod
+    def sign_markdown_images(text: str, expires_in_seconds: int = 7200) -> str:
+        """Find all /api/v1/knowledge/images/ URLs in markdown and sign them with a token."""
+        import re
+        if not isinstance(text, str):
+            return text
+        
+        pattern = r'(/api/v1/knowledge/images/([^\)\"\s\?]+))'
+        
+        def replace_match(match):
+            full_url = match.group(1)
+            object_name = match.group(2)
+            token = AuthUtils.generate_image_token(object_name, expires_in_seconds)
+            if "?" in full_url:
+                return f"{full_url}&token={token}"
+            return f"{full_url}?token={token}"
+            
+        return re.sub(pattern, replace_match, text)
+
+

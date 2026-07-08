@@ -163,9 +163,13 @@ async def process_images(
                 data=data,
             )
 
+            url = result.url
+            if image_bucket == minio_client.KB_BUCKETS["images"]:
+                url = f"/api/v1/knowledge/images/{object_name}"
+
             img_info = {
                 "name": Path(img_name).name,
-                "url": result.url,
+                "url": url,
                 "path": f"images/{Path(img_name).name}",
             }
             images.append(img_info)

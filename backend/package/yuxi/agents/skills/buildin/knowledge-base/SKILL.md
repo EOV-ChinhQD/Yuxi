@@ -12,6 +12,7 @@ Use this skill when users require answers to questions based on content related 
 
 - `list_kbs`: Lists the enabled knowledge bases accessible to the current session.
 - `query_kb`: Retrieve content in the specified knowledge base by `kb_id`, returning `file_id` and related fragments.
+- `query_keywords`: Search for exact keywords (error codes, abbreviations, document IDs) in the knowledge base using BM25.
 - `open_kb_document`: Press `kb_id` and `file_id` to open the original document window, suitable for viewing more complete context.
 - `find_kb_document`: Use keywords or regular expressions to locate paragraphs in known documents.
 - `get_mindmap`: View the knowledge base mind map structure.

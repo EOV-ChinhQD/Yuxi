@@ -230,8 +230,17 @@ def _find_query_target(
 
 async def _build_query_output(target_kb_id: str, result: Any) -> Any:
     if isinstance(result, dict) and result.get("kb_id") == target_kb_id and isinstance(result.get("results"), list):
-        return SearchOutputSchema(**result).model_dump()
-    return KnowledgeBase.build_search_output(target_kb_id, result)
+        out = SearchOutputSchema(**result).model_dump()
+    else:
+        out = KnowledgeBase.build_search_output(target_kb_id, result)
+        
+    from yuxi.utils.auth_utils import AuthUtils
+    if isinstance(out, dict) and isinstance(out.get("results"), list):
+        for item in out["results"]:
+            if "content" in item and isinstance(item["content"], str):
+                item["content"] = AuthUtils.sign_markdown_images(item["content"])
+    return out
+
 
 
 @tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=QueryKBInput)
@@ -287,6 +296,47 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
     except Exception as e:
         logger.error(f"Truy xuất thất bại: {e}")
         return f"Truy xuất thất bại: {str(e)}"
+
+
+@tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=QueryKBInput)
+async def query_keywords(kb_id: str, query_text: str, file_name: str | None = None, runtime: ToolRuntime = None) -> Any:
+    """Tìm kiếm nội dung trong kho kiến thức sử dụng công cụ tìm kiếm từ khóa BM25 chính xác.
+
+    Sử dụng công cụ này khi người dùng muốn tìm kiếm từ khóa chính xác, mã lỗi, tên riêng viết tắt,
+    hoặc số hiệu văn bản cụ thể.
+    """
+    if not kb_id:
+        return "Vui lòng cung cấp kb_id"
+    if not query_text:
+        return "Vui lòng cung cấp nội dung truy vấn"
+
+    knowledge_base = _get_knowledge_base()
+    retrievers = knowledge_base.get_retrievers()
+    visible_kbs = await _resolve_visible_knowledge_bases_for_query(runtime)
+    target_info, target_kb_id, target_error = _find_query_target(
+        kb_id=kb_id,
+        retrievers=retrievers,
+        visible_kbs=visible_kbs,
+    )
+    if target_error:
+        return target_error
+
+    try:
+        retriever = target_info["retriever"]
+        kwargs = {"search_mode": "keyword"}
+        if file_name:
+            kwargs["file_name"] = file_name
+
+        if inspect.iscoroutinefunction(retriever):
+            result = await retriever(query_text, **kwargs)
+        else:
+            result = retriever(query_text, **kwargs)
+
+        return await _build_query_output(target_kb_id, result)
+
+    except Exception as e:
+        logger.error(f"Truy xuất từ khóa thất bại: {e}")
+        return f"Truy xuất từ khóa thất bại: {str(e)}"
 
 
 @tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=OpenKBDocumentInput)
@@ -506,12 +556,13 @@ async def search_file(
 def get_common_kb_tools() -> list:
     """Lấy danh sách các công cụ kho kiến thức chung.
 
-    Trả về 6 công cụ chung:
+    Trả về các công cụ chung:
     - list_kbs: Liệt kê danh sách kho kiến thức người dùng có thể truy cập
     - get_mindmap: Lấy sơ đồ tư duy của kho kiến thức được chỉ định
     - query_kb: Truy xuất thông tin trong kho kiến thức được chỉ định
+    - query_keywords: Tìm kiếm từ khóa chính xác BM25 trong kho kiến thức
     - find_kb_document: Định vị từ khóa hoặc regex trong tệp được chỉ định
     - open_kb_document: Mở một phần tài liệu kho kiến thức theo file_id
     - search_file: Tìm kiếm tệp trong kho kiến thức
     """
-    return [list_kbs, get_mindmap, query_kb, find_kb_document, open_kb_document, search_file]
+    return [list_kbs, get_mindmap, query_kb, query_keywords, find_kb_document, open_kb_document, search_file]

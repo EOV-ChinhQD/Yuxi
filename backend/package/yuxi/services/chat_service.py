@@ -49,9 +49,9 @@ from yuxi.utils.thread_utils import extract_thread_id as _metadata_thread_id
 
 
 def _build_state_files(attachments: list[dict]) -> dict:
-    """将附件列表转换为 StateBackend 格式的 files 字典
+    """Chuyển danh sách tệp đính kèm sang định dạng files của StateBackend.
 
-    StateBackend 期望的格式:
+    Định dạng StateBackend kỳ vọng:
     {
         "/attachments/file.md": {
             "content": ["line1", "line2", ...],
@@ -72,7 +72,7 @@ def _build_state_files(attachments: list[dict]) -> dict:
             continue
 
         now = datetime.now(UTC).isoformat()
-        # 将 markdown 内容按行拆分
+        # Tách nội dung markdown thành các dòng
         content_lines = markdown.split("\n")
         files[file_path] = {
             "content": content_lines,
@@ -115,7 +115,7 @@ def _build_langfuse_run_context(
     extra_tags = None
     invocation_meta = (meta or {}).get("agent_invocation_meta") if isinstance(meta, dict) else None
     evaluation = invocation_meta.get("evaluation") if isinstance(invocation_meta, dict) else None
-    # 如果请求来自智能体评测，添加评测相关的 metadata 和 tags，方便在 Langfuse 中进行过滤和分析
+    # Nếu yêu cầu đến từ đánh giá agent, bổ sung metadata và tags liên quan để lọc và phân tích trong Langfuse
     if (meta or {}).get("source") == "agent_evaluation" or (isinstance(evaluation, dict) and evaluation):
         extra_metadata = {
             "source": "agent_evaluation",
@@ -151,11 +151,11 @@ def _build_langfuse_run_context(
 
 
 def extract_agent_state(values: dict) -> AgentStatePayload:
-    """从 LangGraph state 中提取 agent 状态"""
+    """Trích xuất trạng thái agent từ LangGraph state"""
     if not isinstance(values, dict):
         return {"todos": [], "files": {}, "artifacts": [], "subagent_runs": [], "token_usage": None}
 
-    # 直接获取，信任 state 的数据结构
+    # Lấy trực tiếp, tin tưởng cấu trúc dữ liệu của state
     todos = values.get("todos")
     artifacts = values.get("artifacts")
     subagent_runs = values.get("subagent_runs")
@@ -202,7 +202,7 @@ def _json_safe(value: Any) -> Any:
 
 
 def _apply_model_override(input_context: dict, meta: dict | None) -> None:
-    """对话级模型覆盖：meta.model_spec 优先于智能体配置的 model。值已在创建 run 时校验。"""
+    """Ghi đè model theo cấp độ hội thoại: meta.model_spec ưu tiên hơn cấu hình model của agent. Giá trị đã được xác thực khi tạo run."""
     model_spec = (meta or {}).get("model_spec")
     model_spec = model_spec.strip() if isinstance(model_spec, str) else model_spec
     if model_spec:
@@ -210,18 +210,19 @@ def _apply_model_override(input_context: dict, meta: dict | None) -> None:
 
 
 def _apply_subagent_runtime_context(input_context: dict, meta: dict | None) -> None:
-    """把子智能体 run 的父线程和文件线程信息注入运行 context。"""
+    """Inject thông tin parent thread và file thread của sub-agent run vào runtime context."""
     meta = meta or {}
-    # 仅对子智能体类型的 run 生效
+    # Chỉ áp dụng cho run loại sub-agent
     if meta.get("run_type") != "subagent":
         return
-    # 这三个线程 ID 由 subagent_run_service 在创建 run 时写入 runtime，
-    # 是子智能体区别于普通对话的唯一依据；缺失即上游契约被破坏，直接失败而非静默回退。
+    # Ba thread ID này được subagent_run_service ghi vào runtime khi tạo run,
+    # là tiêu chí duy nhất phân biệt sub-agent với hội thoại thường; nếu thiếu thì hợp đồng upstream bị vi phạm, lỗi thẳng không fallback.
     for key in ("parent_thread_id", "file_thread_id", "skills_thread_id"):
         value = str(meta.get(key) or "").strip()
+        if not value:
             raise ValueError(f"Lượt chạy sub-agent thiếu trường bắt buộc {key}")
         input_context[key] = value
-    # 标记为子智能体运行，供下游逻辑判断
+    # Đánh dấu đang chạy sub-agent để logic hạ tầng kiểm tra
     input_context["is_subagent_runtime"] = True
 
 
@@ -561,7 +562,7 @@ async def save_messages_from_langgraph_state(
 
 
 def _extract_interrupt_info(state) -> Any | None:
-    """从 LangGraph state 中提取中断信息"""
+    """Trích xuất thông tin ngắt (interrupt) từ LangGraph state"""
     if hasattr(state, "tasks") and state.tasks:
         for task in state.tasks:
             if hasattr(task, "interrupts") and task.interrupts:
@@ -575,7 +576,7 @@ def _extract_interrupt_info(state) -> Any | None:
 
 
 def _coerce_interrupt_payload(info: Any) -> dict:
-    """将 LangGraph interrupt 对象转换为 dict 结构。"""
+    """Chuyển đối tượng interrupt của LangGraph thành cấu trúc dict."""
     if isinstance(info, dict):
         return info
 
@@ -594,7 +595,7 @@ def _coerce_interrupt_payload(info: Any) -> dict:
 
 
 def _build_ask_user_question_payload(info: Any, thread_id: str) -> dict[str, Any]:
-    """将 interrupt 信息标准化为 ask_user_question_required 载荷。"""
+    """Chuẩn hóa thông tin interrupt thành payload ask_user_question_required."""
     payload = _coerce_interrupt_payload(info)
 
     questions = _normalize_interrupt_questions(payload.get("questions"))
@@ -603,7 +604,7 @@ def _build_ask_user_question_payload(info: Any, thread_id: str) -> dict[str, Any
         questions = [
             {
                 "question_id": str(uuid.uuid4()),
-                "question": "请选择一个选项",
+                "question": "Vui lòng chọn một tùy chọn",
                 "options": [],
                 "multi_select": False,
                 "allow_other": True,
@@ -620,14 +621,14 @@ def _build_ask_user_question_payload(info: Any, thread_id: str) -> dict[str, Any
 
 
 def _ensure_full_msg(full_msg: AIMessage | None, accumulated_content: list[str]) -> AIMessage | None:
-    """如果 full_msg 为空且有累积内容，构建 AIMessage"""
+    """Nếu full_msg rỗng và có nội dung đã tích lũy, tạo AIMessage"""
     if not full_msg and accumulated_content:
         return AIMessage(content="".join(accumulated_content))
     return full_msg
 
 
 def _extract_ai_message(messages: list[Any] | None) -> AIMessage | None:
-    """从消息列表中提取最后一条 AIMessage。"""
+    """Trích xuất AIMessage cuối cùng từ danh sách tin nhắn."""
     if not isinstance(messages, list):
         return None
 
@@ -651,7 +652,7 @@ async def _resolve_agent_runtime(
     thread_id: str | None,
     agent_kind: Literal["main", "subagent"] = "main",
 ) -> tuple[Agent, Any, dict]:
-    """解析智能体运行时，返回 (Agent, backend, agent_config)"""
+    """Giải quyết runtime của agent, trả về (Agent, backend, agent_config)"""
     agent_repo = AgentRepository(db)
     conv_repo = ConversationRepository(db)
     resolved_agent_slug = requested_agent_slug
@@ -660,22 +661,22 @@ async def _resolve_agent_runtime(
         conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
         if conversation:
             if conversation.uid != str(user.uid) or conversation.status == "deleted":
-                raise ValueError("对话线程不存在")
-            # Conversation.agent_id 是历史字段名，实际保存的是 Agent.slug。
+                raise ValueError("Thread hội thoại không tồn tại")
+            # Conversation.agent_id là tên trường lịch sử, thực tế lưu Agent.slug.
             if requested_agent_slug and requested_agent_slug != conversation.agent_id:
-                raise ValueError("已有线程已绑定智能体，不能切换")
+                raise ValueError("Thread đã gắn với agent khác, không thể chuyển đổi")
             resolved_agent_slug = conversation.agent_id
 
     if not resolved_agent_slug:
-        raise ValueError("缺少必需的 agent_slug 字段")
+        raise ValueError("Thiếu trường bắt buộc agent_slug")
 
     agent_item = await agent_repo.get_visible_by_slug(slug=resolved_agent_slug, user=user, kind=agent_kind)
     if not agent_item:
-        raise ValueError("智能体不存在或无权限访问")
+        raise ValueError("Agent không tồn tại hoặc không có quyền truy cập")
 
     backend = agent_manager.get_agent(agent_item.backend_id)
     if not backend:
-        raise ValueError(f"智能体后端 {agent_item.backend_id} 不存在")
+        raise ValueError(f"Backend của agent {agent_item.backend_id} không tồn tại")
 
     agent_config = await normalize_agent_context_config(
         (agent_item.config_json or {}).get("context", {}),
@@ -729,7 +730,7 @@ async def _ensure_thread_bound_agent(
         return
 
     if conversation.agent_id != agent_item.slug:
-        raise ValueError("已有线程已绑定智能体，不能切换")
+        raise ValueError("Thread đã gắn với agent khác, không thể chuyển đổi")
 
 
 def _normalize_attachment_file_ids(meta: dict | None) -> list[str]:
@@ -791,7 +792,7 @@ async def stream_agent_chat(
 
     meta = dict(meta or {})
     if "request_id" not in meta or not meta.get("request_id"):
-        logger.warning("请求缺少 request_id，已自动生成一个新的 request_id")
+        logger.warning("Yêu cầu thiếu request_id, đã tự động tạo một request_id mới")
         meta["request_id"] = str(uuid.uuid4())
 
     uid = str(current_user.uid)
@@ -806,7 +807,7 @@ async def stream_agent_chat(
 
     if conf.enable_content_guard and await content_guard.check(query):
         yield make_chunk(
-            status="error", error_type="content_guard_blocked", error_message="输入内容包含敏感词", meta=meta
+            status="error", error_type="content_guard_blocked", error_message="Nội dung đầu vào chứa từ ngữ bị cấm", meta=meta
         )
         return
 
@@ -906,11 +907,11 @@ async def stream_agent_chat(
             except Exception as e:
                 logger.error(f"Error saving user message: {e}")
 
-        # 先构建 langgraph_config
+        # Xây dựng langgraph_config trước
         langgraph_config = {"configurable": {"thread_id": thread_id, "uid": uid}}
 
-        # LangGraph 会自动从 checkpointer 恢复 state（包括 uploads）
-        # 无需手动加载或传递
+        # LangGraph tự động khôi phục state từ checkpointer (bao gồm cả uploads)
+        # Không cần tải thủ công hay truyền tổng hợp
 
         protocol_message_ids: dict[tuple[str, str], str] = {}
         async for mode, payload in _stream_agent_events(
@@ -1003,7 +1004,7 @@ async def stream_agent_chat(
                 request_id=meta.get("request_id"),
             )
             meta["time_cost"] = asyncio.get_event_loop().time() - start_time
-            yield make_chunk(status="interrupted", message="检测到敏感内容，已中断输出", meta=meta)
+            yield make_chunk(status="interrupted", message="Phát hiện nội dung nhạy cảm, đã ngắt đầu ra", meta=meta)
             return
 
         interrupted = False
@@ -1024,7 +1025,7 @@ async def stream_agent_chat(
             last_agent_state_signature = final_signature
             yield make_chunk(status="agent_state", agent_state=agent_state, meta=meta)
 
-        # 先存储数据库，再返回 finished，避免前端查询时数据未落库
+        # Lưu database trước, rồi mới trả về finished, tránh frontend query khi dữ liệu chưa được lưu
         try:
             await save_messages_from_langgraph_state(
                 agent_instance=agent,
@@ -1038,7 +1039,7 @@ async def stream_agent_chat(
             )
         except Exception as e:
             logger.exception(f"Error saving messages from LangGraph state: {e}")
-            yield make_chunk(status="warning", message=f"消息保存失败: {e}", meta=meta)
+            yield make_chunk(status="warning", message=f"Lưu tin nhắn thất bại: {e}", meta=meta)
 
         if interrupted:
             return
@@ -1058,7 +1059,7 @@ async def stream_agent_chat(
                     new_conv_repo,
                     thread_id,
                     full_msg=full_msg,
-                    error_message="对话已中断" if not full_msg else None,
+                    error_message="Hội thoại đã bị ngắt" if not full_msg else None,
                     error_type="interrupted",
                     trace_info=trace_info,
                     run_id=meta.get("run_id"),
@@ -1073,7 +1074,7 @@ async def stream_agent_chat(
         except Exception as exc:
             logger.error(f"Error during cleanup save: {exc}")
 
-        yield make_chunk(status="interrupted", message="对话已中断", meta=meta)
+        yield make_chunk(status="interrupted", message="Hội thoại đã bị ngắt", meta=meta)
 
     except Exception as e:
         logger.exception(f"Error streaming messages: {e}")
@@ -1250,7 +1251,7 @@ async def stream_agent_resume(
         if final_signature and final_signature != last_agent_state_signature:
             yield make_resume_chunk(status="agent_state", agent_state=agent_state, meta=meta)
 
-        # 先存储数据库，再返回 finished，避免前端查询时数据未落库
+        # Lưu database trước, rồi mới trả về finished, tránh frontend query khi dữ liệu chưa được lưu
         conv_repo = ConversationRepository(db)
         try:
             await save_messages_from_langgraph_state(
@@ -1265,7 +1266,7 @@ async def stream_agent_resume(
             )
         except Exception as e:
             logger.exception(f"Error saving messages from LangGraph state: {e}")
-            yield make_resume_chunk(status="warning", message=f"消息保存失败: {e}", meta=meta)
+            yield make_resume_chunk(status="warning", message=f"Lưu tin nhắn thất bại: {e}", meta=meta)
 
         if interrupted:
             return
@@ -1280,14 +1281,14 @@ async def stream_agent_resume(
             await save_partial_message(
                 new_conv_repo,
                 thread_id,
-                error_message="对话恢复已中断",
+                error_message="Khôi phục hội thoại đã bị ngắt",
                 error_type="resume_interrupted",
                 trace_info=trace_info,
                 run_id=meta.get("run_id"),
                 request_id=meta.get("request_id"),
             )
 
-        yield make_resume_chunk(status="interrupted", message="对话恢复已中断", meta=meta)
+        yield make_resume_chunk(status="interrupted", message="Khôi phục hội thoại đã bị ngắt", meta=meta)
 
     except Exception as e:
         logger.exception(f"Error during resume: {e}")
@@ -1321,7 +1322,14 @@ def _serialize_state_messages(values: dict[str, Any]) -> list[dict[str, Any]]:
             serialized.append(dict(message))
         else:
             serialized.append({"type": "unknown", "content": str(message)})
+            
+    from yuxi.utils.auth_utils import AuthUtils
+    for item in serialized:
+        if "content" in item and isinstance(item["content"], str):
+            item["content"] = AuthUtils.sign_markdown_images(item["content"])
+            
     return serialized
+
 
 
 async def _read_checkpoint_state(agent, *, uid: str, thread_id: str, context):
@@ -1350,10 +1358,10 @@ async def get_agent_state_view(
 
         agent_item = await agent_repo.get_by_slug(conversation.agent_id)
         if not agent_item:
-            raise HTTPException(status_code=404, detail="智能体不存在")
+            raise HTTPException(status_code=404, detail="Agent không tồn tại")
         agent = agent_manager.get_agent(agent_item.backend_id)
         if not agent:
-            raise HTTPException(status_code=404, detail="智能体后端不存在")
+            raise HTTPException(status_code=404, detail="Backend của agent không tồn tại")
         agent_config = await normalize_agent_context_config(
             (agent_item.config_json or {}).get("context", {}),
             db=db,
@@ -1385,7 +1393,7 @@ async def get_agent_state_view(
                 or parent_conversation.uid != str(current_uid)
                 or parent_conversation.status == "deleted"
             ):
-                raise HTTPException(status_code=404, detail="父对话线程不存在")
+                raise HTTPException(status_code=404, detail="Parent thread hội thoại không tồn tại")
             response["parent_thread_id"] = parent_conversation.thread_id
             response["subagent_thread"] = relation.to_dict()
             latest_run = await run_repo.get_latest_subagent_run_by_thread_for_user(
@@ -1396,12 +1404,12 @@ async def get_agent_state_view(
                 try:
                     response["subagent_run"] = serialize_subagent_run_state(latest_run)
                 except ValueError as exc:
-                    logger.error(f"子智能体运行记录格式异常: thread_id={thread_id}, run_id={latest_run.id}, {exc}")
-                    raise HTTPException(status_code=500, detail="子智能体运行记录格式异常") from exc
+                    logger.error(f"Bản ghi sub-agent run bị lỗi format: thread_id={thread_id}, run_id={latest_run.id}, {exc}")
+                    raise HTTPException(status_code=500, detail="Bản ghi sub-agent run bị lỗi format") from exc
         if include_messages:
             response["messages"] = _serialize_state_messages(values)
         return response
 
-    # 子智能体线程在创建时必然同时写入子对话与线程关系（见 SubagentRunService.start），
-    # 由上面的 conversation 分支统一处理；走到这里说明该 thread 没有对应对话，即线程不存在。
-    raise HTTPException(status_code=404, detail="对话线程不存在")
+    # Sub-agent thread được tạo đồng thời với sub-conversation và thread relationship (xem SubagentRunService.start),
+    # được xử lý ở nánh conversation phía trên; đến đây nghĩa là thread không có hội thoại tương ứng, tức là thread không tồn tại.
+    raise HTTPException(status_code=404, detail="Thread hội thoại không tồn tại")

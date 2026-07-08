@@ -263,14 +263,8 @@ class BaseContext:
         metadata={
             "name": "Giới hạn xem trước kết quả công cụ tóm tắt",
             "description": (
-                "Khi tóm tắt ngữ cảnh làm sạch lịch sử kết quả công cụ, kết quả đầy đủ sẽ được ghi vào outputs, và nội dung ToolMessage sẽ được thay thế bằng đường dẫn và phần xem trước không quá số token "
-                f"này, mặc định là {DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT}."
-=======
-            "name": "摘要工具结果 token 上限",
-            "description": (
-                "上下文摘要 L1 清洗历史工具结果时，超过该 token 数的 ToolMessage 会写入 outputs，"
-                "并在上下文中保留不超过该 token 数的预览；未超过则保持原样。默认 "
-                f"{DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT}。"
+                "Khi tóm tắt ngữ cảnh L1 làm sạch lịch sử kết quả công cụ, ToolMessage vượt quá số token này sẽ được ghi vào outputs, "
+                f"và ngữ cảnh sẽ giữ lại phần xem trước không vượt quá số token đó; nếu không vượt quá thì giữ nguyên. Mặc định là {DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT}."
             ),
             "type": "number",
             "auth": "admin",
@@ -280,12 +274,11 @@ class BaseContext:
     summary_l2_trigger_ratio: float = field(
         default=DEFAULT_SUMMARY_L2_TRIGGER_RATIO,
         metadata={
-            "name": "L2 摘要触发比例",
+            "name": "Tỷ lệ kích hoạt tóm tắt L2",
             "description": (
-                "L1 结构精简后，剩余上下文超过 摘要触发阈值 * 该比例 时才进入 L2 summary。"
-                "建议范围 0.1 到 1.0，值越小越容易触发 L2，默认 "
-                f"{DEFAULT_SUMMARY_L2_TRIGGER_RATIO}。"
->>>>>>> auth_upstream/main
+                "Sau khi L1 tinh giản cấu trúc, ngữ cảnh còn lại chỉ vào L2 summary khi vượt quá ngưỡng kích hoạt * tỷ lệ này. "
+                "Khuyến nghị dùng giá trị từ 0.1 đến 1.0, giá trị càng nhỏ càng dễ kích hoạt L2. Mặc định là "
+                f"{DEFAULT_SUMMARY_L2_TRIGGER_RATIO}."
             ),
             "type": "number",
             "auth": "admin",

@@ -16,6 +16,7 @@ from pymilvus import (
     Function,
     FunctionType,
     WeightedRanker,
+    RRFRanker,
     connections,
     db,
     utility,
@@ -1032,6 +1033,7 @@ class MilvusKB(KnowledgeBase):
                 bm25_drop_ratio_search = float(merged_kwargs.get("bm25_drop_ratio_search", 0.0))
                 vector_weight = float(merged_kwargs.get("vector_weight", 0.7))
                 bm25_weight = float(merged_kwargs.get("bm25_weight", 0.3))
+                hybrid_ranker_type = str(merged_kwargs.get("hybrid_ranker", "weighted")).lower()
 
                 vector_request = AnnSearchRequest(
                     data=query_embedding,
@@ -1050,10 +1052,17 @@ class MilvusKB(KnowledgeBase):
                     limit=bm25_top_k,
                     expr=file_expr,
                 )
+
+                if hybrid_ranker_type == "rrf":
+                    rrf_k = int(merged_kwargs.get("rrf_k", 60))
+                    ranker = RRFRanker(k=rrf_k)
+                else:
+                    ranker = WeightedRanker(vector_weight, bm25_weight)
+
                 results = await _run_milvus_query_io(
                     collection.hybrid_search,
                     reqs=[vector_request, bm25_request],
-                    rerank=WeightedRanker(vector_weight, bm25_weight),
+                    rerank=ranker,
                     limit=recall_top_k,
                     output_fields=output_fields,
                 )

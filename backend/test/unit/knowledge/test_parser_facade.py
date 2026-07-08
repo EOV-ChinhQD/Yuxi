@@ -139,7 +139,7 @@ def test_convert_with_docling_keeps_image_placeholder_when_upload_fails(
 
     markdown = parser_unified._convert_with_docling(file_path)
 
-    assert markdown == "before\n[图片: image_1000000.png]\nafter"
+    assert markdown == "before\n[picture: image_1000000.png]\nafter"
 
 
 def test_parser_parse_png_file_returns_markdown_text_with_mocked_ocr(
@@ -194,8 +194,9 @@ def test_parse_image_ignores_enable_ocr(tmp_path: Path) -> None:
     file_path = tmp_path / "parser_test.png"
     _build_png(file_path)
 
-    with pytest.raises(ValueError, match="必须启用OCR"):
+    with pytest.raises(ValueError, match="bắt buộc phải bật OCR"):
         parser_unified.parse_image(str(file_path), params={"ocr_engine": "disable", "enable_ocr": "rapid_ocr"})
+
 
 
 @pytest.mark.asyncio

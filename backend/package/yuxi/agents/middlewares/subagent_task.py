@@ -163,7 +163,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         )
 
     def _build_task_tool(self, available_agents: str) -> StructuredTool:
-        """构建 task 工具：启动子智能体后阻塞等待其最终结果。"""
+        """Xây dựng công cụ task: khởi chạy sub-agent rồi chặn chờ kết quả cuối cùng."""
 
         async def atask(
             description: Annotated[str, TASK_DESCRIPTION_ARG],
@@ -176,12 +176,12 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
                 subagent_slug=subagent_slug,
                 runtime=runtime,
                 thread_id=thread_id,
-                error_prefix="无法调用子智能体",
+                error_prefix="Không thể gọi sub-agent",
             )
             if error is not None:
                 return error
 
-            # 阻塞父智能体运行，直到子 run 终结再读取最终结果；运行失败时 result 含 error 信息
+            # Chặn agent cha cho đến khi sub run kết thúc rồi mới đọc kết quả; nếu run thất bại thì result chứa thông tin lỗi
             parent_runtime = started.parent_runtime
             subagent_service = _subagent_run_service_module()
             try:
@@ -217,7 +217,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         )
 
     def _build_async_subagent_tools(self, available_agents: str) -> list[StructuredTool]:
-        """构建后台子智能体生命周期工具：start/status/events/cancel/await。"""
+        """Xây dựng các công cụ vòng đời sub-agent chạy nền: start/status/events/cancel/await."""
 
         async def asubagent_start(
             description: Annotated[str, TASK_DESCRIPTION_ARG],
@@ -230,7 +230,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
                 subagent_slug=subagent_slug,
                 runtime=runtime,
                 thread_id=thread_id,
-                error_prefix="无法启动子智能体",
+                error_prefix="Không thể khởi chạy sub-agent",
             )
             if error is not None:
                 return error
@@ -258,7 +258,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         ) -> str | Command:
             from yuxi.services.agent_run_service import get_agent_run_progress, get_agent_run_result
 
-            parent_runtime, runtime_error = self._require_async_parent_runtime("无法查询子智能体")
+            parent_runtime, runtime_error = self._require_async_parent_runtime("Không thể truy vấn sub-agent")
             if runtime_error:
                 return runtime_error
             try:
@@ -268,7 +268,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
                     run_id=run_id,
                 )
 
-                # 如果 run 已经终结，则尝试读取最终结果；否则 result 保持 None
+                # Nếu run đã kết thúc, đọc kết quả cuối cùng; nếu chưa thì result giữ nguyên None
                 result = None
                 if run.status in TERMINAL_RUN_STATUSES:
                     async with pg_manager.get_async_session_context() as db:
@@ -300,7 +300,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         ) -> str | Command:
             from yuxi.services.run_queue_service import list_run_stream_events, normalize_after_seq
 
-            parent_runtime, runtime_error = self._require_async_parent_runtime("无法读取子智能体事件")
+            parent_runtime, runtime_error = self._require_async_parent_runtime("Không thể đọc sự kiện sub-agent")
             if runtime_error:
                 return runtime_error
             try:
@@ -308,7 +308,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
                     run_id=run_id,
                     uid=parent_runtime.uid,
                     created_by_run_id=parent_runtime.created_by_run_id,
-                )  # 校验子智能体归属
+                )  # Xác thực quyền sở hữu sub-agent
             except ValueError as exc:
                 return str(exc)
 
@@ -330,7 +330,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         ) -> str | Command:
             from yuxi.services.agent_run_service import request_cancel_agent_run
 
-            parent_runtime, runtime_error = self._require_async_parent_runtime("无法取消子智能体")
+            parent_runtime, runtime_error = self._require_async_parent_runtime("Không thể hủy sub-agent")
             if runtime_error:
                 return runtime_error
             try:
@@ -338,9 +338,9 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
                     run_id=run_id,
                     uid=parent_runtime.uid,
                     created_by_run_id=parent_runtime.created_by_run_id,
-                )  # 校验子智能体归属
+                )  # Xác thực quyền sở hữu sub-agent
 
-                # 取消子智能体运行，返回最新 run 状态
+                # Hủy lượt chạy sub-agent, trả về trạng thái run mới nhất
                 async with pg_manager.get_async_session_context() as db:
                     run = await request_cancel_agent_run(run_id=run_id, current_uid=parent_runtime.uid, db=db)
 
@@ -363,18 +363,18 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         ) -> str | Command:
             from yuxi.services.agent_run_service import AgentRunWaitTimeout, await_agent_run_result
 
-            parent_runtime, runtime_error = self._require_async_parent_runtime("无法等待子智能体")
+            parent_runtime, runtime_error = self._require_async_parent_runtime("Không thể chờ sub-agent")
             if runtime_error:
                 return runtime_error
             wait_timed_out = False
             try:
-                # 等待前校验 run 归属，避免越权等待其它子任务
+                # Xác thực quyền sở hữu run trước khi chờ, tránh chờ trái phép tác vụ con khác
                 await self._get_verified_subagent_run(
                     run_id=run_id,
                     uid=parent_runtime.uid,
                     created_by_run_id=parent_runtime.created_by_run_id,
                 )
-                # 等待结束后重新读取已验证的最新 run 状态
+                # Sau khi chờ xong, đọc lại trạng thái run đã xác thực mới nhất
                 result = await await_agent_run_result(run_id=run_id, current_uid=parent_runtime.uid)
                 run = await self._get_verified_subagent_run(
                     run_id=run_id,
@@ -404,7 +404,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
             }
             if wait_timed_out:
                 payload["wait_timed_out"] = True
-                payload["message"] = "子智能体仍在运行，等待最终结果超时；请稍后继续查询。"
+                payload["message"] = "Sub-agent vẫn đang chạy, chờ kết quả cuối cùng đã hết thời gian; vui lòng truy vấn lại sau."
             subagent_run = subagent_service.serialize_subagent_run_state(run)
             return _json_tool_command(payload, runtime.tool_call_id, subagent_run=subagent_run)
 
@@ -437,7 +437,7 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         ]
 
     def _parent_runtime(self) -> _ParentRuntime:
-        """从父智能体 context 中抽取子智能体运行所需的最小父运行信息。"""
+        """Trích xuất thông tin parent run tối thiểu cần thiết cho sub-agent từ context của agent cha."""
         parent_thread_id = str(getattr(self.parent_context, "parent_thread_id", None) or self.parent_context.thread_id)
         file_thread_id = str(getattr(self.parent_context, "file_thread_id", None) or parent_thread_id)
         uid = str(getattr(self.parent_context, "uid", "") or "").strip()
@@ -449,12 +449,12 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         )
 
     def _require_async_parent_runtime(self, error_prefix: str) -> tuple[_ParentRuntime, str | None]:
-        """校验后台子智能体工具必须依赖的父运行上下文。"""
+        """Xác thực context parent run mà công cụ sub-agent nền phải phụ thuộc."""
         parent_runtime = self._parent_runtime()
         if not parent_runtime.uid:
-            return parent_runtime, f"{error_prefix}：当前运行时缺少 uid"
+            return parent_runtime, f"{error_prefix}: runtime hiện tại thiếu uid"
         if not parent_runtime.created_by_run_id:
-            return parent_runtime, f"{error_prefix}：当前运行时缺少父运行 ID"
+            return parent_runtime, f"{error_prefix}: runtime hiện tại thiếu parent run ID"
         return parent_runtime, None
 
     async def _start_subagent(
@@ -466,10 +466,10 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         thread_id: str | None,
         error_prefix: str,
     ) -> tuple[_StartedSubagent | None, str | Command | None]:
-        """校验并启动（或继续）后台子智能体 run；成功返回启动结果，失败返回可直接回传的错误响应。"""
+        """Xác thực và khởi chạy (hoặc tiếp tục) sub-agent run nền; thành công trả về kết quả khởi động, thất bại trả về phản hồi lỗi trực tiếp."""
         if subagent_slug not in self.subagents:
             allowed = ", ".join(f"`{slug}`" for slug in self.subagents)
-            return None, f"无法调用子智能体 {subagent_slug}，可用子智能体只有：{allowed}"
+            return None, f"Không thể gọi sub-agent {subagent_slug}, các sub-agent khả dụng chỉ có: {allowed}"
         if not runtime.tool_call_id:
             raise ValueError("Tool call ID is required for subagent invocation")
 
@@ -538,7 +538,7 @@ class _StartedSubagent:
 
 
 def _task_result_response(result: dict[str, Any], tool_call_id: str, subagent_run: dict[str, Any]) -> Command:
-    """Chuyển đổi kết quả cuối cùng của run sub-agent chạy nền thành kết quả công cụ task đồng bộ."""|
+    """Chuyển đổi kết quả cuối cùng của run sub-agent chạy nền thành kết quả công cụ task đồng bộ."""
     output = str(result.get("output") or "").strip()
     error = result.get("error") if isinstance(result.get("error"), dict) else None
     if not output and error:
