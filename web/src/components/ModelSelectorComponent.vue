@@ -14,7 +14,7 @@
             class="model-clear-btn"
             @mousedown.prevent.stop
             @click.stop="handleClear"
-            title="清空选择"
+            title="Xóa sạchChọn"
           >
             <X :size="14" />
           </button>
@@ -332,7 +332,7 @@ const handleSelectV2Model = (spec) => {
   dropdownOpen.value = false
 }
 
-// 清空选择
+// Xóa sạchChọn
 const handleClear = () => {
   if (props.disabled) return
   state.currentModelStatus = null

@@ -59,7 +59,7 @@ const parsedArgs = computed(() => {
 
 const subagentRun = computed(() => props.toolCall.subagent_run || null)
 const subagentDisplayName = computed(
-  () => subagentRun.value?.subagent_name || props.toolCall.display_label || '子智能体'
+  () => subagentRun.value?.subagent_name || props.toolCall.display_label || 'Trợ lý thông minh con'
 )
 const description = computed(
   () => parsedArgs.value.description || subagentRun.value?.description || ''
@@ -74,22 +74,21 @@ const childThreadId = computed(
 const hasToolResult = computed(() =>
   Boolean(props.toolCall.tool_call_result || props.toolCall.result)
 )
-// 是否为当前真正在执行的子智能体调用（同一子线程的多次 steer 中只有最后一个为活跃）。
+// Có phải là cuộc gọi con tác nhân đang thực sự thực hiện hiện tại (nhiều lần trong cùng một luồng con) steer trong đó chỉ có cái cuối cùng là hoạt động）。
 const isActiveRun = computed(() =>
   Boolean(activeSubagentToolCallIds?.value?.has(String(props.toolCall.id)))
 )
 const runStatus = computed(() => {
   if (props.toolCall.status === 'error') return 'failed'
-  // ongoing 期间工具结果不流式：有结果说明是历史/已落库，按结果展示；
-  // 没有结果时，只有「活跃」调用算运行中，其余 steer 历史调用视为已完成（结果待整轮结束后回填）。
+  // ongoing Trong thời gian này, kết quả công cụ không được phát trực tiếp: nếu có kết quả, điều đó có nghĩa là dữ liệu lịch sử/đã lưu, và kết quả được hiển thị; // Khi không có kết quả, chỉ cuộc gọi 'hoạt động' được coi là đang chạy, các cuộc gọi khác steer Lịch sử gọi được xem là đã hoàn thành ( kết quả sẽ được điền lại sau khi toàn bộ vòng kết thúc )）。
   if (hasToolResult.value) return subagentRun.value?.status === 'failed' ? 'failed' : 'completed'
   if (isActiveRun.value) return 'running'
   return 'completed'
 })
 const runStatusLabel = computed(() => {
-  if (runStatus.value === 'completed') return '已完成'
-  if (runStatus.value === 'failed') return '失败'
-  if (runStatus.value === 'running') return '运行中'
+  if (runStatus.value === 'completed') return 'Đã hoàn thành'
+  if (runStatus.value === 'failed') return 'Thất bại'
+  if (runStatus.value === 'running') return 'Đang chạy'
   return ''
 })
 const runStatusClass = computed(() => ({
@@ -97,9 +96,9 @@ const runStatusClass = computed(() => ({
   'is-completed': runStatus.value === 'completed',
   'is-failed': runStatus.value === 'failed'
 }))
-// 映射到 BaseToolCall 的图标状态（failed → error）
+// Ánh xạ đến BaseToolCall Trạng thái biểu tượng（failed → error）
 const baseStatus = computed(() => (runStatus.value === 'failed' ? 'error' : runStatus.value))
-// ongoing 期间 task 结果不流式：只展示工具结果，状态摘要不承载后端预览文本。
+// ongoing Trong thời gian task Kết quả không dòng: Chỉ hiển thị kết quả công cụ, tóm tắt trạng thái không chứa văn bản xem trước phía sau。
 const displayResult = computed(() => {
   const toolResult = props.toolCall.tool_call_result?.content || props.toolCall.result
   if (toolResult) return toolResult
@@ -129,7 +128,7 @@ const formatToolCall = (toolCall) => {
   return `Call(${name}): ${args}`
 }
 
-// 子线程实时轨迹：最新一条 ongoing 消息——优先展示工具调用，否则展示正文。
+// Theo dõi luồng phụ thời gian thực: mới nhất ongoing Tin — ưu tiên hiển thị gọi công cụ, nếu không thì hiển thị văn bản。
 const liveStep = computed(() => {
   if (!isRunning.value || !childThreadId.value || typeof getThreadOngoingMessages !== 'function') {
     return ''

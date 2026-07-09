@@ -7,29 +7,29 @@ export const uploadMultimodalImage = async (file) => {
   if (!file) return null
 
   if (file.size > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
-    message.error('图片文件过大，请选择小于10MB的图片')
+    message.error('Tệp ảnh quá lớn, vui lòng chọn nhỏ hơn10MBcủa hình ảnh')
     return null
   }
 
   if (!file.type?.startsWith('image/')) {
-    message.error('请选择有效的图片文件')
+    message.error('Vui lòng chọn file hình ảnh hợp lệ')
     return null
   }
 
   try {
-    message.loading({ content: '正在处理图片...', key: 'image-upload' })
+    message.loading({ content: 'Đang xử lý hình ảnh...', key: 'image-upload' })
 
     const result = await multimodalApi.uploadImage(file)
     if (!result.success) {
       message.error({
-        content: `图片处理失败: ${result.error}`,
+        content: `Xử lý hình ảnh thất bại: ${result.error}`,
         key: 'image-upload'
       })
       return null
     }
 
     message.success({
-      content: '图片处理成功',
+      content: 'Xử lý hình ảnh thành công',
       key: 'image-upload',
       duration: 2
     })
@@ -46,9 +46,9 @@ export const uploadMultimodalImage = async (file) => {
       originalName: file.name || result.original_filename || 'pasted-image'
     }
   } catch (error) {
-    console.error('图片上传失败:', error)
+    console.error('Tải lên hình ảnh thất bại:', error)
     message.error({
-      content: `图片上传失败: ${error.message || '未知错误'}`,
+      content: `Tải lên hình ảnh thất bại: ${error.message || 'Lỗi không xác định'}`,
       key: 'image-upload'
     })
     return null

@@ -1,5 +1,5 @@
 /**
- * Chunk 工具函数
+ * Chunk hàm công cụ
  */
 
 export const DEFAULT_CHUNK_PRESET_ID = 'general'
@@ -46,10 +46,10 @@ export const buildChunkParamsPayload = (source, options = {}) => {
 }
 
 /**
- * 查找两个字符串的重叠部分
- * @param {string} str1 - 第一个字符串
- * @param {string} str2 - 第二个字符串
- * @returns {string} - 重叠部分的内容
+ * Tìm phần chồng lấn giữa hai chuỗi
+ * @param {string} str1 - Chuỗi đầu tiên
+ * @param {string} str2 - Chữ ký thứ hai
+ * @returns {string} - Nội dung phần chồng lấp
  */
 export function findOverlap(str1, str2) {
   if (!str1 || !str2) return ''
@@ -57,7 +57,7 @@ export function findOverlap(str1, str2) {
   const maxOverlap = Math.min(str1.length, str2.length)
   let overlap = ''
 
-  // 从最长可能的重叠开始检查
+  // Bắt đầu kiểm tra từ sự chồng lấp dài nhất có thể
   for (let i = maxOverlap; i > 10; i--) {
     const endStr1 = str1.slice(-i)
     const startStr2 = str2.slice(0, i)
@@ -72,16 +72,16 @@ export function findOverlap(str1, str2) {
 }
 
 /**
- * 合并chunks并处理重叠内容
- * @param {Array} chunks - chunk数组，每个chunk包含id, content, chunk_order_index
- * @returns {Object} - 合并结果，包含content和chunks数组
+ * GộpchunksVà xử lý nội dung trùng lặp
+ * @param {Array} chunks - chunkMảng, mỗichunkChứaid, content, chunk_order_index
+ * @returns {Object} - Kết quả hợp nhất, bao gồmcontentvàchunksmảng
  */
 export function mergeChunks(chunks) {
   if (!chunks || chunks.length === 0) {
     return { content: '', chunks: [] }
   }
 
-  // 按order排序
+  // Nhấnorder排序
   const sorted = [...chunks].sort((a, b) => a.chunk_order_index - b.chunk_order_index)
   const merged = []
   let currentContent = ''
@@ -91,7 +91,7 @@ export function mergeChunks(chunks) {
     const content = chunk.content
 
     if (i === 0) {
-      // 第一个chunk直接添加
+      // Đầu tiênchunkThêm trực tiếp
       currentContent = content
       merged.push({
         ...chunk,
@@ -99,7 +99,7 @@ export function mergeChunks(chunks) {
         endOffset: content.length
       })
     } else {
-      // 查找重叠部分
+      // Tìm phần chồng lấn
       const overlap = findOverlap(currentContent, content)
       const newContent = content.slice(overlap.length)
 
@@ -123,22 +123,22 @@ export function mergeChunks(chunks) {
 }
 
 /**
- * 将文本分割成段落
- * @param {string} content - 文本内容
- * @returns {Array} - 段落数组
+ * Chia văn bản thành các đoạn
+ * @param {string} content - Nội dung văn bản
+ * @returns {Array} - Mảng đoạn
  */
 export function splitIntoParagraphs(content) {
   if (!content) return []
 
-  // 按换行符分割，保留空段落
+  // Tách theo ký tự xuống dòng, giữ lại đoạn trống
   return content.split(/\n\n+/).filter((para) => para.trim() !== '')
 }
 
 /**
- * 为每个段落找到对应的chunk
- * @param {Array} paragraphs - 段落数组
- * @param {Array} mappedChunks - 映射后的chunks
- * @returns {Array} - 包含chunk信息的段落
+ * Tìm tương ứng cho mỗi đoạn vănchunk
+ * @param {Array} paragraphs - Mảng đoạn
+ * @param {Array} mappedChunks - Sau khi ánh xạchunks
+ * @returns {Array} - ChứachunkĐoạn thông tin
  */
 export function mapParagraphsToChunks(paragraphs, mappedChunks) {
   if (!paragraphs || !mappedChunks) return []
@@ -147,7 +147,7 @@ export function mapParagraphsToChunks(paragraphs, mappedChunks) {
   return paragraphs.map((paragraph) => {
     const paragraphLength = paragraph.length + 2 // +2 for the \n\n
 
-    // 找到包含此位置的chunk
+    // Tìm thấy chứa vị trí nàychunk
     const chunk =
       mappedChunks.find(
         (chunk) => currentOffset >= chunk.startOffset && currentOffset < chunk.endOffset
@@ -166,10 +166,10 @@ export function mapParagraphsToChunks(paragraphs, mappedChunks) {
 }
 
 /**
- * 获取chunk的预览文本
- * @param {string} content - chunk内容
- * @param {number} maxLength - 最大长度
- * @returns {string} - 预览文本
+ * LấychunkVăn bản xem trước
+ * @param {string} content - chunknội dung
+ * @param {number} maxLength - Độ dài tối đa
+ * @returns {string} - Xem trước văn bản
  */
 export function getChunkPreview(content, maxLength = 100) {
   if (!content) return ''

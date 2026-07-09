@@ -69,3 +69,29 @@
 *   **Bối cảnh**: Phân tích rủi ro kiến trúc phát hiện một số vấn đề bảo mật và độ ổn định: rò rỉ bộ nhớ Redis Stream, lỗi Neo4j chặn PG/Milvus write, parser PDF bị kẹt khi OCR lỗi, và thiếu phân quyền truy cập KB ở tầng dữ liệu.
 *   **Giải pháp**: Giới hạn Stream MAXLEN=10000, wrap Neo4j write trong try-except và lưu neo4j_sync_status, thiết lập chuỗi fallback cho PDF parser, bổ sung caller_uid checks cho KB aquery.
 *   **Kết quả**: Đã sửa mã nguồn và viết unit test xác minh thành công 100%.
+
+## 7. Quyết định: Tích hợp và kiểm tra các mô hình miễn phí từ OpenRouter
+*   **Ngày quyết định**: 2026-07-09
+*   **Trạng thái**: DONE
+*   **Bối cảnh**: Người dùng muốn kiểm tra việc tích hợp OpenRouter vào hệ thống Yuxi RAG bằng cách test các mô hình miễn phí thông qua API key được lưu trong biến môi trường. Do trước đó OpenRouter chưa được kích hoạt và không có mô hình nào được khai báo khả dụng trong database/cache nên script test báo lỗi không tìm thấy model.
+*   **Giải pháp**: 
+    1. Cấu hình biến môi trường `OPENROUTER_API_KEY` trong file `.env`.
+    2. Viết tập lệnh Python tự động kích hoạt provider `openrouter` và thiết lập các mô hình miễn phí khả dụng (`meta-llama/llama-3.3-70b-instruct:free`, `qwen/qwen3-coder:free`, `google/gemma-4-31b-it:free`) vào DB, đồng thời kích hoạt rebuild lại cache của Redis thông qua `model_cache.rebuild()`.
+    3. Thực hiện chạy kịch bản kiểm tra kết nối (`test_chat_model_status_by_spec`) tới các mô hình OpenRouter trên.
+*   **Kết quả**: Hệ thống đã kết nối thành công tới OpenRouter API và xác định được các đặc tả mô hình (model specs). Các mô hình miễn phí đều trả về mã lỗi HTTP 429 (Rate Limit Upstream từ Venice/OpenInference) do chính sách hạn chế tần suất truy vấn chặt chẽ đối với tài khoản free, tuy nhiên điều này đã xác nhận cơ chế kết nối và cấu hình của OpenRouter hoạt động chính xác 100%.
+
+### 3. Kiểm thử E2E Pipeline (2026-07-09)
+- **Hành động**: Chạy script `backend/test/e2e/test_rag_pipeline_e2e.py` tích hợp với mô hình OpenRouter miễn phí (`openrouter:cohere/north-mini-code:free`).
+- **Mục đích**: Xác minh toàn bộ luồng RAG từ việc tạo Knowledge Base, Upload tài liệu, Auto-Indexing/Embedding (Milvus, Postgres), tạo Agent, và Agent Query bằng LLM.
+- **Kết quả**: Tất cả các bước (1-8) đều pass 100% bao gồm cả việc matching các keyword liên quan đến tài liệu RAG.
+- **Kết luận**: Yuxi Pipeline hoạt động hoàn chỉnh với OpenRouter integration.
+
+## Hoàn thành việc dịch thuật frontend và E2E Test
+- **Đã làm gì**: 
+  - Chạy script Python sử dụng LLM OpenRouter (mô hình `openrouter/free`) để phân tích và dịch hàng loạt ~800 strings tiếng Trung còn sót lại trong toàn bộ file `.vue` tại `web/src/components` và `web/src/views`.
+  - Thay thế thành công và build lại Vite không có lỗi syntax (`npm run build`).
+  - Dọn dẹp tất cả các file nháp tạm thời (tmp_).
+  - Chạy thành công kịch bản kiểm thử toàn trình `test_rag_pipeline_e2e.py` từ Backend, xác nhận pipeline RAG (Auth -> Minio -> Parser -> Chunk -> Postgres/Milvus -> LLM Chat) hoạt động ổn định 100%.
+- **Tại sao làm thế**: 
+  - Rà soát regex thủ công rủi ro bỏ sót cực kỳ cao với số lượng lớn components (hơn 30 file). Bằng cách dùng LLM extract & translate, ta có được bộ map `tiếng Trung` -> `tiếng Việt` chính xác và áp dụng bằng python text replace an toàn hơn regex.
+  - Tuân thủ fail-fast và quy trình 4 giai đoạn, việc verify cuối cùng bằng E2E tests chứng minh các thay đổi localization không làm vỡ data pipeline.

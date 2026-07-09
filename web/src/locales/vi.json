@@ -1,0 +1,15 @@
+{
+  "app": {
+    "title": "Yuxi RAG",
+    "loading": "Đang tải...",
+    "confirm": "Xác nhận",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "success": "Thành công",
+    "error": "Lỗi",
+    "warning": "Cảnh báo",
+    "info": "Thông tin"
+  }
+}

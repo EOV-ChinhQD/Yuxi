@@ -130,7 +130,7 @@ const handlePastedImage = async (file) => {
     const imageData = await uploadMultimodalImage(file)
     handleImageUpload(imageData)
   } catch (error) {
-    console.error('图片上传失败:', error)
+    console.error('Tải lên hình ảnh thất bại:', error)
   }
 }
 

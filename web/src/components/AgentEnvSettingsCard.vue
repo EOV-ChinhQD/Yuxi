@@ -2,15 +2,15 @@
   <div class="agent-env-settings">
     <div class="header-section">
       <div class="header-content">
-        <div class="section-title">沙盒环境变量</div>
+        <div class="section-title">Biến môi trường Sandbox</div>
         <p class="section-description">
-          配置当前用户的 Agent 沙盒环境变量。新建沙盒时会注入这些变量，并覆盖同名全局 sandbox.env。
+          Cấu hình biến môi trường Agent Sandbox cho người dùng hiện tại. Các biến này sẽ được đưa vào khi tạo sandbox mới và ghi đè sandbox.env toàn cục cùng tên.
         </p>
       </div>
       <div class="header-actions">
         <a-button class="lucide-icon-btn" :loading="loading" @click="loadAgentEnv">
           <template #icon><RefreshCw :size="16" :class="{ spin: loading }" /></template>
-          刷新
+          Làm mới
         </a-button>
         <a-button type="primary" :loading="saving" @click="saveAgentEnv">
           {{ saveButtonText }}
@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <div class="env-tip">保存后仅对新建沙盒生效，已运行沙盒不会热更新。</div>
+    <div class="env-tip">Chỉ có hiệu lực cho sandbox mới được tạo, không cập nhật nóng cho sandbox đang chạy.</div>
 
     <a-spin :spinning="loading">
       <McpEnvEditor
@@ -72,7 +72,7 @@ const savedEnvKeys = computed(() => Object.keys(lastSavedEnv.value || {}))
 const hasUnsavedChanges = computed(
   () => !isSameEnv(normalizeEnv(draftEnv.value), lastSavedEnv.value)
 )
-const saveButtonText = computed(() => (hasUnsavedChanges.value ? '保存（有修改）' : '保存'))
+const saveButtonText = computed(() => (hasUnsavedChanges.value ? 'Lưu (Đã sửa)' : 'Lưu'))
 
 const updateDraftEnv = (value) => {
   const nextEnv = normalizeEnv(value)
@@ -84,21 +84,21 @@ const updateDraftEnv = (value) => {
 const validateEnv = (env) => {
   const entries = Object.entries(env)
   if (entries.length > MAX_ENV_COUNT) {
-    message.error(`环境变量数量不能超过 ${MAX_ENV_COUNT} 个`)
+    message.error(`Số lượng biến môi trường không được vượt quá ${MAX_ENV_COUNT}`)
     return false
   }
 
   for (const [key, value] of entries) {
     if (key.length > MAX_ENV_KEY_LENGTH) {
-      message.error(`环境变量名长度不能超过 ${MAX_ENV_KEY_LENGTH}`)
+      message.error(`Độ dài tên biến môi trường không được vượt quá ${MAX_ENV_KEY_LENGTH}`)
       return false
     }
     if (!ENV_KEY_PATTERN.test(key)) {
-      message.error(`环境变量名 ${key} 格式不正确`)
+      message.error(`Tên biến môi trường ${key} không đúng định dạng`)
       return false
     }
     if (value.length > MAX_ENV_VALUE_LENGTH) {
-      message.error(`环境变量 ${key} 的值过长`)
+      message.error(`Giá trị biến môi trường ${key} quá dài`)
       return false
     }
   }
@@ -114,7 +114,7 @@ const loadAgentEnv = async () => {
     lastSavedEnv.value = env
     editorRevision.value += 1
   } catch (error) {
-    message.error(error.message || '加载环境变量失败')
+    message.error(error.message || 'Tải biến môi trường thất bại')
   } finally {
     loading.value = false
   }
@@ -124,7 +124,7 @@ const saveAgentEnv = async () => {
   const env = normalizeEnv(draftEnv.value)
   if (!validateEnv(env)) return
   if (isSameEnv(env, lastSavedEnv.value)) {
-    message.info('环境变量未变化')
+    message.info('Biến môi trường không thay đổi')
     return
   }
 
@@ -134,9 +134,9 @@ const saveAgentEnv = async () => {
     draftEnv.value = env
     lastSavedEnv.value = env
     editorRevision.value += 1
-    message.success('环境变量已保存')
+    message.success('Đã lưu biến môi trường')
   } catch (error) {
-    message.error(error.message || '保存环境变量失败')
+    message.error(error.message || 'Lưu biến môi trường thất bại')
   } finally {
     saving.value = false
   }

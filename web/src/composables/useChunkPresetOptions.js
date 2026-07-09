@@ -33,7 +33,7 @@ export const useChunkPresetOptions = () => {
         return chunkPresetOptions.value
       })
       .catch((error) => {
-        console.error('加载分块策略失败:', error)
+        console.error('Tải chiến lược chia nhỏ thất bại:', error)
         chunkPresetOptions.value = []
         return chunkPresetOptions.value
       })

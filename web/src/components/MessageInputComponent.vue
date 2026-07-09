@@ -1344,7 +1344,7 @@ defineExpose({
     background: var(--main-10);
 
     &::after {
-      content: '释放以上传附件';
+      content: 'Phát hành sau khi tải lên tệp đính kèm';
       position: absolute;
       inset: 6px;
       z-index: 5;

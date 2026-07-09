@@ -24,7 +24,7 @@
           </div>
 
           <div v-if="activeQuestion.operation" class="approval-operation">
-            <span class="label">操作：</span>
+            <span class="label">Thao tác: </span>
             <span class="operation-text">{{ activeQuestion.operation }}</span>
           </div>
 
@@ -67,7 +67,7 @@
                 :value="otherTexts[activeQuestion.questionId] || ''"
                 :disabled="isProcessing"
                 rows="1"
-                placeholder="其他：请输入自定义内容"
+                placeholder="Khác: Vui lòng nhập nội dung tùy chỉnh"
                 @input="handleOtherTextInput(activeQuestion.questionId, $event)"
               ></textarea>
             </div>
@@ -76,7 +76,7 @@
       </div>
 
       <div class="approval-actions">
-        <button class="btn btn-reject" @click="handleCancel" :disabled="isProcessing">取消</button>
+        <button class="btn btn-reject" @click="handleCancel" :disabled="isProcessing">Hủy</button>
         <button
           class="btn btn-approve"
           @click="handlePrimaryAction"
@@ -88,7 +88,7 @@
 
       <div v-if="isProcessing" class="approval-processing">
         <span class="processing-spinner"></span>
-        处理中...
+        Đang xử lý...
       </div>
     </div>
   </transition>
@@ -118,7 +118,7 @@ const OTHER_TEXTAREA_MAX_ROWS = 4
 
 const normalizedQuestions = computed(() => {
   const questions = normalizeQuestions(props.questions)
-  // 添加 otherOptionValue 字段
+  // Thêm otherOptionValue Trường
   return questions.map((q) => {
     const otherOption = q.options.find((opt) => isOtherOption(opt))
     return {
@@ -308,7 +308,7 @@ const isCurrentQuestionAnswered = computed(() => {
   return isQuestionAnswered(activeQuestion.value)
 })
 
-const primaryButtonText = computed(() => (isLastQuestion.value ? '提交' : '下一项'))
+const primaryButtonText = computed(() => (isLastQuestion.value ? 'Gửi' : 'Tiếp theo'))
 
 const isPrimaryButtonDisabled = computed(() => {
   if (isProcessing.value) return true

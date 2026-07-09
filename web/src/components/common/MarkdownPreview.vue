@@ -297,7 +297,7 @@ const enhanceHtmlPreviews = () => {
         : `${Date.now()}-${Math.random()}`
     }`
     iframe.className = 'html-preview-frame'
-    iframe.title = 'HTML 预览'
+    iframe.title = 'HTML Xem trước'
     iframe.setAttribute('sandbox', 'allow-scripts')
     iframe.setAttribute('loading', 'lazy')
     iframe.setAttribute('referrerpolicy', 'no-referrer')

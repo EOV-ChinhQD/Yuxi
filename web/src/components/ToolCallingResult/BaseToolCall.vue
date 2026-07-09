@@ -32,7 +32,7 @@
             :tool-name="toolName"
             :result-content="resultContent"
           >
-            工具&nbsp; <span class="tool-name">{{ toolName }}</span> &nbsp; 执行完成
+            Công cụ&nbsp; <span class="tool-name">{{ toolName }}</span> &nbsp; Hoàn thành thực thi
           </slot>
 
           <slot
@@ -41,12 +41,12 @@
             :tool-name="toolName"
             :error-message="toolCall.error_message"
           >
-            工具&nbsp; <span class="tool-name">{{ toolName }}</span> &nbsp; 执行失败
+            Công cụ&nbsp; <span class="tool-name">{{ toolName }}</span> &nbsp; Thực thi thất bại
             <span v-if="toolCall.error_message">（{{ toolCall.error_message }}）</span>
           </slot>
 
           <slot name="header-running" v-else :tool-name="toolName">
-            正在调用工具: &nbsp; <span class="tool-name">{{ toolName }}</span>
+            Đang gọi công cụ: &nbsp; <span class="tool-name">{{ toolName }}</span>
           </slot>
         </template>
       </div>
@@ -64,7 +64,7 @@
       <div class="tool-params" v-if="hasParams && !hideParams">
         <slot name="params" :tool-call="toolCall" :args="formattedArgs">
           <div class="tool-params-content">
-            <strong>参数: </strong>
+            <strong>Tham số: </strong>
             <span>{{ formattedArgs }}</span>
           </div>
         </slot>
@@ -113,12 +113,12 @@ const props = defineProps({
     type: String,
     default: 'card'
   },
-  // 外部可覆盖状态以驱动图标：'running' | 'completed' | 'failed'（用于结果不随流式返回的工具，如 task）
+  // Trạng thái bên ngoài có thể ghi đè để điều khiển biểu tượng：'running' | 'completed' | 'failed'（Công cụ dùng cho kết quả không được trả về theo luồng, ví dụ như task）
   status: {
     type: String,
     default: ''
   },
-  // 即使没有 tool_call_result 也展示结果区（配合外部提供的结果内容）
+  // Ngay cả khi không có tool_call_result Cũng hiển thị khu vực kết quả (kết hợp với nội dung kết quả do bên ngoài cung cấp）
   forceShowResult: {
     type: Boolean,
     default: false
@@ -135,7 +135,7 @@ const toggleExpand = () => {
   isExpanded.value = !isExpanded.value
 }
 
-// 图标状态：优先用外部传入的 status，否则按 tool_call_result/status 推断
+// Trạng thái biểu tượng: Ưu tiên sử dụng giá trị được truyền từ bên ngoài status，Nếu không, nhấn tool_call_result/status Suy luận
 const effectiveStatus = computed(() => {
   if (props.status) return props.status
   if (props.toolCall.status === 'success' || props.toolCall.tool_call_result) return 'completed'

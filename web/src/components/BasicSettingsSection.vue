@@ -51,7 +51,7 @@
           <div class="setting-row two-cols">
             <div class="col-item">
               <div class="setting-label">
-                {{ items?.default_ocr_engine?.des || '默认 OCR 解析引擎' }}
+                {{ items?.default_ocr_engine?.des || 'mặc định OCR Công cụ phân tích' }}
               </div>
               <div class="setting-content">
                 <a-select
@@ -192,7 +192,7 @@ const configStore = useConfigStore()
 const userStore = useUserStore()
 const items = computed(() => configStore.config?._config_items || {})
 const ocrEngineOptions = [
-  { value: 'disable', label: '不启用' },
+  { value: 'disable', label: 'Không bật' },
   { value: 'rapid_ocr', label: 'RapidOCR (ONNX)' },
   { value: 'mineru_ocr', label: 'MinerU OCR' },
   { value: 'mineru_official', label: 'MinerU Official API' },

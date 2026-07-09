@@ -71,7 +71,7 @@ const getRemoteConfig = async () => {
   try {
     await configStore.refreshConfig()
   } catch (error) {
-    console.warn('加载系统配置失败:', error)
+    console.warn('Tải cấu hình hệ thống thất bại:', error)
   }
 }
 
@@ -79,7 +79,7 @@ const getRemoteDatabase = async () => {
   try {
     await databaseStore.loadDatabases()
   } catch (error) {
-    console.warn('加载知识库列表失败:', error)
+    console.warn('Lỗi tải danh sách kho tri thức:', error)
   }
 }
 
@@ -87,23 +87,23 @@ const getRemoteDatabase = async () => {
 const fetchGithubStars = async () => {
   try {
     isLoadingStars.value = true
-    // 公共API，可以直接使用fetch
+    // Công cộngAPI，có thể sử dụng trực tiếpfetch
     const response = await fetch('https://api.github.com/repos/xerrors/Yuxi')
     const data = await response.json()
     githubStars.value = data.stargazers_count
   } catch (error) {
-    console.error('获取GitHub stars失败:', error)
+    console.error('LấyGitHub starsThất bại:', error)
   } finally {
     isLoadingStars.value = false
   }
 }
 
 onMounted(async () => {
-  // 加载信息配置与知识库数据无依赖，可并行
+  // Việc tải cấu hình thông tin và dữ liệu cơ sở kiến thức không phụ thuộc, có thể thực hiện song song
   await Promise.all([infoStore.loadInfoConfig(), getRemoteDatabase()])
   await initAgentNavigation()
   await getRemoteConfig()
-  // 仅管理员加载任务中心数据
+  // Chỉ quản trị viên tải dữ liệu trung tâm nhiệm vụ
   if (userStore.isAdmin) {
     taskerStore.loadTasks()
     fetchGithubStars() // Fetch GitHub stars on mount
@@ -121,7 +121,7 @@ const organizationName = computed(() => {
   return infoStore.organization.name || infoStore.branding.name || 'Yuxi'
 })
 
-// 下面是导航菜单部分，添加智能体项
+// Dưới đây là phần menu điều hướng, thêm mục AI agent
 const mainList = computed(() => {
   const items = [
     {
@@ -198,7 +198,7 @@ const initAgentNavigation = async () => {
     }
     await chatThreadsStore.loadThreads()
   } catch (error) {
-    console.warn('加载对话导航失败:', error)
+    console.warn('Tải điều hướng trò chuyện thất bại:', error)
   }
 }
 
@@ -231,7 +231,7 @@ const handleDeleteChat = async (threadId) => {
       await router.replace({ name: 'AgentComp' })
     }
   } catch (error) {
-    console.warn('删除对话失败:', error)
+    console.warn('Xóa cuộc trò chuyện thất bại:', error)
   }
 }
 
@@ -239,7 +239,7 @@ const handleRenameChat = async ({ chatId, title }) => {
   try {
     await chatThreadsStore.updateThread(chatId, title)
   } catch (error) {
-    console.warn('重命名对话失败:', error)
+    console.warn('Đổi tên hội thoại thất bại:', error)
   }
 }
 
@@ -253,7 +253,7 @@ const handleTogglePinChat = async (threadId) => {
       chatThreadsStore.setCurrentThreadId(currentThreadId.value)
     }
   } catch (error) {
-    console.warn('更新置顶状态失败:', error)
+    console.warn('Cập nhật trạng thái ghim thất bại:', error)
   }
 }
 
@@ -285,7 +285,7 @@ provide('settingsModal', {
           v-else
           type="button"
           class="brand-link brand-expand-button"
-          aria-label="展开侧边栏"
+          aria-label="Mở rộng thanh bên"
           @click="setSidebarCollapsed(false)"
         >
           <img :src="infoStore.organization.avatar" class="brand-avatar brand-avatar-image" />
@@ -295,7 +295,7 @@ provide('settingsModal', {
           v-if="!sidebarCollapsed"
           type="button"
           class="sidebar-toggle"
-          aria-label="折叠侧边栏"
+          aria-label="Thu gọn thanh bên"
           @click="toggleSidebar"
         >
           <PanelLeftClose size="18" />
@@ -375,7 +375,7 @@ provide('settingsModal', {
       <div class="foo">
         <div class="github nav-item" @click.stop>
           <a-tooltip placement="right" :open="sidebarCollapsed ? undefined : false">
-            <template #title>欢迎 Star</template>
+            <template #title>Chào mừng Star</template>
             <a href="https://github.com/xerrors/Yuxi" target="_blank" class="github-link">
               <GithubOutlined class="icon" />
               <span class="nav-text">GitHub</span>
@@ -385,16 +385,16 @@ provide('settingsModal', {
             </a>
           </a-tooltip>
         </div>
-        <!-- 用户信息组件 -->
+        <!-- Thành phần thông tin người dùng -->
         <div class="nav-item user-info" @click.stop>
           <UserInfoComponent :show-role="!sidebarCollapsed">
             <template v-if="userStore.isAdmin" #actions>
-              <a-tooltip placement="top" title="任务中心">
+              <a-tooltip placement="top" title="Trung tâm nhiệm vụ">
                 <button
                   class="user-task-center"
                   :class="{ active: isDrawerOpen }"
                   type="button"
-                  aria-label="任务中心"
+                  aria-label="Trung tâm nhiệm vụ"
                   @click.stop="taskerStore.openDrawer()"
                 >
                   <a-badge
@@ -430,7 +430,7 @@ provide('settingsModal', {
     <!-- Debug Modal -->
     <a-modal
       v-model:open="showDebugModal"
-      title="调试面板"
+      title="Bảng điều khiển debug"
       width="90%"
       :footer="null"
       @cancel="handleDebugModalClose"
@@ -450,7 +450,7 @@ provide('settingsModal', {
 </template>
 
 <style lang="less" scoped>
-// Less 变量定义
+// Less Định nghĩa biến
 @sidebar-width: 230px;
 @sidebar-collapsed-width: 56px;
 @sidebar-padding-y: 6px;

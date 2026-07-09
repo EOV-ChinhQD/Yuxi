@@ -190,7 +190,7 @@ const isDefaultModel = (providerId, modelId) =>
   defaultModelSpec.value === buildModelSpec(providerId, modelId)
 
 const warnDefaultModelProtected = () => {
-  message.warning('当前默认模型正在使用该供应商或模型，请先切换默认模型')
+  message.warning('Mô hình mặc định hiện tại đang sử dụng nhà cung cấp hoặc mô hình này, vui lòng chuyển đổi mô hình mặc định trước')
 }
 
 const isModelTesting = (providerId, modelId) =>

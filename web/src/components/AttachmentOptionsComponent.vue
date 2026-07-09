@@ -1,10 +1,10 @@
 <template>
   <div class="attachment-options">
     <div class="option-item" :class="{ disabled: disabled }" @click="handleAttachmentClick">
-      <a-tooltip title="支持任意文件格式 ≤ 5 MB" placement="right">
+      <a-tooltip title="Hỗ trợ mọi định dạng file ≤ 5 MB" placement="right">
         <div class="option-content">
           <FileText :size="14" class="option-icon" />
-          <span class="option-text">添加附件</span>
+          <span class="option-text">Thêm tệp đính kèm</span>
         </div>
       </a-tooltip>
     </div>
@@ -13,7 +13,7 @@
       <a-tooltip title="支持 jpg/jpeg/png/gif， ≤ 5 MB" placement="right">
         <div class="option-content">
           <Image :size="14" class="option-icon" />
-          <span class="option-text">上传图片</span>
+          <span class="option-text">Tải ảnh lên</span>
         </div>
       </a-tooltip>
     </div>
@@ -39,11 +39,11 @@ const handleAttachmentClick = () => {
   emit('upload')
 }
 
-// 处理图片上传
+// Đang xử lý tải lên hình ảnh
 const handleImageUpload = () => {
   if (props.disabled) return
 
-  // 创建隐藏的文件输入
+  // Tạo trường nhập tệp ẩn
   const input = document.createElement('input')
   input.type = 'file'
   input.accept = 'image/*'
@@ -64,21 +64,21 @@ const handleImageUpload = () => {
   emit('upload-image')
 }
 
-// 处理图片上传逻辑
+// Xử lý logic tải lên hình ảnh
 const processImageUpload = async (file) => {
   try {
     const imageData = await uploadMultimodalImage(file)
     if (!imageData) return
 
-    // 发出上传成功事件，包含处理后的图片数据
+    // Gửi sự kiện tải lên thành công, bao gồm dữ liệu hình ảnh đã xử lý
     emit('upload-image', imageData)
 
-    // 发出上传成功通知事件，用于关闭选项面板
+    // Phát sự kiện thông báo tải lên thành công, để đóng bảng lựa chọn
     emit('upload-image-success')
   } catch (error) {
-    console.error('图片上传失败:', error)
+    console.error('Tải lên hình ảnh thất bại:', error)
     message.error({
-      content: `图片上传失败: ${error.message || '未知错误'}`,
+      content: `Tải lên hình ảnh thất bại: ${error.message || 'Lỗi không xác định'}`,
       key: 'image-upload'
     })
   }

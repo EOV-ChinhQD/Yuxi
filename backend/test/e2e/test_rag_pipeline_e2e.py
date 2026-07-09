@@ -114,7 +114,7 @@ def s1_auth():
 # =====================================================================
 def s2_kb():
     sep("STAGE 2 ─ Knowledge Base Creation")
-    KB_NAME = "TEST_RAG_PIPELINE_2064"
+    KB_NAME = f"TEST_RAG_PIPELINE_{int(time.time())}"
 
     r = GET("/api/knowledge/databases")
     resp = r.json()
@@ -435,9 +435,9 @@ def s8_rag_chat(agent_id, thread_id, kb_id):
 
         run_r = POST("/api/agent/runs", json_data={
             "query": tc["q"],
-            "agent_id": agent_id,
+            "agent_slug": agent_id,
             "thread_id": fresh_thread_id,
-            "model_spec": "ollama:qwen2.5:7b",
+            "model_spec": "openrouter:cohere/north-mini-code:free",
             "meta": {
                 "knowledge_base_ids": [kb_id],
             }

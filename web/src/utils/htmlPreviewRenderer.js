@@ -22,9 +22,9 @@ const escapeSrcdoc = (value) => escapeHtml(value).replaceAll('\r', '').replaceAl
 const renderHtmlPreviewLoading = () =>
   renderHtmlPreviewContainer(
     [
-      `<div class="html-preview-loading-slot" aria-live="polite" aria-label="HTML 预览加载中">`,
+      `<div class="html-preview-loading-slot" aria-live="polite" aria-label="HTML Đang tải bản xem trước">`,
       `<div class="html-preview-loading-canvas">`,
-      `<div class="html-preview-loading-text">HTML 预览加载中...</div>`,
+      `<div class="html-preview-loading-text">HTML Đang tải bản xem trước...</div>`,
       `<div class="html-preview-skeleton html-preview-skeleton-title"></div>`,
       `<div class="html-preview-skeleton-grid">`,
       `<div class="html-preview-skeleton html-preview-skeleton-card"></div>`,
@@ -52,10 +52,9 @@ const renderHtmlPreview = (html, sanitizeHtml) => {
 }
 
 /**
- * 将 Markdown 中的 ```html:preview 围栏代码块转换为 sandboxed iframe 预览。
+ * Sẽ Markdown Trong ```html:preview Chuyển đổi khối mã có hàng rào thành sandboxed iframe Xem trước.
  *
- * 普通 ```html 代码块保持不变，避免误伤需要展示源码的回答。
- * 未闭合的 html:preview 围栏渲染为加载占位块，等闭合后再替换成 iframe。
+ * Thông thường ```html Giữ các khối mã không thay đổi để tránh ảnh hưởng đến các câu trả lời cần hiển thị mã nguồn. * Chưa đóng html:preview 围栏Render为Đang tải占位khối，等闭合后再替换成 iframe。
  */
 export function renderHtmlPreviewBlocks(markdown, options = {}) {
   const sanitizeHtml = options.sanitizeHtml || ((html) => html)

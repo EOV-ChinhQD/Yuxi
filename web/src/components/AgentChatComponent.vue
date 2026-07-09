@@ -96,7 +96,7 @@
                   @saved="handleArtifactSaved"
                   @open-preview="openPanelPreview"
                 />
-                <!-- 显示对话最后一个消息使用的模型 -->
+                <!-- Hiển thị mô hình được sử dụng cho tin nhắn cuối cùng của cuộc trò chuyện -->
                 <RefsComponent
                   v-if="shouldShowRefs(row.conv)"
                   :message="getLastMessage(row.conv)"
@@ -110,7 +110,7 @@
               </div>
             </template>
 
-            <!-- 生成中的加载状态 - 增强条件支持主聊天和resume流程 -->
+            <!-- Trạng thái tải trong khi tạo - Hỗ trợ chính thức cho trò chuyện chính vàresumeQuy trình -->
             <div class="generating-status" v-if="isReplyLoading && conversations.length > 0">
               <div class="generating-indicator">
                 <div class="loading-dots">
@@ -123,7 +123,7 @@
             </div>
           </div>
           <div class="bottom" :class="{ 'start-screen': !conversations.length }">
-            <!-- 人工审批弹窗 - 放在输入框上方 -->
+            <!-- Cửa sổ phê duyệt thủ công - đặt trên trên ô nhập -->
             <HumanApprovalModal
               :visible="currentApprovalModalVisible"
               :questions="currentApprovalQuestions"
@@ -132,13 +132,13 @@
             />
 
             <div class="message-input-wrapper">
-              <!-- 加载状态：加载消息 -->
+              <!-- Trạng thái tải: đang tải tin -->
               <div v-if="isLoadingMessages" class="chat-loading">
                 <div class="loading-spinner"></div>
                 <span>Loading messages...</span>
               </div>
 
-              <!-- 打招呼区域 - 在输入框上方 -->
+              <!-- Khu vực chào hỏi - phía trên hộp nhập -->
               <div v-if="!conversations.length" class="chat-greeting-input">
                 <h1>{{ randomGreeting }}</h1>
               </div>
@@ -647,15 +647,15 @@ const greetingMessages = [
   '👋 Hello, I am at your service!'
 ]
 
-// 随机选择一个打招呼文本
+// Chọn ngẫu nhiên một văn bản chào hỏi
 const randomGreeting = greetingMessages[Math.floor(Math.random() * greetingMessages.length)]
 
-// 业务状态（保留在组件本地）
+// Trạng thái nghiệp vụ (giữ lại trong thành phần)）
 const chatState = reactive({
   currentThreadId: null,
-  // 以threadId为键的线程状态
+  // VớithreadIdTrạng thái chuỗi làm khóa
   threadStates: {},
-  // 流式期间记录 父 task 工具调用 id → 子智能体 child_thread_id（首次运行时前端无法推算该 id）
+  // Ghi lại trong thời gian luồng, cha task Gọi công cụ id → Trợ lý thông minh con child_thread_id（Khi chạy lần đầu, giao diện không thể suy luận điều này id）
   subagentThreadByToolCall: {}
 })
 const recordSubagentThread = (toolCallId, childThreadId) => {
@@ -680,7 +680,7 @@ const { getThreadState, resetOnGoingConv, stopThreadStream } = useAgentThreadSta
   onBeforeCleanupThread: (threadId) => streamSmoother.resetThread(threadId)
 })
 
-// 组件级别的消息、附件与提示状态
+// Trạng thái thông báo, tệp đính kèm và gợi ý ở cấp thành phần
 const threadMessages = ref({})
 const threadFilesMap = ref({})
 const threadAttachmentsMap = ref({})
@@ -701,7 +701,7 @@ const threadConfigSnapshotMap = ref({})
 const configNoticeSyncDepth = ref(0)
 const configNoticeScrollVersion = ref(0)
 
-// 本地 UI 状态（仅在本组件使用）
+// Địa phương UI Trạng thái (chỉ sử dụng trong thành phần này)）
 const localUIState = reactive({
   chatMainWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
   chatContentWidth: typeof window !== 'undefined' ? window.innerWidth : 0
@@ -725,13 +725,13 @@ const filePanelGapWidth = 0
 const mobilePanelBreakpoint = 768
 const statePanelDockWidth = 340
 const statePanelDockMinChatWidth = 800
-const panelRatio = ref(defaultPanelRatio) // 面板宽度比例 (0-1)
+const panelRatio = ref(defaultPanelRatio) // Tỷ lệ chiều rộng bảng điều khiển (0-1)
 const filePanelDragWidth = ref(null)
 const agentPanelPreviewTabs = ref([])
 const agentPanelActivePreviewPath = ref('')
 const agentPanelViewMode = ref('tree')
 const chatContentContainerRef = ref(null)
-const panelWrapperRef = ref(null) // 直接操作 DOM
+const panelWrapperRef = ref(null) // Thao tác trực tiếp DOM
 const TODO_NAME_MAX_LENGTH = 20
 let resizeStartX = 0
 let resizeStartWidth = 0
@@ -817,20 +817,20 @@ const showFileTreePanel = () => {
 const getPanelFileName = (file) => {
   if (file?.name) return file.name
   if (file?.path) return String(file.path).split('/').pop() || String(file.path)
-  return '未知文件'
+  return 'Tệp không xác định'
 }
 
 const getArtifactMetaLabel = (path) => {
   const filename = getPanelFileName({ path })
-  if (!filename.includes('.')) return '交付文件'
+  if (!filename.includes('.')) return 'Tệp giao nhận'
   const extension = filename.split('.').pop()
-  return extension ? `交付文件 · ${extension.toUpperCase()}` : '交付文件'
+  return extension ? `Tệp giao nhận · ${extension.toUpperCase()}` : 'Tệp giao nhận'
 }
 
 const getSubagentRunName = (run) => {
   const subagentSlug = run?.subagent_slug ? String(run.subagent_slug) : ''
   return (
-    run?.subagent_name || currentSubagentOptionBySlug.value.get(subagentSlug)?.name || '子智能体'
+    run?.subagent_name || currentSubagentOptionBySlug.value.get(subagentSlug)?.name || 'Trợ lý thông minh con'
   )
 }
 
@@ -850,7 +850,7 @@ const getSubagentDefaultIconSrc = (run) =>
 
 const getSubagentRunMeta = (run) => {
   const artifacts = Array.isArray(run?.artifacts) ? run.artifacts.length : 0
-  return artifacts ? `${artifacts} 个产物` : run?.id || ''
+  return artifacts ? `${artifacts} Sản phẩm` : run?.id || ''
 }
 
 const normalizePanelPath = (path) => String(path || '').replace(/\/+$/, '')
@@ -949,7 +949,7 @@ const currentAgentId = computed(() => {
 
 const currentAgentName = computed(() => {
   const agent = currentAgent.value
-  return agent ? agent.name : '智能体'
+  return agent ? agent.name : 'đại lý thông minh'
 })
 
 const currentAgent = computed(() => {
@@ -958,8 +958,8 @@ const currentAgent = computed(() => {
 })
 const currentChatId = computed(() => currentThreadId.value)
 
-// ==================== 对话级模型覆盖 ====================
-// 按线程记忆用户选择的模型；未选择时回退到智能体配置的模型。
+// ==================== Bộ phủ mô hình cấp độ trò chuyện ====================
+// Nhấn线程记忆用户Chọncủa模型；Chưa chọn时回退到đại lý thông minh配置của模型。
 const DRAFT_MODEL_KEY = '__draft__'
 const selectedModelByThread = reactive({})
 const agentDefaultModel = computed(
@@ -992,7 +992,7 @@ const currentThreadAgentName = computed(() => {
   }
   return currentAgentName.value
 })
-// 检查当前智能体是否支持文件上传
+// Kiểm tra xem tác nhân hiện tại có hỗ trợ tải lên tệp không
 const supportsFileUpload = computed(() => {
   if (!currentAgent.value) return false
   const capabilities = currentAgent.value.capabilities || []
@@ -1005,7 +1005,7 @@ const supportsFiles = computed(() => {
   return capabilities.includes('files')
 })
 
-// AgentState 相关计算属性
+// AgentState Các thuộc tính tính toán liên quan
 const currentAgentState = computed(() => {
   return currentChatId.value ? getThreadState(currentChatId.value)?.agentState || null : null
 })
@@ -1063,41 +1063,41 @@ const tokenUsageSegments = computed(() => {
   const rawSegments = [
     {
       key: 'cut',
-      label: '已压缩',
+      label: 'Đã nén',
       value: cutMessageTokens,
       messageCount: cutMessageCount,
       tone: 'is-cut'
     },
     {
       key: 'messages',
-      label: '内容消息',
+      label: 'Tin nội dung',
       value: contentMessageTokens,
       messageCount: contentMessageCount,
       tone: 'is-messages'
     },
     {
       key: 'toolMessages',
-      label: '工具消息',
+      label: 'Tin nhắn công cụ',
       value: toolMessageTokens,
       messageCount: toolMessageCount,
       tone: 'is-tool-messages'
     },
     {
       key: 'summary',
-      label: '摘要',
+      label: 'Tóm tắt',
       value: summaryTokens,
       messageCount: usage.summary_active ? 1 : 0,
       tone: 'is-summary'
     },
     {
       key: 'system',
-      label: '系统消息',
+      label: 'Tin nhắn hệ thống',
       value: systemTokens,
       tone: 'is-system'
     },
     {
       key: 'tools',
-      label: `工具定义 (${usage.tool_count || 0})`,
+      label: `Định nghĩa công cụ (${usage.tool_count || 0})`,
       value: toolsTokens,
       tone: 'is-tools'
     }
@@ -1107,7 +1107,7 @@ const tokenUsageSegments = computed(() => {
   if (inputTokens > accountedInputTokens) {
     rawSegments.push({
       key: 'overhead',
-      label: '其他',
+      label: 'Các khác',
       value: inputTokens - accountedInputTokens,
       tone: 'is-overhead'
     })
@@ -1121,7 +1121,7 @@ const tokenUsageSegments = computed(() => {
       ...segment,
       percent: `${Math.max(0, Math.min(ratio * 100, 100)).toFixed(2)}%`,
       valueLabel: segment.messageCount
-        ? `${formatTokenCount(segment.value)} (${segment.messageCount}条)`
+        ? `${formatTokenCount(segment.value)} (${segment.messageCount}Mục)`
         : formatTokenCount(segment.value)
     }
   })
@@ -1177,7 +1177,7 @@ const tokenUsageMetaRows = computed(() => {
   if (toFiniteNumber(usage.context_window)) {
     rows.push({
       key: 'context',
-      label: '窗口/剩余',
+      label: 'Cửa sổ/còn lại',
       value: `${formatTokenCount(usage.context_window)} / ${formatTokenCount(usage.remaining_context_tokens)}`
     })
   }
@@ -1269,7 +1269,7 @@ const toggleStateSection = (key) => {
 const currentStateFiles = computed(() => {
   const files = []
   const seenPaths = new Set()
-  const pushFile = (entry, fallbackName = '文件') => {
+  const pushFile = (entry, fallbackName = 'Tệp') => {
     const path = String(entry?.path || entry?.file_path || entry?.file_name || entry?.name || '')
     if (!path || seenPaths.has(path)) return
     seenPaths.add(path)
@@ -1288,7 +1288,7 @@ const currentStateFiles = computed(() => {
   if (typeof rawFiles === 'object' && !Array.isArray(rawFiles)) {
     Object.entries(rawFiles).forEach(([path, fileData]) => pushFile({ path, ...fileData }))
   }
-  currentThreadAttachments.value.forEach((attachment) => pushFile(attachment, '附件'))
+  currentThreadAttachments.value.forEach((attachment) => pushFile(attachment, 'Tệp đính kèm'))
 
   return files
 })
@@ -1309,7 +1309,7 @@ const stateSummaryLabel = computed(() => {
     currentStateFiles.value.length +
     currentArtifactFiles.value.length +
     displaySubagentRuns.value.length
-  return total ? `${total} 项` : '暂无内容'
+  return total ? `${total} Mục` : 'Chưa có nội dung'
 })
 const hasVisibleStateSections = computed(
   () =>
@@ -1350,10 +1350,10 @@ const shouldSuppressRefsForApproval = () =>
     approvalState.threadId && currentChatId.value === approvalState.threadId && isProcessing.value
   )
 
-// 判断某轮对话是否已「收尾」，即可以展示 refs（来源/操作栏）：
-// - 后面紧跟的下一轮以 human message 开头（即用户开启了新一轮）→ 已收尾；
-// - 它是最后一轮，且当前没有正在生成回复 → 已收尾。
-// 反之（后面跟的是没有 human message 的 AI 续写，如 resume 续写；或仍在生成中）→ 未收尾，不展示。
+// Xác định xem một lượt hội thoại đã 'kết thúc' chưa, tức là có thể hiển thị refs（Nguồn/Hành động栏）：
+// - 后面紧跟của下一轮Với human message 开头（ngay lập tức用户Kích hoạt了新一轮）→ Đã收尾；
+// - 它是最后一轮，且当前没有正在生成回复 → Đã收尾。
+// 反之（后面跟của是没有 human message của AI Tiếp tục, ví dụ resume Tiếp tục viết; hoặc vẫn đang trong quá trình tạo) → Chưa hoàn thành, không hiển thị。
 const isConversationSettled = (conv) => {
   const convs = conversations.value
   const idx = convs.indexOf(conv)
@@ -1365,7 +1365,7 @@ const isConversationSettled = (conv) => {
   return !(isProcessing.value || isReplyLoading.value)
 }
 
-// 计算是否显示Refs组件的条件
+// Tính toán xem có hiển thị khôngRefsĐiều kiện của thành phần
 const shouldShowRefs = computed(() => {
   return (conv) => {
     if (!getLastMessage(conv) || conv.status === 'streaming' || shouldSuppressRefsForApproval()) {
@@ -1383,7 +1383,7 @@ const shouldShowArtifacts = computed(() => {
   }
 })
 
-// 当前线程状态的computed属性
+// Trạng thái luồng hiện tạicomputedthuộc tính
 const currentThreadState = computed(() => {
   return getThreadState(currentChatId.value)
 })
@@ -1402,13 +1402,13 @@ const getThreadOngoingMessages = (threadId) => {
 
 const onGoingConvMessages = computed(() => getThreadOngoingMessages(currentChatId.value))
 
-// 供深层 TaskTool 读取子线程实时轨迹 / 首次运行时定位 child_thread_id
+// Để sâu hơn TaskTool Đọc quỹ đạo thời gian thực của luồng con / định vị khi chạy lần đầu child_thread_id
 provide('getThreadOngoingMessages', getThreadOngoingMessages)
 provide('getSubagentThreadIdByToolCall', getSubagentThreadIdByToolCall)
 
-// 解析父级 ongoing 里的全部 task 工具调用（按消息顺序），统一供面板与状态判定使用。
-// 注意：ongoing 期间 task 的工具结果不流式（只有 message_delta/tool_call 事件），因此这里的
-// hasResult 在流式阶段恒为 false，状态判定不能依赖它。
+// phân tích父级 ongoing Tất cả trong task Cuộc gọi công cụ (theo thứ tự tin nhắn), thống nhất cung cấp cho bảng điều khiển và 판단 trạng thái.
+// Lưu ý：ongoing Trong thời gian task củaCông cụ结果不流式（只有 message_delta/tool_call sự kiện), vì vậy ở đây
+// hasResult Trong giai đoạn phát trực tiếp luôn là false，Không thể dựa vào nó để xác định trạng thái。
 const ongoingTaskCalls = computed(() => {
   const calls = []
   onGoingConvMessages.value.forEach((message, messageIndex) => {
@@ -1432,9 +1432,8 @@ const ongoingTaskCalls = computed(() => {
   return calls
 })
 
-// 当前活跃（真正在执行）的 task 调用 = 最后一条「含未完成 task 调用」的 AI 消息中的那些调用。
-// steer 顺序进行 → 只有最后一条消息的调用在执行；并行 → 同一条消息的多个调用都在执行。
-// 用消息顺序判定，不依赖异步推算的 child_thread_id，避免首次运行哈希未就绪导致的状态错乱。
+// Đang hoạt động ( thực sự đang thực hiện ) task Gọi = Mục cuối cùng 'chứa chưa hoàn thành task Gọi đến AI Những lệnh gọi trong tin nhắn。
+// steer Thực hiện tuần tự → chỉ cuộc gọi của tin nhắn cuối cùng được thực thi; song song → tất cả các cuộc gọi của cùng một tin nhắn đều được thực thi. // Xác định dựa trên thứ tự tin nhắn, không phụ thuộc vào suy luận không đồng bộ child_thread_id，Tránh nhầm lẫn trạng thái do hash chưa sẵn sàng khi chạy lần đầu。
 const activeSubagentToolCallIds = computed(() => {
   const pending = ongoingTaskCalls.value.filter((call) => !call.hasResult)
   if (!pending.length) return new Set()
@@ -1445,8 +1444,8 @@ const activeSubagentToolCallIds = computed(() => {
 })
 provide('activeSubagentToolCallIds', activeSubagentToolCallIds)
 
-// agent_state.subagent_runs 仅在 task 返回（完成态）时写入；面板的运行中条目只取「活跃」调用，
-// 避免已完成的 steer 历史调用在面板里重复成额外条目。
+// agent_state.subagent_runs Chỉ trong task Ghi khi trả về (trạng thái hoàn thành); các mục đang chạy của bảng điều khiển chỉ lấy các cuộc gọi "hoạt động",
+// tránh các mục đã hoàn thành steer Các cuộc gọi lịch sử được lặp lại thành các mục bổ sung trong bảng điều khiển。
 const runningSubagentRunsFromStream = computed(() => {
   const activeIds = activeSubagentToolCallIds.value
   return ongoingTaskCalls.value
@@ -1458,7 +1457,7 @@ const runningSubagentRunsFromStream = computed(() => {
       return {
         id: call.id,
         subagent_slug: call.subagentSlug,
-        subagent_name: option?.name || call.subagentSlug || '子智能体',
+        subagent_name: option?.name || call.subagentSlug || 'Trợ lý thông minh con',
         description: call.description,
         child_thread_id: call.childThreadId || '',
         status: 'running'
@@ -1466,8 +1465,7 @@ const runningSubagentRunsFromStream = computed(() => {
     })
 })
 
-// task 工具调用入参里携带的任务描述（tool_call_id -> description），覆盖历史与进行中消息。
-// 后端 subagent_runs 不再冗余存储 description，面板据此为已完成的 run 回填展示文案。
+// task Mô tả nhiệm vụ được đưa vào tham số gọi công cụ（tool_call_id -> description），Ghi đè lịch sử và tin nhắn đang xử lý. // Backend subagent_runs Không còn lưu trữ thừa description，Panel được xác định là đã hoàn thành run Nội dung hiển thị được điền lại。
 const taskDescriptionByToolCallId = computed(() => {
   const map = new Map()
   const collect = (messages) => {
@@ -1489,12 +1487,12 @@ const taskDescriptionByToolCallId = computed(() => {
   return map
 })
 
-// 后端按 run_id 合并持久化状态；流式期的临时 task 条目还没有 run_id，仅用工具调用 id 合并占位。
+// Backend nhấn run_id Gộp持久化状态；流式期của临时 task mục chưa có run_id，Chỉ dùng để gọi công cụ id Ghép nối vị trí trống。
 const displaySubagentRuns = computed(() => {
   const descByToolCall = taskDescriptionByToolCallId.value
   const merged = currentSubagentRuns.value.map((run) => {
     const copy = { ...run }
-    // 持久化条目不带 description，按 tool_call_id（即 run.id）从 task 调用入参回填。
+    // Các mục được lưu trữ vĩnh viễn không có description，Nhấn tool_call_id（ngay lập tức run.id）Từ task Điền tham số khi gọi。
     if (!copy.description && copy.id) {
       const desc = descByToolCall.get(String(copy.id))
       if (desc) copy.description = desc
@@ -1505,8 +1503,7 @@ const displaySubagentRuns = computed(() => {
   const transientIdIndex = new Map()
   merged.forEach((run, index) => {
     if (run.run_id) runIdIndex.set(String(run.run_id), index)
-    // 持久化条目（同时带 run_id 与 id）也按工具调用 id 建索引，
-    // 否则流式占位条目找不到它，会在面板里重复成额外一行。
+    // Các mục bền vững (đồng thời mang run_id 与 id）Cũng theo cách gọi công cụ id Tạo chỉ mục, nếu không, mục giữ chỗ truyền dòng sẽ không tìm thấy nó và sẽ trùng lặp thành một dòng bổ sung trong bảng điều khiển。
     if (run.id) transientIdIndex.set(String(run.id), index)
   })
   runningSubagentRunsFromStream.value.forEach((run) => {
@@ -1520,7 +1517,7 @@ const displaySubagentRuns = computed(() => {
       position = merged.length
       merged.push(run)
     } else if (!merged[position].run_id) {
-      // 已落库（有 run_id）的条目以后端为准，不被流式运行态覆盖；仅覆盖纯占位条目
+      // đã được lưu vào kho (có run_id）Các mục sau này dựa trên backend, không bị ghi đè bởi trạng thái chạy stream; chỉ ghi đè các mục placeholder trống
       merged[position] = { ...merged[position], ...run }
     }
     if (run.run_id) runIdIndex.set(String(run.run_id), position)
@@ -1573,7 +1570,7 @@ const activeSubagentThreadIsStreaming = computed(
     activeSubagentThreadRun.value?.status === 'running'
 )
 
-// 首次运行的子智能体：前端按后端同样的哈希推算 child_thread_id，缓存到映射里供面板/轨迹定位。
+// Agent con chạy lần đầu: frontend tính toán theo cùng hash như backend child_thread_id，Bảo quản trong bản đồ để panel/định vị đường đi。
 watch(
   onGoingConvMessages,
   (messages) => {
@@ -1722,7 +1719,7 @@ const conversations = computed(() => {
       currentThreadState.value?.activeRunId || null
     )
 
-  // 如果有进行中的消息且线程状态显示正在流式处理，添加进行中的对话
+  // Nếu có tin nhắn đang tiến hành và trạng thái luồng cho thấy đang xử lý luồng, thêm cuộc trò chuyện đang tiến hành
   if (activeRunOngoingMessages.length > 0) {
     const onGoingConv = {
       messages: activeRunOngoingMessages,
@@ -1773,7 +1770,7 @@ const isReplyLoading = computed(() => {
   return Boolean(threadState?.replyLoadingVisible)
 })
 const replyLoadingText = computed(() =>
-  currentThreadState.value?.contextCompressing ? '正在压缩上下文...' : '正在生成回复...'
+  currentThreadState.value?.contextCompressing ? 'Đang nén ngữ cảnh...' : 'Đang tạo phản hồi...'
 )
 const isSendButtonDisabled = computed(() => {
   return (
@@ -1826,7 +1823,7 @@ const buildOptimisticHumanMessage = ({
   return message
 }
 
-// 发送 runs 前先在前端插入一条用户消息，避免等待 worker 轮询后消息才出现。
+// Gửi runs Đầu tiên chèn một tin nhắn người dùng ở phía trước để tránh chờ đợi worker Tin nhắn chỉ xuất hiện sau khi polling。
 const insertOptimisticHumanMessage = (
   threadState,
   { requestId, text, imageContent = null, attachments = [] }
@@ -1855,7 +1852,7 @@ const rollbackAttachments = (threadId, previousAttachments) => {
 }
 
 const CONFIG_CHANGE_NOTICE_MESSAGE =
-  '在运行过程中切换或修改配置可能会影响最终效果，建议新建一个对话。'
+  'Trong quá trình chạy, chuyển đổi hoặc sửa đổi cấu hình có thể ảnh hưởng đến kết quả cuối cùng; nên tạo một cuộc trò chuyện mới。'
 
 const withConfigNoticeSync = async (task) => {
   configNoticeSyncDepth.value += 1
@@ -1880,7 +1877,7 @@ const syncThreadConfigSnapshot = (threadId, options = {}) => {
   if (!overwrite && threadConfigSnapshotMap.value[threadId]) return
   if (threadPendingConfigNoticeMap.value[threadId]) return
 
-  // 线程切换时先记录当前 UI 的配置快照，避免同步 thread 绑定配置时误报。
+  // Khi chuyển đổi luồng, ghi lại trạng thái hiện tại trước UI Chụp nhanh cấu hình, tránh đồng bộ thread Báo động sai khi liên kết cấu hình。
   threadConfigSnapshotMap.value = {
     ...threadConfigSnapshotMap.value,
     [threadId]: buildThreadConfigSnapshot()
@@ -1965,7 +1962,7 @@ const maybeInsertThreadConfigNotice = () => {
   if (currentThreadHasHistory.value) {
     upsertThreadConfigNotice(threadId, conversations.value.length)
   } else if (chatUIStore.isLoadingMessages) {
-    // 历史线程仍在加载时先挂起提示，避免消息返回后把变更误当成新的基线。
+    // Khi luồng lịch sử vẫn đang tải, tạm hoãn gợi ý trước, tránh việc sau khi tin nhắn trả về lại coi thay đổi là đường cơ sở mới。
     queuePendingThreadConfigNotice(threadId)
   } else {
     return
@@ -1981,7 +1978,7 @@ const maybeInsertThreadConfigNotice = () => {
 const scrollController = new ScrollController('.chat-main')
 const chatMainRef = ref(null)
 let chatMainResizeObserver = null
-// 初始化延迟标志，避免首次挂载时 ResizeObserver 立即触发导致侧边栏意外关闭
+// Khởi tạo cờ delay để tránh khi lần đầu mount ResizeObserver Kích hoạt ngay lập tức dẫn đến việc thanh bên đóng lại một cách bất ngờ
 let isResizeObserverReady = false
 let resizeObserverReadyTimer = null
 
@@ -1991,7 +1988,7 @@ const armResizeObserver = () => {
   }
 
   isResizeObserverReady = false
-  // keep-alive 切页回来时等布局稳定后再恢复宽度判断，避免隐藏态宽度污染侧边栏状态。
+  // keep-alive Khi quay lại một trang, chờ layout ổn định trước khi tiếp tục tính chiều rộng, để tránh chiều rộng ẩn gây nhiễu trạng thái thanh bên。
   resizeObserverReadyTimer = setTimeout(() => {
     isResizeObserverReady = true
   }, 50)
@@ -2039,7 +2036,7 @@ const startChatMainResizeObserver = () => {
 
   syncLayoutWidths()
   chatMainResizeObserver = new ResizeObserver((entries) => {
-    // 初始化期间跳过检查，等待 layout 稳定
+    // Bỏ qua kiểm tra trong quá trình khởi tạo, chờ layout Ổn định
     if (!isResizeObserverReady) return
 
     if (!entries.length) return
@@ -2089,12 +2086,12 @@ onUnmounted(() => {
     clearTimeout(sendCooldownTimer)
     sendCooldownTimer = null
   }
-  // 清理所有线程状态
+  // Dọn dẹp tất cả trạng thái luồng
   resetOnGoingConv()
 })
 
-// ==================== 线程管理方法 ====================
-// 获取当前智能体的线程列表
+// ==================== Phương pháp quản lý luồng ====================
+// Lấy danh sách luồng của trợ lý thông minh hiện tại
 const fetchThreads = async (agentId = null) => {
   const targetAgentId = props.singleMode ? agentId || currentAgentId.value : agentId
   if (props.singleMode && !targetAgentId) return
@@ -2102,8 +2099,8 @@ const fetchThreads = async (agentId = null) => {
   await chatThreadsStore.loadThreads(targetAgentId)
 }
 
-// 创建新线程
-const createThread = async (agentId, title = '新的对话') => {
+// Tạo luồng mới
+const createThread = async (agentId, title = 'Cuộc trò chuyện mới') => {
   if (!agentId) return null
 
   try {
@@ -2121,11 +2118,11 @@ const createThread = async (agentId, title = '新的对话') => {
   }
 }
 
-// 获取线程消息
+// Lấy tin nhắn từ luồng
 const fetchThreadMessages = async ({ agentId, threadId, delay = 0 }) => {
   if (!threadId || !agentId) return
 
-  // 如果指定了延迟，等待指定时间（用于确保后端数据库事务提交）
+  // Nếu đã chỉ định độ trễ, chờ thời gian chỉ định (để đảm bảo giao dịch cơ sở dữ liệu backend được commit)）
   if (delay > 0) {
     await new Promise((resolve) => setTimeout(resolve, delay))
   }
@@ -2141,7 +2138,7 @@ const fetchThreadMessages = async ({ agentId, threadId, delay = 0 }) => {
   }
 }
 
-// 跨会话还原：用最近一条用户消息记录的 model_spec 还原模型选择
+// Phục hồi跨 phiên: Sử dụng bản ghi tin nhắn gần nhất của người dùng model_spec Khôi phục lựa chọn mô hình
 const restoreThreadModelSelection = (threadId, history) => {
   if (selectedModelByThread[threadId]) return
   for (let i = history.length - 1; i >= 0; i -= 1) {
@@ -2203,16 +2200,16 @@ const fetchAgentState = async (agentId, threadId) => {
   }
 }
 
-const ensureActiveThread = async (title = '新的对话') => {
+const ensureActiveThread = async (title = 'Cuộc trò chuyện mới') => {
   if (currentChatId.value) return currentChatId.value
   try {
-    const newThread = await createThread(currentAgentId.value, title || '新的对话')
+    const newThread = await createThread(currentAgentId.value, title || 'Cuộc trò chuyện mới')
     if (newThread) {
       setCurrentThreadId(newThread.id)
       return newThread.id
     }
   } catch {
-    // createThread 已处理错误提示
+    // createThread Thông báo lỗi đã được xử lý
   }
   return null
 }
@@ -2221,7 +2218,7 @@ const handleAttachmentUpload = async (files = []) => {
   if (
     !AgentValidator.validateAgentIdWithError(
       currentAgentId.value,
-      '上传附件',
+      'Tải lênTệp đính kèm',
       handleValidationError
     )
   )
@@ -2238,7 +2235,7 @@ const handleAttachmentUpload = async (files = []) => {
 
 const ensureAttachmentThread = async () => {
   if (currentChatId.value) return currentChatId.value
-  return await ensureActiveThread('新的对话')
+  return await ensureActiveThread('Cuộc trò chuyện mới')
 }
 
 const handleTmpAttachmentsAdded = async () => {
@@ -2274,7 +2271,7 @@ const handleAttachmentRemove = async (attachment) => {
   }
 }
 
-// ==================== 审批功能管理 ====================
+// ==================== Quản lý chức năng phê duyệt ====================
 const {
   approvalState,
   processApprovalInStream,
@@ -2335,7 +2332,7 @@ const handlePageVisibilityChange = () => {
 }
 
 // ==================== CHAT ACTIONS ====================
-// 获取第一个非置顶的对话
+// Lấy cuộc trò chuyện đầu tiên không được ưu tiên
 const getFirstNonPinnedChat = (chatList) => {
   if (!chatList || chatList.length === 0) return null
   return chatList.find((chat) => !chat.is_pinned) || chatList[0]
@@ -2347,17 +2344,17 @@ const selectChat = async (chatId) => {
   const previousThreadId = chatState.currentThreadId
 
   if (!targetAgentId) {
-    handleValidationError('选择对话失败：缺少智能体信息')
+    handleValidationError('Thất bại khi chọn cuộc trò chuyện: thiếu thông tin về trí tuệ nhân tạo')
     return
   }
 
-  if (!AgentValidator.validateAgentIdWithError(targetAgentId, '选择对话', handleValidationError))
+  if (!AgentValidator.validateAgentIdWithError(targetAgentId, 'Chọn cuộc hội thoại', handleValidationError))
     return
 
-  // 中断之前线程的流式输出（如果存在）
+  // Ngắt luồng đầu ra của chủ đề trước (nếu có)）
   if (previousThreadId && previousThreadId !== chatId) {
     stopThreadStream(previousThreadId)
-    // run 模式下仅断开 SSE 订阅，不取消后台运行任务
+    // run Chỉ ngắt kết nối trong chế độ SSE Đăng ký, không hủy任务在后台运行
     stopRunStreamSubscription(previousThreadId)
   }
 
@@ -2367,7 +2364,7 @@ const selectChat = async (chatId) => {
 
   try {
     await withConfigNoticeSync(async () => {
-      // 先更新当前线程，确保底部智能体名称与选中项即时同步。
+      // Trước tiên cập nhật luồng hiện tại để đảm bảo tên trí tuệ nhân tạo ở phía dưới đồng bộ với mục đã chọn ngay lập tức。
       setCurrentThreadId(chatId)
 
       if (
@@ -2450,17 +2447,17 @@ const handleSendMessage = async ({ image } = {}) => {
   )
     return
 
-  // 发送后进入短暂冷却，防止连续触发停止
+  // Sau khi gửi, vào chế độ làm mát ngắn để ngăn chặn việc kích hoạt liên tục dừng lại
   startSendCooldown()
 
   let threadId = currentChatId.value
   if (!threadId) {
     threadId = await ensureActiveThread(text)
     if (!threadId) {
-      message.error('创建对话失败，请重试')
+      message.error('Tạo cuộc trò chuyện thất bại, vui lòng thử lại')
       return
     }
-    // 新建线程：把草稿态的模型选择迁移到真实线程，避免选择丢失
+    // Tạo chủ đề mới: Di chuyển lựa chọn mô hình ở trạng thái bản nháp vào chủ đề thực, tránh mất lựa chọn
     const draftModelSpec = selectedModelByThread[DRAFT_MODEL_KEY]
     if (draftModelSpec) {
       if (!selectedModelByThread[threadId]) {
@@ -2469,7 +2466,7 @@ const handleSendMessage = async ({ image } = {}) => {
       delete selectedModelByThread[DRAFT_MODEL_KEY]
     }
   }
-  // 仅当用户显式选择过模型才下发覆盖；否则传 null，由后端使用智能体配置的模型
+  // Chỉ gửi bản ghi đè khi người dùng đã chọn mô hình rõ ràng; nếu không, gửi... null，Mô hình được cấu hình bởi tác nhân sử dụng bởi backend
   const modelSpec = selectedModelByThread[threadId] || null
 
   userInput.value = ''
@@ -2540,7 +2537,7 @@ const handleSendMessage = async ({ image } = {}) => {
     })
     const runId = runResp?.run_id
     if (!runId) {
-      throw new Error('创建 run 失败：缺少 run_id')
+      throw new Error('Tạo run Thất bại: Thiếu run_id')
     }
     await startRunStream(threadId, runId, 0)
   } catch (error) {
@@ -2553,7 +2550,7 @@ const handleSendMessage = async ({ image } = {}) => {
   }
 }
 
-// 发送或中断
+// Gửi hoặc ngắt
 const handleSendOrStop = async (payload) => {
   if (sendCooldownActive.value) {
     return
@@ -2568,7 +2565,7 @@ const handleSendOrStop = async (payload) => {
       if (approvalState.threadId === threadId) {
         hideApprovalState()
       }
-      message.info('已发送取消请求')
+      message.info('Đã gửi yêu cầu hủy')
     } catch (error) {
       handleChatError(error, 'stop')
     }
@@ -2578,25 +2575,25 @@ const handleSendOrStop = async (payload) => {
   await handleSendMessage(payload)
 }
 
-// ==================== 人工审批处理 ====================
+// ==================== Xử lý phê duyệt thủ công ====================
 const handleApprovalWithStream = async (answer) => {
   const threadId = approvalState.threadId
   const interruptedRunId = approvalState.interruptedRunId
   if (!threadId) {
-    message.error('无效的提问请求')
+    message.error('Yêu cầu đặt câu hỏi không hợp lệ')
     approvalState.showModal = false
     return
   }
 
   const threadState = getThreadState(threadId)
   if (!threadState) {
-    message.error('无法找到对应的对话线程')
+    message.error('Không thể tìm thấy chuỗi hội thoại tương ứng')
     approvalState.showModal = false
     return
   }
 
   if (!interruptedRunId) {
-    message.error('无法找到需要恢复的运行任务')
+    message.error('Không thể tìm thấy tác vụ đang chạy cần khôi phục')
     approvalState.showModal = false
     return
   }
@@ -2619,7 +2616,7 @@ const handleApprovalWithStream = async (answer) => {
     })
     const runId = runResp?.run_id
     if (!runId) {
-      throw new Error('创建 resume run 失败：缺少 run_id')
+      throw new Error('Tạo resume run Thất bại: Thiếu run_id')
     }
     await startRunStream(threadId, runId, '0-0')
   } catch (error) {
@@ -2650,8 +2647,8 @@ const buildExportPayload = () => {
   }
 
   const payload = {
-    chatTitle: currentThread.value?.title || '新对话',
-    agentName: currentAgentName.value || currentAgent.value?.name || '智能助手',
+    chatTitle: currentThread.value?.title || 'Cuộc trò chuyện mới',
+    agentName: currentAgentName.value || currentAgent.value?.name || 'Trợ lý thông minh',
     agentDescription: agentDescription || currentAgent.value?.description || '',
     messages: conversations.value ? JSON.parse(JSON.stringify(conversations.value)) : [],
     onGoingMessages: onGoingConvMessages.value
@@ -2707,8 +2704,8 @@ const toggleAgentPanel = async () => {
   await handleAgentStateRefresh()
 }
 
-// 处理面板宽度调整（使用比例）
-// 向右拖动(deltaX > 0)让面板变窄，向左拖动(deltaX < 0)让面板变宽
+// Điều chỉnh chiều rộng bảng xử lý (sử dụng tỷ lệ)
+// Kéo sang phải(deltaX > 0)Làm cho bảng điều khiển hẹp lại, kéo sang trái(deltaX < 0)Làm rộng bảng điều khiển
 const handlePanelResize = (clientX) => {
   if (!panelWrapperRef.value) return
 
@@ -2730,7 +2727,7 @@ const handlePanelResize = (clientX) => {
   }
 }
 
-// 拖拽状态变化时，同步最终状态到 Vue 响应式数据
+// Khi trạng thái kéo thả thay đổi, đồng bộ trạng thái cuối cùng đến Vue Dữ liệu phản hồi
 const handleResizingChange = (isResizingState, clientX = 0) => {
   isResizing.value = isResizingState
 
@@ -2753,7 +2750,7 @@ const handleResizingChange = (isResizingState, clientX = 0) => {
     filePanelDragWidth.value = null
     resizeStartX = 0
     resizeStartWidth = 0
-    panelContainerWidth = 0 // 重置，供下次使用
+    panelContainerWidth = 0 // Đặt lại để sử dụng lần sau
   }
 }
 
@@ -2797,12 +2794,12 @@ const showMsgRefs = (msg, conv) => {
     return false
   }
 
-  // 该消息所在对话未收尾（后面跟的是没有 human message 的 AI 续写，或仍在生成）时不展示
+  // 该Thông báo所在对话未收尾（后面跟của是没有 human message của AI Không hiển thị khi tiếp tục hoặc vẫn đang tạo
   if (!isConversationSettled(conv)) {
     return false
   }
 
-  // 只有真正完成的消息才显示 refs
+  // Chỉ những tin nhắn thực sự hoàn thành mới hiển thị refs
   if (msg.isLast && msg.status === 'finished') {
     return ['copy', 'sources']
   }
@@ -2830,7 +2827,7 @@ const loadChatsList = async () => {
     await fetchThreads(agentId)
     if (props.singleMode && currentAgentId.value !== agentId) return
 
-    // 如果当前线程不在线程列表中，清空当前线程
+    // Nếu luồng hiện tại không có trong danh sách luồng, xóa luồng hiện tại
     if (
       chatState.currentThreadId &&
       !threads.value.find((t) => t.id === chatState.currentThreadId)
@@ -2838,7 +2835,7 @@ const loadChatsList = async () => {
       setCurrentThreadId(null)
     }
 
-    // singleMode 保持旧行为：自动选择首个可用对话
+    // singleMode Giữ lại hành vi cũ: Tự động chọn cuộc trò chuyện có sẵn đầu tiên
     if (props.singleMode && threads.value.length > 0 && !chatState.currentThreadId) {
       await selectChat(getFirstNonPinnedChat(threads.value).id)
     }
@@ -2898,13 +2895,13 @@ watch(
     }
 
     if (newAgentId !== oldAgentId) {
-      // 清理当前线程状态
+      // Xóa trạng thái hiện tại của luồng
       setCurrentThreadId(null)
       threadMessages.value = {}
       threadFilesMap.value = {}
       threadAttachmentsMap.value = {}
       resetAgentPanelState()
-      // 清理所有线程状态
+      // Dọn dẹp tất cả trạng thái luồng
       resetOnGoingConv()
 
       if (newAgentId) {
@@ -3443,7 +3440,7 @@ watch(currentChatId, (threadId, oldThreadId) => {
     font-size: 14px;
     font-weight: 500;
     letter-spacing: 0.025em;
-    /* 恢复灰色调：深灰 -> 亮灰(高光) -> 深灰 */
+    /* Khôi phục tông màu xám: Xám đậm -> Xám sáng (highlight)) -> Xám đậm */
     background: linear-gradient(
       90deg,
       var(--gray-700) 0%,
@@ -3539,7 +3536,7 @@ watch(currentChatId, (threadId, oldThreadId) => {
   }
 }
 
-// 智能体选择器的图标对齐
+// Định vị biểu tượng trong chọn trí tuệ nhân tạo
 .agent-segment-wrapper {
   :deep(.ant-segmented-item-label) {
     display: flex;
@@ -4066,7 +4063,7 @@ watch(currentChatId, (threadId, oldThreadId) => {
   }
 }
 
-/* AgentState 按钮有内容时的样式 */
+/* AgentState Kiểu dáng nút khi có nội dung */
 .agent-nav-btn.agent-state-btn.has-content:hover:not(.is-disabled) {
   color: var(--gray-900);
   background-color: var(--gray-100);

@@ -20,32 +20,32 @@ Nhiệm vụ của bạn là nén lịch sử trò chuyện dưới đây thành
 
 Vui lòng đặc biệt giữ lại và ghi nhận rõ ràng:
 
-## SESSION INTENT
+## Ý ĐỊNH PHIÊN TRÒ CHUYỆN
 Mục tiêu chính, phạm vi nhiệm vụ và sản phẩm bàn giao cuối cùng hiện tại của người dùng.
 
-## USER REQUIREMENTS AND PREFERENCES
+## YÊU CẦU VÀ SỞ THÍCH CỦA NGƯỜI DÙNG
 Các yêu cầu, sở thích, điều tối kỵ, định dạng đầu ra, phong cách ngôn ngữ, ràng buộc kỹ thuật, tiêu chí chấp nhận được người dùng nêu rõ, cũng như ý kiến lựa chọn phương án thực hiện. Chỉ ghi lại những nội dung vẫn có thể ảnh hưởng đến các câu trả lời hoặc việc thực thi tiếp theo.
 
-## PROGRESS AND DECISIONS
+## TIẾN ĐỘ VÀ QUYẾT ĐỊNH
 Các bước đã hoàn thành, kết luận chính, phương án đã xác nhận, phương án bị từ chối và lý do.
 
-## ARTIFACTS AND REFERENCES
-Các tệp, đường dẫn, đường dẫn đầu ra của công cụ, thread hoặc định danh chạy đã được tạo, sửa đổi, đọc hoặc cần tiếp tục theo dõi. Giữ lại đường dẫn cụ thể và các định danh chính.
+## TÀI LIỆU VÀ THAM KHẢO
+Các tệp, đường dẫn, kết quả đầu ra của công cụ, thread hoặc định danh đã được tạo, sửa đổi, đọc hoặc cần tiếp tục theo dõi. Giữ lại đường dẫn cụ thể và các định danh chính.
 
-## NEXT STEPS
-For the purpose of Finishuser, the most specific steps should be continued. Write None when there is no to-do.
+## BƯỚC TIẾP THEO
+Để hoàn thành nhiệm vụ, cần tiếp tục thực hiện các bước cụ thể nhất. Viết Không có (None) nếu không có việc cần làm.
 
-Require:
-- Do not recite lengthy tool output verbatim; retain conclusions, paths, and necessary evidence.
-- Don’t make up facts that don’t appear in the conversation.
-- If there are unresolved issues or risks, clearly document them.
-- Use language that is consistent with the user's primary conversation.
+Yêu cầu:
+- Không lặp lại nguyên văn kết quả dài của công cụ; chỉ giữ lại kết luận, đường dẫn và bằng chứng cần thiết.
+- Không bịa đặt những sự kiện không xuất hiện trong cuộc hội thoại.
+- Nếu có vấn đề hoặc rủi ro chưa được giải quyết, hãy ghi nhận lại rõ ràng.
+- Sử dụng ngôn ngữ nhất quán với cuộc trò chuyện chính của người dùng (Tiếng Việt).
 
 <messages>
 {messages}
 </messages>
 
-Output only the compressed context without adding additional descriptions."""
+Chỉ xuất ra ngữ cảnh đã nén mà không thêm các mô tả bổ sung khác."""
 
 
 def _role_can_access(auth: str | None, role: str | None) -> bool:

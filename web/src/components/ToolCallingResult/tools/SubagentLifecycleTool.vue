@@ -86,33 +86,33 @@ const props = defineProps({
 })
 
 const TOOL_LABELS = {
-  subagent_start: '启动子智能体',
-  subagent_status: '查询子智能体',
-  subagent_events: '读取子智能体事件',
-  subagent_cancel: '取消子智能体',
-  subagent_await: '等待子智能体'
+  subagent_start: 'khởi động đại lý con',
+  subagent_status: 'Truy vấn tác nhân phụ',
+  subagent_events: 'Đọc sự kiện của con trí tuệ nhân tạo',
+  subagent_cancel: 'Hủy bỏ tác nhân phụ',
+  subagent_await: 'Đang chờ sub-agent'
 }
 
 const PROGRESS_KIND_LABELS = {
-  assistant_message: '消息',
-  assistant_reasoning: '思考',
-  tool_call: '工具',
-  tool_call_delta: '工具'
+  assistant_message: 'Thông báo',
+  assistant_reasoning: 'Suy nghĩ',
+  tool_call: 'Công cụ',
+  tool_call_delta: 'Công cụ'
 }
 
 const STATUS_LABELS = {
-  busy: '忙碌',
-  cancelled: '已取消',
-  cancel_requested: '取消中',
-  completed: '已完成',
-  existing: '已存在',
-  failed: '失败',
-  interrupted: '已中断',
-  ok: '成功',
-  pending: '等待中',
-  running: '运行中',
-  started: '已启动',
-  success: '成功'
+  busy: 'Bận',
+  cancelled: 'Đã hủy',
+  cancel_requested: 'Đang hủy',
+  completed: 'Đã hoàn thành',
+  existing: 'Đã tồn tại',
+  failed: 'Thất bại',
+  interrupted: 'đã bị gián đoạn',
+  ok: 'Thành công',
+  pending: 'Đang chờ',
+  running: 'Đang chạy',
+  started: 'Đã khởi động',
+  success: 'Thành công'
 }
 
 const terminalStatuses = new Set(['completed', 'failed', 'cancelled', 'interrupted'])
@@ -132,7 +132,7 @@ const headerTitle = computed(() => {
     parsedResult.value?.subagent_slug ||
     subagentRun.value?.subagent_slug ||
     ''
-  const label = TOOL_LABELS[toolId.value] || '子智能体'
+  const label = TOOL_LABELS[toolId.value] || 'Trợ lý thông minh con'
   return name ? `${label}: ${name}` : label
 })
 
@@ -197,7 +197,7 @@ const metaItems = computed(() => {
       result.subagent_slug || args.value.subagent_slug || subagentRun.value?.subagent_slug
     ],
     ['last_seq', result.last_seq || result.progress?.last_seq],
-    ['events', Array.isArray(result.events) ? `${result.events.length} 条` : '']
+    ['events', Array.isArray(result.events) ? `${result.events.length} Mục` : '']
   ]
   return items
     .filter(([, value]) => value !== undefined && value !== null && value !== '')
@@ -221,7 +221,7 @@ const progressMessages = computed(() => {
     }))
 })
 
-const progressKindLabel = (kind) => PROGRESS_KIND_LABELS[kind] || '进度'
+const progressKindLabel = (kind) => PROGRESS_KIND_LABELS[kind] || 'Tiến độ'
 
 const progressMessageKey = (message, index) =>
   [message?.seq, message?.message_id, message?.tool_call_id, index].filter(Boolean).join(':')

@@ -1,6 +1,6 @@
 <template>
   <div class="skill-cards-page extension-page-root">
-    <PageShoulder search-placeholder="搜索技能..." v-model:search="searchQuery">
+    <PageShoulder search-placeholder="Tìm kiếm kỹ năng..." v-model:search="searchQuery">
       <template #actions>
         <template v-if="!isBatchDeleteMode">
           <a-button
@@ -8,7 +8,7 @@
             :disabled="loading || importing || filteredDeletableSkills.length === 0"
             class="lucide-icon-btn"
           >
-            <span>批量管理</span>
+            <span>Quản lý hàng loạt</span>
           </a-button>
           <a-button
             @click="handleOpenRemoteInstall"
@@ -16,7 +16,7 @@
             class="lucide-icon-btn"
           >
             <Computer :size="14" />
-            <span>远程安装</span>
+            <span>Cài đặt từ xa</span>
           </a-button>
           <a-upload
             accept=".zip,.md"
@@ -27,19 +27,19 @@
           >
             <a-button type="primary" :loading="importing" class="lucide-icon-btn">
               <Upload :size="14" />
-              <span>上传 Skill</span>
+              <span>Tải lên Skill</span>
             </a-button>
           </a-upload>
-          <a-tooltip title="刷新 Skills" placement="bottom">
+          <a-tooltip title="Làm mới Skills" placement="bottom">
             <a-button class="lucide-icon-btn" :disabled="loading" @click="fetchSkills">
               <RefreshCw :size="14" />
             </a-button>
           </a-tooltip>
         </template>
         <template v-else>
-          <a-button size="small" type="link" @click="handleBatchSelectAll">全选</a-button>
-          <a-button size="small" type="link" @click="handleBatchSelectInvert">反选</a-button>
-          <a-button size="small" type="link" @click="handleBatchSelectNone">清空</a-button>
+          <a-button size="small" type="link" @click="handleBatchSelectAll">Chọn tất cả</a-button>
+          <a-button size="small" type="link" @click="handleBatchSelectInvert">Bỏ chọn</a-button>
+          <a-button size="small" type="link" @click="handleBatchSelectNone">Xóa trắng</a-button>
           <a-button
             type="primary"
             danger
@@ -47,9 +47,9 @@
             :loading="loading"
             @click="handleBatchDelete"
           >
-            批量删除 ({{ selectedCardSlugs.length }})
+            Xóa hàng loạt ({{ selectedCardSlugs.length }})
           </a-button>
-          <a-button :disabled="loading" @click="exitBatchDeleteMode">退出管理</a-button>
+          <a-button :disabled="loading" @click="exitBatchDeleteMode">Thoát quản lý</a-button>
         </template>
       </template>
     </PageShoulder>
@@ -63,13 +63,13 @@
           <BookMarked :size="22" />
         </div>
         <div class="skill-empty-title">
-          {{ searchQuery ? '没有匹配的 Skill' : '还没有添加 Skill' }}
+          {{ searchQuery ? 'Không tìm thấy Skill' : 'Chưa có Skill nào' }}
         </div>
         <div class="skill-empty-desc">
           {{
             searchQuery
-              ? '换个关键词试试，或清空搜索条件。'
-              : '可以从远程仓库安装，或上传本地 Skill 文件。'
+              ? 'Thử từ khóa khác hoặc xóa điều kiện tìm kiếm.'
+              : 'Có thể cài đặt từ kho lưu trữ từ xa, hoặc tải lên tệp Skill cục bộ.'
           }}
         </div>
       </div>
@@ -102,7 +102,7 @@
             <InfoCard
               variant="mini"
               :title="formatExtensionCardTitle(skill.name)"
-              :description="skill.description || '暂无描述'"
+              :description="skill.description || 'Không có mô tả'"
               :default-icon="BookMarkedIcon"
               @click="handleCardClick(skill)"
               :class="{ 'card-clickable-select': isBatchDeleteMode && !skill.isRecommendation }"
@@ -114,7 +114,7 @@
                   class="skill-enabled-action"
                   :class="{ loading: isRecommendedSkillInstalling(skill.source) }"
                   :disabled="isRecommendedSkillInstallDisabled(skill.source)"
-                  aria-label="安装推荐 Skill"
+                  aria-label="Cài đặt Skill đề xuất"
                   @click.stop="handleRecommendedSkillInstall(skill)"
                 >
                   <LoaderCircle
@@ -130,7 +130,7 @@
                   class="skill-enabled-action"
                   :class="{ enabled: skill.enabled !== false }"
                   :disabled="!canManageSkill(skill) || isSkillToggling(skill.slug)"
-                  :aria-label="skill.enabled === false ? '启用 Skill' : '禁用 Skill'"
+                  :aria-label="skill.enabled === false ? 'Bật Skill' : 'Tắt Skill'"
                   @click.stop="handleToggleSkillEnabled(skill)"
                 >
                   <Plus v-if="skill.enabled === false" :size="15" class="action-icon" />
@@ -173,7 +173,7 @@
                   Skill</span
                 >
                 <span v-if="previewSkill.enabled === false" class="skill-preview-disabled-tag">
-                  已禁用
+                  Đã tắt
                 </span>
               </div>
             </div>
@@ -198,7 +198,7 @@
             :content="skillPreviewMarkdown"
             :compact="true"
           />
-          <a-empty v-else :description="skillPreviewError || '未读取到 SKILL.md'" />
+          <a-empty v-else :description="skillPreviewError || 'Không đọc được SKILL.md'" />
         </div>
 
         <div class="skill-preview-footer">
@@ -209,13 +209,13 @@
               :loading="deletingPreviewSkill"
               @click="confirmDeletePreviewSkill"
             >
-              卸载
+              Gỡ cài đặt
             </a-button>
           </div>
           <div class="skill-preview-footer-right">
-            <a-button @click="closeSkillPreview">关闭</a-button>
+            <a-button @click="closeSkillPreview">Đóng</a-button>
             <a-button type="primary" class="lucide-icon-btn" @click="goToPreviewSkillManagement">
-              <span>去管理</span>
+              <span>Quản lý</span>
             </a-button>
           </div>
         </div>
@@ -224,7 +224,7 @@
 
     <a-modal
       v-model:open="remoteInstallModalVisible"
-      title="远程安装 Skill"
+      title="Cài đặt từ xa Skill"
       :footer="null"
       width="760px"
       :closable="!installingRemoteSkill"
@@ -238,15 +238,15 @@
             :disabled="installingRemoteSkill"
             class="install-tabs"
           >
-            <!-- Tab 1: 按仓库拉取 -->
-            <a-tab-pane key="repo" tab="按仓库拉取">
+            <!-- Tab 1: Kéo từ kho lưu trữ (Repo) -->
+            <a-tab-pane key="repo" tab="Kéo từ kho lưu trữ (Repo)">
               <div class="tab-content-wrapper">
                 <a-form layout="vertical" class="remote-install-form">
                   <div class="repo-input-row">
                     <div class="repo-input-field">
                       <a-input
                         v-model:value="remoteInstallForm.source"
-                        placeholder="来源仓库，如 anthropics/skills 或 GitHub URL"
+                        placeholder="Nguồn kho lưu trữ, vd: anthropics/skills hoặc GitHub URL"
                         :disabled="installingRemoteSkill"
                       >
                         <template #suffix>
@@ -256,7 +256,7 @@
                             overlay-class-name="history-dropdown-menu"
                           >
                             <div class="history-trigger-wrapper">
-                              <a-tooltip title="历史仓库">
+                              <a-tooltip title="Lịch sử kho lưu trữ">
                                 <History
                                   :size="14"
                                   class="history-icon-trigger"
@@ -267,7 +267,7 @@
                             <template #overlay>
                               <a-menu @click="handleSelectHistory">
                                 <a-menu-item v-if="repoHistory.length === 0" disabled>
-                                  <span class="history-empty-text">暂无使用历史</span>
+                                  <span class="history-empty-text">Chưa có lịch sử sử dụng</span>
                                 </a-menu-item>
                                 <template v-else>
                                   <a-menu-item v-for="item in repoHistory" :key="item">
@@ -290,7 +290,7 @@
                                   >
                                     <div class="clear-history-btn-content">
                                       <Trash2 :size="12" class="clear-icon" />
-                                      <span>清空历史记录</span>
+                                      <span>Xóa lịch sử</span>
                                     </div>
                                   </a-menu-item>
                                 </template>
@@ -306,30 +306,30 @@
                       :disabled="installingRemoteSkill"
                       @click="handleListRemoteSkills"
                     >
-                      拉取技能
+                      Kéo kỹ năng
                     </a-button>
                   </div>
                   <div class="repo-hint-text">
-                    支持 `owner/repo` 或 GitHub URL。可前往
+                    Hỗ trợ `owner/repo` hoặc GitHub URL. Có thể truy cập
                     <a href="https://skills.sh/" target="_blank" rel="noopener noreferrer"
                       >skills.sh</a
                     >
-                    查询开源 skills。 也支持 ModelScope 单个 Skill
-                    地址，每次仅限安装一个：`https://modelscope.cn/skills/&lt;skill-id&gt;`。 Skill
-                    ID 可在
+                    để tìm kiếm các skill mã nguồn mở. Cũng hỗ trợ từng Skill từ ModelScope
+                    địa chỉ, chỉ có thể cài đặt một lần：`https://modelscope.cn/skills/&lt;skill-id&gt;`。 Skill
+                    ID có thể lấy tại
                     <a href="https://modelscope.cn/skills" target="_blank" rel="noopener noreferrer"
-                      >ModelScope Skill 市场</a
+                      >Chợ Skill ModelScope</a
                     >
-                    进入详情后从地址栏获取。
+                    sau khi vào chi tiết để lấy từ thanh địa chỉ.
                   </div>
 
-                  <!-- 仓库技能分页多选列表 -->
+                  <!-- Danh sách phân trang kỹ năng từ kho -->
                   <div v-if="remoteSkillOptions.length" class="skills-list-section">
                     <template v-if="hasSingleRepoSkill">
                       <div class="single-remote-skill-card">
                         <div class="single-remote-skill-name">{{ singleRepoSkill.name }}</div>
                         <div class="single-remote-skill-meta">
-                          {{ singleRepoSkill.description || '暂无描述' }}
+                          {{ singleRepoSkill.description || 'Không có mô tả' }}
                         </div>
                       </div>
                     </template>
@@ -337,18 +337,18 @@
                       <div class="list-operations-bar">
                         <div class="op-buttons">
                           <a-button size="small" type="link" @click="handleRepoSelectAll"
-                            >全选</a-button
+                            >Chọn tất cả</a-button
                           >
                           <a-button size="small" type="link" @click="handleRepoSelectInvert"
-                            >反选</a-button
+                            >Bỏ chọn</a-button
                           >
                           <a-button size="small" type="link" @click="handleRepoSelectNone"
-                            >清空</a-button
+                            >Xóa trắng</a-button
                           >
                         </div>
                         <a-input
                           v-model:value="repoFilterKeyword"
-                          placeholder="本地过滤检索..."
+                          placeholder="Lọc tìm kiếm cục bộ..."
                           size="small"
                           style="width: 180px"
                           allow-clear
@@ -377,11 +377,11 @@
                                 </div>
                                 <div class="skill-desc-col">
                                   <a-tooltip
-                                    :title="item.description || '暂无描述'"
+                                    :title="item.description || 'Không có mô tả'"
                                     placement="topLeft"
                                   >
                                     <span class="skill-item-desc">{{
-                                      item.description || '暂无描述'
+                                      item.description || 'Không có mô tả'
                                     }}</span>
                                   </a-tooltip>
                                 </div>
@@ -391,8 +391,8 @@
                         </a-list>
                       </div>
                       <div class="remote-skill-summary">
-                        已选 {{ selectedRepoSkills.length }} / 共发现
-                        {{ remoteSkillOptions.length }} 个 skills。
+                        Đã chọn {{ selectedRepoSkills.length }} / Đã tìm thấy
+                        {{ remoteSkillOptions.length }} skills.
                       </div>
                     </template>
                   </div>
@@ -400,15 +400,15 @@
               </div>
             </a-tab-pane>
 
-            <!-- Tab 2: 全局搜索发现 -->
-            <a-tab-pane key="search" tab="全局搜索发现">
+            <!-- Tab 2: Khám phá tìm kiếm toàn cầu -->
+            <a-tab-pane key="search" tab="Khám phá tìm kiếm toàn cầu">
               <div class="tab-content-wrapper">
                 <a-form layout="vertical" class="remote-install-form">
                   <div class="repo-input-row">
                     <div class="repo-input-field">
                       <a-input
                         v-model:value="searchKeyword"
-                        placeholder="输入 web、python 等关键字进行全局查找"
+                        placeholder="Nhập từ khóa như web, python để tìm kiếm"
                         :disabled="installingRemoteSkill"
                         @pressEnter="handleSearchRemoteSkills"
                       />
@@ -419,14 +419,14 @@
                       :disabled="installingRemoteSkill"
                       @click="handleSearchRemoteSkills"
                     >
-                      查找技能
+                      Tìm kiếm kỹ năng
                     </a-button>
                   </div>
                   <div class="repo-hint-text">
-                    直接输入关键字检索 skills.sh 上的开源 Skills 并批量拉取安装。
+                    Nhập từ khóa để tìm kiếm các Skill mã nguồn mở trên skills.sh và tải về hàng loạt.
                   </div>
 
-                  <!-- 搜索结果列表 -->
+                  <!-- Danh sách kết quả tìm kiếm -->
                   <div v-if="searchedSkills.length" class="skills-list-section">
                     <template v-if="hasSingleSearchedSkill">
                       <div class="single-remote-skill-card">
@@ -451,13 +451,13 @@
                       <div class="list-operations-bar">
                         <div class="op-buttons">
                           <a-button size="small" type="link" @click="handleSearchSelectAll"
-                            >全选</a-button
+                            >Chọn tất cả</a-button
                           >
                           <a-button size="small" type="link" @click="handleSearchSelectInvert"
-                            >反选</a-button
+                            >Bỏ chọn</a-button
                           >
                           <a-button size="small" type="link" @click="handleSearchSelectNone"
-                            >清空</a-button
+                            >Xóa trắng</a-button
                           >
                         </div>
                       </div>
@@ -504,8 +504,8 @@
                         </a-list>
                       </div>
                       <div class="remote-skill-summary">
-                        已选择 {{ selectedSearchSkills.length }} / 共找到
-                        {{ searchedSkills.length }} 个 skills。
+                        Đã chọn {{ selectedSearchSkills.length }} / Tìm thấy tổng cộng
+                        {{ searchedSkills.length }} skills.
                       </div>
                     </template>
                   </div>
@@ -514,10 +514,10 @@
             </a-tab-pane>
           </a-tabs>
 
-          <!-- 底部操作区 -->
+          <!-- Khu vực thao tác dưới -->
           <div class="modal-footer-actions">
             <a-button :disabled="installingRemoteSkill" @click="handleCancelInstall">
-              取消
+              Hủy
             </a-button>
             <a-button
               type="primary"
@@ -529,9 +529,9 @@
               "
               @click="startInstallRemoteSkills"
             >
-              解析并确认 (已选
+              Phân tích và xác nhận (Đã chọn
               {{ activeTab === 'repo' ? selectedRepoSkills.length : selectedSearchSkills.length }}
-              个)
+              )
             </a-button>
           </div>
         </div>
@@ -540,20 +540,20 @@
 
     <a-modal
       v-model:open="draftConfirmVisible"
-      title="确认添加 Skill"
+      title="Xác nhận thêm Skill"
       width="720px"
       :confirm-loading="draftConfirmLoading"
       :closable="!draftConfirmLoading"
       :mask-closable="!draftConfirmLoading"
       :keyboard="!draftConfirmLoading"
-      ok-text="确认添加"
-      cancel-text="取消"
+      ok-text="Xác nhận thêm"
+      cancel-text="Hủy"
       @ok="confirmSkillDraft"
       @cancel="cancelSkillDraft"
     >
       <div v-if="pendingDraft" class="skill-draft-confirm-panel">
         <div class="draft-source-row">
-          <span class="draft-source-label">来源</span>
+          <span class="draft-source-label">Nguồn</span>
           <span>{{ pendingDraft.source || sourceTypeLabel(pendingDraft.source_type) }}</span>
         </div>
         <div class="draft-items-list">
@@ -565,18 +565,18 @@
           >
             <div class="draft-item-main">
               <div class="draft-item-title">{{ item.name || item.slug }}</div>
-              <div class="draft-item-desc">{{ item.description || item.error || '暂无描述' }}</div>
+              <div class="draft-item-desc">{{ item.description || item.error || 'Không có mô tả' }}</div>
               <div v-if="item.warnings?.length" class="draft-item-warning">
                 {{ item.warnings.join('；') }}
               </div>
             </div>
-            <a-tag v-if="item.success === false" color="red">解析失败</a-tag>
+            <a-tag v-if="item.success === false" color="red">Phân tích thất bại</a-tag>
             <a-tag v-else color="blue">{{
               sourceTypeLabel(item.source_type || pendingDraft.source_type)
             }}</a-tag>
           </div>
         </div>
-        <div class="draft-share-title">生效范围</div>
+        <div class="draft-share-title">Phạm vi áp dụng</div>
         <ShareConfigForm
           ref="shareConfigFormRef"
           v-model="draftShareConfig"
@@ -618,7 +618,7 @@ const RECOMMENDED_SKILLS = [
     slug: 'skill-creator',
     name: 'skill-creator',
     description:
-      '创建、维护和改进 Agent Skill，适合编写 SKILL.md、设计使用流程、整理依赖与优化技能说明。',
+      'Tạo, duy trì và cải thiện Agent Skill, phù hợp để viết SKILL.md, thiết kế quy trình, v.v.',
     source: 'https://modelscope.cn/skills/@anthropics/skill-creator',
     aliases: ['skill-creator', 'Skill Creator']
   },
@@ -626,7 +626,7 @@ const RECOMMENDED_SKILLS = [
     slug: 'frontend-design',
     name: 'frontend-design',
     description:
-      '提供前端界面与交互设计建议，适合规划页面结构、组件状态、响应式布局和可访问性细节。',
+      'Cung cấp gợi ý thiết kế giao diện UI/UX.',
     source: 'https://modelscope.cn/skills/@anthropics/frontend-design',
     aliases: ['frontend-design', 'Frontend Design']
   },
@@ -634,7 +634,7 @@ const RECOMMENDED_SKILLS = [
     slug: 'docx',
     name: 'docx',
     description:
-      '读取、编辑和生成 Word DOCX 文档，适合处理正文、表格、批注、样式和文档结构化内容。',
+      'Đọc, chỉnh sửa và tạo tài liệu Word DOCX.',
     source: 'https://modelscope.cn/skills/@anthropics/docx',
     aliases: ['docx', 'DOCX']
   },
@@ -642,7 +642,7 @@ const RECOMMENDED_SKILLS = [
     slug: 'xlsx',
     name: 'xlsx',
     description:
-      '读取、分析和生成 Excel XLSX 表格，适合处理多工作表数据、公式结果、统计汇总和结构化导出。',
+      'Đọc, phân tích và tạo bảng tính Excel XLSX.',
     source: 'https://modelscope.cn/skills/@anthropics/xlsx',
     aliases: ['xlsx', 'XLSX']
   },
@@ -650,7 +650,7 @@ const RECOMMENDED_SKILLS = [
     slug: 'pdf',
     name: 'pdf',
     description:
-      '读取、提取和分析 PDF 文档内容，适合从报告、论文、合同等文件中整理要点、定位证据并生成摘要。',
+      'Đọc, trích xuất và phân tích nội dung tài liệu PDF.',
     source: 'https://modelscope.cn/skills/@anthropics/pdf',
     aliases: ['pdf', 'PDF']
   }
@@ -679,7 +679,7 @@ let previewRequestSeq = 0
 const installingRecommendedSources = ref([])
 
 const remoteInstallModalVisible = ref(false)
-const activeTab = ref('repo') // 'repo' 或 'search'
+const activeTab = ref('repo') // 'repo' hoặc 'search'
 
 const remoteInstallForm = reactive({
   source: 'https://github.com/anthropics/skills',
@@ -745,17 +745,17 @@ const filteredInstalledSkills = computed(() => installedSkillCards.value.filter(
 const skillGroups = computed(() => [
   {
     key: 'recommended',
-    title: '推荐',
+    title: 'Đề xuất',
     skills: isBatchDeleteMode.value ? [] : recommendedSkillCards.value.filter(matchesSearch)
   },
   {
     key: 'builtin',
-    title: '内置',
+    title: 'Tích hợp sẵn',
     skills: filteredInstalledSkills.value.filter((skill) => skill.sourceType === 'builtin')
   },
   {
     key: 'uploaded',
-    title: '上传的',
+    title: 'Đã tải lên',
     skills: filteredInstalledSkills.value.filter((skill) => skill.sourceType !== 'builtin')
   }
 ])
@@ -772,7 +772,7 @@ const canDeletePreviewSkill = computed(
     previewSkill.value.sourceType !== 'builtin'
 )
 
-// 仓库拉取的技能列表过滤
+// Lọc danh sách kỹ năng được trích xuất từ kho lưu trữ
 const filteredRepoSkills = computed(() => {
   if (!repoFilterKeyword.value.trim()) return remoteSkillOptions.value
   const kw = repoFilterKeyword.value.trim().toLowerCase()
@@ -783,7 +783,7 @@ const filteredRepoSkills = computed(() => {
   )
 })
 
-// 批量选择/反选/清空管理
+// 批量Chọn/Bỏ chọn/Xóa trắng管理
 const handleRepoSelectAll = () => {
   selectedRepoSkills.value = filteredRepoSkills.value.map((item) => item.name)
 }
@@ -846,9 +846,9 @@ const handleToggleSearchSkill = (item, checked) => {
 }
 
 const sourceTypeLabel = (sourceType) => {
-  if (sourceType === 'builtin') return '内置'
-  if (sourceType === 'remote') return '远程'
-  return '上传'
+  if (sourceType === 'builtin') return 'Tích hợp sẵn'
+  if (sourceType === 'remote') return 'Từ xa'
+  return 'Tải lên'
 }
 
 const canManageSkill = (skill) => skill?.can_manage !== false
@@ -881,7 +881,7 @@ const openSkillPreview = async (skill) => {
     skillPreviewMarkdown.value = result?.data?.content || ''
   } catch (error) {
     if (requestSeq !== previewRequestSeq || previewSkill.value?.slug !== skill.slug) return
-    skillPreviewError.value = error?.response?.data?.detail || error.message || '读取 SKILL.md 失败'
+    skillPreviewError.value = error?.response?.data?.detail || error.message || 'Đọc SKILL.md thất bại'
   } finally {
     if (requestSeq === previewRequestSeq) skillPreviewLoading.value = false
   }
@@ -934,9 +934,9 @@ const handleToggleSkillEnabled = async (skill) => {
         ? { ...updatedSkill, sourceType: updatedSkill.source_type || 'upload' }
         : { ...previewSkill.value, enabled }
     }
-    message.success(`Skill 已${enabled ? '启用' : '禁用'}`)
+    message.success(`Skill đã được ${enabled ? 'bật' : 'tắt'}`)
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || '更新 Skill 启用状态失败')
+    message.error(error?.response?.data?.detail || error.message || 'Cập nhật trạng thái Skill thất bại')
   } finally {
     togglingSkillSlugs.value = togglingSkillSlugs.value.filter((slug) => slug !== skill.slug)
   }
@@ -952,21 +952,21 @@ const confirmDeletePreviewSkill = () => {
   if (!target || !canDeletePreviewSkill.value || deletingPreviewSkill.value) return
 
   Modal.confirm({
-    title: `卸载 ${target.name || target.slug}`,
-    content: '卸载后会删除该 Skill 的数据库记录和本地文件，操作不可恢复。',
-    okText: '卸载',
+    title: `Gỡ cài đặt ${target.name || target.slug}`,
+    content: 'Sau khi gỡ cài đặt sẽ xóa bản ghi cơ sở dữ liệu và tệp cục bộ, thao tác không thể khôi phục.',
+    okText: 'Gỡ cài đặt',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy',
     async onOk() {
       deletingPreviewSkill.value = true
       try {
         await skillApi.deleteSkill(target.slug)
-        message.success('Skill 已卸载')
+        message.success('Skill đã được gỡ cài đặt')
         closeSkillPreview()
         previewSkill.value = null
         await fetchSkills()
       } catch (error) {
-        message.error(error?.response?.data?.detail || error.message || '卸载 Skill 失败')
+        message.error(error?.response?.data?.detail || error.message || 'Gỡ cài đặt Skill thất bại')
       } finally {
         deletingPreviewSkill.value = false
       }
@@ -1008,11 +1008,11 @@ const handleBatchDelete = () => {
   if (deletableSlugs.length === 0) return
 
   Modal.confirm({
-    title: '确定要批量删除选中的技能吗？',
-    content: `您已选中了 ${deletableSlugs.length} 个技能。该操作将从数据库和物理磁盘中彻底删除这些技能包，且不可恢复！`,
-    okText: '确定删除',
+    title: 'Bạn có chắc chắn muốn xóa hàng loạt các kỹ năng đã chọn không?',
+    content: `Bạn đã chọn ${deletableSlugs.length} kỹ năng. Thao tác này sẽ xóa vĩnh viễn khỏi CSDL và ổ đĩa, không thể khôi phục!`,
+    okText: 'Xác nhận xóa',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Hủy',
     onOk: async () => {
       loading.value = true
       try {
@@ -1022,15 +1022,15 @@ const handleBatchDelete = () => {
         const failList = results.filter((r) => !r.success)
 
         if (failList.length === 0) {
-          message.success(`批量删除成功，已删除 ${successList.length} 个技能`)
+          message.success(`Xóa hàng loạt thành công, đã xóa ${successList.length} kỹ năng`)
         } else {
-          message.warning(`批量删除完成：成功 ${successList.length} 个，失败 ${failList.length} 个`)
+          message.warning(`Hoàn tất xóa hàng loạt: Thành công ${successList.length}, Thất bại ${failList.length}`)
         }
 
         exitBatchDeleteMode()
         await fetchSkills()
       } catch (error) {
-        message.error(error?.response?.data?.detail || error.message || '批量删除失败')
+        message.error(error?.response?.data?.detail || error.message || 'Xóa hàng loạt thất bại')
       } finally {
         loading.value = false
       }
@@ -1045,7 +1045,7 @@ const fetchSkills = async () => {
     skills.value = skillResult?.data || []
     allowedSkillAccessLevels.value = skillResult?.allowed_access_levels || ['user']
   } catch {
-    message.error('加载失败')
+    message.error('Tải thất bại')
   } finally {
     loading.value = false
   }
@@ -1054,7 +1054,7 @@ const fetchSkills = async () => {
 const beforeSkillUpload = (file) => {
   const lower = file.name.toLowerCase()
   if (!lower.endsWith('.zip') && lower !== 'skill.md') {
-    message.error('仅支持上传 .zip 文件或 SKILL.md 文件')
+    message.error('Chỉ hỗ trợ tải lên tệp .zip hoặc SKILL.md')
     return false
   }
   return true
@@ -1080,7 +1080,7 @@ const normalizePendingDraft = (draftPayload) => {
   return {
     ...first,
     draft_ids: validDrafts.map((item) => item.draft_id),
-    source: validDrafts.length === 1 ? first.source : `${validDrafts.length} 个来源`,
+    source: validDrafts.length === 1 ? first.source : `${validDrafts.length}  nguồn`,
     items: validDrafts.flatMap((draft) =>
       (draft.items || []).map((item) => ({
         ...item,
@@ -1099,7 +1099,7 @@ const openDraftConfirmation = async (draftPayload) => {
     await Promise.allSettled(
       draft.draft_ids.map((draftId) => skillApi.discardSkillInstallDraft(draftId))
     )
-    message.error('没有可添加的 Skill')
+    message.error('Không có Skill để thêm')
     return false
   }
   pendingDraft.value = draft
@@ -1118,7 +1118,7 @@ const cancelSkillDraft = async () => {
 const confirmSkillDraft = async () => {
   const validation = shareConfigFormRef.value?.validate?.()
   if (validation && !validation.valid) {
-    message.warning(validation.message || '请完善 Skill 生效范围')
+    message.warning(validation.message || 'Vui lòng hoàn thiện phạm vi áp dụng của Skill')
     return
   }
 
@@ -1135,15 +1135,15 @@ const confirmSkillDraft = async () => {
     const successCount = results.filter((item) => item.success).length
     const failedCount = results.length - successCount
     if (failedCount === 0) {
-      message.success(`已添加 ${successCount} 个 Skill`)
+      message.success(`Đã thêm ${successCount}  Skill`)
     } else {
-      message.warning(`添加完成：成功 ${successCount} 个，失败 ${failedCount} 个`)
+      message.warning(`Hoàn tất thêm: Thành công ${successCount}, Thất bại ${failedCount}`)
     }
     remoteInstallModalVisible.value = false
     resetDraftConfirmation()
     await fetchSkills()
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || '确认添加 Skill 失败')
+    message.error(error?.response?.data?.detail || error.message || 'Xác nhận thêm Skill thất bại')
   } finally {
     draftConfirmLoading.value = false
   }
@@ -1154,11 +1154,11 @@ const handleImportUpload = async ({ file, onSuccess, onError }) => {
   try {
     const result = await skillApi.prepareSkillUpload(file)
     if (await openDraftConfirmation(result?.data)) {
-      message.success('解析完成，请确认 Skill 生效范围')
+      message.success('Phân tích hoàn tất, vui lòng xác nhận phạm vi áp dụng của Skill')
     }
     onSuccess?.(result)
   } catch (e) {
-    message.error(e?.response?.data?.detail || e.message || '解析 Skill 失败')
+    message.error(e?.response?.data?.detail || e.message || 'Phân tích Skill thất bại')
     onError?.(e)
   } finally {
     importing.value = false
@@ -1195,7 +1195,7 @@ const rememberRemoteSource = (source) => {
 const handleListRemoteSkills = async () => {
   const source = remoteInstallForm.source.trim()
   if (!source) {
-    message.warning('请输入来源仓库')
+    message.warning('Vui lòng nhập kho lưu trữ nguồn')
     return
   }
   listingRemoteSkills.value = true
@@ -1205,18 +1205,18 @@ const handleListRemoteSkills = async () => {
     selectedRepoSkills.value =
       remoteSkillOptions.value.length === 1 ? [remoteSkillOptions.value[0].name] : []
     if (!remoteSkillOptions.value.length) {
-      message.warning('未发现可安装的 Skills')
+      message.warning('Không tìm thấy Skills có thể cài đặt')
       return
     }
     if (remoteSkillOptions.value.length === 1) {
-      message.success('已发现 1 个 Skill，已自动选中')
+      message.success('Đã tìm thấy 1 Skill, tự động chọn')
     } else {
-      message.success(`已发现 ${remoteSkillOptions.value.length} 个 Skills`)
+      message.success(`Đã tìm thấy ${remoteSkillOptions.value.length}  Skills`)
     }
 
     rememberRemoteSource(source)
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || '获取远程 Skills 失败')
+    message.error(error?.response?.data?.detail || error.message || 'Lấy Skills từ xa thất bại')
   } finally {
     listingRemoteSkills.value = false
   }
@@ -1248,7 +1248,7 @@ const handleRecommendedSkillInstall = async (skill) => {
 
     if (!matchedSkill?.name) {
       remoteInstallModalVisible.value = true
-      message.warning('已拉取推荐来源，请选择要安装的 Skill')
+      message.warning('Đã kéo nguồn đề xuất, vui lòng chọn Skill để cài đặt')
       return
     }
 
@@ -1259,10 +1259,10 @@ const handleRecommendedSkillInstall = async (skill) => {
       skills: [matchedSkill.name]
     })
     if (await openDraftConfirmation(prepareResult?.data)) {
-      message.success('解析完成，请确认 Skill 生效范围')
+      message.success('Phân tích hoàn tất, vui lòng xác nhận phạm vi áp dụng của Skill')
     }
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || '解析推荐 Skill 失败')
+    message.error(error?.response?.data?.detail || error.message || 'Phân tích Skill đề xuất thất bại')
   } finally {
     installingRecommendedSources.value = installingRecommendedSources.value.filter(
       (source) => source !== skill.source
@@ -1289,7 +1289,7 @@ const deleteHistoryItem = (item) => {
 const clearAllHistory = () => {
   repoHistory.value = []
   localStorage.removeItem('yuxi_remote_repo_history')
-  message.success('历史记录已清空')
+  message.success('Lịch sử đã được xóa')
 }
 
 const handleSelectHistory = ({ key }) => {
@@ -1303,7 +1303,7 @@ const handleSelectHistory = ({ key }) => {
 const handleSearchRemoteSkills = async () => {
   const query = searchKeyword.value.trim()
   if (!query) {
-    message.warning('请输入搜索关键字')
+    message.warning('Vui lòng nhập từ khóa tìm kiếm')
     return
   }
   searchingRemoteSkills.value = true
@@ -1312,14 +1312,14 @@ const handleSearchRemoteSkills = async () => {
     searchedSkills.value = result?.data || []
     selectedSearchSkills.value = searchedSkills.value.length === 1 ? [...searchedSkills.value] : []
     if (!searchedSkills.value.length) {
-      message.warning('未搜索到相关的 Skills')
+      message.warning('Không tìm thấy Skills liên quan')
     } else if (searchedSkills.value.length === 1) {
-      message.success('搜索到 1 个 Skill，已自动选中')
+      message.success('Tìm thấy 1 Skill, tự động chọn')
     } else {
-      message.success(`搜索到 ${searchedSkills.value.length} 个 Skills`)
+      message.success(`Tìm thấy ${searchedSkills.value.length}  Skills`)
     }
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || '搜索远程 Skills 失败')
+    message.error(error?.response?.data?.detail || error.message || 'Tìm kiếm Skills từ xa thất bại')
   } finally {
     searchingRemoteSkills.value = false
   }
@@ -1350,10 +1350,10 @@ const startInstallRemoteSkills = async () => {
 
     if (await openDraftConfirmation(drafts)) {
       remoteInstallModalVisible.value = false
-      message.success('解析完成，请确认 Skill 生效范围')
+      message.success('Phân tích hoàn tất, vui lòng xác nhận phạm vi áp dụng của Skill')
     }
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || '解析远程 Skill 失败')
+    message.error(error?.response?.data?.detail || error.message || 'Phân tích Skill từ xa thất bại')
   } finally {
     installingRemoteSkill.value = false
   }
@@ -1998,11 +1998,11 @@ defineExpose({
 }
 </style>
 
-<!-- NOTE: unscoped style block 用于 dropdown overlay 样式穿透 teleport -->
+<!-- NOTE: unscoped style block dành cho dropdown overlay xuyên thấu teleport -->
 <style lang="less">
-/* Ant Design Dropdown overlay 通过 teleport 挂载到 body，
-   scoped CSS 无法穿透，因此必须使用 unscoped 样式。
-   使用 .history-dropdown-menu 作为 overlayClassName 命名空间。 */
+/* Ant Design Dropdown overlay qua teleport Gắn vào body，
+   scoped CSS không thể xuyên thấu, do đó phải sử dụng kiểu unscoped.
+   Sử dụng .history-dropdown-menu Như là overlayClassName Không gian tên。 */
 .history-dropdown-menu {
   min-width: 280px;
 
@@ -2022,7 +2022,7 @@ defineExpose({
   }
 }
 
-/* 历史记录行：仓库地址 + 删除按钮 */
+/* Dòng lịch sử: địa chỉ kho + nút xóa */
 .history-item-menu-row {
   display: flex;
   justify-content: space-between;
@@ -2069,7 +2069,7 @@ defineExpose({
   font-size: 12px;
 }
 
-/* 清空历史记录按钮内容 — 图标在左文字在右，水平居中 */
+/* Xóa trắng历史记录Nhấn钮nội dung — Biểu tượng在左文字在右，水平居中 */
 .clear-history-btn-content {
   display: flex;
   align-items: center;

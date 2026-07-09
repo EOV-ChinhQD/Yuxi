@@ -60,8 +60,8 @@ const loadingMessageChunk = (chunk) => {
   return msg || null
 }
 
-// 工具结果不走 messages 流，而是以 method=tools 的 stream_event 事件返回（tool-started/tool-finished）。
-// 取出 tool-finished 的 output（一条 ToolMessage 字典），交给 msgChunks 与 AI 消息按 tool_call_id 关联。
+// Kết quả công cụ không đi qua messages Dòng, mà là method=tools của stream_event Sự kiện trả về（tool-started/tool-finished）。
+// Lấy ra tool-finished của output（Một dòng ToolMessage Từ điển), giao cho msgChunks 与 AI Tin nhắn theo tool_call_id Liên kết。
 const toolFinishedMessage = (chunk) => {
   const streamEvent = chunk?.event
   if (!streamEvent || streamEvent.method !== 'tools') return null
@@ -153,8 +153,8 @@ export function useAgentStreamHandler({
 
       case 'stream_event':
         {
-          // 工具结果需立即落地（不经平滑层），写入 msgChunks 后由 convertToolResultToMessages
-          // 按 tool_call_id 关联到对应 AI 消息的 tool_call，驱动其完成态。
+          // Kết quả công cụ cần được ghi lại ngay lập tức (không qua lớp làm mượt), ghi vào msgChunks Sau đó do convertToolResultToMessages
+          // Nhấn tool_call_id Liên kết với tương ứng AI Của tin nhắn tool_call，Điều khiển trạng thái hoàn thành của nó。
           const toolMessage = toolFinishedMessage(chunk)
           if (toolMessage) {
             if (!threadState.onGoingConv.msgChunks[toolMessage.id]) {
@@ -186,7 +186,7 @@ export function useAgentStreamHandler({
           threadId,
           currentAgentId: unref(currentAgentId)
         })
-        // 使用审批 composable 处理审批请求
+        // Sử dụng phê duyệt composable Xử lý yêu cầu phê duyệt
         return processApprovalInStream(chunk, threadId, unref(currentAgentId))
 
       case 'agent_state':
@@ -226,7 +226,7 @@ export function useAgentStreamHandler({
 
       case 'finished':
         streamSmoother?.flushThread(threadId)
-        // 先标记流式结束，但保持消息显示直到历史记录加载完成
+        // Trước tiên đánh dấu kết thúc streaming, nhưng giữ tin hiển thị cho đến khi tải lịch sử hoàn thành
         if (threadState) {
           threadState.isStreaming = false
           threadState.replyLoadingVisible = false
@@ -254,7 +254,7 @@ export function useAgentStreamHandler({
 
       case 'interrupted':
         streamSmoother?.flushThread(threadId)
-        // 中断状态，刷新消息历史
+        // Ngắt trạng thái, làm mới lịch sử tin nhắn
         console.warn(`${debugPrefix}[interrupted]`, {
           threadId,
           message: chunkMessage,
@@ -270,7 +270,7 @@ export function useAgentStreamHandler({
             threadState.pendingInterrupt = pendingInterrupt
           }
         }
-        // 如果有 message 字段，显示提示（例如：敏感内容检测）
+        // 如果有 message Cột, hiển thị thông báo (ví dụ: phát hiện nội dung dễ gây khó chịu)）
         if (chunkMessage) {
           message.info(chunkMessage)
         }

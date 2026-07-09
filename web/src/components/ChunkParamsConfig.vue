@@ -1,13 +1,13 @@
 <template>
   <div class="chunk-params-config">
     <div class="params-info">
-      <p>调整分块参数可以控制文本的切分方式，影响检索质量和文档加载效率。</p>
+      <p>Điều chỉnh tham số chunk có thể kiểm soát cách chia cắt văn bản, ảnh hưởng đến chất lượng tìm kiếm và hiệu suất tải tài liệu。</p>
     </div>
     <a-form :model="localParams" name="chunkConfig" autocomplete="off" layout="vertical">
       <a-form-item v-if="showPreset" name="chunk_preset_id">
         <template #label>
           <span class="chunk-preset-label">
-            分块策略
+            Chiến lược phân chia
             <a-tooltip :title="presetDescription">
               <QuestionCircleOutlined class="chunk-preset-help-icon" />
             </a-tooltip>
@@ -20,8 +20,8 @@
           style="width: 100%"
         />
         <p class="param-description">
-          选择适合当前文档结构的分块策略。
-          <span v-if="allowPresetFollowDefault">留空时沿用知识库默认策略。</span>
+          Chọn chiến lược phân chia phù hợp với cấu trúc tài liệu hiện tại。
+          <span v-if="allowPresetFollowDefault">Sử dụng chiến lược mặc định của cơ sở kiến thức khi để trống。</span>
         </p>
       </a-form-item>
 
@@ -29,8 +29,8 @@
         <a-form-item v-if="showChunkSizeOverlap" name="chunk_token_num">
           <template #label>
             <span class="chunk-preset-label">
-              最大 Token 数
-              <a-tooltip title="每个文本片段的最大 token 数，留空时使用默认值 512">
+              Tối đa Token Số
+              <a-tooltip title="Tối đa cho mỗi đoạn văn bản token Số，留空时Sử dụngmặc định值 512">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
@@ -39,15 +39,15 @@
             v-model:value="parserConfig.chunk_token_num"
             :min="100"
             :max="10000"
-            placeholder="默认 512"
+            placeholder="mặc định 512"
             style="width: 100%"
           />
         </a-form-item>
         <a-form-item v-if="showChunkSizeOverlap" name="overlapped_percent">
           <template #label>
             <span class="chunk-preset-label">
-              重叠比例 (%)
-              <a-tooltip title="相邻文本片段按 token 数计算的重叠比例，留空时使用默认值 0">
+              Tỷ lệ chồng lấp (%)
+              <a-tooltip title="Các đoạn văn bản liền kề theo token Tính tỷ lệ chồng lấn, để trống để dùng giá trị mặc định 0">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
@@ -56,22 +56,22 @@
             v-model:value="parserConfig.overlapped_percent"
             :min="0"
             :max="99"
-            placeholder="默认 0"
+            placeholder="mặc định 0"
             style="width: 100%"
           />
         </a-form-item>
         <a-form-item v-if="showQaSplit" name="delimiter">
           <template #label>
             <span class="chunk-preset-label">
-              分隔符
-              <a-tooltip title="支持 \\n、\\t 等转义字符。留空时使用默认分隔符 \\n">
+              Dấu phân cách
+              <a-tooltip title="支持 \\n、\\t Chờ ký tự thoát. Nếu để trống, sử dụng dấu phân cách mặc định \\n">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
           </template>
           <a-input
             v-model:value="parserConfig.delimiter"
-            placeholder="默认 \\n，可输入 \\n\\n\\n 或 ---"
+            placeholder="mặc định \\n，Có thể nhập liệu \\n\\n\\n hoặc ---"
             style="width: 100%"
           />
         </a-form-item>
@@ -140,7 +140,7 @@ const presetOptions = computed(() => {
   if (props.allowPresetFollowDefault) {
     options.push({
       value: '',
-      label: `沿用知识库默认（${defaultPresetLabel}）`
+      label: `Tiếp tục sử dụng mặc định của cơ sở kiến thức（${defaultPresetLabel}）`
     })
   }
 

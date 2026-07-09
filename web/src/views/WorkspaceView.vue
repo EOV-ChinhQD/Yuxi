@@ -8,7 +8,7 @@
           @click="openAgentsGuideModal"
         >
           <template #icon><CircleHelp :size="16" /></template>
-          使用说明
+          Hướng dẫn sử dụng
         </a-button>
         <a-button :disabled="activeSourceKey !== 'personal'" @click="openCreateDirectoryModal">
           Thư mục mới
@@ -137,30 +137,30 @@
 
     <a-modal
       v-model:open="agentsGuideModalVisible"
-      title="Agents 目录说明"
-      okText="我知道了"
+      title="Agents Mô tả thư mục"
+      okText="Tôi đã hiểu"
       :cancelButtonProps="{ style: { display: 'none' } }"
       @ok="closeAgentsGuideModal"
     >
       <div class="agents-guide-content">
         <p>
-          这个文件夹中的说明文件会在合适的时机注入到 Agent
-          的执行流程中，用来补充你的长期偏好、业务背景和协作要求。
+          Tệp hướng dẫn trong thư mục này sẽ được chèn vào thời điểm thích hợp Agent
+          Trong quy trình thực hiện, dùng để bổ sung sở thích dài hạn, nền tảng kinh doanh và yêu cầu hợp tác của bạn。
         </p>
         <p>
-          目前支持 <code>AGENTS.md</code>：其中内容会在每次会话中注入到 Agent Prompt，适合写入希望
-          Agent 长期遵守的信息。
+          Hiện tại được hỗ trợ <code>AGENTS.md</code>：Nội dung đó sẽ được tiêm vào mỗi lần hội thoại Agent Prompt，Phù hợp để ghi nội dung mong muốn
+          Agent Thông tin tuân thủ lâu dài。
         </p>
 
         <section class="agents-guide-section">
-          <h3>填写建议</h3>
+          <h3>Điền gợi ý</h3>
           <ul>
-            <li>写清常用工作背景，例如部门职责、常见任务、知识库使用方式。</li>
-            <li>写清回答偏好，例如语言风格、详略程度、是否优先给结论。</li>
-            <li>写清业务术语和固定称呼，帮助 Agent 保持表达一致。</li>
-            <li>写清资料使用要求，例如优先引用哪些知识库、哪些内容需要谨慎确认。</li>
-            <li>写清协作边界，例如不确定时先提问，涉及重要决策时先给方案再执行。</li>
-            <li>优先使用明确、可执行的规则，避免“尽量做好”这类模糊描述。</li>
+            <li>Ghi rõ bối cảnh công việc thường dùng, ví dụ: trách nhiệm bộ phận, nhiệm vụ thường gặp, cách sử dụng cơ sở tri thức。</li>
+            <li>Làm rõ sở thích trả lời, ví dụ phong cách ngôn ngữ, mức độ chi tiết, có ưu tiên đưa ra kết luận không。</li>
+            <li>Ghi rõ thuật ngữ kinh doanh và tên gọi cố định, giúp Agent Giữ cách diễn đạt nhất quán。</li>
+            <li>Rõ ràng yêu cầu sử dụng tài liệu, ví dụ ưu tiên trích dẫn từ kho kiến thức nào, nội dung nào cần được xác nhận kỹ lưỡng。</li>
+            <li>Làm rõ ranh giới hợp tác, ví dụ khi không chắc chắn hãy đặt câu hỏi trước, khi liên quan đến quyết định quan trọng hãy đưa ra phương án trước khi thực hiện。</li>
+            <li>Ưu tiên sử dụng quy tắc rõ ràng, có thể thực thi, tránh mô tả mơ hồ như “cố gắng làm tốt nhất”。</li>
           </ul>
         </section>
       </div>

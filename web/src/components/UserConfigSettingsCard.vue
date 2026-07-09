@@ -2,15 +2,15 @@
   <div class="user-config-settings">
     <div class="header-section">
       <div class="header-content">
-        <div class="section-title">用户配置(Beta)</div>
+        <div class="section-title">Cấu hình người dùng(Beta)</div>
         <p class="section-description">
-          配置当前用户的专属设置。当前为测试预览版，暂未引入新的特性，仅作技术能力拓展。
+          Cấu hình cài đặt riêng cho người dùng hiện tại. Hiện tại là phiên bản preview thử nghiệm, chưa đưa vào tính năng mới, chỉ mở rộng khả năng kỹ thuật.。
         </p>
       </div>
       <div class="header-actions">
         <a-button class="lucide-icon-btn" :loading="loading" @click="loadUserConfig">
           <template #icon><RefreshCw :size="16" :class="{ spin: loading }" /></template>
-          刷新
+          Làm mới
         </a-button>
         <a-button type="primary" :loading="saving" @click="saveUserConfig">
           {{ saveButtonText }}
@@ -23,10 +23,10 @@
         <div class="config-row">
           <div class="config-meta">
             <div class="config-title-line">
-              <span class="config-title">是否启用 Memory</span>
-              <span class="reserved-badge">预留开关</span>
+              <span class="config-title">Có bật không Memory</span>
+              <span class="reserved-badge">Công tắc dự trữ</span>
             </div>
-            <p class="config-description">当前仅保存配置值，暂不接入智能体运行逻辑。</p>
+            <p class="config-description">Hiện tại chỉ lưu giá trị cấu hình, chưa kết nối với logic vận hành của trợ lý thông minh。</p>
           </div>
           <a-switch :checked="draftEnableMemory" @change="draftEnableMemory = Boolean($event)" />
         </div>
@@ -47,7 +47,7 @@ const draftEnableMemory = ref(false)
 const savedEnableMemory = ref(false)
 
 const hasUnsavedChanges = computed(() => draftEnableMemory.value !== savedEnableMemory.value)
-const saveButtonText = computed(() => (hasUnsavedChanges.value ? '保存（有修改）' : '保存'))
+const saveButtonText = computed(() => (hasUnsavedChanges.value ? 'Lưu (có thay đổi)）' : 'Lưu'))
 
 const applyResponse = (res) => {
   draftEnableMemory.value = res.enable_memory
@@ -60,7 +60,7 @@ const loadUserConfig = async () => {
     const res = await userConfigApi.get()
     applyResponse(res)
   } catch (error) {
-    message.error(error.message || '加载用户配置失败')
+    message.error(error.message || 'Tải cấu hình người dùng thất bại')
   } finally {
     loading.value = false
   }
@@ -68,7 +68,7 @@ const loadUserConfig = async () => {
 
 const saveUserConfig = async () => {
   if (!hasUnsavedChanges.value) {
-    message.info('用户配置未变化')
+    message.info('Cấu hình người dùng chưa thay đổi')
     return
   }
 
@@ -76,9 +76,9 @@ const saveUserConfig = async () => {
   try {
     const res = await userConfigApi.update({ enable_memory: draftEnableMemory.value })
     applyResponse(res)
-    message.success('用户配置已保存')
+    message.success('Cấu hình người dùng đã được lưu')
   } catch (error) {
-    message.error(error.message || '保存用户配置失败')
+    message.error(error.message || 'Lưu cấu hình người dùng thất bại')
   } finally {
     saving.value = false
   }

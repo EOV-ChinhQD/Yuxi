@@ -17,21 +17,21 @@
     />
 
     <div v-if="detailLoading" class="database-detail-loading">
-      <a-spin tip="加载知识库信息..." />
+      <a-spin tip="Tải thông tin cơ sở kiến thức..." />
     </div>
 
     <template v-else>
       <div class="detail-top-bar">
         <button class="detail-back-btn" type="button" @click="backToDatabase">
           <ArrowLeft :size="16" />
-          <span>返回</span>
+          <span>Quay lại</span>
         </button>
         <div class="detail-title-area">
           <div class="detail-icon">
             <component :is="kbTypeIcon" :size="18" />
           </div>
           <div class="detail-title-text">
-            <h2>{{ database.name || '知识库加载中' }}</h2>
+            <h2>{{ database.name || 'Đang tải cơ sở kiến thức' }}</h2>
             <span class="detail-subtitle">{{ databaseSubtitle }}</span>
           </div>
         </div>
@@ -43,7 +43,7 @@
               @click="copyDatabaseId"
             >
               <Copy :size="14" />
-              <span>复制 ID</span>
+              <span>Sao chép ID</span>
             </button>
             <button
               type="button"
@@ -51,15 +51,15 @@
               @click="showEditModal"
             >
               <Pencil :size="14" />
-              <span>编辑</span>
+              <span>Chỉnh sửa</span>
             </button>
           </a-space>
         </div>
       </div>
 
       <div class="database-detail-body">
-        <div class="database-tab-bar" aria-label="知识库功能导航">
-          <nav class="database-tab-list" aria-label="知识库功能标签" role="tablist">
+        <div class="database-tab-bar" aria-label="Điều hướng chức năng kho tri thức">
+          <nav class="database-tab-list" aria-label="Thẻ chức năng cơ sở kiến thức" role="tablist">
             <button
               v-for="tab in visibleTabs"
               :key="tab.key"
@@ -87,7 +87,7 @@
                     @click="showAddFilesModal()"
                   >
                     <FileUp :size="14" />
-                    <span>上传</span>
+                    <span>Tải lên</span>
                   </button>
                   <button
                     type="button"
@@ -95,7 +95,7 @@
                     @click="showCreateFolderModal"
                   >
                     <FolderPlus :size="14" />
-                    <span>新建文件夹</span>
+                    <span>Tạo thư mục mới</span>
                   </button>
                 </div>
               </div>
@@ -110,7 +110,7 @@
                   <FileText :size="16" />
                   <div class="file-stat-inline">
                     <strong>{{ pendingParseCount }}</strong>
-                    <span>待解析</span>
+                    <span>Chưa được phân tích</span>
                   </div>
                 </button>
                 <button
@@ -123,21 +123,21 @@
                   <DatabaseIcon :size="16" />
                   <div class="file-stat-inline">
                     <strong>{{ pendingIndexCount }}</strong>
-                    <span>待入库</span>
+                    <span>Chờ nhập kho</span>
                   </div>
                 </button>
                 <div class="file-stat-card file-stat-summary">
                   <FileText :size="16" />
                   <div class="file-stat-inline">
                     <strong>{{ fileStats.count }}</strong>
-                    <span>文件</span>
+                    <span>Tệp</span>
                   </div>
                 </div>
                 <div v-if="fileStats.sizeText" class="file-stat-card file-stat-summary">
                   <DatabaseIcon :size="16" />
                   <div class="file-stat-inline">
                     <strong>{{ fileStats.sizeText }}</strong>
-                    <span>总大小</span>
+                    <span>Kích thước tổng</span>
                   </div>
                 </div>
                 <button
@@ -145,8 +145,8 @@
                   class="file-stat-card file-stat-summary file-stat-repair"
                   :disabled="statsRepairing"
                   :aria-busy="statsRepairing"
-                  aria-label="修复缺失的 Chunk/Token 统计"
-                  title="修复缺失的 Chunk/Token 统计"
+                  aria-label="修复缺失của Chunk/Token Thống kê"
+                  title="修复缺失của Chunk/Token Thống kê"
                   @click="repairDatabaseStats"
                 >
                   <LoaderCircle v-if="statsRepairing" :size="16" class="file-stat-spinner" />
@@ -161,8 +161,8 @@
                   class="file-stat-card file-stat-summary file-stat-repair"
                   :disabled="statsRepairing"
                   :aria-busy="statsRepairing"
-                  aria-label="修复缺失的 Chunk/Token 统计"
-                  title="修复缺失的 Chunk/Token 统计"
+                  aria-label="修复缺失của Chunk/Token Thống kê"
+                  title="修复缺失của Chunk/Token Thống kê"
                   @click="repairDatabaseStats"
                 >
                   <LoaderCircle v-if="statsRepairing" :size="16" class="file-stat-spinner" />
@@ -182,12 +182,12 @@
               <div class="query-test-pane">
                 <QuerySection ref="querySectionRef" :visible="true" @toggle-visible="() => {}" />
               </div>
-              <aside class="query-config-pane" aria-label="检索配置">
+              <aside class="query-config-pane" aria-label="Cấu hình truy xuất">
                 <div class="search-config-wrapper">
                   <div class="search-config-header">
                     <div>
-                      <h3>检索配置</h3>
-                      <p>调整当前知识库的检索参数。</p>
+                      <h3>Cấu hình truy xuất</h3>
+                      <p>Điều chỉnh các tham số truy xuất của cơ sở tri thức hiện tại。</p>
                     </div>
                     <button
                       type="button"
@@ -196,7 +196,7 @@
                       @click="handleInlineSearchConfigSave"
                     >
                       <Save :size="14" />
-                      <span>保存</span>
+                      <span>Lưu</span>
                     </button>
                   </div>
                   <div class="search-config-body">
@@ -246,47 +246,47 @@
       </div>
     </template>
 
-    <a-modal v-model:open="editModalVisible" title="编辑知识库信息" width="700px">
+    <a-modal v-model:open="editModalVisible" title="Chỉnh sửa thông tin cơ sở tri thức" width="700px">
       <template #footer>
         <a-button danger @click="deleteDatabase" style="margin-right: auto; margin-left: 0">
           <template #icon>
             <Trash2 :size="16" style="vertical-align: -3px; margin-right: 4px" />
           </template>
-          删除数据库
+          xóaDữ liệu库
         </a-button>
-        <a-button key="back" @click="editModalVisible = false">取消</a-button>
-        <a-button key="submit" type="primary" @click="handleEditSubmit">确定</a-button>
+        <a-button key="back" @click="editModalVisible = false">Hủy</a-button>
+        <a-button key="submit" type="primary" @click="handleEditSubmit">xác nhận</a-button>
       </template>
       <a-form :model="editForm" :rules="rules" ref="editFormRef" layout="vertical">
-        <a-form-item label="知识库名称" name="name" required>
-          <a-input v-model:value="editForm.name" placeholder="请输入知识库名称" />
+        <a-form-item label="Tên kho kiến thức" name="name" required>
+          <a-input v-model:value="editForm.name" placeholder="Vui lòng nhập tên cơ sở kiến thức" />
         </a-form-item>
-        <a-form-item label="知识库描述" name="description">
+        <a-form-item label="Mô tả kho tri thức" name="description">
           <AiTextarea
             v-model="editForm.description"
             :name="editForm.name"
             :files="fileList"
-            placeholder="请输入知识库描述"
+            placeholder="Vui lòng nhập mô tả cơ sở kiến thức"
             action-placement="header"
             :rows="4"
           />
         </a-form-item>
 
-        <a-form-item v-if="!isConnector" label="自动生成问题" name="auto_generate_questions">
+        <a-form-item v-if="!isConnector" label="Tự động tạo ra câu hỏi" name="auto_generate_questions">
           <a-switch
             v-model:checked="editForm.auto_generate_questions"
-            checked-children="开启"
-            un-checked-children="关闭"
+            checked-children="Kích hoạt"
+            un-checked-children="Đóng"
           />
           <span style="margin-left: 8px; font-size: 12px; color: var(--gray-500)">
-            上传文件后自动生成测试问题
+            Tự động tạo ra câu hỏi thử nghiệm sau khi tải lên tệp tin
           </span>
         </a-form-item>
 
         <a-form-item v-if="!isConnector" name="chunk_preset_id">
           <template #label>
             <span class="chunk-preset-label">
-              分块策略
+              Chiến lược phân chia
               <a-tooltip :title="editPresetDescription">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
@@ -303,19 +303,19 @@
           <a-form-item label="Dify API URL" name="dify_api_url">
             <a-input
               v-model:value="editForm.dify_api_url"
-              placeholder="例如: https://api.dify.ai/v1"
+              placeholder="Ví dụ: https://api.dify.ai/v1"
             />
           </a-form-item>
           <a-form-item label="Dify Token" name="dify_token">
             <a-input-password
               v-model:value="editForm.dify_token"
-              placeholder="请输入 Dify API Token"
+              placeholder="Vui lòng nhập Dify API Token"
             />
           </a-form-item>
           <a-form-item label="Dataset ID" name="dify_dataset_id">
             <a-input
               v-model:value="editForm.dify_dataset_id"
-              placeholder="请输入 Dify dataset_id"
+              placeholder="Vui lòng nhập Dify dataset_id"
             />
           </a-form-item>
         </template>
@@ -324,13 +324,13 @@
           <a-form-item label="Notion Token" name="notion_token">
             <a-input-password
               v-model:value="editForm.notion_token"
-              placeholder="留空则保持现有 Token 或使用环境变量"
+              placeholder="Nếu để trống, giữ nguyên hiện状 Token Hoặc sử dụng biến môi trường"
             />
           </a-form-item>
           <a-form-item label="Data Source ID" name="notion_data_source_id">
             <a-input
               v-model:value="editForm.notion_data_source_id"
-              placeholder="请输入 Notion data_source_id"
+              placeholder="Vui lòng nhập Notion data_source_id"
             />
           </a-form-item>
           <a-form-item label="Notion API Version" name="notion_version">
@@ -338,7 +338,7 @@
           </a-form-item>
         </template>
 
-        <a-form-item v-if="canEditShareConfig" label="共享设置" name="share_config">
+        <a-form-item v-if="canEditShareConfig" label="Cài đặt chia sẻ" name="share_config">
           <a-form-item-rest>
             <ShareConfigForm
               ref="shareConfigFormRef"
@@ -349,7 +349,7 @@
         </a-form-item>
         <a-form-item
           v-else-if="database.share_config"
-          label="共享设置"
+          label="Cài đặt chia sẻ"
           name="share_config_readonly"
         >
           <div class="share-config-readonly">
@@ -438,28 +438,28 @@ const kbTypeIcon = computed(() => getKbTypeIcon(kbType.value || 'milvus'))
 
 const databaseSubtitle = computed(() => {
   const typeLabel = getKbTypeLabel(kbType.value || 'milvus')
-  if (!isCurrentDatabaseLoaded.value) return '正在加载知识库信息'
+  if (!isCurrentDatabaseLoaded.value) return 'Đang tải thông tin cơ sở tri thức'
 
   const description = database.value.description?.trim()
   if (description) return description
 
-  if (isConnector.value) return `${typeLabel} 连接器`
-  return `${typeLabel} 知识库 · ${database.value.row_count || 0} 文件`
+  if (isConnector.value) return `${typeLabel} Kết nối`
+  return `${typeLabel} Tài liệu kiến thức · ${database.value.row_count || 0} Tệp`
 })
 
 const tabs = computed(() => {
   if (isMilvus.value) {
     return [
-      { key: 'filetable', label: '文件管理', icon: FileText },
-      { key: 'query', label: '检索测试', icon: Search },
-      { key: 'graph', label: '知识图谱', icon: Network },
-      { key: 'mindmap', label: '知识导图', icon: MapIcon },
-      { key: 'evaluation', label: 'RAG 评估', icon: BarChart3 },
-      { key: 'benchmarks', label: '评估基准', icon: ClipboardList }
+      { key: 'filetable', label: 'Quản lý tệp', icon: FileText },
+      { key: 'query', label: 'Kiểm tra tìm kiếm', icon: Search },
+      { key: 'graph', label: 'Đồ thị tri thức', icon: Network },
+      { key: 'mindmap', label: 'Bản đồ kiến thức', icon: MapIcon },
+      { key: 'evaluation', label: 'RAG Đánh giá', icon: BarChart3 },
+      { key: 'benchmarks', label: 'Tiêu chuẩn đánh giá', icon: ClipboardList }
     ]
   }
 
-  return [{ key: 'query', label: '检索测试', icon: Search }]
+  return [{ key: 'query', label: 'Kiểm tra tìm kiếm', icon: Search }]
 })
 
 const visibleTabs = computed(() => tabs.value)
@@ -525,14 +525,14 @@ const repairDatabaseStats = async () => {
     const updatedChunkFiles = Number(result?.updated_chunk_files || 0)
     if (updatedTokenFiles || updatedChunkFiles) {
       message.success(
-        `已修复 ${updatedTokenFiles} 个 Token 统计，${updatedChunkFiles} 个 Chunk 统计`
+        `đã được sửa ${updatedTokenFiles} Cái Token Thống kê，${updatedChunkFiles} Cái Chunk Thống kê`
       )
     } else {
-      message.info('统计已是最新')
+      message.info('Thống kê đã là mới nhất')
     }
   } catch (error) {
     console.error(error)
-    message.error(error.message || '统计修复失败')
+    message.error(error.message || 'Sửa thống kê thất bại')
   } finally {
     statsRepairing.value = false
   }
@@ -545,15 +545,15 @@ const pendingIndexCount = computed(() => {
 const confirmBatchParse = () => {
   const count = pendingParseCount.value
   if (count <= 0) {
-    message.info('没有待解析文档')
+    message.info('Không có tài liệu cần phân tích')
     return
   }
 
   Modal.confirm({
-    title: '解析待解析文件',
-    content: `将提交 ${formatStatNumber(count)} 个待解析文件，任务会在后台按批处理，可在任务中心查看进度。`,
-    okText: '提交解析',
-    cancelText: '取消',
+    title: 'Phân tích các tệp đang chờ xử lý',
+    content: `Sẽ được gửi ${formatStatNumber(count)} CáiChưa được phân tíchTệp，任务会在后台Nhấn批处理，có thểTrung tâm nhiệm vụ查看Tiến độ。`,
+    okText: 'Gửi để phân tích',
+    cancelText: 'Hủy',
     onOk: () => store.parsePendingFiles(count)
   })
 }
@@ -561,13 +561,13 @@ const confirmBatchParse = () => {
 const confirmBatchIndex = () => {
   const count = pendingIndexCount.value
   if (count <= 0) {
-    message.info('没有待入库文档')
+    message.info('Không có tài liệu chờ thêm vào kho')
     return
   }
 
   const opened = fileTableRef.value?.startPendingIndex?.(count)
   if (!opened) {
-    message.error('文件列表尚未加载完成，请稍后再试')
+    message.error('Danh sách tệp chưa tải xong, vui lòng thử lại sau')
   }
 }
 
@@ -707,13 +707,13 @@ const backToDatabase = () => {
 
 const copyDatabaseId = async () => {
   if (!database.value.kb_id) {
-    message.warning('知识库ID为空')
+    message.warning('Tài liệu kiến thứcIDTrống')
     return
   }
 
   try {
     await navigator.clipboard.writeText(database.value.kb_id)
-    message.success('知识库ID已复制到剪贴板')
+    message.success('Tài liệu kiến thứcIDĐã sao chép vào bộ nhớ tạm')
   } catch {
     const textArea = document.createElement('textarea')
     textArea.value = database.value.kb_id
@@ -721,7 +721,7 @@ const copyDatabaseId = async () => {
     textArea.select()
     document.execCommand('copy')
     document.body.removeChild(textArea)
-    message.success('知识库ID已复制到剪贴板')
+    message.success('Tài liệu kiến thứcIDĐã sao chép vào bộ nhớ tạm')
   }
 }
 
@@ -744,7 +744,7 @@ const editForm = reactive({
 })
 
 const rules = {
-  name: [{ required: true, message: '请输入知识库名称' }]
+  name: [{ required: true, message: 'Vui lòng nhập tên cơ sở kiến thức' }]
 }
 
 const editPresetDescription = computed(() => getChunkPresetDescription(editForm.chunk_preset_id))
@@ -761,8 +761,8 @@ const shareConfigDisplay = computed(() => {
     const names = departmentIds.map((id) => getDepartmentName(id)).join('、') || '无'
     return {
       color: 'blue',
-      label: '部门共享',
-      detail: `${departmentIds.length} 个部门可访问：${names}`
+      label: 'Chia sẻ bộ phận',
+      detail: `${departmentIds.length} có thể truy cập：${names}`
     }
   }
 
@@ -771,21 +771,21 @@ const shareConfigDisplay = computed(() => {
     const names = userUids.map((uid) => getUserName(uid)).join('、') || '无'
     return {
       color: 'purple',
-      label: '指定人',
-      detail: `${userUids.length} 个用户可访问：${names}`
+      label: 'Người được chỉ định',
+      detail: `${userUids.length} người dùng có thể truy cập：${names}`
     }
   }
 
   return {
     color: 'green',
-    label: '全局共享',
-    detail: '所有用户可访问'
+    label: 'Chia sẻ toàn cục',
+    detail: 'Tất cả người dùng có thể truy cập'
   }
 })
 
 const getDepartmentName = (id) => {
   const dept = departments.value.find((item) => Number(item.id) === Number(id))
-  return dept?.name || `部门${id}`
+  return dept?.name || `Bộ phận${id}`
 }
 
 const getUserName = (uid) => {
@@ -857,11 +857,11 @@ const handleEditSubmit = () => {
           !editForm.dify_token?.trim() ||
           !editForm.dify_dataset_id?.trim()
         ) {
-          message.error('请完整填写 Dify API URL、Token 和 Dataset ID')
+          message.error('请完整填写 Dify API URL、Token và Dataset ID')
           return
         }
         if (!editForm.dify_api_url.trim().endsWith('/v1')) {
-          message.error('Dify API URL 必须以 /v1 结尾')
+          message.error('Dify API URL phải bắt đầu bằng /v1 Kết thúc')
           return
         }
         updateData.additional_params = {
@@ -871,7 +871,7 @@ const handleEditSubmit = () => {
         }
       } else if (isNotionKb.value) {
         if (!editForm.notion_data_source_id?.trim()) {
-          message.error('请填写 Notion Data Source ID')
+          message.error('Vui lòng điền Notion Data Source ID')
           return
         }
         updateData.additional_params = {
@@ -892,7 +892,7 @@ const handleEditSubmit = () => {
       editModalVisible.value = false
     })
     .catch((err) => {
-      console.error('表单验证失败:', err)
+      console.error('Xác thực form thất bại:', err)
     })
 }
 
@@ -1363,7 +1363,7 @@ onMounted(() => {
   }
 }
 
-/* 全局样式作为备用方案 */
+/* Kiểu toàn cầu làm giải pháp dự phòng */
 .ant-popover .query-params-compact {
   width: 220px;
 }

@@ -35,7 +35,7 @@
             v-if="userStore.isLoggedIn"
           >
             <SlidersHorizontal class="icon" :size="18" />
-            <span>用户配置</span>
+            <span>Cấu hình người dùng</span>
           </div>
           <div
             class="sider-item"
@@ -125,7 +125,7 @@
           @click="activeTab = 'userConfig'"
           v-if="userStore.isLoggedIn"
         >
-          用户配置
+          Cấu hình người dùng
         </div>
         <div
           class="nav-item"

@@ -1,6 +1,6 @@
-// 复刻后端 yuxi/utils/hash_utils.py 的 hash_id("subagent_", "{parent}:{slug}:{tool_call_id}", length=64)：
+// Nhân bản backend yuxi/utils/hash_utils.py của hash_id("subagent_", "{parent}:{slug}:{tool_call_id}", length=64)：
 // child_thread_id = "subagent_" + sha256("{parent}:{slug}:{tool_call_id}")[:55]
-// 子智能体由 graph.ainvoke 独立调用，流式事件不带 tool_call_id，前端据此自行推算 child_thread_id。
+// Bằng con trí tuệ nhân tạo graph.ainvoke Gọi độc lập, sự kiện truyền dòng không có tool_call_id，Phía trước tính toán dựa trên điều này child_thread_id。
 const PREFIX = 'subagent_'
 const DIGEST_LENGTH = 64 - PREFIX.length
 

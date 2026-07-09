@@ -25,7 +25,7 @@
     <div ref="modalBodyRef" class="subagent-thread-modal-body">
       <div ref="modalContentRef" class="subagent-thread-modal-content">
         <div v-if="loading && !hasRenderableMessages" class="subagent-thread-modal-state">
-          正在加载子智能体消息...
+          Đang tải tin nhắn của tác nhân con...
         </div>
         <div v-else-if="error" class="subagent-thread-modal-state is-error">{{ error }}</div>
         <ThreadMessageList
@@ -112,7 +112,7 @@ const RUN_TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled', 'inte
 const normalizeRunStatus = (status) => String(status || '').trim()
 const isTerminalRunStatus = (status) => RUN_TERMINAL_STATUSES.has(normalizeRunStatus(status))
 
-const modalTitleName = computed(() => props.subagentName || '子智能体')
+const modalTitleName = computed(() => props.subagentName || 'Trợ lý thông minh con')
 const effectiveRunStatus = computed(() =>
   normalizeRunStatus(historyRunStatus.value || props.runStatus)
 )
@@ -244,7 +244,7 @@ const attachModalScrollTracking = async () => {
   }
 }
 
-// LangChain 内容块数组 → 纯文本（仅保留 text 块）
+// LangChain Mảng khối nội dung → văn bản thuần (chỉ giữ lại text khối）
 const flattenContent = (content) => {
   if (typeof content === 'string') return content
   if (Array.isArray(content)) {
@@ -285,7 +285,7 @@ const loadHistory = async (threadId) => {
       return
     }
 
-    // 子智能体消息存于 LangGraph checkpoint，需走 state 接口并把 tool 结果嵌入 AI 消息。
+    // Tin nhắn của tác nhân con được lưu trong LangGraph checkpoint，Cần đi qua state Giao diện và đặt tool Kết quả được nhúng AI Thông báo。
     const response = await agentApi.getAgentState(threadId, { includeMessages: true })
     historyRunId.value = response?.subagent_run?.run_id ? String(response.subagent_run.run_id) : ''
     historyRunStatus.value = normalizeRunStatus(response?.subagent_run?.status || props.runStatus)
@@ -300,7 +300,7 @@ const loadHistory = async (threadId) => {
       return
     }
 
-    // checkpoint 的 content 可能是 LangChain 内容块数组，扁平成文本供 MarkdownPreview 渲染。
+    // checkpoint của content Có thể là LangChain Mảng khối nội dung, làm phẳng thành văn bản để MarkdownPreview Render。
     const normalized = normalizeMessages(response.messages || [])
     messages.value = MessageProcessor.convertToolResultToMessages(normalized)
     await nextTick()
@@ -308,7 +308,7 @@ const loadHistory = async (threadId) => {
       scheduleScrollToBottom(true, true)
     }
   } catch (e) {
-    error.value = '加载子智能体消息失败'
+    error.value = 'Đang tảiTrợ lý thông minh conThông báoThất bại'
     console.error('Failed to load subagent thread messages:', e)
   } finally {
     loading.value = false
