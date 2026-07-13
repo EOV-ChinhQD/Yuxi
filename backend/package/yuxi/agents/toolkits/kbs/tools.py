@@ -273,19 +273,59 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
             kwargs["file_name"] = file_name
 
         from yuxi.knowledge.retrieval.multi_hop_retriever import detect_and_decompose, multi_hop_retrieve_labeled
+        from yuxi.knowledge.retrieval.router import SemanticRouter, RouteType
 
         # Lấy cấu hình LLM để thực hiện phân tách câu hỏi
         llm_model_spec = target_info.get("metadata", {}).get("llm_model_spec") or "gpt-4o"
 
-        is_multi_hop = False
-        sub_queries = []
-        if inspect.iscoroutinefunction(retriever):
-            is_multi_hop, sub_queries = await detect_and_decompose(query_text, llm_model_spec)
+        route_type, route_details = await SemanticRouter.route(query_text, llm_model_spec="gpt-4o-mini")
+        logger.info(f"[QueryKB] Router decided: {route_type.value} - {route_details}")
 
-        if is_multi_hop:
-            result = await multi_hop_retrieve_labeled(sub_queries, retriever, **kwargs)
-            result["kb_id"] = target_kb_id
-        else:
+        result = {"results": []}
+
+        if route_type == RouteType.CHIT_CHAT:
+            logger.info("[QueryKB] CHIT_CHAT detected. Returning empty results.")
+            result = {"results": [], "answer": ""}
+            
+        elif route_type == RouteType.OUT_OF_DOMAIN:
+            logger.info("[QueryKB] OUT_OF_DOMAIN detected. Returning system message.")
+            result = {"results": [], "answer": "Tôi không có thông tin về vấn đề này."}
+            
+        elif route_type == RouteType.AMBIGUOUS:
+            logger.info("[QueryKB] AMBIGUOUS detected. Requesting clarification.")
+            result = {"results": [], "answer": "Câu hỏi chưa rõ ràng. Bạn vui lòng làm rõ ý định hoặc chỉ định tài liệu cụ thể (nếu cần tóm tắt)."}
+            
+        elif route_type == RouteType.STRUCTURED_AGGREGATION:
+            logger.info("[QueryKB] STRUCTURED_AGGREGATION detected.")
+            result = {"results": [], "answer": "Hệ thống RAG hiện tại không hỗ trợ việc đếm, tính toán hoặc thống kê trên dữ liệu văn bản."}
+            
+        elif route_type == RouteType.EXACT_MATCH:
+            logger.info("[QueryKB] EXACT_MATCH detected. Using keyword search.")
+            kwargs["search_mode"] = "keyword"
+            if inspect.iscoroutinefunction(retriever):
+                result = await retriever(query_text, **kwargs)
+            else:
+                result = retriever(query_text, **kwargs)
+                
+        elif route_type == RouteType.SUMMARIZATION:
+            logger.info("[QueryKB] SUMMARIZATION detected. Using NAIVE_SEARCH for general summarization context.")
+            if inspect.iscoroutinefunction(retriever):
+                result = await retriever(query_text, **kwargs)
+            else:
+                result = retriever(query_text, **kwargs)
+                
+        elif route_type == RouteType.MULTI_HOP:
+            is_multi_hop, sub_queries = await detect_and_decompose(query_text, llm_model_spec)
+            if is_multi_hop:
+                result = await multi_hop_retrieve_labeled(sub_queries, retriever, **kwargs)
+                result["kb_id"] = target_kb_id
+            else:
+                if inspect.iscoroutinefunction(retriever):
+                    result = await retriever(query_text, **kwargs)
+                else:
+                    result = retriever(query_text, **kwargs)
+                    
+        else: # NAIVE_SEARCH
             if inspect.iscoroutinefunction(retriever):
                 result = await retriever(query_text, **kwargs)
             else:

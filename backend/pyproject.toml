@@ -9,6 +9,8 @@ dependencies = [
     "uvicorn[standard]>=0.34.2",
     "arq>=0.26.3",
     "yuxi",
+    "apscheduler>=3.11.3",
+    "alembic>=1.18.5",
 ]
 [tool.ruff]
 line-length = 120  # Max line length

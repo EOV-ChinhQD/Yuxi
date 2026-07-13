@@ -914,3 +914,80 @@ class FailedJob(Base):
             "retry_count": self.retry_count,
             "status": self.status,
         }
+
+
+class UserEpisodicMemory(Base):
+    """User Episodic Memory model"""
+
+    __tablename__ = "user_episodic_memory"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uid = Column(String(64), nullable=False, index=True)
+    thread_id = Column(String(64), nullable=True, index=True)
+    event_summary = Column(Text, nullable=False)
+    timestamp = Column(DateTime, default=utc_now_naive)
+    sentiment_score = Column(Float, nullable=True)
+    confidence_score = Column(Float, nullable=True)
+    is_archived = Column(Boolean, nullable=False, default=False, index=True)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "uid": self.uid,
+            "thread_id": self.thread_id,
+            "event_summary": self.event_summary,
+            "timestamp": format_utc_datetime(self.timestamp),
+            "sentiment_score": self.sentiment_score,
+            "confidence_score": self.confidence_score,
+            "is_archived": bool(self.is_archived),
+        }
+
+
+class UserProceduralMemory(Base):
+    """User Procedural Memory model"""
+
+    __tablename__ = "user_procedural_memory"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uid = Column(String(64), nullable=False, index=True)
+    rule_text = Column(Text, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True, index=True)
+    superseded_by = Column(Integer, nullable=True)
+    confidence_score = Column(Float, nullable=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "uid": self.uid,
+            "rule_text": self.rule_text,
+            "is_active": bool(self.is_active),
+            "superseded_by": self.superseded_by,
+            "confidence_score": self.confidence_score,
+            "created_at": format_utc_datetime(self.created_at),
+            "updated_at": format_utc_datetime(self.updated_at),
+        }
+
+
+class RejectedMemoryLog(Base):
+    """Rejected Memory Log model"""
+
+    __tablename__ = "rejected_memory_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uid = Column(String(64), nullable=False, index=True)
+    raw_fact = Column(Text, nullable=False)
+    memory_type = Column(String(32), nullable=False, index=True)  # episodic, semantic, procedural
+    confidence_score = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=utc_now_naive)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "uid": self.uid,
+            "raw_fact": self.raw_fact,
+            "memory_type": self.memory_type,
+            "confidence_score": self.confidence_score,
+            "created_at": format_utc_datetime(self.created_at),
+        }

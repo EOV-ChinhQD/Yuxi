@@ -14,7 +14,7 @@ from yuxi.utils import logger
 # Processor instance cache
 _PROCESSOR_CACHE: dict[str, BaseDocumentProcessor] = {}
 
-# 处理器类型映射: processor_type -> (module_path, class_name)
+# Ánh xạ loại bộ xử lý: processor_type -> (module_path, class_name)
 PROCESSOR_TYPES = {
     "rapid_ocr": ("yuxi.knowledge.parser.rapid_ocr", "RapidOCRParser"),
     "mineru_ocr": ("yuxi.knowledge.parser.mineru", "MinerUParser"),

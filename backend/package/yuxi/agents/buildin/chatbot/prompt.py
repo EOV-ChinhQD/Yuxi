@@ -101,5 +101,59 @@ async def build_prompt_with_context(context):
                 f"Không xin phép, không hỏi lại — gọi `query_kb` ngay lập tức."
             )
 
-    system_prompt = f"{current_date}\n\n{PROMPT.strip()}{kb_info_str}\n\n{context.system_prompt or ''}"
+    # Tích hợp Agentic Memory Injection
+    memory_prompt_str = ""
+    uid = getattr(context, "uid", None)
+    thread_id = getattr(context, "thread_id", None)
+    if uid and thread_id:
+        try:
+            from yuxi.storage.postgres.manager import pg_manager
+            from yuxi.config.user import UserConfig
+            
+            async with pg_manager.get_async_session_context() as db:
+                user_config = await UserConfig.load(db, uid)
+                if user_config.schema.enable_memory:
+                    from yuxi.repositories.conversation_repository import ConversationRepository
+                    from yuxi.agents.memory.injector import MemoryInjector
+                    
+                    conv_repo = ConversationRepository(db)
+                    msgs = await conv_repo.get_messages_by_thread_id(thread_id)
+                    user_msgs = [m for m in msgs if m.role == "user"]
+                    query_text = user_msgs[-1].content if user_msgs else ""
+                    
+                    if query_text:
+                        injector = MemoryInjector()
+                        memories = await injector.get_memories_for_prompt(db, uid, query_text)
+                        
+                        # 1. Procedural Rules (Độ ưu tiên cao nhất, hành vi ứng xử)
+                        proc_rules = memories.get("procedural_rules", [])
+                        if proc_rules:
+                            rules_block = "\n".join([f"- {r}" for r in proc_rules])
+                            memory_prompt_str += (
+                                f"\n\n<| BEHAVIOR_CONSTRAINTS |>\n"
+                                f"Bạn BẮT BUỘC phải tuân thủ các quy tắc hành xử và quy chuẩn xưng hô dưới đây của người dùng:\n"
+                                f"{rules_block}"
+                            )
+                        
+                        # 2. Semantic & Episodic Memories (Thông tin cá nhân & ngữ cảnh tham khảo)
+                        semantic_facts = memories.get("semantic_facts", [])
+                        episodic_events = memories.get("episodic_events", [])
+                        
+                        profile_str = ""
+                        if semantic_facts:
+                            profile_str += "\nThông tin & Sở thích cá nhân:\n" + "\n".join([f"- {f}" for f in semantic_facts])
+                        if episodic_events:
+                            profile_str += "\nSự kiện & Bối cảnh liên quan:\n" + "\n".join([f"- {e}" for e in episodic_events])
+                            
+                        if profile_str:
+                            memory_prompt_str += (
+                                f"\n\n<| USER_PROFILE_AND_HISTORY |>\n"
+                                f"Dưới đây là thông tin bổ sung và ngữ cảnh lịch sử về người dùng (chỉ mang tính chất tham khảo để cá nhân hóa phản hồi):\n"
+                                f"{profile_str.strip()}"
+                            )
+        except Exception as e:
+            from yuxi.utils import logger
+            logger.warning(f"Failed to retrieve user memory for prompt: {e}")
+
+    system_prompt = f"{current_date}\n\n{PROMPT.strip()}{kb_info_str}{memory_prompt_str}\n\n{context.system_prompt or ''}"
     return system_prompt.strip()

@@ -41,24 +41,24 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
         if not self.api_token:
             return {
                 "status": "unavailable",
-                "message": "PADDLEOCR_API_TOKEN 未配置",
+                "message": "PADDLEOCR_API_TOKEN chưa được cấu hình",
                 "details": {"api_url": self.api_url, "model": self.model},
             }
 
         return {
             "status": "configured",
-            "message": "PaddleOCR API token 已配置，将在解析时验证",
+            "message": "PaddleOCR API token đã được cấu hình, sẽ được xác minh khi phân tích",
             "details": {"api_url": self.api_url, "model": self.model},
         }
 
     def process_file(self, file_path: str, params: dict[str, Any] | None = None) -> str:
         if not os.path.exists(file_path) and not file_path.startswith(("http://", "https://")):
-            raise DocumentParserException(f"文件不存在: {file_path}", self.get_service_name(), "file_not_found")
+            raise DocumentParserException(f"Tệp không tồn tại: {file_path}", self.get_service_name(), "file_not_found")
 
         file_ext = self._file_extension(file_path)
         if file_ext and not self.supports_file_type(file_ext):
             raise DocumentParserException(
-                f"不支持的文件类型: {file_ext}", self.get_service_name(), "unsupported_file_type"
+                f"Định dạng tệp không được hỗ trợ: {file_ext}", self.get_service_name(), "unsupported_file_type"
             )
 
         self._require_api_token()
@@ -66,7 +66,7 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
         start_time = time.time()
 
         try:
-            logger.info(f"PaddleOCR API 开始处理: {Path(file_path).name} ({self.model})")
+            logger.info(f"PaddleOCR API bắt đầu xử lý: {Path(file_path).name} ({self.model})")
             job_id = self._submit_job(file_path, params)
             result_url = self._poll_job_result(
                 job_id=job_id,
@@ -78,21 +78,21 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
 
             processing_time = time.time() - start_time
             logger.info(
-                f"PaddleOCR API 处理成功: {Path(file_path).name} ({self.model}) - "
-                f"{len(text)} 字符 ({processing_time:.2f}s)"
+                f"PaddleOCR API xử lý thành công: {Path(file_path).name} ({self.model}) - "
+                f"{len(text)} ký tự ({processing_time:.2f}s)"
             )
             return text
         except DocumentParserException:
             raise
         except Exception as exc:
             processing_time = time.time() - start_time
-            error_msg = f"PaddleOCR API 处理失败: {exc}"
+            error_msg = f"PaddleOCR API xử lý thất bại: {exc}"
             logger.error(f"{error_msg} ({processing_time:.2f}s)")
             raise DocumentParserException(error_msg, self.get_service_name(), "processing_failed") from exc
 
     def _require_api_token(self) -> None:
         if not self.api_token:
-            raise DocumentParserException("PADDLEOCR_API_TOKEN 未配置", self.get_service_name(), "missing_api_token")
+            raise DocumentParserException("PADDLEOCR_API_TOKEN chưa được cấu hình", self.get_service_name(), "missing_api_token")
 
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"bearer {self.api_token}"}
@@ -134,7 +134,7 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
 
         if response.status_code != 200:
             raise DocumentParserException(
-                f"提交 PaddleOCR 任务失败: HTTP {response.status_code} {response.text}",
+                f"Gửi tác vụ PaddleOCR thất bại: HTTP {response.status_code} {response.text}",
                 self.get_service_name(),
                 "submit_failed",
             )
@@ -142,7 +142,7 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
         body = response.json()
         if body.get("code") not in (None, 0):
             raise DocumentParserException(
-                f"提交 PaddleOCR 任务失败: {body.get('msg', '未知错误')}",
+                f"Gửi tác vụ PaddleOCR thất bại: {body.get('msg', '未知错误')}",
                 self.get_service_name(),
                 f"api_error_{body.get('code')}",
             )
@@ -150,7 +150,7 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
         job_id = (body.get("data") or {}).get("jobId")
         if not job_id:
             raise DocumentParserException(
-                "提交 PaddleOCR 任务后未返回 jobId",
+                "Gửi tác vụ PaddleOCR không trả về jobId",
                 self.get_service_name(),
                 "missing_job_id",
             )
@@ -164,7 +164,7 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
             response = requests.get(f"{self.api_url}/{job_id}", headers=self._headers(), timeout=30)
             if response.status_code != 200:
                 raise DocumentParserException(
-                    f"查询 PaddleOCR 任务失败: HTTP {response.status_code} {response.text}",
+                    f"Truy vấn tác vụ PaddleOCR thất bại: HTTP {response.status_code} {response.text}",
                     self.get_service_name(),
                     "status_query_failed",
                 )
@@ -176,28 +176,28 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
                 json_url = ((data.get("resultUrl") or {}).get("jsonUrl") or "").strip()
                 if not json_url:
                     raise DocumentParserException(
-                        "PaddleOCR 任务完成但未返回 jsonUrl", self.get_service_name(), "missing_result_url"
+                        "Tác vụ PaddleOCR hoàn thành nhưng không trả về jsonUrl", self.get_service_name(), "missing_result_url"
                     )
                 return json_url
 
             if state == "failed":
-                error_msg = data.get("errorMsg") or "未知错误"
-                raise DocumentParserException(f"PaddleOCR 任务失败: {error_msg}", self.get_service_name(), "job_failed")
+                error_msg = data.get("errorMsg") or "Lỗi không xác định"
+                raise DocumentParserException(f"Tác vụ PaddleOCR thất bại: {error_msg}", self.get_service_name(), "job_failed")
 
             if state not in {"pending", "running"}:
                 raise DocumentParserException(
-                    f"PaddleOCR 任务状态异常: {state}", self.get_service_name(), "unknown_job_state"
+                    f"Trạng thái tác vụ PaddleOCR bất thường: {state}", self.get_service_name(), "unknown_job_state"
                 )
 
             time.sleep(poll_interval_seconds)
 
-        raise DocumentParserException("PaddleOCR 任务处理超时", self.get_service_name(), "timeout")
+        raise DocumentParserException("Tác vụ PaddleOCR xử lý quá thời gian (timeout)", self.get_service_name(), "timeout")
 
     def _download_jsonl(self, json_url: str) -> list[dict[str, Any]]:
         response = requests.get(json_url, timeout=60)
         if response.status_code != 200:
             raise DocumentParserException(
-                f"下载 PaddleOCR 结果失败: HTTP {response.status_code} {response.text}",
+                f"Tải kết quả PaddleOCR thất bại: HTTP {response.status_code} {response.text}",
                 self.get_service_name(),
                 "download_failed",
             )
@@ -210,7 +210,7 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
             rows.append(json.loads(line))
 
         if not rows:
-            raise DocumentParserException("PaddleOCR 结果为空", self.get_service_name(), "empty_result")
+            raise DocumentParserException("Kết quả PaddleOCR trống", self.get_service_name(), "empty_result")
 
         return rows
 
@@ -221,7 +221,7 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
         response = requests.get(image_url, timeout=60)
         if response.status_code != 200:
             raise DocumentParserException(
-                f"下载 PaddleOCR Markdown 图片失败: HTTP {response.status_code}",
+                f"Tải ảnh Markdown của PaddleOCR thất bại: HTTP {response.status_code}",
                 self.get_service_name(),
                 "image_download_failed",
             )

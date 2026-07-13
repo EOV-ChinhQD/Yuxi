@@ -104,6 +104,29 @@ async def lifespan(app: FastAPI):
     print("LangGraph Checkpoint tables verified/created!")
 
     await tasker.start()
+    
+    # Start APScheduler for Episodic Decay Job (TTL)
+    # NOTE: In a multi-worker deployment, this in-memory scheduler will run on each process.
+    # To scale properly, configure a Redis or SQLAlchemy job store for APScheduler, or use a distributed lock.
+    try:
+        from apscheduler.schedulers.asyncio import AsyncIOScheduler
+        from yuxi.agents.memory.decay_job import run_episodic_decay_job
+        import datetime
+
+        scheduler = AsyncIOScheduler()
+        # Schedule the job to run every 24 hours, starting now
+        scheduler.add_job(
+            run_episodic_decay_job,
+            "interval",
+            hours=24,
+            next_run_time=datetime.datetime.now(datetime.timezone.utc)
+        )
+        scheduler.start()
+        app.state.scheduler = scheduler
+        logger.info("APScheduler started: scheduled episodic memory decay job every 24 hours.")
+    except Exception as e:
+        logger.error(f"Failed to start APScheduler for episodic memory decay: {e}", exc_info=True)
+
     logger.info(f"""
 
 ░██     ░██                       ░██
@@ -117,6 +140,14 @@ async def lifespan(app: FastAPI):
     """)
     logger.info("Yuxi backend startup complete")
     yield
+    # Shutdown APScheduler
+    if hasattr(app.state, "scheduler"):
+        try:
+            app.state.scheduler.shutdown()
+            logger.info("APScheduler shut down successfully.")
+        except Exception as e:
+            logger.error(f"Failed to shutdown APScheduler: {e}", exc_info=True)
+
     await tasker.shutdown()
     shutdown_sandbox_provider()
     await close_queue_clients()

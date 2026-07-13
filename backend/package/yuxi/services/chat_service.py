@@ -560,6 +560,57 @@ async def save_messages_from_langgraph_state(
         await run_repo.set_output_message(run_id, last_ai_message.id)
         await conv_repo.db.commit()
 
+    # Tích hợp Agentic Memory Extraction
+    try:
+        import time
+        from yuxi.storage.redis import get_async_redis_client
+        from yuxi.config.user import UserConfig
+        
+        # 1. Fetch conversation
+        conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
+        if conversation:
+            uid = conversation.uid
+            # 2. Check user config memory status
+            user_config = await UserConfig.load(conv_repo.db, uid)
+            if user_config.schema.enable_memory:
+                redis_client = await get_async_redis_client()
+                redis_key = f"yuxi:memory_extractor:last_extracted:{thread_id}"
+                
+                # Fetch last extraction data from Redis
+                last_data_raw = await redis_client.get(redis_key)
+                last_count = 0
+                last_time = 0.0
+                if last_data_raw:
+                    try:
+                        last_data = json.loads(last_data_raw)
+                        last_count = last_data.get("last_extracted_count", 0)
+                        last_time = last_data.get("last_extracted_time", 0.0)
+                    except Exception:
+                        pass
+                
+                current_time = time.time()
+                # Extract dialog messages (role: user/assistant)
+                dialog_messages = [
+                    {"role": m.role, "content": m.content}
+                    for m in await conv_repo.get_messages_by_thread_id(thread_id)
+                    if m.role in {"user", "assistant"}
+                ]
+                total_count = len(dialog_messages)
+                
+                # Check debounce condition: >= 5 new dialog messages or >= 5 mins idle since last check (and there are new messages)
+                if (total_count - last_count >= 5) or (current_time - last_time >= 300 and total_count > last_count):
+                    new_msgs = dialog_messages[last_count:]
+                    from yuxi.agents.memory.extractor import MemoryExtractorTask
+                    extractor = MemoryExtractorTask()
+                    # Run extraction in background task to avoid blocking response stream
+                    asyncio.create_task(extractor.extract_memory_from_dialogue(uid, thread_id, new_msgs))
+                    
+                    # Update redis state
+                    new_state = {"last_extracted_count": total_count, "last_extracted_time": current_time}
+                    await redis_client.set(redis_key, json.dumps(new_state))
+    except Exception as mem_err:
+        logger.warning(f"Failed to trigger memory extraction: {mem_err}", exc_info=True)
+
 
 def _extract_interrupt_info(state) -> Any | None:
     """Trích xuất thông tin ngắt (interrupt) từ LangGraph state"""
