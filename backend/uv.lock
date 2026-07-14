@@ -3732,6 +3732,28 @@ wheels = [
 ]
 
 [[package]]
+name = "python-crfsuite"
+version = "0.9.12"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b6/bb/946c0f96b4d3f7916f0558e19245d2248caebb3f470bcffae8fbf8d862e9/python_crfsuite-0.9.12.tar.gz", hash = "sha256:db37fccc3bd8f0c49c28a7697ca79c89d67b3fd5bf119122866169240ac4c480", size = 488298, upload-time = "2025-12-23T19:07:21.423Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/be/c388376c4ca05b383dd17f0e1024b85c726a009543afd21e145a5fafff97/python_crfsuite-0.9.12-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:e68009911b28ff899da5a6be3ec1efc3c24886c92318d02d39ec29d329b08b90", size = 319352, upload-time = "2025-12-23T19:06:41.26Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/0c/9725b097738f4a6aac9ac4e5a5fc6494eca69f17663d3d6ba8d0ea3858d2/python_crfsuite-0.9.12-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:7118a3b267c437a9701362f5eacd6d1ff2360305a9c872cc20a716cd005c13eb", size = 1207132, upload-time = "2025-12-23T19:06:43.035Z" },
+    { url = "https://files.pythonhosted.org/packages/63/3f/da9732ccb24b71a7539470dcdfcd16c923692788f39553f37238f208ca55/python_crfsuite-0.9.12-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:891bf2a5f410f17c5f9d76ab7330178a10142d48ed12f5c15b84f4c23fee80c7", size = 1245808, upload-time = "2025-12-23T19:06:44.293Z" },
+    { url = "https://files.pythonhosted.org/packages/45/6f/a0186566f7480725ec4027ed63a11a38c9cbbad53f7cd6ece4e0ec4961f9/python_crfsuite-0.9.12-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:812f963fb61cfa5bfbc91b92e058cee41808a9ce813c84ecab6691848cc3b51c", size = 2164442, upload-time = "2025-12-23T19:06:45.57Z" },
+    { url = "https://files.pythonhosted.org/packages/57/81/4c82aad97851431ec70c1cf46fdd2a58d2f79f68fa36bf4b7b4b8ed7ea6e/python_crfsuite-0.9.12-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:a696ef90c77344ba88e5d241ace35fd21ad31e43f878fc734668741db18ed186", size = 2266336, upload-time = "2025-12-23T19:06:47.123Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/0f/19a46db879e400b0b82e6760d5c19e106a74870b5c0ce744da2efc32b143/python_crfsuite-0.9.12-cp312-cp312-win32.whl", hash = "sha256:e32c826e43fe8ac5c3b436bbddd8483f735a5638ea5dc07778d505cde78dc875", size = 282261, upload-time = "2025-12-23T19:06:48.81Z" },
+    { url = "https://files.pythonhosted.org/packages/36/ae/9a7bceadbc962871819b1752f8aa53f60e657579fb94520bfa9b0495acf3/python_crfsuite-0.9.12-cp312-cp312-win_amd64.whl", hash = "sha256:fa6258bf10d8185262dee8fe2ca8d3de3c7aecb990846329043fc895344cc939", size = 303081, upload-time = "2025-12-23T19:06:49.933Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/ea/29f9891b22903ab50ca90cc291c886803d519ee04bd62c2b3c601d3da41e/python_crfsuite-0.9.12-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:2048d8768a0b4c6a6d9390e879a2b7a760bb57a7f2ba491316f5dc36f9cfd836", size = 318868, upload-time = "2025-12-23T19:06:51.119Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/74/61ccfdda6f98e8719dabf9fee18cf0660b0a33487cfad222fa5174f489a9/python_crfsuite-0.9.12-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:5294008716b65606c4d416c3b2597ca14422359a4a84734ead239b29b95f2780", size = 1207620, upload-time = "2025-12-23T19:06:52.53Z" },
+    { url = "https://files.pythonhosted.org/packages/40/06/8e2219853504de660fb497a2f99e729f69b6dba76e44ffbdbb77035d3695/python_crfsuite-0.9.12-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9f1641b9263c3cd1190711d0383d871b002ad325aa800fcf3c8583ef36f0bb07", size = 1246409, upload-time = "2025-12-23T19:06:54.463Z" },
+    { url = "https://files.pythonhosted.org/packages/66/dc/4c88933a6ab16ce797e8f30ff491f371bee4890ceb9b9a90192fdb278591/python_crfsuite-0.9.12-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:f0e73d0a8859db0c3d1a7a3595a83810efc535d95cb79f2f675eb44ad7a7954a", size = 2166123, upload-time = "2025-12-23T19:06:56.3Z" },
+    { url = "https://files.pythonhosted.org/packages/74/52/f396a51f2089df8efdd8607ce9bdcb5228c0594dfe0e6c7b99fcbdbbc563/python_crfsuite-0.9.12-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:96f27f343ff7e7cb1e29a785d8ed4626a3470f8d42c41cda734dcbaede566722", size = 2267988, upload-time = "2025-12-23T19:06:57.591Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/2e/abcb7d53eda1355c5ef9aff6a620ecc21f527c593d0a7a7aace51a2fd2cd/python_crfsuite-0.9.12-cp313-cp313-win32.whl", hash = "sha256:385fda7f407be778f6a9440dffdeed3cdafc6f6923065a856e45997626283589", size = 282157, upload-time = "2025-12-23T19:06:59.048Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/da/282120f8d88def791610ba8310413c6ae3002f945f008979c3e440a6ad88/python_crfsuite-0.9.12-cp313-cp313-win_amd64.whl", hash = "sha256:21334c298318d4de057eacaad2ed179b7f63640e9cbd0c8141d656f58e7bd3f1", size = 303082, upload-time = "2025-12-23T19:07:00.14Z" },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -3828,6 +3850,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ff/46/dd499ec9038423421951e4fad73051febaa13d2df82b4064f87af8b8c0c3/pytz-2026.2.tar.gz", hash = "sha256:0e60b47b29f21574376f218fe21abc009894a2321ea16c6754f3cad6eb7cdd6a", size = 320861, upload-time = "2026-05-04T01:35:29.667Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/dd/96da98f892250475bdf2328112d7468abdd4acc7b902b6af23f4ed958ea0/pytz-2026.2-py2.py3-none-any.whl", hash = "sha256:04156e608bee23d3792fd45c94ae47fae1036688e75032eea2e3bf0323d1f126", size = 510141, upload-time = "2026-05-04T01:35:27.408Z" },
+]
+
+[[package]]
+name = "pyvi"
+version = "0.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "scikit-learn" },
+    { name = "sklearn-crfsuite" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/df/af/ce6ccb5458a7fed50127de2cac4ee47f88283062c859279e50de1e7cb7a9/pyvi-0.1.1.tar.gz", hash = "sha256:08abab45a83ad674cf6549725096b8530d49be51418aa2613ce1a0b45d17db2d", size = 8362510, upload-time = "2021-06-30T04:20:06.722Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2c/27/27ffee2663f42430cf3434da963f04224fec157b90799fe9e92a3564c1a6/pyvi-0.1.1-py2.py3-none-any.whl", hash = "sha256:e5e9e0e40ea1a556af12646c6b754f065342c86f1dfe84785ba926e1190c0bb7", size = 8455088, upload-time = "2021-06-30T04:20:01.957Z" },
 ]
 
 [[package]]
@@ -4355,6 +4390,21 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
+]
+
+[[package]]
+name = "sklearn-crfsuite"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-crfsuite" },
+    { name = "scikit-learn" },
+    { name = "tabulate" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d7/d4/26211eb22127f8476589e92448273c698f4ac39fce2e300cd0a1f748de98/sklearn_crfsuite-0.5.0.tar.gz", hash = "sha256:136cb941ff5f7ce62a2c378988d1123ac1037241e73999ae404509a2135078e9", size = 26187, upload-time = "2024-06-18T11:08:30.42Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b2/11/a8370dd6fce65f8f4e74a0adffae72be9db5799d8ed8ddbf84415356a764/sklearn_crfsuite-0.5.0-py2.py3-none-any.whl", hash = "sha256:9cb7a881969b6426d28ada69ada7eff4c789a3c508eafc32d39c0d078ce3bebc", size = 10839, upload-time = "2024-06-18T11:08:22.743Z" },
 ]
 
 [[package]]
@@ -5603,6 +5653,7 @@ dependencies = [
     { name = "pypinyin" },
     { name = "python-dotenv" },
     { name = "python-multipart" },
+    { name = "pyvi" },
     { name = "pyyaml" },
     { name = "rapidocr" },
     { name = "readability-lxml" },
@@ -5682,6 +5733,7 @@ requires-dist = [
     { name = "pypinyin", specifier = ">=0.55.0" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "python-multipart", specifier = ">=0.0.31" },
+    { name = "pyvi", specifier = ">=0.1.1" },
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "rapidocr", specifier = ">=3.0.0" },
     { name = "readability-lxml", specifier = ">=0.8.1" },

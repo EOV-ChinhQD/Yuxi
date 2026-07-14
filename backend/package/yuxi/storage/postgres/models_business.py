@@ -991,3 +991,43 @@ class RejectedMemoryLog(Base):
             "confidence_score": self.confidence_score,
             "created_at": format_utc_datetime(self.created_at),
         }
+
+
+class AuditLog(Base):
+    """
+    Dedicated Audit Log table for compliance (tamper-proof).
+    Uses Hash Chain to prevent post-insert modifications.
+    Note: To be partitioned by created_at at the DB level.
+    """
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uid = Column(String(255), nullable=False, index=True)
+    conversation_id = Column(String(64), nullable=True, index=True)
+    request_id = Column(String(64), nullable=True)
+    
+    raw_query = Column(Text, nullable=False)
+    response_content = Column(Text, nullable=True)
+    
+    source_refs = Column(JSON, nullable=True)  # Store chunk_id/file_id only, NO FULL TEXT
+    grounding_scores = Column(JSON, nullable=True)
+    
+    created_at = Column(DateTime, default=utc_now_naive, nullable=False, index=True)
+    
+    prev_hash = Column(String(64), nullable=True)  # SHA-256 of the previous row
+    log_hash = Column(String(64), nullable=False, unique=True)  # SHA-256 of (content + prev_hash)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "uid": self.uid,
+            "conversation_id": self.conversation_id,
+            "request_id": self.request_id,
+            "raw_query": self.raw_query,
+            "response_content": self.response_content,
+            "source_refs": self.source_refs,
+            "grounding_scores": self.grounding_scores,
+            "created_at": format_utc_datetime(self.created_at),
+            "prev_hash": self.prev_hash,
+            "log_hash": self.log_hash,
+        }

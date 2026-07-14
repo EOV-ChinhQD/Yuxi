@@ -38,6 +38,20 @@ CONTENT_ANALYZER_PARAMS = {"type": "chinese"}
 VECTOR_METRIC_TYPE = "COSINE"
 MILVUS_CHUNK_EMBED_BATCH_SIZE = 200
 MILVUS_QUERY_OFFLOAD_LIMIT = 8
+
+try:
+    from pyvi import ViTokenizer
+except ImportError:
+    ViTokenizer = None
+
+def _tokenize_vietnamese(text: str) -> str:
+    if ViTokenizer is not None and text:
+        try:
+            return ViTokenizer.tokenize(text)
+        except Exception:
+            pass
+    return text
+
 _milvus_query_offload_semaphore_refs: dict[
     int,
     tuple[weakref.ReferenceType[asyncio.AbstractEventLoop], weakref.ReferenceType[asyncio.Semaphore]],
@@ -457,6 +471,7 @@ class MilvusKB(KnowledgeBase):
             FieldSchema(name="chunk_index", dtype=DataType.INT64),
             FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=embedding_dim),
             FieldSchema(name=CONTENT_SPARSE_FIELD, dtype=DataType.SPARSE_FLOAT_VECTOR),
+            FieldSchema(name="raw_content", dtype=DataType.VARCHAR, max_length=65535),
         ]
         bm25_function = Function(
             name="content_bm25",
@@ -588,14 +603,27 @@ class MilvusKB(KnowledgeBase):
         if not chunks:
             return
 
-        entities = [
-            [chunk["id"] for chunk in chunks],
-            [chunk["content"] for chunk in chunks],
-            [chunk["chunk_id"] for chunk in chunks],
-            [chunk["file_id"] for chunk in chunks],
-            [chunk["chunk_index"] for chunk in chunks],
-            embeddings,
-        ]
+        has_raw_content = "raw_content" in [f.name for f in collection.schema.fields]
+        if has_raw_content:
+            tokenized_contents = [_tokenize_vietnamese(chunk["content"]) for chunk in chunks]
+            entities = [
+                [chunk["id"] for chunk in chunks],
+                tokenized_contents,
+                [chunk["chunk_id"] for chunk in chunks],
+                [chunk["file_id"] for chunk in chunks],
+                [chunk["chunk_index"] for chunk in chunks],
+                embeddings,
+                [chunk["content"] for chunk in chunks],  # raw_content
+            ]
+        else:
+            entities = [
+                [chunk["id"] for chunk in chunks],
+                [chunk["content"] for chunk in chunks],
+                [chunk["chunk_id"] for chunk in chunks],
+                [chunk["file_id"] for chunk in chunks],
+                [chunk["chunk_index"] for chunk in chunks],
+                embeddings,
+            ]
         chunk_repo = KnowledgeChunkRepository()
 
         def _insert_milvus_records():
@@ -925,7 +953,8 @@ class MilvusKB(KnowledgeBase):
             "file_id": file_id,
             "chunk_index": entity.get("chunk_index"),
         }
-        chunk = {"content": entity.get("content", ""), "metadata": metadata, "score": float(score or 0.0)}
+        content = entity.get("raw_content") or entity.get("content", "")
+        chunk = {"content": content, "metadata": metadata, "score": float(score or 0.0)}
         if score_field:
             chunk[score_field] = float(score or 0.0)
         if include_distances:
@@ -967,7 +996,11 @@ class MilvusKB(KnowledgeBase):
             if file_expr:
                 logger.debug(f"Using filter expression: {file_expr}")
 
+            has_raw_content = "raw_content" in [f.name for f in collection.schema.fields]
             output_fields = ["content", "chunk_id", "file_id", "chunk_index"]
+            if has_raw_content:
+                output_fields.append("raw_content")
+
             retrieved_chunks: list[dict] = []
             if search_mode == "vector":
                 embedding_model_spec = self.databases_meta[kb_id].get("embedding_model_spec")
@@ -1007,9 +1040,11 @@ class MilvusKB(KnowledgeBase):
                     "params": {"drop_ratio_search": bm25_drop_ratio_search},
                 }
 
+                tokenized_query = _tokenize_vietnamese(query_text) if has_raw_content else query_text
+
                 results = await _run_milvus_query_io(
                     collection.search,
-                    data=[query_text],
+                    data=[tokenized_query],
                     anns_field=CONTENT_SPARSE_FIELD,
                     param=bm25_search_params,
                     limit=bm25_top_k,
@@ -1042,8 +1077,9 @@ class MilvusKB(KnowledgeBase):
                     limit=recall_top_k,
                     expr=file_expr,
                 )
+                tokenized_query = _tokenize_vietnamese(query_text) if has_raw_content else query_text
                 bm25_request = AnnSearchRequest(
-                    data=[query_text],
+                    data=[tokenized_query],
                     anns_field=CONTENT_SPARSE_FIELD,
                     param={
                         "metric_type": "BM25",
@@ -1131,34 +1167,81 @@ class MilvusKB(KnowledgeBase):
 
             # Use a reordering model
             reranker_model = merged_kwargs.get("reranker_model")
-            if not reranker_model:
+            stage1_reranker_model = merged_kwargs.get("stage1_reranker_model")
+            stage1_top_k = int(merged_kwargs.get("stage1_top_k", 20))
+            enable_stage1_prefilter = bool(merged_kwargs.get("enable_stage1_prefilter", False))
+
+            if not reranker_model and not stage1_reranker_model:
                 raise ValueError(
-                    "Reranker model must be specified when use_reranker=True. "
-                    "Please provide reranker_model in query parameters."
+                    "At least one Reranker model (stage1_reranker_model or reranker_model) must be specified when use_reranker=True."
                 )
 
-            try:
-                from yuxi.models.rerank import get_reranker
+            from yuxi.models.rerank import get_reranker
 
-                reranker = get_reranker(reranker_model)
+            stage1_elapsed = 0.0
+            stage2_elapsed = 0.0
+            total_rerank_start = time.time()
+            stage1_success = False
+
+            # --- STAGE 1 (Lọc thô) ---
+            if len(retrieved_chunks) <= stage1_top_k:
+                logger.info(
+                    f"[Two-Stage Rerank] Retrieved chunks count ({len(retrieved_chunks)}) <= stage1_top_k ({stage1_top_k}). "
+                    f"Bypassing Stage 1."
+                )
+            elif stage1_reranker_model:
                 try:
-                    rerank_start = time.time()
-                    documents_text = [chunk["content"] for chunk in retrieved_chunks]
-                    rerank_scores = await reranker.acompute_score([query_text, documents_text], normalize=True)
+                    stage1_start = time.time()
+                    stage1_reranker = get_reranker(stage1_reranker_model)
+                    try:
+                        documents_text = [chunk["content"] for chunk in retrieved_chunks]
+                        stage1_scores = await stage1_reranker.acompute_score([query_text, documents_text], normalize=True)
+                        for chunk, score in zip(retrieved_chunks, stage1_scores):
+                            chunk["stage1_score"] = float(score)
+                        
+                        retrieved_chunks.sort(key=lambda item: item.get("stage1_score", 0.0), reverse=True)
+                        retrieved_chunks = retrieved_chunks[:stage1_top_k]
+                        stage1_success = True
+                    finally:
+                        await stage1_reranker.aclose()
+                    stage1_elapsed = time.time() - stage1_start
+                except Exception as exc:  # noqa: BLE001
+                    logger.error(f"[Two-Stage Rerank] Stage 1 reranking failed: {exc}. Falling back: keeping all original chunks for Stage 2.")
+            elif enable_stage1_prefilter:
+                logger.info(f"[Two-Stage Rerank] Prefiltering chunks down to {stage1_top_k} using original hybrid scores.")
+                retrieved_chunks = retrieved_chunks[:stage1_top_k]
 
-                    for chunk, rerank_score in zip(retrieved_chunks, rerank_scores):
-                        chunk["rerank_score"] = float(rerank_score)
+            # --- STAGE 2 (Lọc tinh) ---
+            if reranker_model:
+                try:
+                    stage2_start = time.time()
+                    stage2_reranker = get_reranker(reranker_model)
+                    try:
+                        documents_text = [chunk["content"] for chunk in retrieved_chunks]
+                        stage2_scores = await stage2_reranker.acompute_score([query_text, documents_text], normalize=True)
+                        for chunk, score in zip(retrieved_chunks, stage2_scores):
+                            chunk["rerank_score"] = float(score)
 
-                    retrieved_chunks.sort(
-                        key=lambda item: item.get("rerank_score", item.get("score", 0.0)), reverse=True
-                    )
-                    elapsed = time.time() - rerank_start
-                    logger.info(f"Reranking completed for {kb_id} in {elapsed:.3f}s with model {reranker_model}")
-                finally:
-                    await reranker.aclose()
+                        retrieved_chunks.sort(
+                            key=lambda item: item.get("rerank_score", item.get("score", 0.0)), reverse=True
+                        )
+                    finally:
+                        await stage2_reranker.aclose()
+                    stage2_elapsed = time.time() - stage2_start
+                except Exception as exc:  # noqa: BLE001
+                    logger.error(f"[Two-Stage Rerank] Stage 2 reranking failed: {exc}. Falling back to previous best scores.")
+                    if stage1_success:
+                        retrieved_chunks.sort(key=lambda item: item.get("stage1_score", 0.0), reverse=True)
+                    else:
+                        retrieved_chunks.sort(key=lambda item: item.get("score", 0.0), reverse=True)
 
-            except Exception as exc:  # noqa: BLE001
-                logger.error(f"Reranking failed: {exc}, falling back to vector scores")
+            total_elapsed = time.time() - total_rerank_start
+            logger.info(
+                f"[Two-Stage Rerank] Reranking completed for {kb_id}: "
+                f"stage1_elapsed={stage1_elapsed:.3f}s, "
+                f"stage2_elapsed={stage2_elapsed:.3f}s, "
+                f"total={total_elapsed:.3f}s"
+            )
 
             # Return results uniformly
             return retrieved_chunks[:final_top_k]

@@ -230,8 +230,25 @@ def parse_pdf(file, params=None):
     """Parse PDF files and support multiple OCR methods."""
     from yuxi.knowledge.parser.base import DocumentProcessorException
     from yuxi.knowledge.parser.factory import DocumentProcessorFactory
+    from yuxi.knowledge.parser.density import PDFDensityAnalyzer
 
     opt_ocr, processor_params = _resolve_ocr_engine_params(params)
+
+    # Tự động phân tích mật độ văn bản của tài liệu PDF để tối ưu hóa quyết định OCR
+    try:
+        analyzer = PDFDensityAnalyzer()
+        analysis = analyzer.analyze_document(file)
+        logger.info(
+            f"[Density Analyzer] Recommended: {analysis['recommended_ocr']}, "
+            f"Scan pages: {len(analysis['scan_pages'])}/{analysis['total_pages']}, "
+            f"Hybrid pages: {len(analysis['hybrid_pages'])}/{analysis['total_pages']}"
+        )
+        # Nếu tài liệu có text layer sạch trên toàn bộ các trang, tự động tắt OCR
+        if analysis["recommended_ocr"] == "disable" and opt_ocr != "disable":
+            logger.info("[Density Analyzer] PDF contains high-quality text layer on all pages. Automatically disabling OCR.")
+            opt_ocr = "disable"
+    except Exception as e:
+        logger.warning(f"[Density Analyzer] Failed to analyze PDF density, falling back to original OCR config: {e}")
 
     if opt_ocr == "disable":
         return pdfreader(file, params=processor_params)

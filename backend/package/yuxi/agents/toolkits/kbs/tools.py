@@ -243,6 +243,30 @@ async def _build_query_output(target_kb_id: str, result: Any) -> Any:
 
 
 
+async def _rewrite_query(query: str, model_spec: str) -> str:
+    prompt = f"""Bạn là một chuyên gia tối ưu hóa truy vấn RAG.
+Nhiệm vụ của bạn là viết lại câu hỏi dưới đây của người dùng để cải thiện khả năng tìm kiếm chính xác (BM25 và Vector Search) trong kho tài liệu.
+Hãy phân tích các từ viết tắt, thuật ngữ, hoặc lỗi chính tả có thể có, và bổ sung các từ đồng nghĩa hoặc dạng đầy đủ nếu cần thiết.
+
+CÂU HỎI GỐC: "{query}"
+
+YÊU CẦU:
+1. Chỉ trả về câu hỏi đã được viết lại tối ưu nhất.
+2. KHÔNG giải thích, KHÔNG thêm lời dẫn, KHÔNG trả về định dạng JSON, chỉ trả về chuỗi text sạch của câu hỏi mới.
+
+CÂU HỎI MỚI:"""
+    try:
+        model = select_model(model_spec=model_spec)
+        response = await asyncio.wait_for(model.call(prompt, stream=False), timeout=10.0)
+        rewritten = response.content.strip()
+        if (rewritten.startswith('"') and rewritten.endswith('"')) or (rewritten.startswith("'") and rewritten.endswith("'")):
+            rewritten = rewritten[1:-1].strip()
+        return rewritten
+    except Exception as e:
+        logger.error(f"[QueryKB] Error rewriting query: {e}")
+        return query
+
+
 @tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=QueryKBInput)
 async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, runtime: ToolRuntime = None) -> Any:
     """Tìm kiếm nội dung trong kho kiến thức được chỉ định.
@@ -278,58 +302,83 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
         # Lấy cấu hình LLM để thực hiện phân tách câu hỏi
         llm_model_spec = target_info.get("metadata", {}).get("llm_model_spec") or "gpt-4o"
 
-        route_type, route_details = await SemanticRouter.route(query_text, llm_model_spec="gpt-4o-mini")
-        logger.info(f"[QueryKB] Router decided: {route_type.value} - {route_details}")
+        current_query = query_text
+        attempts = 0
+        MAX_REWRITE_ATTEMPTS = 1
 
-        result = {"results": []}
+        while True:
+            route_type, route_details = await SemanticRouter.route(current_query, llm_model_spec="gpt-4o-mini")
+            logger.info(f"[QueryKB] Router decided: {route_type.value} - {route_details} (Attempt {attempts})")
 
-        if route_type == RouteType.CHIT_CHAT:
-            logger.info("[QueryKB] CHIT_CHAT detected. Returning empty results.")
-            result = {"results": [], "answer": ""}
-            
-        elif route_type == RouteType.OUT_OF_DOMAIN:
-            logger.info("[QueryKB] OUT_OF_DOMAIN detected. Returning system message.")
-            result = {"results": [], "answer": "Tôi không có thông tin về vấn đề này."}
-            
-        elif route_type == RouteType.AMBIGUOUS:
-            logger.info("[QueryKB] AMBIGUOUS detected. Requesting clarification.")
-            result = {"results": [], "answer": "Câu hỏi chưa rõ ràng. Bạn vui lòng làm rõ ý định hoặc chỉ định tài liệu cụ thể (nếu cần tóm tắt)."}
-            
-        elif route_type == RouteType.STRUCTURED_AGGREGATION:
-            logger.info("[QueryKB] STRUCTURED_AGGREGATION detected.")
-            result = {"results": [], "answer": "Hệ thống RAG hiện tại không hỗ trợ việc đếm, tính toán hoặc thống kê trên dữ liệu văn bản."}
-            
-        elif route_type == RouteType.EXACT_MATCH:
-            logger.info("[QueryKB] EXACT_MATCH detected. Using keyword search.")
-            kwargs["search_mode"] = "keyword"
-            if inspect.iscoroutinefunction(retriever):
-                result = await retriever(query_text, **kwargs)
-            else:
-                result = retriever(query_text, **kwargs)
+            result = {"results": []}
+
+            if route_type == RouteType.CHIT_CHAT:
+                logger.info("[QueryKB] CHIT_CHAT detected. Returning empty results.")
+                result = {"results": [], "answer": ""}
                 
-        elif route_type == RouteType.SUMMARIZATION:
-            logger.info("[QueryKB] SUMMARIZATION detected. Using NAIVE_SEARCH for general summarization context.")
-            if inspect.iscoroutinefunction(retriever):
-                result = await retriever(query_text, **kwargs)
-            else:
-                result = retriever(query_text, **kwargs)
+            elif route_type == RouteType.OUT_OF_DOMAIN:
+                logger.info("[QueryKB] OUT_OF_DOMAIN detected. Returning system message.")
+                result = {"results": [], "answer": "Tôi không có thông tin về vấn đề này."}
                 
-        elif route_type == RouteType.MULTI_HOP:
-            is_multi_hop, sub_queries = await detect_and_decompose(query_text, llm_model_spec)
-            if is_multi_hop:
-                result = await multi_hop_retrieve_labeled(sub_queries, retriever, **kwargs)
-                result["kb_id"] = target_kb_id
-            else:
+            elif route_type == RouteType.AMBIGUOUS:
+                logger.info("[QueryKB] AMBIGUOUS detected. Requesting clarification.")
+                result = {"results": [], "answer": "Câu hỏi chưa rõ ràng. Bạn vui lòng làm rõ ý định hoặc chỉ định tài liệu cụ thể (nếu cần tóm tắt)."}
+                
+            elif route_type == RouteType.STRUCTURED_AGGREGATION:
+                logger.info("[QueryKB] STRUCTURED_AGGREGATION detected.")
+                result = {"results": [], "answer": "Hệ thống RAG hiện tại không hỗ trợ việc đếm, tính toán hoặc thống kê trên dữ liệu văn bản."}
+                
+            elif route_type == RouteType.EXACT_MATCH:
+                logger.info("[QueryKB] EXACT_MATCH detected. Using keyword search.")
+                kwargs["search_mode"] = "keyword"
                 if inspect.iscoroutinefunction(retriever):
-                    result = await retriever(query_text, **kwargs)
+                    result = await retriever(current_query, **kwargs)
                 else:
-                    result = retriever(query_text, **kwargs)
+                    result = retriever(current_query, **kwargs)
                     
-        else: # NAIVE_SEARCH
-            if inspect.iscoroutinefunction(retriever):
-                result = await retriever(query_text, **kwargs)
-            else:
-                result = retriever(query_text, **kwargs)
+            elif route_type == RouteType.SUMMARIZATION:
+                logger.info("[QueryKB] SUMMARIZATION detected. Using NAIVE_SEARCH for general summarization context.")
+                if inspect.iscoroutinefunction(retriever):
+                    result = await retriever(current_query, **kwargs)
+                else:
+                    result = retriever(current_query, **kwargs)
+                    
+            elif route_type == RouteType.MULTI_HOP:
+                is_multi_hop, sub_queries = await detect_and_decompose(current_query, llm_model_spec)
+                if is_multi_hop:
+                    result = await multi_hop_retrieve_labeled(sub_queries, retriever, **kwargs)
+                    result["kb_id"] = target_kb_id
+                else:
+                    if inspect.iscoroutinefunction(retriever):
+                        result = await retriever(current_query, **kwargs)
+                    else:
+                        result = retriever(current_query, **kwargs)
+                        
+            else: # NAIVE_SEARCH
+                if inspect.iscoroutinefunction(retriever):
+                    result = await retriever(current_query, **kwargs)
+                else:
+                    result = retriever(current_query, **kwargs)
+
+            # Check if we should retry: only for real search intents that yielded no results
+            is_search_route = route_type in (RouteType.EXACT_MATCH, RouteType.SUMMARIZATION, RouteType.MULTI_HOP, RouteType.NAIVE_SEARCH)
+            has_results = False
+            if isinstance(result, dict) and result.get("results"):
+                has_results = True
+            elif isinstance(result, list) and len(result) > 0:
+                has_results = True
+
+            if is_search_route and not has_results and attempts < MAX_REWRITE_ATTEMPTS:
+                attempts += 1
+                logger.info(f"[QueryKB] 0 results found. Retrying with RETRY_WITH_REWRITE (Attempt {attempts}/{MAX_REWRITE_ATTEMPTS})...")
+                
+                # Rewrite query
+                rewritten_query = await _rewrite_query(current_query, llm_model_spec)
+                logger.info(f"[QueryKB] Rewrote query: '{current_query}' -> '{rewritten_query}'")
+                current_query = rewritten_query
+                continue
+                
+            break
 
         return await _build_query_output(target_kb_id, result)
 

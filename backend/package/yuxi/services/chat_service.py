@@ -504,6 +504,30 @@ async def save_partial_message(
         return None
 
 
+def _extract_retrieved_chunks(messages: list) -> list[str]:
+    chunks = []
+    for msg in messages:
+        if not hasattr(msg, "model_dump"):
+            continue
+        msg_dict = msg.model_dump()
+        msg_type = msg_dict.get("type")
+        if msg_type == "tool":
+            content = msg_dict.get("content", "")
+            if not isinstance(content, str):
+                continue
+            try:
+                import json
+                data = json.loads(content)
+                if isinstance(data, dict) and "results" in data:
+                    for result in data["results"]:
+                        if "content" in result:
+                            chunks.append(result["content"])
+            except Exception:
+                if content:
+                    chunks.append(content)
+    return chunks
+
+
 async def save_messages_from_langgraph_state(
     agent_instance,
     thread_id: str,
@@ -555,10 +579,79 @@ async def save_messages_from_langgraph_state(
         elif msg_type == "tool":
             await _save_tool_message(conv_repo, msg_dict)
 
+    if last_ai_message and last_ai_message.role == "assistant":
+        # Trích xuất các chunks đã tìm được và chạy NLI Grounding Verification
+        retrieved_chunks = _extract_retrieved_chunks(messages)
+        if retrieved_chunks:
+            try:
+                from yuxi.knowledge.grounding.nli_verifier import NLIVerifier
+                from sqlalchemy.orm.attributes import flag_modified
+                
+                claims = NLIVerifier.split_into_claims(last_ai_message.content)
+                if claims:
+                    logger.info(f"[NLI] Running grounding verification on {len(claims)} claims against {len(retrieved_chunks)} chunks...")
+                    nli_results = await NLIVerifier.verify_claims(claims, retrieved_chunks)
+                    logger.info(f"[NLI] Grounding verification completed: {nli_results}")
+                    
+                    extra_metadata = last_ai_message.extra_metadata or {}
+                    extra_metadata["grounding_scores"] = nli_results
+                    last_ai_message.extra_metadata = extra_metadata
+                    flag_modified(last_ai_message, "extra_metadata")
+                    conv_repo.db.add(last_ai_message)
+                    await conv_repo.db.commit()
+            except Exception as e:
+                logger.error(f"[NLI] Graceful degradation: Grounding verification failed: {e}")
+
     if run_id and last_ai_message:
         run_repo = AgentRunRepository(conv_repo.db)
         await run_repo.set_output_message(run_id, last_ai_message.id)
         await conv_repo.db.commit()
+
+    # Tích hợp Audit Log P2
+    try:
+        from yuxi.storage.postgres.audit_repository import AuditLogRepository
+        conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
+        
+        # Get raw query from the latest human message
+        raw_query = ""
+        for m in reversed(messages):
+            msg_type = getattr(m, "type", "")
+            if not msg_type and isinstance(m, dict):
+                msg_type = m.get("type", "")
+            if msg_type == "human" or (isinstance(m, dict) and m.get("role") in ("human", "user")):
+                raw_query = getattr(m, "content", "") if hasattr(m, "content") else m.get("content", "")
+                break
+
+        uid = conversation.uid if conversation else "unknown"
+        response_content = last_ai_message.content if last_ai_message else ""
+        
+        source_refs = None
+        if 'retrieved_chunks' in locals() and retrieved_chunks:
+            source_refs = []
+            for c in retrieved_chunks:
+                # Trích xuất an toàn để không lộ full text (Privacy)
+                chunk_id = getattr(c, "chunk_id", None) or (c.get("chunk_id") if isinstance(c, dict) else None)
+                file_id = getattr(c, "file_id", None) or (c.get("file_id") if isinstance(c, dict) else None)
+                source_refs.append({"chunk_id": chunk_id, "file_id": file_id})
+        
+        grounding_scores = None
+        if 'nli_results' in locals():
+            grounding_scores = nli_results
+
+        # Ghi Audit Log vào Postgres an toàn (cơ chế Outbox hoặc Hash Chain đồng bộ)
+        audit_repo = AuditLogRepository(conv_repo.db)
+        await audit_repo.create_audit_log(
+            uid=uid,
+            raw_query=raw_query,
+            conversation_id=thread_id,
+            request_id=request_id,
+            response_content=response_content,
+            source_refs=source_refs,
+            grounding_scores=grounding_scores,
+        )
+        await conv_repo.db.commit()
+    except Exception as e:
+        logger.error(f"[Audit] Failed to create audit log: {e}")
 
     # Tích hợp Agentic Memory Extraction
     try:

@@ -10,6 +10,7 @@ from yuxi.utils import logger
 from yuxi.models import select_model
 
 class RouteType(str, Enum):
+    # --- Pre-Retrieval Classification (Định tuyến trước khi tìm kiếm) ---
     CHIT_CHAT = "CHIT_CHAT"
     OUT_OF_DOMAIN = "OUT_OF_DOMAIN"
     AMBIGUOUS = "AMBIGUOUS"
@@ -18,6 +19,11 @@ class RouteType(str, Enum):
     STRUCTURED_AGGREGATION = "STRUCTURED_AGGREGATION"
     MULTI_HOP = "MULTI_HOP"
     NAIVE_SEARCH = "NAIVE_SEARCH"
+
+    # --- Post-Retrieval Decision (Định tuyến sau khi tìm kiếm thất bại) ---
+    # Nhãn này chỉ được kích hoạt bởi Agent Loop khi lần query đầu tiên trả về rỗng,
+    # kích hoạt cơ chế rewrite query và thử lại tối đa 1 lần (MAX_REWRITE_ATTEMPTS = 1).
+    RETRY_WITH_REWRITE = "RETRY_WITH_REWRITE"
 
 class SemanticRouter:
     """

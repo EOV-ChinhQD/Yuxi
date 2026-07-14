@@ -18,6 +18,7 @@ from server.routers.system_task_router import tasks
 from server.routers.tool_router import tools
 from server.routers.user_router import user_router
 from server.routers.workspace_router import workspace
+from server.routers.audit_router import router as audit_router
 
 _LITE_MODE = os.environ.get("LITE_MODE", "").lower() in ("true", "1")
 
@@ -43,6 +44,7 @@ router.include_router(user_router)  # /api/user/* User-level configuration and c
 router.include_router(filesystem_router)  # /api/viewer/filesystem/* Workbench file system view
 router.include_router(workspace)  # /api/workspace/* User personal workspace
 router.include_router(mention_router)  # /api/mention/* Mention file search interface
+router.include_router(audit_router)  # /api/audit/* Audit Log Compliance
 
 if not _LITE_MODE:
     from server.routers.graph_router import graph
