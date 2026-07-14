@@ -4,12 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from server.dependencies import get_db, get_current_user
+from server.utils.auth_middleware import get_db, get_current_user
 from yuxi.storage.postgres.models_business import AuditLog, User
 from yuxi.storage.postgres.audit_repository import AuditLogRepository
-from yuxi.utils.logger import get_logger
-
-logger = get_logger(__name__)
+from yuxi.utils import logger
 
 router = APIRouter(
     prefix="/audit",

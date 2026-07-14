@@ -1,7 +1,7 @@
 <div align="center">
 <h1>Phân tích ngôn ngữ Yuxi</h1>
 
-<p><strong>nhiều người thuê nhà Harness + Cơ sở tri thức doanh nghiệp</strong><br/>Làm cho các đại lý có thể truy xuất được kiến thức doanh nghiệp、Lý luận và giao hàng</p>
+<p><strong>Nền tảng RAG mở, module hoá</strong><br/>Có khả năng tích hợp nhiều chiến lược retrieval và knowledge modeling khác nhau (SAG, LightRAG, RAPTOR, v.v.)</p>
 
 [![](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=ffffff)](https://github.com/xerrors/Yuxi/blob/main/docker-compose.yml)
 [![](https://img.shields.io/github/issues/xerrors/Yuxi?color=F48D73)](https://github.com/xerrors/Yuxi/issues)
@@ -20,7 +20,7 @@
 
 ## Giới thiệu
 
-Phân tích ngôn ngữ（Yuxi）Nó là một nền tảng phát triển tác nhân đồ thị tri thức và cơ sở tri thức thông minh dựa trên các mô hình lớn.。nó đặt **RAG Tìm kiếm**、**Milvus Sơ đồ tri thức trong cơ sở tri thức** với **LangGraph Điều phối đa tác nhân** Được tích hợp vào một bàn làm việc nhiều người thuê thống nhất：Cơ sở kiến thức cấu hình quản trị viên、Mô hình và quyền，Người dùng trong lớp ChatGPT Giao diện và có thể gắn kết Skills、MCP、Đối thoại đại lý giữa đại lý phụ và công cụ hộp cát，và lấy nguồn có trích dẫn、Lập luận về biểu đồ tri thức và các câu trả lời về sản phẩm có thể phân phối được。
+Phân tích ngôn ngữ（Yuxi）là một nền tảng RAG mở, có khả năng tích hợp nhiều chiến lược retrieval và knowledge modeling khác nhau (Naive RAG, Hybrid Event RAG, SAG, LightRAG, v.v.). Nó đặt **RAG Tìm kiếm**、**Sơ đồ tri thức** với **LangGraph Điều phối đa tác nhân** được tích hợp vào một bàn làm việc nhiều người thuê thống nhất：Cơ sở kiến thức cấu hình quản trị viên、Mô hình và quyền，Người dùng trong lớp ChatGPT Giao diện và có thể gắn kết Skills、MCP、Đối thoại đại lý giữa đại lý phụ và công cụ hộp cát，và lấy nguồn có trích dẫn、Lập luận về biểu đồ tri thức và các câu trả lời về sản phẩm có thể phân phối được。
 
 Điều hướng：[Giới thiệu dự án](https://xerrors.github.io/Yuxi/) ｜ [bắt đầu nhanh](https://xerrors.github.io/Yuxi/intro/quick-start) ｜ [Lộ trình phát triển](https://xerrors.github.io/Yuxi/develop-guides/roadmap) | [0.7 Đặc điểm phiên bản](http://xhslink.com/o/5Y6QWnmjF2d)；Tin tức phát triển mới nhất，Xem chi tiết [changelog](https://xerrors.github.io/Yuxi/develop-guides/changelog)。
 

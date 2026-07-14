@@ -588,6 +588,10 @@ class MilvusKB(KnowledgeBase):
                 "ent_ids": chunk.get("ent_ids"),
                 "tags": chunk.get("tags"),
                 "extraction_result": chunk.get("extraction_result"),
+                "chunk_version": chunk.get("chunk_version"),
+                "status": chunk.get("status", "pending"),
+                "heading_path": chunk.get("heading_path"),
+                "section_type": chunk.get("section_type"),
             }
             for chunk in chunks
         ]
@@ -634,6 +638,16 @@ class MilvusKB(KnowledgeBase):
         results = await asyncio.gather(pg_task, milvus_task, return_exceptions=True)
         errors = [result for result in results if isinstance(result, Exception)]
         if not errors:
+            from yuxi.core.feature_manager import FeatureManager
+            if FeatureManager.is_enabled(FeatureManager.EVENT_EXTRACTION):
+                from yuxi.core.queue import QueueClient
+                for chunk in chunks:
+                    await QueueClient.publish("EXTRACT_KNOWLEDGE", {
+                        "kb_id": kb_id,
+                        "file_id": file_id,
+                        "chunk_id": chunk["chunk_id"],
+                        "content": chunk["content"],
+                    })
             return
 
         logger.error(f"Chunk double-write failed for file {file_id}, rolling back PostgreSQL and Milvus chunks")
@@ -661,10 +675,22 @@ class MilvusKB(KnowledgeBase):
         if not chunks:
             return
 
+        from yuxi.core.feature_manager import FeatureManager
+
         chunk_batch_size = max(int(chunk_batch_size), 1)
         for start in range(0, len(chunks), chunk_batch_size):
             batch_chunks = chunks[start : start + chunk_batch_size]
-            texts = [chunk["content"] for chunk in batch_chunks]
+            
+            texts = []
+            for chunk in batch_chunks:
+                content = chunk["content"]
+                heading_path = chunk.get("heading_path")
+                if heading_path and FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING):
+                    prefix = "Context: " + " > ".join(heading_path)
+                    texts.append(f"{prefix}\n{content}")
+                else:
+                    texts.append(content)
+
             embeddings = await embedding_function(texts)
             await self._insert_chunks_to_stores(
                 kb_id,
@@ -673,6 +699,100 @@ class MilvusKB(KnowledgeBase):
                 batch_chunks,
                 embeddings,
             )
+
+    async def _incremental_index_file(
+        self,
+        kb_id: str,
+        file_id: str,
+        collection: Collection,
+        new_chunks: list[dict],
+        embedding_function,
+    ) -> None:
+        """Thực hiện Incremental Indexing dựa trên Diff của content hash."""
+        from yuxi.repositories.knowledge_chunk_repository import KnowledgeChunkRepository
+        from yuxi.utils import hashstr
+        import json
+
+        chunk_repo = KnowledgeChunkRepository()
+        existing_chunks = await chunk_repo.list_by_file_id(file_id)
+
+        # 1. Trích xuất hash map của existing chunks
+        existing_map = {}
+        for ec in existing_chunks:
+            h = hashstr(ec.content)
+            existing_map[h] = ec
+
+        # 2. Phân loại new chunks
+        chunks_to_embed = []
+        chunks_to_reuse = []
+        
+        for idx, chunk in enumerate(new_chunks):
+            h = hashstr(chunk["content"])
+            chunk["chunk_index"] = idx
+            chunk["chunk_version"] = "v1.0"
+            
+            if h in existing_map:
+                old_chunk = existing_map[h]
+                chunk["status"] = "ready"
+                # Lưu ID của chunk cũ để query vector từ Milvus
+                chunks_to_reuse.append((chunk, old_chunk.chunk_id))
+            else:
+                chunk["status"] = "pending"
+                chunks_to_embed.append(chunk)
+
+        # 3. Tái sử dụng embedding từ Milvus
+        reused_embeddings = []
+        if chunks_to_reuse:
+            old_ids = [item[1] for item in chunks_to_reuse]
+            expr = f'chunk_id in {json.dumps(old_ids)}'
+            
+            def _query_milvus_embeddings():
+                return collection.query(expr=expr, output_fields=["chunk_id", "embedding"], limit=len(old_ids))
+            
+            try:
+                milvus_results = await asyncio.to_thread(_query_milvus_embeddings)
+                embedding_map = {res["chunk_id"]: res["embedding"] for res in milvus_results}
+            except Exception as exc:
+                logger.warning(f"Failed to query existing embeddings from Milvus: {exc}. Falling back to embedding all chunks.")
+                embedding_map = {}
+
+            for chunk, old_id in chunks_to_reuse:
+                emb = embedding_map.get(old_id)
+                if emb is not None:
+                    reused_embeddings.append((chunk, emb))
+                else:
+                    chunks_to_embed.append(chunk)
+
+        # 4. Xóa các chunks cũ không còn dùng
+        new_hashes = {hashstr(c["content"]) for c in new_chunks}
+        chunks_to_delete = [ec for ec in existing_chunks if hashstr(ec.content) not in new_hashes]
+        if chunks_to_delete:
+            del_ids = [ec.chunk_id for ec in chunks_to_delete]
+            
+            # Xóa khỏi Postgres
+            async with pg_manager.get_async_session_context() as session:
+                from sqlalchemy import delete
+                from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
+                await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.chunk_id.in_(del_ids)))
+                
+            # Xóa khỏi Milvus
+            expr_del = f'chunk_id in {json.dumps(del_ids)}'
+            def _delete_milvus():
+                collection.delete(expr_del)
+            try:
+                await asyncio.to_thread(_delete_milvus)
+            except Exception as exc:
+                logger.warning(f"Failed to delete old chunks from Milvus: {exc}")
+
+        # 5. Lưu trữ các reused chunks với index mới
+        if reused_embeddings:
+            reused_chunks = [item[0] for item in reused_embeddings]
+            reused_embs = [item[1] for item in reused_embeddings]
+            await self._insert_chunks_to_stores(kb_id, file_id, collection, reused_chunks, reused_embs)
+
+        # 6. Embed và lưu trữ các chunks mới
+        if chunks_to_embed:
+            await self._embed_and_store_chunks(kb_id, file_id, collection, chunks_to_embed, embedding_function)
 
     async def _delete_file_chunks_from_milvus(self, collection: Collection, file_id: str) -> None:
         expr = f'file_id == "{file_id}"'
@@ -802,10 +922,13 @@ class MilvusKB(KnowledgeBase):
             chunk_stats = self._calculate_chunk_stats(chunks)
 
             # Clean up existing chunks if any (for re-indexing)
-            await self.delete_file_chunks_only(kb_id, file_id)
-
-            if chunks:
-                await self._embed_and_store_chunks(kb_id, file_id, collection, chunks, embedding_function)
+            from yuxi.core.feature_manager import FeatureManager
+            if FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING):
+                await self._incremental_index_file(kb_id, file_id, collection, chunks, embedding_function)
+            else:
+                await self.delete_file_chunks_only(kb_id, file_id)
+                if chunks:
+                    await self._embed_and_store_chunks(kb_id, file_id, collection, chunks, embedding_function)
 
             logger.info(f"Indexed file {file_id} into Milvus")
 
@@ -962,7 +1085,22 @@ class MilvusKB(KnowledgeBase):
         return chunk
 
     async def aquery(self, query_text: str, kb_id: str, agent_call: bool = False, **kwargs) -> list[dict]:
-        """Asynchronous query knowledge base"""
+        """Asynchronous query knowledge base using Strategy Pattern."""
+        from yuxi.core.feature_manager import feature_manager
+        
+        use_graph_retrieval = bool(kwargs.get("use_graph_retrieval", False)) or \
+                               bool(self.databases_meta.get(kb_id, {}).get("use_graph_retrieval", False)) or \
+                               feature_manager.is_enabled("ENABLE_EVENT_EXTRACTION")
+                               
+        if use_graph_retrieval:
+            from yuxi.knowledge.retrieval.dispatcher import RetrievalDispatcher
+            dispatcher = RetrievalDispatcher()
+            return await dispatcher.dispatch(query_text, self, kb_id, **kwargs)
+            
+        return await self._query_factual(query_text, kb_id, agent_call, **kwargs)
+
+    async def _query_factual(self, query_text: str, kb_id: str, agent_call: bool = False, **kwargs) -> list[dict]:
+        """Original factual retrieval logic using Milvus hybrid/vector search."""
         collection = await self._get_milvus_collection(kb_id)
         if not collection:
             raise ValueError(f"Database {kb_id} not found")

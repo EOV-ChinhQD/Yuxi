@@ -86,7 +86,14 @@ Trích xuất dưới dạng JSON hợp lệ với cấu trúc sau, KHÔNG giả
 }}
 """
         try:
-            model = select_model(model_spec=llm_model_spec)
+            from yuxi.models.providers.cache import model_cache
+            actual_model_spec = llm_model_spec
+            if not model_cache.get_model_info(actual_model_spec):
+                available = model_cache.get_all_specs("chat")
+                if available:
+                    actual_model_spec = available[0].spec
+                    logger.info(f"[SemanticRouter] Fallback model spec from '{llm_model_spec}' to '{actual_model_spec}'")
+            model = select_model(model_spec=actual_model_spec)
             response = await asyncio.wait_for(model.call(prompt, stream=False), timeout=10.0)
             raw = response.content.strip()
             

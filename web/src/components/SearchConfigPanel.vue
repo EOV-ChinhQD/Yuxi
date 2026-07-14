@@ -172,7 +172,7 @@ const loadSavedConfig = () => {
 
 const save = async () => {
   if (!props.kbId) {
-    message.error('Không thể lưu cấu hình：Thiếu nền tảng kiến thứcID')
+    message.error('Không thể lưu cấu hình：Thiếu nền tảng kiến thức ID')
     return false
   }
 

@@ -1,7 +1,7 @@
 <div align="center">
 <h1>Yuxi</h1>
 
-<p><strong>A multi-tenant agent platform combining RAG and knowledge graphs</strong><br/>Make enterprise knowledge retrievable, reasoned over, and deliverable by agents</p>
+<p><strong>An open, modular RAG platform</strong><br/>Capable of integrating various retrieval and knowledge modeling strategies (SAG, LightRAG, RAPTOR, etc.)</p>
 
 [![](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=ffffff)](https://github.com/xerrors/Yuxi/blob/main/docker-compose.yml)
 [![](https://img.shields.io/github/issues/xerrors/Yuxi?color=F48D73)](https://github.com/xerrors/Yuxi/issues)
@@ -22,7 +22,7 @@
 
 ## Introduction
 
-Yuxi is an LLM-powered platform for building knowledge-base and knowledge-graph agents. It unifies **RAG retrieval**, **Milvus-backed in-knowledge-base graphs**, and **LangGraph multi-agent orchestration** into a single multi-tenant workspace: administrators configure knowledge bases, models, and permissions, while users chat — in a ChatGPT-like interface — with agents that can mount Skills, MCPs, sub-agents, and sandbox tools, and receive answers with cited sources, graph-based reasoning, and deliverable artifacts.
+Yuxi is an open, modular RAG platform capable of integrating various retrieval and knowledge modeling strategies (Naive RAG, Hybrid Event RAG, SAG, LightRAG, etc.). It unifies **RAG retrieval**, **Knowledge Graphs**, and **LangGraph multi-agent orchestration** into a single multi-tenant workspace: administrators configure knowledge bases, models, and permissions, while users chat — in a ChatGPT-like interface — with agents that can mount Skills, MCPs, sub-agents, and sandbox tools, and receive answers with cited sources, graph-based reasoning, and deliverable artifacts.
 
 Navigation: [Introduction](https://xerrors.github.io/Yuxi/) ｜ [Quick Start](https://xerrors.github.io/Yuxi/intro/quick-start) ｜ [Roadmap](https://xerrors.github.io/Yuxi/develop-guides/roadmap); for the latest updates, see the [changelog](https://xerrors.github.io/Yuxi/develop-guides/changelog).
 

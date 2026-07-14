@@ -26,6 +26,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from yuxi.storage.postgres.models_business import Base
+import yuxi.storage.postgres.models_knowledge  # import to ensure Base gets all tables
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

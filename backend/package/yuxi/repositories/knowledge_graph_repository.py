@@ -45,6 +45,8 @@ class KnowledgeGraphRepository:
                         index_elements=["entity_id"],
                         set_={
                             "name": entity_stmt.excluded.name,
+                            "canonical_name": entity_stmt.excluded.canonical_name,
+                            "aliases": entity_stmt.excluded.aliases,
                             "attributes": entity_stmt.excluded.attributes,
                             "updated_at": func.now(),
                         },
@@ -128,6 +130,13 @@ class KnowledgeGraphRepository:
                     "keywords": event.get("keywords"),
                     "level": event.get("level", 0),
                     "rank": event.get("rank", 0),
+                    "event_version": event.get("event_version"),
+                    "status": event.get("status", "pending"),
+                    "confidence": event.get("confidence"),
+                    "importance": event.get("importance"),
+                    "event_type": event.get("event_type"),
+                    "temporal_info": event.get("temporal_info"),
+                    "event_embedding": event.get("event_embedding"),
                 })
                 
                 for entity in event.get("entities", []):
@@ -151,6 +160,13 @@ class KnowledgeGraphRepository:
                             "keywords": event_stmt.excluded.keywords,
                             "level": event_stmt.excluded.level,
                             "rank": event_stmt.excluded.rank,
+                            "event_version": event_stmt.excluded.event_version,
+                            "status": event_stmt.excluded.status,
+                            "confidence": event_stmt.excluded.confidence,
+                            "importance": event_stmt.excluded.importance,
+                            "event_type": event_stmt.excluded.event_type,
+                            "temporal_info": event_stmt.excluded.temporal_info,
+                            "event_embedding": event_stmt.excluded.event_embedding,
                             "updated_at": func.now(),
                         },
                     )

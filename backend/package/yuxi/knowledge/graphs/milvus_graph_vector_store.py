@@ -88,10 +88,18 @@ class MilvusGraphVectorStore:
             return
 
         embed = self._get_embedding_function(embedding_model_spec)
+        event_texts = []
+        if missing_events:
+            for event in missing_events:
+                title = event.get("title") or ""
+                summary = event.get("summary") or ""
+                keywords = " ".join(event.get("keywords") or [])
+                event_texts.append(f"{title} {summary} {keywords}".strip())
+
         entity_embeddings, triple_embeddings, event_embeddings = await asyncio.gather(
             embed([entity["content"] for entity in missing_entities]) if missing_entities else self._empty_embeddings(),
             embed([triple["content"] for triple in missing_triples]) if missing_triples else self._empty_embeddings(),
-            embed([event["content"] for event in missing_events]) if missing_events else self._empty_embeddings(),
+            embed(event_texts) if missing_events else self._empty_embeddings(),
         )
 
         if missing_entities:

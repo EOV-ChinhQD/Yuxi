@@ -27,6 +27,10 @@ class KnowledgeChunkRepository:
         "tags",
         "extraction_result",
         "neo4j_sync_status",
+        "chunk_version",
+        "status",
+        "heading_path",
+        "section_type",
     }
 
     @staticmethod
