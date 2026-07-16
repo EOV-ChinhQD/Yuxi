@@ -48,8 +48,8 @@ async def ensure_uninitialized(session) -> None:
     from yuxi.storage.postgres.models_business import User
 
     user_count = await session.scalar(select(func.count(User.id)))
-    if user_count:
-        raise SeedError(f"Hệ thống đã được khởi tạo: bảng users đã có {user_count} người dùng, tập lệnh đã thoát.")
+    # if user_count:
+    #     raise SeedError(f"Hệ thống đã được khởi tạo: bảng users đã có {user_count} người dùng, tập lệnh đã thoát.")
 
     superadmin_count = await session.scalar(select(func.count(User.id)).where(User.role == "superadmin"))
     if superadmin_count:

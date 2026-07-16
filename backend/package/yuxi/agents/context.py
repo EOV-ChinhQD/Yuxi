@@ -143,7 +143,11 @@ class BaseContext:
 
     thread_id: str = field(
         default_factory=lambda: str(uuid.uuid4()),
-        metadata={"name": "Thread ID", "configurable": False, "description": "Used to uniquely identify a conversation thread"},
+        metadata={
+            "name": "Thread ID",
+            "configurable": False,
+            "description": "Used to uniquely identify a conversation thread",
+        },
     )
 
     uid: str = field(
@@ -434,19 +438,26 @@ async def resolve_agent_resource_options(
 
         databases = (await knowledge_base.get_databases_by_user(user)).get("databases", [])
         import os
+
         # Filter out SiliconFlow databases if SILICONFLOW_API_KEY is not set
         databases = [
-            db for db in databases
-            if not (str(db.get("embedding_model_spec") or "").startswith("siliconflow") and not os.environ.get("SILICONFLOW_API_KEY"))
+            db
+            for db in databases
+            if not (
+                str(db.get("embedding_model_spec") or "").startswith("siliconflow")
+                and not os.environ.get("SILICONFLOW_API_KEY")
+            )
         ]
         # Filter TEST_RAG_PIPELINE databases to keep only the latest one
         test_dbs = [db for db in databases if str(db.get("name") or "").startswith("TEST_RAG_PIPELINE_")]
         if test_dbs:
+
             def get_suffix(db):
                 try:
                     return int(db.get("name").split("_")[-1])
                 except Exception:
                     return -1
+
             latest_test_db = max(test_dbs, key=get_suffix)
             databases = [latest_test_db]
 

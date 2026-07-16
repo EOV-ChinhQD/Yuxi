@@ -9,7 +9,10 @@
   >
     <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
       <a-form-item label="Tên điểm chuẩn" name="name">
-        <a-input v-model:value="formState.name" placeholder="Vui lòng nhập tên điểm chuẩn đánh giá" />
+        <a-input
+          v-model:value="formState.name"
+          placeholder="Vui lòng nhập tên điểm chuẩn đánh giá"
+        />
       </a-form-item>
 
       <a-form-item label="Mô tả" name="description">
@@ -109,7 +112,9 @@
               <template #label>
                 <span class="field-label-with-help">
                   Số lượng bản dựng đồng thời
-                  <a-tooltip title="Tạo câu hỏi đánh giá cùng một lúc worker con số，Quá cao có thể kích hoạt giới hạn hiện tại của dịch vụ mô hình">
+                  <a-tooltip
+                    title="Tạo câu hỏi đánh giá cùng một lúc worker con số，Quá cao có thể kích hoạt giới hạn hiện tại của dịch vụ mô hình"
+                  >
                     <CircleHelp class="help-icon" />
                   </a-tooltip>
                 </span>
@@ -132,7 +137,9 @@
               <template #label>
                 <span class="field-label-with-help">
                   Mở rộng mỗi vòng Chunk con số
-                  <a-tooltip title="PPR Điểm cao nhất được thêm vào trong mỗi vòng sau khi phổ biến Chunk con số">
+                  <a-tooltip
+                    title="PPR Điểm cao nhất được thêm vào trong mỗi vòng sau khi phổ biến Chunk con số"
+                  >
                     <CircleHelp class="help-icon" />
                   </a-tooltip>
                 </span>
@@ -231,10 +238,17 @@ const formState = reactive({
 const rules = {
   name: [
     { required: true, message: 'Vui lòng nhập tên điểm chuẩn', trigger: 'blur' },
-    { min: 2, max: 100, message: 'Độ dài tên cơ sở phải nằm trong2-100giữa các ký tự', trigger: 'blur' }
+    {
+      min: 2,
+      max: 100,
+      message: 'Độ dài tên cơ sở phải nằm trong2-100giữa các ký tự',
+      trigger: 'blur'
+    }
   ],
   count: [{ required: true, message: 'Vui lòng nhập số lượng câu hỏi được tạo', trigger: 'blur' }],
-  concurrency_count: [{ required: true, message: 'Vui lòng nhập số lượng bản dựng đồng thời', trigger: 'blur' }]
+  concurrency_count: [
+    { required: true, message: 'Vui lòng nhập số lượng bản dựng đồng thời', trigger: 'blur' }
+  ]
 }
 
 // Ràng buộc hai chiềuvisible
@@ -259,7 +273,8 @@ const generationModeOptions = computed(() => [
     value: 'graph_enhanced',
     label: 'Xây dựng tăng cường đồ thị',
     tag: 'tập bản đồ',
-    description: 'Dựa trên việc thu hồi vectơ và kết hợp với biểu đồ tri thức để mở rộng mối tương quan chunks。',
+    description:
+      'Dựa trên việc thu hồi vectơ và kết hợp với biểu đồ tri thức để mở rộng mối tương quan chunks。',
     helper: graphEnhancedDisabled.value
       ? 'Cơ sở tri thức hiện tại vẫn chưa hoàn thiện việc xây dựng đồ thị.，Không thể sử dụng phép tăng đồ thị để xây dựng'
       : `Bản đồ đã được xây dựng chunks：${graphIndexedChunks.value}`,

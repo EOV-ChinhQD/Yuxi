@@ -17,6 +17,7 @@ export const modelIcons = {
   'moonshotai-cn': `${ICON_BASE}/moonshot.svg`,
   opencode: `${ICON_BASE}/opencode.svg`,
   openai: `${ICON_BASE}/openai.svg`,
+  nvidia: `${ICON_BASE}/nvidia.svg`,
   openrouter: `${ICON_BASE}/openrouter.svg`,
   siliconflow: `${ICON_BASE}/siliconcloud-color.svg`,
   'siliconflow-cn': `${ICON_BASE}/siliconcloud-color.svg`,

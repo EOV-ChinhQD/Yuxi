@@ -3,7 +3,9 @@
     <div class="header-section">
       <div class="header-content">
         <div class="section-title">Cài đặt tài khoản</div>
-        <p class="section-description">Quản lý thông tin tài khoản, thông tin cá nhân và API Key。</p>
+        <p class="section-description">
+          Quản lý thông tin tài khoản, thông tin cá nhân và API Key。
+        </p>
       </div>
       <a-button class="lucide-icon-btn" :loading="refreshing" @click="refreshProfile">
         <template #icon><RefreshCw :size="16" :class="{ spin: refreshing }" /></template>

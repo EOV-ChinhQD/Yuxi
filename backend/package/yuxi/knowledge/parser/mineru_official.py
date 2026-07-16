@@ -24,7 +24,9 @@ class MinerUOfficialParser(BaseDocumentProcessor):
     def __init__(self, api_key: str | None = None):
         self.api_key = api_key or os.getenv("MINERU_API_KEY")
         if not self.api_key:
-            raise DocumentParserException("Biến môi trường MINERU_API_KEY chưa được thiết lập", "mineru_official", "missing_api_key")
+            raise DocumentParserException(
+                "Biến môi trường MINERU_API_KEY chưa được thiết lập", "mineru_official", "missing_api_key"
+            )
 
         self.api_base = "https://mineru.net/api/v4"
         self.headers = {
@@ -50,9 +52,17 @@ class MinerUOfficialParser(BaseDocumentProcessor):
 
             # If 401 or a specific API error code is returned, there is a problem with the key
             if response.status_code == 401:
-                return {"status": "unhealthy", "message": "API Key is invalid or expired", "details": {"error_code": "A0202"}}
+                return {
+                    "status": "unhealthy",
+                    "message": "API Key is invalid or expired",
+                    "details": {"error_code": "A0202"},
+                }
             elif response.status_code == 403:
-                return {"status": "unhealthy", "message": "API Insufficient key permissions", "details": {"error_code": "A0211"}}
+                return {
+                    "status": "unhealthy",
+                    "message": "API Insufficient key permissions",
+                    "details": {"error_code": "A0211"},
+                }
             elif response.status_code == 200:
                 # Parse the response to check if the task was successfully created
                 try:
@@ -224,21 +234,27 @@ class MinerUOfficialParser(BaseDocumentProcessor):
 
         if response.status_code != 200:
             raise DocumentParserException(
-                f"Failed to apply for upload link: HTTP {response.status_code}", self.get_service_name(), "upload_url_failed"
+                f"Failed to apply for upload link: HTTP {response.status_code}",
+                self.get_service_name(),
+                "upload_url_failed",
             )
 
         result = response.json()
         if result.get("code") != 0:
             error_msg = result.get("msg", "unknown error")
             raise DocumentParserException(
-                f"Failed to apply for upload link: {error_msg}", self.get_service_name(), f"api_error_{result.get('code', 'unknown')}"
+                f"Failed to apply for upload link: {error_msg}",
+                self.get_service_name(),
+                f"api_error_{result.get('code', 'unknown')}",
             )
 
         batch_id = result["data"]["batch_id"]
         upload_urls = result["data"]["file_urls"]
 
         if not upload_urls:
-            raise DocumentParserException("Không lấy được liên kết tải lên file", self.get_service_name(), "no_upload_url")
+            raise DocumentParserException(
+                "Không lấy được liên kết tải lên file", self.get_service_name(), "no_upload_url"
+            )
 
         # Upload files
         upload_url = upload_urls[0]
@@ -263,7 +279,9 @@ class MinerUOfficialParser(BaseDocumentProcessor):
 
             if response.status_code != 200:
                 raise DocumentParserException(
-                    f"Failed to query task status: HTTP {response.status_code}", self.get_service_name(), "status_query_failed"
+                    f"Failed to query task status: HTTP {response.status_code}",
+                    self.get_service_name(),
+                    "status_query_failed",
                 )
 
             result = response.json()
@@ -288,7 +306,9 @@ class MinerUOfficialParser(BaseDocumentProcessor):
                 return file_result
             elif state == "failed":
                 err_msg = file_result.get("err_msg", "unknown error")
-                raise DocumentParserException(f"Phân tích tài liệu thất bại: {err_msg}", self.get_service_name(), "parsing_failed")
+                raise DocumentParserException(
+                    f"Phân tích tài liệu thất bại: {err_msg}", self.get_service_name(), "parsing_failed"
+                )
 
             # Keep waiting
             time.sleep(5)
@@ -298,7 +318,9 @@ class MinerUOfficialParser(BaseDocumentProcessor):
     def _download_and_extract(self, zip_url: str) -> str:
         """Download and unzip the results file"""
         if not zip_url:
-            raise DocumentParserException("Không lấy được liên kết tải kết quả", self.get_service_name(), "no_download_url")
+            raise DocumentParserException(
+                "Không lấy được liên kết tải kết quả", self.get_service_name(), "no_download_url"
+            )
 
         # Download file
         response = requests.get(zip_url, timeout=60)
@@ -351,7 +373,9 @@ class MinerUOfficialParser(BaseDocumentProcessor):
     def _download_zip(self, zip_url: str) -> str:
         """Download the resulting ZIP to a temporary file and return the path"""
         if not zip_url:
-            raise DocumentParserException("Không lấy được liên kết tải kết quả", self.get_service_name(), "no_download_url")
+            raise DocumentParserException(
+                "Không lấy được liên kết tải kết quả", self.get_service_name(), "no_download_url"
+            )
         response = requests.get(zip_url, timeout=60)
         if response.status_code != 200:
             raise DocumentParserException(

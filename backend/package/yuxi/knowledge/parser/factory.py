@@ -69,7 +69,9 @@ class DocumentProcessorFactory:
             ValueError: Loại bộ xử lý không được hỗ trợ
         """
         if processor_type not in cls.PROCESSOR_TYPES:
-            raise ValueError(f"Loại bộ xử lý không được hỗ trợ: {processor_type}. Các loại được hỗ trợ: {list(cls.PROCESSOR_TYPES.keys())}")
+            raise ValueError(
+                f"Loại bộ xử lý không được hỗ trợ: {processor_type}. Các loại được hỗ trợ: {list(cls.PROCESSOR_TYPES.keys())}"
+            )
 
         # Use caching to avoid duplicate creation
         cache_key = cls._build_cache_key(processor_type, kwargs)

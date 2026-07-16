@@ -72,7 +72,8 @@ export class AgentValidator {
   static validateRenameOperation(chatId, title, agentId, errorHandler) {
     // Xác minh các thông số cơ bản
     if (!chatId || !title) {
-      const message = 'Cuộc trò chuyện không được chỉ địnhIDhoặc tiêu đề，Không thể đổi tên cuộc trò chuyện'
+      const message =
+        'Cuộc trò chuyện không được chỉ địnhIDhoặc tiêu đề，Không thể đổi tên cuộc trò chuyện'
       if (errorHandler) {
         errorHandler(message)
       }

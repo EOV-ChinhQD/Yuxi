@@ -42,7 +42,9 @@ class OIDCConfig(BaseModel):
     token_endpoint: str = Field(default="", description="URL endpoint Token")
     userinfo_endpoint: str = Field(default="", description="URL endpoint UserInfo")
     end_session_endpoint: str = Field(default="", description="URL endpoint đăng xuất")
-    provider_name: str = Field(default="Đăng nhập OIDC", description="Tên nguồn xác thực, văn bản hiển thị trên nút đăng nhập")
+    provider_name: str = Field(
+        default="Đăng nhập OIDC", description="Tên nguồn xác thực, văn bản hiển thị trên nút đăng nhập"
+    )
     scopes: str = Field(default="openid profile email", description="Phạm vi scope yêu cầu")
     auto_create_user: bool = Field(default=True, description="Có tự động tạo người dùng không")
     default_role: str = Field(default="user", description="Vai trò mặc định của người dùng OIDC")
@@ -50,10 +52,14 @@ class OIDCConfig(BaseModel):
     username_claim: str = Field(default="preferred_username", description="Trường ánh xạ tên người dùng")
     email_claim: str = Field(default="email", description="Trường ánh xạ email")
     name_claim: str = Field(default="name", description="Trường ánh xạ tên")
-    use_raw_username: bool = Field(default=False, description="Có sử dụng tên người dùng gốc (không có tiền tố oidc) không")
+    use_raw_username: bool = Field(
+        default=False, description="Có sử dụng tên người dùng gốc (không có tiền tố oidc) không"
+    )
     fetch_department_info: bool = Field(default=False, description="Có lấy thông tin bộ phận từ OIDC không")
     department_claim: str = Field(default="department", description="Trường ánh xạ thông tin bộ phận")
-    force_prompt_login: bool = Field(default=False, description="Có ép buộc người dùng đăng nhập lại (thêm tham số prompt=login) không")
+    force_prompt_login: bool = Field(
+        default=False, description="Có ép buộc người dùng đăng nhập lại (thêm tham số prompt=login) không"
+    )
 
     @classmethod
     def from_env(cls) -> "OIDCConfig":
@@ -750,19 +756,27 @@ async def oidc_callback_handler(code: str, state: str, db, request: Request | No
         return _redirect_to_login_with_error("OIDC The configuration is incomplete, please contact the administrator")
 
     if not OIDCUtils.verify_state(state):
-        return _redirect_to_login_with_error("The login session has expired, please return to the login page and try again")
+        return _redirect_to_login_with_error(
+            "The login session has expired, please return to the login page and try again"
+        )
 
     token_response = await OIDCUtils.exchange_code_for_token(code)
     if not token_response:
-        return _redirect_to_login_with_error("Unable to obtain access token, please return to the login page and try again")
+        return _redirect_to_login_with_error(
+            "Unable to obtain access token, please return to the login page and try again"
+        )
 
     access_token = token_response.get("access_token")
     if not access_token:
-        return _redirect_to_login_with_error("Unable to obtain access token, please return to the login page and try again")
+        return _redirect_to_login_with_error(
+            "Unable to obtain access token, please return to the login page and try again"
+        )
 
     userinfo = await OIDCUtils.get_userinfo(access_token)
     if not userinfo:
-        return _redirect_to_login_with_error("Unable to obtain user information, please return to the login page and try again")
+        return _redirect_to_login_with_error(
+            "Unable to obtain user information, please return to the login page and try again"
+        )
 
     extracted_info = OIDCUtils.extract_user_info(userinfo)
     sub = extracted_info["sub"]
@@ -794,7 +808,9 @@ async def oidc_callback_handler(code: str, state: str, db, request: Request | No
                         f"OIDC sub {sub} is already bound to a different user, "
                         f"login rejected to prevent account hijacking (conflict: {conflict_name})"
                     )
-                    return _redirect_to_login_with_error("The OIDC logo has been bound to another account. Please contact the administrator to resolve the binding conflict.")
+                    return _redirect_to_login_with_error(
+                        "The OIDC logo has been bound to another account. Please contact the administrator to resolve the binding conflict."
+                    )
             else:
                 # sub is not bound to any user yet
                 if user_by_name:
@@ -810,7 +826,9 @@ async def oidc_callback_handler(code: str, state: str, db, request: Request | No
                     if oidc_config.auto_create_user:
                         user = None  # Let subsequent logic be created
                     else:
-                        return _redirect_to_login_with_error("The user does not exist, please contact the administrator to open an account")
+                        return _redirect_to_login_with_error(
+                            "The user does not exist, please contact the administrator to open an account"
+                        )
         else:
             # Username is not obtained, fall back to search by sub
             user = user_by_sub
@@ -834,7 +852,9 @@ async def oidc_callback_handler(code: str, state: str, db, request: Request | No
             department_id = dept.id if dept else None
             user = await create_oidc_user(db, extracted_info, department_id)
     else:
-        return _redirect_to_login_with_error("The user has not registered, please contact the administrator to open an account")
+        return _redirect_to_login_with_error(
+            "The user has not registered, please contact the administrator to open an account"
+        )
 
     if user.is_deleted:
         return _redirect_to_login_with_error("The account has been canceled")

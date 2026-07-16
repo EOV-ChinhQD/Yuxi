@@ -447,7 +447,8 @@ const viewInfoText = computed(() => {
   }
   if (viewMode.value === 'source') {
     if (sourcePreview.value.loading) return ''
-    if (sourceContentLength.value > 0) return `${formatTextLength(sourceContentLength.value)} nhân vật`
+    if (sourceContentLength.value > 0)
+      return `${formatTextLength(sourceContentLength.value)} nhân vật`
     if (sourcePreview.value.url) return 'Xem trước tập tin nguồn'
     return ''
   }

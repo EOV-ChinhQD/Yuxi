@@ -5,14 +5,22 @@
       <p>Đang tải thông số cấu hình...</p>
     </div>
 
-    <a-result v-else-if="error" status="error" title="Tải cấu hình không thành công" :sub-title="error">
+    <a-result
+      v-else-if="error"
+      status="error"
+      title="Tải cấu hình không thành công"
+      :sub-title="error"
+    >
       <template #extra>
         <a-button type="primary" @click="loadQueryParams">tải lại</a-button>
       </template>
     </a-result>
 
     <template v-else>
-      <a-empty v-if="visibleQueryParams.length === 0" description="Hiện tại chưa có thông số cấu hình" />
+      <a-empty
+        v-if="visibleQueryParams.length === 0"
+        description="Hiện tại chưa có thông số cấu hình"
+      />
       <a-form layout="vertical">
         <a-row :gutter="16">
           <a-col :span="12" v-for="param in visibleQueryParams" :key="param.key">

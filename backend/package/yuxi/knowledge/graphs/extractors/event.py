@@ -12,6 +12,7 @@ from .base import GraphExtractor
 # Global semaphore for LLM event extraction to prevent rate limits
 _global_event_semaphore = None
 
+
 def get_event_semaphore(limit: int = 10) -> asyncio.Semaphore:
     global _global_event_semaphore
     if _global_event_semaphore is None:
@@ -21,8 +22,14 @@ def get_event_semaphore(limit: int = 10) -> asyncio.Semaphore:
 
 def benchmark_entity_types() -> list[dict[str, str]]:
     return [
-        {"type": "person", "description": "Cá nhân cụ thể như nhân vật, tác giả, người dùng, người chịu trách nhiệm, v.v."},
-        {"type": "organization", "description": "Tổ chức như công ty, cơ quan, đoàn thể, cơ quan chính phủ, trường học, đội nhóm, v.v."},
+        {
+            "type": "person",
+            "description": "Cá nhân cụ thể như nhân vật, tác giả, người dùng, người chịu trách nhiệm, v.v.",
+        },
+        {
+            "type": "organization",
+            "description": "Tổ chức như công ty, cơ quan, đoàn thể, cơ quan chính phủ, trường học, đội nhóm, v.v.",
+        },
         {"type": "location", "description": "Địa điểm, vùng miền, quốc gia, thành phố, địa điểm, địa chỉ"},
         {"type": "time", "description": "Ngày tháng, năm, thời kỳ, biểu đạt thời gian"},
         {"type": "product", "description": "Sản phẩm, hệ thống, nền tảng, mô hình, phần mềm, dịch vụ, cơ sở dữ liệu"},
@@ -121,32 +128,29 @@ class LLMEventExtractor(GraphExtractor):
                 timeout=60.0,
                 model_params=self.options.get("model_params") or {},
             )
-            
+
             title = (chunk_metadata or {}).get("title") or "Document"
             heading = (chunk_metadata or {}).get("heading") or ""
-            
+
             user_input = {
                 "type": "request",
                 "data": {
-                    "items": [{
-                        "id": 1,
-                        "content": f"# {heading}\n\n{text}" if heading else text
-                    }],
+                    "items": [{"id": 1, "content": f"# {heading}\n\n{text}" if heading else text}],
                     "meta": {
                         "source_type": "article",
                         "source_title": title,
                         "source_summary": "",
                         "previous_context": "",
                         "related_events": [],
-                        "entity_types": benchmark_entity_types()
-                    }
-                }
+                        "entity_types": benchmark_entity_types(),
+                    },
+                },
             }
 
             system_prompt = build_system_prompt()
             prompt_str = f"{system_prompt}\n\nUser Input:\n{json.dumps(user_input)}"
             response = await model.call(prompt_str, stream=False)
-            
+
             raw_content = response.content if response else ""
             try:
                 parsed = json_repair.loads(raw_content)
@@ -154,7 +158,7 @@ class LLMEventExtractor(GraphExtractor):
                 items = data.get("items", [])
                 if not items and "items" in parsed:
                     items = parsed.get("items")
-                
+
                 if items and isinstance(items, list):
                     event = items[0]
                     return {
@@ -165,18 +169,18 @@ class LLMEventExtractor(GraphExtractor):
                             "category": event.get("category", "general"),
                             "keywords": event.get("keywords", []),
                         },
-                        "entities": event.get("entities", [])
+                        "entities": event.get("entities", []),
                     }
             except Exception as e:
                 logger.error(f"Failed to parse LLM event extraction result: {e}. Raw content: {raw_content}")
-            
+
             return {
                 "event": {
                     "title": heading or title,
                     "summary": text[:200],
                     "content": text,
                     "category": "general",
-                    "keywords": []
+                    "keywords": [],
                 },
-                "entities": []
+                "entities": [],
             }

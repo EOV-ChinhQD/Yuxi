@@ -64,11 +64,17 @@ class Config(BaseModel):
     default_ocr_engine: str = Field(default=DEFAULT_OCR_ENGINE, description="默认 OCR 解析引擎")
 
     sandbox_provider: str = Field(default="provisioner", description="Nhà cung cấp sandbox")
-    sandbox_provisioner_url: str = Field(default="http://sandbox-provisioner:8002", description="Địa chỉ dịch vụ sandbox")
-    sandbox_virtual_path_prefix: str = Field(default="/home/gem/user-data", description="Tiền tố thư mục người dùng sandbox")
+    sandbox_provisioner_url: str = Field(
+        default="http://sandbox-provisioner:8002", description="Địa chỉ dịch vụ sandbox"
+    )
+    sandbox_virtual_path_prefix: str = Field(
+        default="/home/gem/user-data", description="Tiền tố thư mục người dùng sandbox"
+    )
     sandbox_exec_timeout_seconds: int = Field(default=180, description="Thời gian chờ thực thi sandbox (giây)")
     sandbox_max_output_bytes: int = Field(default=262144, description="Số byte đầu ra tối đa của sandbox")
     sandbox_keepalive_interval_seconds: int = Field(default=30, description="Khoảng thời gian giữ kết nối sandbox")
+    max_nli_claims: int = Field(default=8, description="Số lượng claim tối đa đưa vào NLI verifier để kiểm tra.")
+    nli_max_concurrency: int = Field(default=3, description="Số lượng kết nối NLI tối đa chạy đồng thời (Semaphore).")
 
     _config_file: Path | None = PrivateAttr(default=None)
     _runtime_sync_thread: Any = PrivateAttr(default=None)
@@ -126,6 +132,8 @@ class Config(BaseModel):
         self.sandbox_keepalive_interval_seconds = int(
             os.getenv("SANDBOX_KEEPALIVE_INTERVAL_SECONDS") or self.sandbox_keepalive_interval_seconds or 30
         )
+        self.max_nli_claims = int(os.getenv("MAX_NLI_CLAIMS") or self.max_nli_claims or 8)
+        self.nli_max_concurrency = int(os.getenv("NLI_MAX_CONCURRENCY") or self.nli_max_concurrency or 3)
 
         if self.sandbox_provider.lower() != "provisioner":
             raise ValueError("Only sandbox_provider=provisioner is supported.")

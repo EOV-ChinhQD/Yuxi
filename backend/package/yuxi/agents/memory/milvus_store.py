@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any, List, Dict, Optional
+from typing import Any
 from pymilvus import (
     connections,
     utility,
@@ -18,6 +18,7 @@ from yuxi.utils import hashstr, logger
 COLLECTION_NAME = "user_semantic_memory"
 VECTOR_METRIC_TYPE = "COSINE"
 
+
 class MilvusMemoryStore:
     def __init__(self):
         self.milvus_token = os.getenv("MILVUS_TOKEN") or ""
@@ -25,7 +26,7 @@ class MilvusMemoryStore:
         self.milvus_db = os.getenv("MILVUS_DB") or "yuxi"
         self.connection_alias = f"milvus_memory_{hashstr(self.milvus_uri, 6)}"
         self._init_connection()
-        self.collection: Optional[Collection] = None
+        self.collection: Collection | None = None
 
     def _init_connection(self) -> None:
         if not connections.has_connection(self.connection_alias):
@@ -86,7 +87,7 @@ class MilvusMemoryStore:
         self.collection = collection
         return collection
 
-    async def get_embeddings(self, texts: List[str]) -> List[List[float]]:
+    async def get_embeddings(self, texts: list[str]) -> list[list[float]]:
         spec, _ = self.get_embedding_model_info()
         model = select_embedding_model(spec)
         return await model.aencode(texts)
@@ -99,7 +100,7 @@ class MilvusMemoryStore:
         confidence_score: float,
         is_active: bool = True,
         superseded_by: str = "",
-        created_at: Optional[int] = None,
+        created_at: int | None = None,
     ) -> None:
         collection = self.get_or_create_collection()
         if created_at is None:
@@ -122,7 +123,7 @@ class MilvusMemoryStore:
         # Use upsert to handle updates cleanly
         collection.upsert(data)
 
-    async def search_facts(self, uid: str, query_text: str, limit: int = 5) -> List[Dict[str, Any]]:
+    async def search_facts(self, uid: str, query_text: str, limit: int = 5) -> list[dict[str, Any]]:
         collection = self.get_or_create_collection()
         vectors = await self.get_embeddings([query_text])
         vector = vectors[0]
@@ -145,16 +146,18 @@ class MilvusMemoryStore:
             for hits in results:
                 for hit in hits:
                     entity = hit.entity
-                    output.append({
-                        "id": entity.get("id"),
-                        "uid": entity.get("uid"),
-                        "fact_text": entity.get("fact_text"),
-                        "is_active": entity.get("is_active"),
-                        "superseded_by": entity.get("superseded_by"),
-                        "created_at": entity.get("created_at"),
-                        "confidence_score": entity.get("confidence_score"),
-                        "distance": hit.distance,
-                    })
+                    output.append(
+                        {
+                            "id": entity.get("id"),
+                            "uid": entity.get("uid"),
+                            "fact_text": entity.get("fact_text"),
+                            "is_active": entity.get("is_active"),
+                            "superseded_by": entity.get("superseded_by"),
+                            "created_at": entity.get("created_at"),
+                            "confidence_score": entity.get("confidence_score"),
+                            "distance": hit.distance,
+                        }
+                    )
         return output
 
     async def deactivate_fact(self, uid: str, fact_id: str, superseded_by: str) -> None:

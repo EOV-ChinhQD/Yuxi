@@ -17,7 +17,9 @@
       class="attachment-dropzone"
     >
       <p class="dropzone-title">Nhấp hoặc kéo thả tệp để tải lên tại đây</p>
-      <p class="dropzone-desc">Hỗ trợ mọi định dạng file ≤ 5 MB；PDF và phân tích hình ảnh tùy chọn thành Markdown。</p>
+      <p class="dropzone-desc">
+        Hỗ trợ mọi định dạng file ≤ 5 MB；PDF và phân tích hình ảnh tùy chọn thành Markdown。
+      </p>
     </a-upload-dragger>
 
     <div v-if="fileItems.length" class="attachment-list">
@@ -93,7 +95,11 @@
                       class="unavailable-toggle"
                       @click="toggleUnavailableParseMethods(item.localId)"
                     >
-                      <span>tùy chọn không khả dụng（{{ getUnavailableParseMethods(item).length }}）</span>
+                      <span
+                        >tùy chọn không khả dụng（{{
+                          getUnavailableParseMethods(item).length
+                        }}）</span
+                      >
                       <ChevronUp v-if="item.unavailableMethodsExpanded" :size="14" />
                       <ChevronDown v-else :size="14" />
                     </button>
@@ -365,7 +371,8 @@ const getMethodStatus = (method) => {
   return current?.status || 'unknown'
 }
 
-const getMethodStatusLabel = (method) => methodStatusLabels[getMethodStatus(method)] || 'Trạng thái không xác định'
+const getMethodStatusLabel = (method) =>
+  methodStatusLabels[getMethodStatus(method)] || 'Trạng thái không xác định'
 
 const getMethodDescription = (method) => {
   if (method === 'disable') return 'Sử dụng lớp văn bản có sẵn của tệp, không gọi dịch vụ OCR'
@@ -379,7 +386,7 @@ const getMethodDescription = (method) => {
     configured: 'Token Được cấu hình, sẽ được xác thực khi phân tích',
     unavailable: 'Dịch vụ không khả dụng',
     unhealthy: 'Ngoại lệ dịch vụ',
-    timeout: 'Dịch vụ检查Hết thời gian',
+    timeout: 'Kiểm tra dịch vụ hết thời gian',
     error: 'Ngoại lệ dịch vụ',
     checking: 'Đang kiểm tra trạng thái dịch vụ',
     unknown: 'Trạng thái dịch vụ không xác định'

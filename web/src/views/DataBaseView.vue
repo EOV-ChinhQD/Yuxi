@@ -144,7 +144,9 @@
         <div class="form-section">
           <h3 class="section-title">Mô tả cơ sở kiến thức</h3>
           <p class="field-hint description-hint">
-            trong quá trình đại lý，Mô tả ở đây sẽ đóng vai trò là mô tả của công cụ。Tác nhân chọn công cụ thích hợp dựa trên tiêu đề và mô tả của cơ sở tri thức。Vì vậy, mô tả chi tiết hơn ở đây là，Đại lý càng dễ dàng lựa chọn công cụ phù hợp。
+            trong quá trình đại lý，Mô tả ở đây sẽ đóng vai trò là mô tả của công cụ。Tác nhân chọn
+            công cụ thích hợp dựa trên tiêu đề và mô tả của cơ sở tri thức。Vì vậy, mô tả chi tiết
+            hơn ở đây là，Đại lý càng dễ dàng lựa chọn công cụ phù hợp。
           </p>
           <AiTextarea
             v-model="newDatabase.description"

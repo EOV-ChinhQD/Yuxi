@@ -41,7 +41,9 @@
           <div class="form-wrapper">
             <header class="form-header">
               <!-- Nếu nó đang khởi tạo，Hiển thị tiêu đề cụ thể -->
-              <h2 v-if="isFirstRun" class="init-title">Khởi tạo hệ thống, vui lòng tạo tài khoản Quản trị viên tối cao</h2>
+              <h2 v-if="isFirstRun" class="init-title">
+                Khởi tạo hệ thống, vui lòng tạo tài khoản Quản trị viên tối cao
+              </h2>
               <p v-else class="welcome-text">Chào mừng bạn đăng nhập</p>
             </header>
 
@@ -210,7 +212,9 @@
                       block
                       size="large"
                     >
-                      <span v-if="isLocked">Tài khoản đã bị khóa {{ formatTime(lockRemainingTime) }}</span>
+                      <span v-if="isLocked"
+                        >Tài khoản đã bị khóa {{ formatTime(lockRemainingTime) }}</span
+                      >
                       <span v-else>Đăng nhập</span>
                     </a-button>
                   </a-form-item>
@@ -417,7 +421,8 @@ const ensureAgreementAccepted = () => {
     return true
   }
 
-  const warningMessage = 'Vui lòng đọc và đồng ý với 《Điều khoản người dùng》 và 《Chính sách bảo mật》 trước'
+  const warningMessage =
+    'Vui lòng đọc và đồng ý với 《Điều khoản người dùng》 và 《Chính sách bảo mật》 trước'
   message.warning(warningMessage)
   return false
 }
@@ -493,7 +498,8 @@ const handleLogin = async () => {
         errorMessage.value = error.message || 'Tài khoản bị khóa, vui lòng thử lại sau'
       }
     } else {
-      errorMessage.value = error.message || 'Đăng nhập thất bại, vui lòng kiểm tra tài khoản và mật khẩu'
+      errorMessage.value =
+        error.message || 'Đăng nhập thất bại, vui lòng kiểm tra tài khoản và mật khẩu'
     }
   } finally {
     loading.value = false
@@ -609,7 +615,8 @@ const checkServerHealth = async () => {
   } catch (error) {
     console.error('Không thể kiểm tra tình trạng sức khỏe của máy chủ:', error)
     serverStatus.value = 'error'
-    serverError.value = error.message || 'Không thể kết nối đến máy chủ, vui lòng kiểm tra kết nối mạng'
+    serverError.value =
+      error.message || 'Không thể kết nối đến máy chủ, vui lòng kiểm tra kết nối mạng'
   } finally {
     healthChecking.value = false
   }

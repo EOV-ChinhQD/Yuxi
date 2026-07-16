@@ -268,8 +268,11 @@ def flush_langfuse() -> None:
 
 from contextlib import asynccontextmanager
 
+
 @asynccontextmanager
-async def langfuse_span(trace_id: str | None, span_name: str, input_data: dict | None = None, metadata: dict | None = None):
+async def langfuse_span(
+    trace_id: str | None, span_name: str, input_data: dict | None = None, metadata: dict | None = None
+):
     client = get_langfuse_client()
     if client is None or not trace_id:
         yield None
@@ -278,11 +281,7 @@ async def langfuse_span(trace_id: str | None, span_name: str, input_data: dict |
     span = None
     try:
         trace = client.trace(id=trace_id)
-        span = trace.span(
-            name=span_name,
-            input=input_data,
-            metadata=metadata
-        )
+        span = trace.span(name=span_name, input=input_data, metadata=metadata)
         yield span
     except Exception as e:
         logger.warning(f"Failed to create Langfuse span {span_name}: {e}")

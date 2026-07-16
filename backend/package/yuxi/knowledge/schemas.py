@@ -5,8 +5,12 @@ from pydantic import BaseModel, Field
 
 class SearchInputSchema(BaseModel):
     kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
-    query_text: str = Field(description="Từ khóa tìm kiếm, nên được trích xuất thành từ khóa hoặc cụm từ giúp truy xuất câu trả lời")
-    file_name: str | None = Field(default=None, description="Lọc từ khóa tên file tùy chọn, không sử dụng nếu không cần thiết")
+    query_text: str = Field(
+        description="Từ khóa tìm kiếm, nên được trích xuất thành từ khóa hoặc cụm từ giúp truy xuất câu trả lời"
+    )
+    file_name: str | None = Field(
+        default=None, description="Lọc từ khóa tên file tùy chọn, không sử dụng nếu không cần thiết"
+    )
 
 
 class SearchResultSchema(BaseModel):
@@ -14,7 +18,9 @@ class SearchResultSchema(BaseModel):
     kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
     file_id: str = Field(default="", description="ID file thuộc về kết quả, có thể dùng cho Find/Open")
     content: str = Field(description="nội dung chunk")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Thông tin bổ sung như nguồn, điểm số, chunk_index, v.v.")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Thông tin bổ sung như nguồn, điểm số, chunk_index, v.v."
+    )
 
 
 class SearchOutputSchema(BaseModel):
@@ -52,7 +58,9 @@ class OpenInputSchema(BaseModel):
     kb_id: str = Field(description="ID tài nguyên kho kiến thức, tức là kb_id")
     file_id: str = Field(description="ID file cần mở")
     line: int | None = Field(default=None, ge=1, description="Tùy chọn, số dòng bắt đầu, bắt đầu từ 1")
-    offset: int | None = Field(default=None, ge=0, description="Tùy chọn, độ lệch bắt đầu, bắt đầu từ 0; line ưu tiên hơn offset")
+    offset: int | None = Field(
+        default=None, ge=0, description="Tùy chọn, độ lệch bắt đầu, bắt đầu từ 0; line ưu tiên hơn offset"
+    )
     window_size: int = Field(default=1800, ge=1, le=2000, description="Đọc số dòng cửa sổ")
 
 
@@ -66,5 +74,7 @@ class OpenOutputSchema(BaseModel):
     window_size: int = Field(description="Số dòng cửa sổ được yêu cầu lần này")
     has_more_before: bool = Field(description="Cửa sổ trước có nội dung không")
     has_more_after: bool = Field(description="Cửa sổ sau có nội dung không")
-    next_offset: int | None = Field(default=None, description="offset của cửa sổ tiếp theo; null khi không còn nội dung")
+    next_offset: int | None = Field(
+        default=None, description="offset của cửa sổ tiếp theo; null khi không còn nội dung"
+    )
     content: str = Field(description="Nội dung cửa sổ có số dòng")

@@ -61,16 +61,20 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to ensure builtin model providers during startup: {e}")
 
-    # Initialize model cache (used by v2 model selection)
+    # Initialize model cache (used by v2 model selection) and warm up
     try:
         from yuxi.models.providers.cache import model_cache
         from yuxi.models.providers.service import get_all_model_providers
+        from yuxi.agents.models import warm_up_models
 
         async with pg_manager.get_async_session_context() as session:
             providers = await get_all_model_providers(session)
             model_cache.rebuild(providers)
+
+        # Warm up models
+        await warm_up_models()
     except Exception as e:
-        logger.error(f"Failed to initialize model cache during startup: {e}")
+        logger.error(f"Failed to initialize model cache/warm-up during startup: {e}")
 
     # Initialize the knowledge base manager
     if os.environ.get("LITE_MODE", "").lower() in ("true", "1"):

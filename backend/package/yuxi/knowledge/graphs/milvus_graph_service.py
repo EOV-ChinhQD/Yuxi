@@ -170,11 +170,15 @@ class MilvusGraphService:
         if existing_config.get("locked"):
             existing_extractor_type = (existing_config.get("extractor_type") or "").lower()
             if normalized_extractor_type != existing_extractor_type:
-                raise ValueError("Loại bộ trích xuất đồ thị đã bị khóa, chỉ có thể sửa đổi mô hình, Schema và các tham số trích xuất khác")
+                raise ValueError(
+                    "Loại bộ trích xuất đồ thị đã bị khóa, chỉ có thể sửa đổi mô hình, Schema và các tham số trích xuất khác"
+                )
 
         extractor_options = extractor_options or {}
         if normalized_extractor_type == "llm" and extractor_options.get("prompt"):
-            raise ValueError("Bộ trích xuất đồ thị LLM không hỗ trợ Prompt tùy chỉnh đầy đủ, vui lòng sử dụng schema để cấu hình ràng buộc")
+            raise ValueError(
+                "Bộ trích xuất đồ thị LLM không hỗ trợ Prompt tùy chỉnh đầy đủ, vui lòng sử dụng schema để cấu hình ràng buộc"
+            )
         GraphExtractorFactory.create(normalized_extractor_type, extractor_options)
         config = {
             "locked": True,
@@ -299,7 +303,9 @@ class MilvusGraphService:
                     if context is not None:
                         completed = processed + failed
                         progress = 5.0 + min(90.0, completed / max(total_pending, 1) * 90.0)
-                        await context.set_progress(progress, f"Map construction {completed}/{total_pending},fail {failed}")
+                        await context.set_progress(
+                            progress, f"Map construction {completed}/{total_pending},fail {failed}"
+                        )
 
             workers = [asyncio.create_task(worker()) for _ in range(min(worker_count, len(unprocessed)))]
             try:
@@ -321,7 +327,7 @@ class MilvusGraphService:
             worker_count = int((config.get("extractor_options") or {}).get("concurrency_count") or 1)
         except (TypeError, ValueError):
             return 1
-        return max(1, min(worker_count, 1000))
+        return max(1, worker_count)
 
     @staticmethod
     def _runtime_extractor_options(config: dict[str, Any]) -> dict[str, Any]:
@@ -474,11 +480,13 @@ class MilvusGraphService:
 
         event_entities = []
         for entity in entity_records:
-            event_entities.append({
-                "entity_id": entity["entity_id"],
-                "weight": 1.0,
-                "relation_type": "MENTIONS",
-            })
+            event_entities.append(
+                {
+                    "entity_id": entity["entity_id"],
+                    "weight": 1.0,
+                    "relation_type": "MENTIONS",
+                }
+            )
 
         event_record = {
             "event_id": event_id,

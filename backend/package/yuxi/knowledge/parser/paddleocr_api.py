@@ -92,7 +92,9 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
 
     def _require_api_token(self) -> None:
         if not self.api_token:
-            raise DocumentParserException("PADDLEOCR_API_TOKEN chưa được cấu hình", self.get_service_name(), "missing_api_token")
+            raise DocumentParserException(
+                "PADDLEOCR_API_TOKEN chưa được cấu hình", self.get_service_name(), "missing_api_token"
+            )
 
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"bearer {self.api_token}"}
@@ -176,13 +178,17 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
                 json_url = ((data.get("resultUrl") or {}).get("jsonUrl") or "").strip()
                 if not json_url:
                     raise DocumentParserException(
-                        "Tác vụ PaddleOCR hoàn thành nhưng không trả về jsonUrl", self.get_service_name(), "missing_result_url"
+                        "Tác vụ PaddleOCR hoàn thành nhưng không trả về jsonUrl",
+                        self.get_service_name(),
+                        "missing_result_url",
                     )
                 return json_url
 
             if state == "failed":
                 error_msg = data.get("errorMsg") or "Lỗi không xác định"
-                raise DocumentParserException(f"Tác vụ PaddleOCR thất bại: {error_msg}", self.get_service_name(), "job_failed")
+                raise DocumentParserException(
+                    f"Tác vụ PaddleOCR thất bại: {error_msg}", self.get_service_name(), "job_failed"
+                )
 
             if state not in {"pending", "running"}:
                 raise DocumentParserException(
@@ -191,7 +197,9 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
 
             time.sleep(poll_interval_seconds)
 
-        raise DocumentParserException("Tác vụ PaddleOCR xử lý quá thời gian (timeout)", self.get_service_name(), "timeout")
+        raise DocumentParserException(
+            "Tác vụ PaddleOCR xử lý quá thời gian (timeout)", self.get_service_name(), "timeout"
+        )
 
     def _download_jsonl(self, json_url: str) -> list[dict[str, Any]]:
         response = requests.get(json_url, timeout=60)

@@ -20,7 +20,9 @@
         />
       </template>
     </template>
-    <div v-if="conversations.length === 0" class="thread-message-list-empty">Chưa có tin tức nào</div>
+    <div v-if="conversations.length === 0" class="thread-message-list-empty">
+      Chưa có tin tức nào
+    </div>
   </div>
 </template>
 

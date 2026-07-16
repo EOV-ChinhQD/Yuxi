@@ -12,11 +12,13 @@ from .base import GraphExtractor
 # Global Semaphore for LLM Graph Extraction to prevent rate limits
 _global_llm_semaphore = None
 
+
 def get_llm_semaphore(limit: int = 10) -> asyncio.Semaphore:
     global _global_llm_semaphore
     if _global_llm_semaphore is None:
         _global_llm_semaphore = asyncio.Semaphore(limit)
     return _global_llm_semaphore
+
 
 DEFAULT_TRIPLE_EXTRACTION_PROMPT = """Vui lòng trích xuất các thực thể và mối quan hệ thực thể từ văn bản bên dưới, trả về JSON chuẩn, không in ra lời giải thích.
 JSON Format:
@@ -44,7 +46,9 @@ class LLMGraphExtractor(GraphExtractor):
         if not self.options.get("model_spec"):
             raise ValueError("Bộ trích xuất LLM cần model_spec")
         if self.options.get("prompt"):
-            raise ValueError("Bộ trích xuất đồ thị LLM không hỗ trợ Prompt tùy chỉnh đầy đủ, vui lòng sử dụng schema để cấu hình ràng buộc")
+            raise ValueError(
+                "Bộ trích xuất đồ thị LLM không hỗ trợ Prompt tùy chỉnh đầy đủ, vui lòng sử dụng schema để cấu hình ràng buộc"
+            )
         concurrency_count = self.options.get("concurrency_count", 1)
         try:
             concurrency_count = int(concurrency_count)

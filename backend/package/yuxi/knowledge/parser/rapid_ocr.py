@@ -145,7 +145,9 @@ class RapidOCRParser(BaseDocumentProcessor):
                 return temp_path
 
         except Exception as e:
-            raise OCRException(f"Tạo tệp hình ảnh tạm thời thất bại: {str(e)}", self.get_service_name(), "temp_file_error")
+            raise OCRException(
+                f"Tạo tệp hình ảnh tạm thời thất bại: {str(e)}", self.get_service_name(), "temp_file_error"
+            )
 
     def process_pdf(self, pdf_path: str, params: dict | None = None) -> str:
         """
@@ -217,7 +219,9 @@ class RapidOCRParser(BaseDocumentProcessor):
         file_ext = Path(file_path).suffix.lower()
 
         if not self.supports_file_type(file_ext):
-            raise OCRException(f"Loại tệp không được hỗ trợ: {file_ext}", self.get_service_name(), "unsupported_file_type")
+            raise OCRException(
+                f"Loại tệp không được hỗ trợ: {file_ext}", self.get_service_name(), "unsupported_file_type"
+            )
 
         if file_ext == ".pdf":
             return self.process_pdf(file_path, params)

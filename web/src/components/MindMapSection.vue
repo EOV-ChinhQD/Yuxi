@@ -19,7 +19,9 @@
           <MapIcon :size="24" />
         </div>
         <p class="empty-title">Chưa có bản đồ tư duy</p>
-        <p class="empty-description">Tạo bản đồ có cấu trúc từ nội dung cơ sở kiến thức hiện tại。</p>
+        <p class="empty-description">
+          Tạo bản đồ có cấu trúc từ nội dung cơ sở kiến thức hiện tại。
+        </p>
         <button
           type="button"
           class="lucide-icon-btn mindmap-primary-action"

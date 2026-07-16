@@ -517,6 +517,7 @@ def _extract_retrieved_chunks(messages: list) -> list[str]:
                 continue
             try:
                 import json
+
                 data = json.loads(content)
                 if isinstance(data, dict) and "results" in data:
                     for result in data["results"]:
@@ -586,13 +587,15 @@ async def save_messages_from_langgraph_state(
             try:
                 from yuxi.knowledge.grounding.nli_verifier import NLIVerifier
                 from sqlalchemy.orm.attributes import flag_modified
-                
+
                 claims = NLIVerifier.split_into_claims(last_ai_message.content)
                 if claims:
-                    logger.info(f"[NLI] Running grounding verification on {len(claims)} claims against {len(retrieved_chunks)} chunks...")
+                    logger.info(
+                        f"[NLI] Running grounding verification on {len(claims)} claims against {len(retrieved_chunks)} chunks..."
+                    )
                     nli_results = await NLIVerifier.verify_claims(claims, retrieved_chunks)
                     logger.info(f"[NLI] Grounding verification completed: {nli_results}")
-                    
+
                     extra_metadata = last_ai_message.extra_metadata or {}
                     extra_metadata["grounding_scores"] = nli_results
                     last_ai_message.extra_metadata = extra_metadata
@@ -610,8 +613,9 @@ async def save_messages_from_langgraph_state(
     # Tích hợp Audit Log P2
     try:
         from yuxi.storage.postgres.audit_repository import AuditLogRepository
+
         conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
-        
+
         # Get raw query from the latest human message
         raw_query = ""
         for m in reversed(messages):
@@ -624,18 +628,18 @@ async def save_messages_from_langgraph_state(
 
         uid = conversation.uid if conversation else "unknown"
         response_content = last_ai_message.content if last_ai_message else ""
-        
+
         source_refs = None
-        if 'retrieved_chunks' in locals() and retrieved_chunks:
+        if "retrieved_chunks" in locals() and retrieved_chunks:
             source_refs = []
             for c in retrieved_chunks:
                 # Trích xuất an toàn để không lộ full text (Privacy)
                 chunk_id = getattr(c, "chunk_id", None) or (c.get("chunk_id") if isinstance(c, dict) else None)
                 file_id = getattr(c, "file_id", None) or (c.get("file_id") if isinstance(c, dict) else None)
                 source_refs.append({"chunk_id": chunk_id, "file_id": file_id})
-        
+
         grounding_scores = None
-        if 'nli_results' in locals():
+        if "nli_results" in locals():
             grounding_scores = nli_results
 
         # Ghi Audit Log vào Postgres an toàn (cơ chế Outbox hoặc Hash Chain đồng bộ)
@@ -658,7 +662,7 @@ async def save_messages_from_langgraph_state(
         import time
         from yuxi.storage.redis import get_async_redis_client
         from yuxi.config.user import UserConfig
-        
+
         # 1. Fetch conversation
         conversation = await conv_repo.get_conversation_by_thread_id(thread_id)
         if conversation:
@@ -668,7 +672,7 @@ async def save_messages_from_langgraph_state(
             if user_config.schema.enable_memory:
                 redis_client = await get_async_redis_client()
                 redis_key = f"yuxi:memory_extractor:last_extracted:{thread_id}"
-                
+
                 # Fetch last extraction data from Redis
                 last_data_raw = await redis_client.get(redis_key)
                 last_count = 0
@@ -680,7 +684,7 @@ async def save_messages_from_langgraph_state(
                         last_time = last_data.get("last_extracted_time", 0.0)
                     except Exception:
                         pass
-                
+
                 current_time = time.time()
                 # Extract dialog messages (role: user/assistant)
                 dialog_messages = [
@@ -689,15 +693,16 @@ async def save_messages_from_langgraph_state(
                     if m.role in {"user", "assistant"}
                 ]
                 total_count = len(dialog_messages)
-                
+
                 # Check debounce condition: >= 5 new dialog messages or >= 5 mins idle since last check (and there are new messages)
                 if (total_count - last_count >= 5) or (current_time - last_time >= 300 and total_count > last_count):
                     new_msgs = dialog_messages[last_count:]
                     from yuxi.agents.memory.extractor import MemoryExtractorTask
+
                     extractor = MemoryExtractorTask()
                     # Run extraction in background task to avoid blocking response stream
                     asyncio.create_task(extractor.extract_memory_from_dialogue(uid, thread_id, new_msgs))
-                    
+
                     # Update redis state
                     new_state = {"last_extracted_count": total_count, "last_extracted_time": current_time}
                     await redis_client.set(redis_key, json.dumps(new_state))
@@ -951,7 +956,10 @@ async def stream_agent_chat(
 
     if conf.enable_content_guard and await content_guard.check(query):
         yield make_chunk(
-            status="error", error_type="content_guard_blocked", error_message="Nội dung đầu vào chứa từ ngữ bị cấm", meta=meta
+            status="error",
+            error_type="content_guard_blocked",
+            error_message="Nội dung đầu vào chứa từ ngữ bị cấm",
+            meta=meta,
         )
         return
 
@@ -1123,7 +1131,9 @@ async def stream_agent_chat(
                             request_id=meta.get("request_id"),
                         )
                         meta["time_cost"] = asyncio.get_event_loop().time() - start_time
-                        yield make_chunk(status="interrupted", message="Phát hiện nội dung nhạy cảm, đã ngắt đầu ra", meta=meta)
+                        yield make_chunk(
+                            status="interrupted", message="Phát hiện nội dung nhạy cảm, đã ngắt đầu ra", meta=meta
+                        )
                         return
 
                 yield make_chunk(
@@ -1466,14 +1476,14 @@ def _serialize_state_messages(values: dict[str, Any]) -> list[dict[str, Any]]:
             serialized.append(dict(message))
         else:
             serialized.append({"type": "unknown", "content": str(message)})
-            
+
     from yuxi.utils.auth_utils import AuthUtils
+
     for item in serialized:
         if "content" in item and isinstance(item["content"], str):
             item["content"] = AuthUtils.sign_markdown_images(item["content"])
-            
-    return serialized
 
+    return serialized
 
 
 async def _read_checkpoint_state(agent, *, uid: str, thread_id: str, context):
@@ -1548,7 +1558,9 @@ async def get_agent_state_view(
                 try:
                     response["subagent_run"] = serialize_subagent_run_state(latest_run)
                 except ValueError as exc:
-                    logger.error(f"Bản ghi sub-agent run bị lỗi format: thread_id={thread_id}, run_id={latest_run.id}, {exc}")
+                    logger.error(
+                        f"Bản ghi sub-agent run bị lỗi format: thread_id={thread_id}, run_id={latest_run.id}, {exc}"
+                    )
                     raise HTTPException(status_code=500, detail="Bản ghi sub-agent run bị lỗi format") from exc
         if include_messages:
             response["messages"] = _serialize_state_messages(values)

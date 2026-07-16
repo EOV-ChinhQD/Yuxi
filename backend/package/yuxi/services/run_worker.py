@@ -261,9 +261,12 @@ async def _consume_stream_with_cancel(agen, run_ctx: RunContext):
             return
 
 
-async def _record_failed_job(ctx, job_type: str, job_id: str | None, payload: dict, error_type: str, error_message: str, retry_count: int):
+async def _record_failed_job(
+    ctx, job_type: str, job_id: str | None, payload: dict, error_type: str, error_message: str, retry_count: int
+):
     from yuxi.storage.postgres.models_business import FailedJob
     from yuxi.storage.postgres.manager import pg_manager
+
     try:
         async with pg_manager.get_async_session_context() as db:
             failed_job = FailedJob(
@@ -273,7 +276,7 @@ async def _record_failed_job(ctx, job_type: str, job_id: str | None, payload: di
                 error_type=error_type,
                 error_message=error_message,
                 retry_count=retry_count,
-                status="failed"
+                status="failed",
             )
             db.add(failed_job)
             await db.commit()
@@ -285,6 +288,7 @@ async def _record_failed_job(ctx, job_type: str, job_id: str | None, payload: di
 async def process_agent_run(ctx, run_id: str):
     """执行队列中的 AgentRun，并只从 run 列 và tin nhắn đầu vào để khôi phục tham số chạy."""
     from yuxi.utils.logging_config import set_log_context, reset_log_context
+
     token = set_log_context(run_id=run_id)
     uid = None
     request_id = None
@@ -551,7 +555,7 @@ async def process_agent_run(ctx, run_id: str):
                     payload={"run_id": run_id, "uid": uid, "request_id": request_id, "thread_id": thread_id},
                     error_type=type(e).__name__,
                     error_message=str(e),
-                    retry_count=job_try - 1
+                    retry_count=job_try - 1,
                 )
                 return
 
@@ -584,7 +588,7 @@ async def process_agent_run(ctx, run_id: str):
             payload={"run_id": run_id, "uid": uid, "request_id": request_id, "thread_id": thread_id},
             error_type=type(e).__name__,
             error_message=str(e),
-            retry_count=job_try - 1
+            retry_count=job_try - 1,
         )
         return
     finally:

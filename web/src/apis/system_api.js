@@ -123,5 +123,9 @@ export const modelProviderApi = {
     return apiAdminGet(
       `/api/system/model-providers/${encodeURIComponent(providerId)}/remote-models`
     )
+  },
+
+  getBuiltinProviders: async () => {
+    return apiAdminGet('/api/system/model-providers/builtin')
   }
 }

@@ -15,18 +15,20 @@ DEFAULT_AGENT_SLUG = "default-chatbot"
 DEFAULT_AGENT_NAME = "Smart Assistant"
 DEFAULT_AGENT_BACKEND_ID = "ChatbotAgent"
 SUB_AGENT_BACKEND_ID = "SubAgentBackend"
-DEFAULT_AGENT_DESCRIPTION = "A basic conversational bot that can answer questions and enable the required tools in the configuration."
+DEFAULT_AGENT_DESCRIPTION = (
+    "A basic conversational bot that can answer questions and enable the required tools in the configuration."
+)
 DEFAULT_SHARE_CONFIG = {"access_level": "global", "department_ids": [], "user_uids": []}
 
 GENERAL_PURPOSE_AGENT_SLUG = "general-purpose"
 GENERAL_PURPOSE_AGENT_NAME = "Common tasks"
-GENERAL_PURPOSE_AGENT_DESCRIPTION = (
-    "For general tasks without dedicated role constraints, use the default running configuration to independently complete analysis, organization, writing or file processing."
-)
+GENERAL_PURPOSE_AGENT_DESCRIPTION = "For general tasks without dedicated role constraints, use the default running configuration to independently complete analysis, organization, writing or file processing."
 
 WEB_SEARCH_AGENT_SLUG = "web-search"
 WEB_SEARCH_AGENT_NAME = "Web search"
-WEB_SEARCH_AGENT_DESCRIPTION = "Continuously search web pages around the search target and return summary information with cited sources."
+WEB_SEARCH_AGENT_DESCRIPTION = (
+    "Continuously search web pages around the search target and return summary information with cited sources."
+)
 WEB_SEARCH_SYSTEM_PROMPT = """Bạn là tác nhân con "Tìm kiếm web", chuyên tìm kiếm thông tin trên web hướng mục tiêu.
 
 Trách nhiệm của bạn: Xoay quanh mục tiêu tìm kiếm do người gọi cung cấp, sử dụng các công cụ tìm kiếm trên web để tiếp tục tìm kiếm cho đến khi thu thập đủ thông tin để trả lời mục tiêu.
@@ -45,9 +47,7 @@ Yêu cầu đầu ra:
 
 DEEP_RESEARCH_AGENT_SLUG = "deep-research"
 DEEP_RESEARCH_AGENT_NAME = "in-depth research"
-DEEP_RESEARCH_AGENT_DESCRIPTION = (
-    "In-depth research tasks for multiple sources and requiring fact checking: planning and dismantling, parallel scheduling of research sub-agents, verification and synthesis into a structured report with references."
-)
+DEEP_RESEARCH_AGENT_DESCRIPTION = "In-depth research tasks for multiple sources and requiring fact checking: planning and dismantling, parallel scheduling of research sub-agents, verification and synthesis into a structured report with references."
 DEEP_RESEARCH_SYSTEM_PROMPT = """Bạn là tác nhân "Nghiên cứu chuyên sâu", chịu trách nhiệm kiểm soát tổng thể và điều phối các tác nhân con cho một nhiệm vụ nghiên cứu chuyên sâu.
 
 Định vị cốt lõi của bạn là người điều phối, không phải tự mình thực hiện tất cả các tìm kiếm: hãy giao phó các công việc điều tra và xác minh nặng nề, có thể độc lập và song song cho các tác nhân con, còn bạn chỉ tập trung vào việc lập kế hoạch, điều phối và tổng hợp cuối cùng.

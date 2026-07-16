@@ -32,7 +32,9 @@
               <Settings class="icon" />
             </button>
           </a-tooltip>
-          <a-tooltip :title="themeStore.isDark ? 'Chuyển sang chế độ ánh sáng' : 'Chuyển sang chế độ tối'">
+          <a-tooltip
+            :title="themeStore.isDark ? 'Chuyển sang chế độ ánh sáng' : 'Chuyển sang chế độ tối'"
+          >
             <button
               type="button"
               class="header-action-button"

@@ -5,7 +5,9 @@ from typing import Any
 
 from yuxi.knowledge.chunking.ragflow_like import nlp
 
-_ARTICLE_PATTERN = re.compile(r"^(No.[zero one two three four five six seven eight nine hundred million 0-9]+strip)[\s　:：]*(.*)$")
+_ARTICLE_PATTERN = re.compile(
+    r"^(No.[zero one two three four five six seven eight nine hundred million 0-9]+strip)[\s　:：]*(.*)$"
+)
 
 
 def _unescape_delimiter(delimiter: str) -> str:

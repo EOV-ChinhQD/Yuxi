@@ -1,7 +1,10 @@
 <template>
   <div class="chunk-params-config">
     <div class="params-info">
-      <p>Điều chỉnh tham số chunk có thể kiểm soát cách chia cắt văn bản, ảnh hưởng đến chất lượng tìm kiếm và hiệu suất tải tài liệu。</p>
+      <p>
+        Điều chỉnh tham số chunk có thể kiểm soát cách chia cắt văn bản, ảnh hưởng đến chất lượng
+        tìm kiếm và hiệu suất tải tài liệu。
+      </p>
     </div>
     <a-form :model="localParams" name="chunkConfig" autocomplete="off" layout="vertical">
       <a-form-item v-if="showPreset" name="chunk_preset_id">
@@ -21,7 +24,9 @@
         />
         <p class="param-description">
           Chọn chiến lược phân chia phù hợp với cấu trúc tài liệu hiện tại。
-          <span v-if="allowPresetFollowDefault">Sử dụng chiến lược mặc định của cơ sở kiến thức khi để trống。</span>
+          <span v-if="allowPresetFollowDefault"
+            >Sử dụng chiến lược mặc định của cơ sở kiến thức khi để trống。</span
+          >
         </p>
       </a-form-item>
 
@@ -29,8 +34,8 @@
         <a-form-item v-if="showChunkSizeOverlap" name="chunk_token_num">
           <template #label>
             <span class="chunk-preset-label">
-              Tối đa Token Số
-              <a-tooltip title="Tối đa cho mỗi đoạn văn bản token Số，留空时Sử dụngmặc định值 512">
+              Số token tối đa
+              <a-tooltip title="Số token tối đa cho mỗi đoạn văn bản. Nếu để trống sẽ sử dụng giá trị mặc định là 512">
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
@@ -39,7 +44,7 @@
             v-model:value="parserConfig.chunk_token_num"
             :min="100"
             :max="10000"
-            placeholder="mặc định 512"
+            placeholder="Mặc định 512"
             style="width: 100%"
           />
         </a-form-item>
@@ -47,7 +52,9 @@
           <template #label>
             <span class="chunk-preset-label">
               Tỷ lệ chồng lấp (%)
-              <a-tooltip title="Các đoạn văn bản liền kề theo token Tính tỷ lệ chồng lấn, để trống để dùng giá trị mặc định 0">
+              <a-tooltip
+                title="Các đoạn văn bản liền kề theo token Tính tỷ lệ chồng lấn, để trống để dùng giá trị mặc định 0"
+              >
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
@@ -56,7 +63,7 @@
             v-model:value="parserConfig.overlapped_percent"
             :min="0"
             :max="99"
-            placeholder="mặc định 0"
+            placeholder="Mặc định 0"
             style="width: 100%"
           />
         </a-form-item>
@@ -64,14 +71,16 @@
           <template #label>
             <span class="chunk-preset-label">
               Dấu phân cách
-              <a-tooltip title="支持 \\n、\\t Chờ ký tự thoát. Nếu để trống, sử dụng dấu phân cách mặc định \\n">
+              <a-tooltip
+                title="Hỗ trợ các ký tự thoát như \\n, \\t. Nếu để trống sẽ sử dụng dấu phân cách mặc định \\n"
+              >
                 <QuestionCircleOutlined class="chunk-preset-help-icon" />
               </a-tooltip>
             </span>
           </template>
           <a-input
             v-model:value="parserConfig.delimiter"
-            placeholder="mặc định \\n，Có thể nhập liệu \\n\\n\\n hoặc ---"
+            placeholder="Mặc định \\n, có thể nhập liệu \\n\\n\\n hoặc ---"
             style="width: 100%"
           />
         </a-form-item>

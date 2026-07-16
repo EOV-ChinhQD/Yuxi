@@ -9,7 +9,10 @@
   >
     <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
       <a-form-item label="Tên điểm chuẩn" name="name">
-        <a-input v-model:value="formState.name" placeholder="Vui lòng nhập tên điểm chuẩn đánh giá" />
+        <a-input
+          v-model:value="formState.name"
+          placeholder="Vui lòng nhập tên điểm chuẩn đánh giá"
+        />
       </a-form-item>
 
       <a-form-item label="Mô tả" name="description">
@@ -31,7 +34,9 @@
         >
           <UploadCloud class="upload-icon" />
           <p class="ant-upload-text">Bấm hoặc kéo JSONL Tải tập tin lên khu vực này</p>
-          <p class="ant-upload-hint">mỗi dòng một cái JSON vật thể，Chỉ hỗ trợ .jsonl，tối đa 100MB</p>
+          <p class="ant-upload-hint">
+            mỗi dòng một cái JSON vật thể，Chỉ hỗ trợ .jsonl，tối đa 100MB
+          </p>
         </a-upload-dragger>
       </a-form-item>
     </a-form>
@@ -93,7 +98,12 @@ const formState = reactive({
 const rules = {
   name: [
     { required: true, message: 'Vui lòng nhập tên điểm chuẩn', trigger: 'blur' },
-    { min: 2, max: 100, message: 'Độ dài tên cơ sở phải nằm trong2-100giữa các ký tự', trigger: 'blur' }
+    {
+      min: 2,
+      max: 100,
+      message: 'Độ dài tên cơ sở phải nằm trong2-100giữa các ký tự',
+      trigger: 'blur'
+    }
   ],
   file: [{ required: true, message: 'Vui lòng chọn một tập tin điểm chuẩn', trigger: 'change' }]
 }

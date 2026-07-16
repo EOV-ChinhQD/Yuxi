@@ -99,7 +99,9 @@ class KnowledgeChunk(Base):
     start_token_pos = Column(Integer)
     end_token_pos = Column(Integer)
     graph_indexed = Column(Boolean, default=False)
-    neo4j_sync_status = Column(String(20), nullable=False, default="pending", comment="Neo4j sync status: pending/synced/failed")
+    neo4j_sync_status = Column(
+        String(20), nullable=False, default="pending", comment="Neo4j sync status: pending/synced/failed"
+    )
     chunk_version = Column(String(64), nullable=True)
     status = Column(String(32), nullable=False, default="pending", index=True)
     heading_path = Column(JSON_VALUE)

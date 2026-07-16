@@ -1,13 +1,13 @@
 import asyncio
 import json
 import re
-from typing import List, Dict, Any
 
 from yuxi.utils import logger
 from yuxi.models import select_model
 from yuxi.storage.neo4j import neo4j_read, neo4j_write, safe_neo4j_label
 from yuxi.knowledge.graphs.milvus_graph_service import MilvusGraphService
 from yuxi.knowledge.graphs.milvus_graph_vector_store import MilvusGraphVectorStore
+
 
 class GraphDeduplicator:
     def __init__(self, kb_id: str, llm_model_spec: str = "gpt-4o"):
@@ -16,7 +16,7 @@ class GraphDeduplicator:
         self.graph_service = MilvusGraphService()
         self.label = safe_neo4j_label(kb_id)
 
-    async def get_all_entities(self) -> List[Dict[str, str]]:
+    async def get_all_entities(self) -> list[dict[str, str]]:
         cypher = f"""
         MATCH (e:Entity:MilvusKB:`{self.label}`)
         WHERE e.kb_id = $kb_id
@@ -25,7 +25,7 @@ class GraphDeduplicator:
         records = await asyncio.to_thread(neo4j_read, self.graph_service.driver, cypher, kb_id=self.kb_id)
         return [{"entity_id": r["entity_id"], "name": r["name"]} for r in records]
 
-    async def cluster_entities_with_llm(self, entities: List[Dict[str, str]]) -> List[List[Dict[str, str]]]:
+    async def cluster_entities_with_llm(self, entities: list[dict[str, str]]) -> list[list[dict[str, str]]]:
         if len(entities) < 2:
             return []
 
@@ -33,9 +33,9 @@ class GraphDeduplicator:
         # Xử lý theo lô tối đa 500 thực thể một lần để không vượt quá context window
         batch_size = 300
         all_clusters = []
-        
+
         for i in range(0, len(names), batch_size):
-            batch_names = names[i:i + batch_size]
+            batch_names = names[i : i + batch_size]
             prompt = f"""Bạn là chuyên gia phân tích dữ liệu đồ thị tiếng Việt.
 Dưới đây là danh sách các thực thể (entities). Hãy nhóm các thực thể đồng nghĩa, viết tắt, hoặc là biến thể của nhau vào chung một nhóm.
 Chỉ gộp khi bạn CỰC KỲ CHẮC CHẮN chúng là một (ví dụ: 'HCM' và 'Hồ Chí Minh', 'Máy biến áp' và 'Máy biến thế', 'Công ty ABC' và 'CTY ABC').
@@ -56,12 +56,12 @@ Trả về JSON chính xác theo định dạng sau (không giải thích thêm)
                 model = select_model(model_spec=self.llm_model_spec)
                 response = await model.call(prompt)
                 raw = response.content.strip()
-                
-                match = re.search(r'\{[\s\S]*\}', raw)
+
+                match = re.search(r"\{[\s\S]*\}", raw)
                 if match:
                     data = json.loads(match.group())
                     clusters = data.get("clusters", [])
-                    
+
                     # Ánh xạ ngược lại object chứa entity_id
                     name_to_obj = {e["name"]: e for e in entities}
                     for cluster in clusters:
@@ -71,10 +71,10 @@ Trả về JSON chính xác theo định dạng sau (không giải thích thêm)
                                 all_clusters.append(cluster_objs)
             except Exception as e:
                 logger.error(f"[Deduplicator] LLM clustering failed for batch: {e}")
-        
+
         return all_clusters
 
-    async def merge_cluster(self, cluster: List[Dict[str, str]]):
+    async def merge_cluster(self, cluster: list[dict[str, str]]):
         if len(cluster) < 2:
             return
 
@@ -82,7 +82,7 @@ Trả về JSON chính xác theo định dạng sau (không giải thích thêm)
         cluster = sorted(cluster, key=lambda x: len(x["name"]))
         target = cluster[0]
         sources = cluster[1:]
-        
+
         source_ids = [s["entity_id"] for s in sources]
         logger.info(f"[Deduplicator] Gộp {len(sources)} thực thể vào '{target['name']}'")
 
@@ -124,7 +124,7 @@ Trả về JSON chính xác theo định dạng sau (không giải thích thêm)
         WITH source
         DETACH DELETE source
         """
-        
+
         # Vì apoc có thể không được bật trên server neo4j tiêu chuẩn của Yuxi
         # Ta viết lại Cypher thuần bằng thủ thuật COLLECT và FOREACH
         native_cypher = f"""
@@ -168,14 +168,20 @@ Trả về JSON chính xác theo định dạng sau (không giải thích thêm)
         WITH source
         DETACH DELETE source
         """
-        
+
         try:
-            await asyncio.to_thread(neo4j_write, self.graph_service.driver, native_cypher, target_id=target["entity_id"], source_ids=source_ids)
-            
+            await asyncio.to_thread(
+                neo4j_write,
+                self.graph_service.driver,
+                native_cypher,
+                target_id=target["entity_id"],
+                source_ids=source_ids,
+            )
+
             # Xóa các entities đã gộp khỏi Milvus Graph Vector Store
             vector_store = MilvusGraphVectorStore()
             await vector_store.delete_graph_records(self.kb_id, entity_ids=source_ids, triple_ids=[])
-            
+
         except Exception as e:
             logger.error(f"[Deduplicator] Lỗi khi gộp cluster {target['name']}: {e}")
 
@@ -183,14 +189,14 @@ Trả về JSON chính xác theo định dạng sau (không giải thích thêm)
         logger.info(f"[Deduplicator] Bắt đầu dọn dẹp đồ thị cho KB {self.kb_id}...")
         entities = await self.get_all_entities()
         logger.info(f"[Deduplicator] Tìm thấy {len(entities)} thực thể.")
-        
+
         clusters = await self.cluster_entities_with_llm(entities)
         logger.info(f"[Deduplicator] LLM đã tìm ra {len(clusters)} nhóm thực thể trùng lặp.")
-        
+
         merged_count = 0
         for cluster in clusters:
             await self.merge_cluster(cluster)
-            merged_count += (len(cluster) - 1)
-            
+            merged_count += len(cluster) - 1
+
         logger.info(f"[Deduplicator] Đã gộp thành công {merged_count} thực thể.")
         return merged_count

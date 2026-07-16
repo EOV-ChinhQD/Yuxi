@@ -65,7 +65,9 @@
               <div v-if="isLoadingMore" class="conversation-search-loading-more">Đang tải...</div>
             </div>
 
-            <div v-else class="conversation-search-empty">Không tìm thấy cuộc trò chuyện có liên quan</div>
+            <div v-else class="conversation-search-empty">
+              Không tìm thấy cuộc trò chuyện có liên quan
+            </div>
           </template>
 
           <template v-else>

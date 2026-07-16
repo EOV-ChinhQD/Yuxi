@@ -93,7 +93,9 @@ def ensure_workspace_default_files(workspace_dir: Path) -> None:
         agents_dir.mkdir(parents=True, exist_ok=True)
         _chmod_writable(agents_dir, dir=True)
     except FileExistsError:
-        logger.warning("Creation of the default Agents directory in the workspace failed: the path is already occupied by a file")
+        logger.warning(
+            "Creation of the default Agents directory in the workspace failed: the path is already occupied by a file"
+        )
         return
     except OSError as exc:
         logger.warning(f"Workspace default Agents directory initialization failed: {exc}")

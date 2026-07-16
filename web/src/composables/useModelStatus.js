@@ -24,7 +24,8 @@ export function useModelStatus() {
     const status = statusMap[key]
     if (!status) return 'Trạng thái không xác định'
     const text =
-      { available: 'Có sẵn', unavailable: 'Không có sẵn', error: 'Lỗi' }[status.status] || 'không rõ'
+      { available: 'Có sẵn', unavailable: 'Không có sẵn', error: 'Lỗi' }[status.status] ||
+      'không rõ'
     return `${text}: ${status.message || 'Không có chi tiết'}`
   }
 

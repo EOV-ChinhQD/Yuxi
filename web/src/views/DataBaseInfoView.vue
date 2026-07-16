@@ -145,8 +145,8 @@
                   class="file-stat-card file-stat-summary file-stat-repair"
                   :disabled="statsRepairing"
                   :aria-busy="statsRepairing"
-                  aria-label="修复缺失của Chunk/Token Thống kê"
-                  title="修复缺失của Chunk/Token Thống kê"
+                  aria-label="Sửa chữa thống kê Chunk/Token bị thiếu"
+                  title="Sửa chữa thống kê Chunk/Token bị thiếu"
                   @click="repairDatabaseStats"
                 >
                   <LoaderCircle v-if="statsRepairing" :size="16" class="file-stat-spinner" />
@@ -161,8 +161,8 @@
                   class="file-stat-card file-stat-summary file-stat-repair"
                   :disabled="statsRepairing"
                   :aria-busy="statsRepairing"
-                  aria-label="修复缺失của Chunk/Token Thống kê"
-                  title="修复缺失của Chunk/Token Thống kê"
+                  aria-label="Sửa chữa thống kê Chunk/Token bị thiếu"
+                  title="Sửa chữa thống kê Chunk/Token bị thiếu"
                   @click="repairDatabaseStats"
                 >
                   <LoaderCircle v-if="statsRepairing" :size="16" class="file-stat-spinner" />
@@ -246,16 +246,20 @@
       </div>
     </template>
 
-    <a-modal v-model:open="editModalVisible" title="Chỉnh sửa thông tin cơ sở tri thức" width="700px">
+    <a-modal
+      v-model:open="editModalVisible"
+      title="Chỉnh sửa thông tin cơ sở tri thức"
+      width="700px"
+    >
       <template #footer>
         <a-button danger @click="deleteDatabase" style="margin-right: auto; margin-left: 0">
           <template #icon>
             <Trash2 :size="16" style="vertical-align: -3px; margin-right: 4px" />
           </template>
-          xóaDữ liệu库
+          Xóa cơ sở tri thức
         </a-button>
         <a-button key="back" @click="editModalVisible = false">Hủy</a-button>
-        <a-button key="submit" type="primary" @click="handleEditSubmit">xác nhận</a-button>
+        <a-button key="submit" type="primary" @click="handleEditSubmit">Xác nhận</a-button>
       </template>
       <a-form :model="editForm" :rules="rules" ref="editFormRef" layout="vertical">
         <a-form-item label="Tên kho kiến thức" name="name" required>
@@ -272,7 +276,11 @@
           />
         </a-form-item>
 
-        <a-form-item v-if="!isConnector" label="Tự động tạo ra câu hỏi" name="auto_generate_questions">
+        <a-form-item
+          v-if="!isConnector"
+          label="Tự động tạo ra câu hỏi"
+          name="auto_generate_questions"
+        >
           <a-switch
             v-model:checked="editForm.auto_generate_questions"
             checked-children="Kích hoạt"
@@ -324,7 +332,7 @@
           <a-form-item label="Notion Token" name="notion_token">
             <a-input-password
               v-model:value="editForm.notion_token"
-              placeholder="Nếu để trống, giữ nguyên hiện状 Token Hoặc sử dụng biến môi trường"
+              placeholder="Nếu để trống, giữ nguyên hiện trạng Token hoặc sử dụng biến môi trường"
             />
           </a-form-item>
           <a-form-item label="Data Source ID" name="notion_data_source_id">
@@ -551,7 +559,7 @@ const confirmBatchParse = () => {
 
   Modal.confirm({
     title: 'Phân tích các tệp đang chờ xử lý',
-    content: `Sẽ được gửi ${formatStatNumber(count)} CáiChưa được phân tíchTệp，任务会在后台Nhấn批处理，có thểTrung tâm nhiệm vụ查看Tiến độ。`,
+    content: `Sẽ gửi ${formatStatNumber(count)} tệp chưa phân tích. Tác vụ sẽ được xử lý hàng loạt dưới nền, bạn có thể theo dõi tiến độ tại Trung tâm nhiệm vụ.`,
     okText: 'Gửi để phân tích',
     cancelText: 'Hủy',
     onOk: () => store.parsePendingFiles(count)
@@ -758,21 +766,21 @@ const shareConfigDisplay = computed(() => {
   const shareConfig = database.value?.share_config || { access_level: 'global' }
   if (shareConfig.access_level === 'department') {
     const departmentIds = shareConfig.department_ids || []
-    const names = departmentIds.map((id) => getDepartmentName(id)).join('、') || '无'
+    const names = departmentIds.map((id) => getDepartmentName(id)).join(', ') || 'Không có'
     return {
       color: 'blue',
       label: 'Chia sẻ bộ phận',
-      detail: `${departmentIds.length} có thể truy cập：${names}`
+      detail: `${departmentIds.length} có thể truy cập: ${names}`
     }
   }
 
   if (shareConfig.access_level === 'user') {
     const userUids = shareConfig.user_uids || []
-    const names = userUids.map((uid) => getUserName(uid)).join('、') || '无'
+    const names = userUids.map((uid) => getUserName(uid)).join(', ') || 'Không có'
     return {
       color: 'purple',
       label: 'Người được chỉ định',
-      detail: `${userUids.length} người dùng có thể truy cập：${names}`
+      detail: `${userUids.length} người dùng có thể truy cập: ${names}`
     }
   }
 
@@ -857,11 +865,11 @@ const handleEditSubmit = () => {
           !editForm.dify_token?.trim() ||
           !editForm.dify_dataset_id?.trim()
         ) {
-          message.error('请完整填写 Dify API URL、Token và Dataset ID')
+          message.error('Vui lòng điền đầy đủ Dify API URL, Token và Dataset ID')
           return
         }
         if (!editForm.dify_api_url.trim().endsWith('/v1')) {
-          message.error('Dify API URL phải bắt đầu bằng /v1 Kết thúc')
+          message.error('Dify API URL phải kết thúc bằng /v1')
           return
         }
         updateData.additional_params = {

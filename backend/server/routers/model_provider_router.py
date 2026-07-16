@@ -97,6 +97,15 @@ async def create_provider(
         raise HTTPException(status_code=500, detail="Tạo nhà cung cấp mô hình thất bại")
 
 
+@model_providers.get("/builtin")
+async def get_builtin_providers(
+    current_user: User = Depends(get_admin_user),
+):
+    """Get a list of built-in model providers."""
+    from yuxi.models.providers.builtin import BUILTIN_PROVIDERS
+    return {"success": True, "data": BUILTIN_PROVIDERS}
+
+
 @model_providers.get("/{provider_id}")
 async def get_provider(
     provider_id: str,

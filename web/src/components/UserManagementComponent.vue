@@ -5,7 +5,8 @@
       <div class="header-content">
         <div class="section-title">Quản lý người dùng</div>
         <p class="section-description">
-          Quản lý người dùng hệ thống，Hãy hoạt động một cách thận trọng。Sau khi xóa người dùng, người dùng sẽ không thể đăng nhập vào hệ thống.。
+          Quản lý người dùng hệ thống，Hãy hoạt động một cách thận trọng。Sau khi xóa người dùng,
+          người dùng sẽ không thể đăng nhập vào hệ thống.。
         </p>
       </div>
       <div class="header-actions">
@@ -65,7 +66,11 @@
         <div class="cards-container">
           <div v-if="filteredUsers.length === 0" class="empty-state">
             <a-empty
-              :description="userManagement.users.length === 0 ? 'Chưa có dữ liệu người dùng' : 'Không có người dùng phù hợp'"
+              :description="
+                userManagement.users.length === 0
+                  ? 'Chưa có dữ liệu người dùng'
+                  : 'Không có người dùng phù hợp'
+              "
             />
           </div>
           <div v-else class="user-cards-grid">
@@ -202,7 +207,8 @@
             v-if="userManagement.form.generatedUid && !userManagement.editMode"
             class="help-text"
           >
-            Đăng nhậpID：{{ userManagement.form.generatedUid }}，cái nàyIDsẽ được sử dụng để đăng nhập，Tự động tạo dựa trên tên người dùng
+            Đăng nhậpID：{{ userManagement.form.generatedUid }}，cái nàyIDsẽ được sử dụng để đăng
+            nhập，Tự động tạo dựa trên tên người dùng
           </div>
         </a-form-item>
 
@@ -253,13 +259,18 @@
         <a-form-item v-else label="vai trò" class="form-item">
           <a-select v-model:value="userManagement.form.role">
             <a-select-option value="user">Người dùng thông thường</a-select-option>
-            <a-select-option value="admin" v-if="userStore.isSuperAdmin">Quản trị viên</a-select-option>
+            <a-select-option value="admin" v-if="userStore.isSuperAdmin"
+              >Quản trị viên</a-select-option
+            >
           </a-select>
         </a-form-item>
 
         <!-- Bộ chọn bộ phận（Chỉ hiển thị với quản trị viên cấp cao） -->
         <a-form-item v-if="userStore.isSuperAdmin" label="Sở" class="form-item">
-          <a-select v-model:value="userManagement.form.departmentId" placeholder="Vui lòng chọn một bộ phận">
+          <a-select
+            v-model:value="userManagement.form.departmentId"
+            placeholder="Vui lòng chọn một bộ phận"
+          >
             <a-select-option
               v-for="dept in departmentManagement.departments"
               :key="dept.id"

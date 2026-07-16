@@ -311,7 +311,9 @@ class SubagentRunService:
         if relation.parent_conversation_id != creator_run.conversation_id:
             raise ValueError(f"Thread sub-agent {child_thread_id}: thread không thuộc hội thoại hiện tại")
         if relation.subagent_slug != agent_item.slug:
-            raise ValueError(f"Thread sub-agent {child_thread_id} thuộc sub-agent {relation.subagent_slug or 'không xác định'}")
+            raise ValueError(
+                f"Thread sub-agent {child_thread_id} thuộc sub-agent {relation.subagent_slug or 'không xác định'}"
+            )
 
     async def _ensure_thread_relation(
         self,
@@ -333,7 +335,9 @@ class SubagentRunService:
             )
             return existing
         if continuing:
-            raise ValueError(f"Không thể tiếp tục thread sub-agent {child_thread_id}: không tìm thấy bản ghi run tương ứng trong hội thoại hiện tại")
+            raise ValueError(
+                f"Không thể tiếp tục thread sub-agent {child_thread_id}: không tìm thấy bản ghi run tương ứng trong hội thoại hiện tại"
+            )
         if creator_run.conversation_id is None:
             raise ValueError("Run cha thiếu conversation_id, không thể tạo quan hệ thread sub-agent")
 

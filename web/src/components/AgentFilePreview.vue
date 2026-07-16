@@ -844,7 +844,9 @@ onUnmounted(() => {
   min-height: 0; // Xóa chiều cao tối thiểu cố định，Tránh nội dung ngắn có lề trắng
   border: none;
   border-radius: 0px;
-  background: var(--gray-0); // theo dõi chủ đề：Màu sắc tươi sáng là màu trắng、Màu tối gần như đen，tránh màu tối HTML Viền trắng lộ ra ở phía dưới
+  background: var(
+    --gray-0
+  ); // theo dõi chủ đề：Màu sắc tươi sáng là màu trắng、Màu tối gần như đen，tránh màu tối HTML Viền trắng lộ ra ở phía dưới
 }
 
 .unsupported-preview {

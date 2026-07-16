@@ -35,7 +35,11 @@
         </a-col>
         <a-col :span="12">
           <a-form-item label="biểu tượng" class="form-item">
-            <a-input v-model:value="form.icon" placeholder="đầu vào emoji，Chẳng hạn như 🧠" :maxlength="2" />
+            <a-input
+              v-model:value="form.icon"
+              placeholder="đầu vào emoji，Chẳng hạn như 🧠"
+              :maxlength="2"
+            />
           </a-form-item>
         </a-col>
       </a-row>

@@ -37,7 +37,9 @@ const args = computed(() => {
   }
 })
 
-const toolName = computed(() => props.toolCall.name || props.toolCall.function?.name || 'bản đồ tư duy')
+const toolName = computed(
+  () => props.toolCall.name || props.toolCall.function?.name || 'bản đồ tư duy'
+)
 
 const operationLabel = computed(() => toolName.value)
 

@@ -112,7 +112,8 @@ const handleCallback = async () => {
     loading.value = false
     error.value = true
     errorTitle.value = 'Đăng nhập không thành công'
-    errorMessage.value = err?.message || 'Đã xảy ra lỗi khi xử lý yêu cầu đăng nhập，Vui lòng thử lại'
+    errorMessage.value =
+      err?.message || 'Đã xảy ra lỗi khi xử lý yêu cầu đăng nhập，Vui lòng thử lại'
   }
 }
 

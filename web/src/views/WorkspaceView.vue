@@ -1,6 +1,10 @@
 <template>
   <div class="workspace-view layout-container">
-    <PageHeader title="Không gian làm việc" :loading="loadingTree || loadingPreview" :show-border="true">
+    <PageHeader
+      title="Không gian làm việc"
+      :loading="loadingTree || loadingPreview"
+      :show-border="true"
+    >
       <template #actions>
         <a-button
           v-if="isAgentsWorkspacePath"
@@ -144,23 +148,42 @@
     >
       <div class="agents-guide-content">
         <p>
-          Tệp hướng dẫn trong thư mục này sẽ được chèn vào thời điểm thích hợp Agent
-          Trong quy trình thực hiện, dùng để bổ sung sở thích dài hạn, nền tảng kinh doanh và yêu cầu hợp tác của bạn。
+          Tệp hướng dẫn trong thư mục này sẽ được chèn vào thời điểm thích hợp Agent Trong quy trình
+          thực hiện, dùng để bổ sung sở thích dài hạn, nền tảng kinh doanh và yêu cầu hợp tác của
+          bạn。
         </p>
         <p>
-          Hiện tại được hỗ trợ <code>AGENTS.md</code>：Nội dung đó sẽ được tiêm vào mỗi lần hội thoại Agent Prompt，Phù hợp để ghi nội dung mong muốn
-          Agent Thông tin tuân thủ lâu dài。
+          Hiện tại được hỗ trợ <code>AGENTS.md</code>：Nội dung đó sẽ được tiêm vào mỗi lần hội
+          thoại Agent Prompt，Phù hợp để ghi nội dung mong muốn Agent Thông tin tuân thủ lâu dài。
         </p>
 
         <section class="agents-guide-section">
           <h3>Điền gợi ý</h3>
           <ul>
-            <li>Ghi rõ bối cảnh công việc thường dùng, ví dụ: trách nhiệm bộ phận, nhiệm vụ thường gặp, cách sử dụng cơ sở tri thức。</li>
-            <li>Làm rõ sở thích trả lời, ví dụ phong cách ngôn ngữ, mức độ chi tiết, có ưu tiên đưa ra kết luận không。</li>
-            <li>Ghi rõ thuật ngữ kinh doanh và tên gọi cố định, giúp Agent Giữ cách diễn đạt nhất quán。</li>
-            <li>Rõ ràng yêu cầu sử dụng tài liệu, ví dụ ưu tiên trích dẫn từ kho kiến thức nào, nội dung nào cần được xác nhận kỹ lưỡng。</li>
-            <li>Làm rõ ranh giới hợp tác, ví dụ khi không chắc chắn hãy đặt câu hỏi trước, khi liên quan đến quyết định quan trọng hãy đưa ra phương án trước khi thực hiện。</li>
-            <li>Ưu tiên sử dụng quy tắc rõ ràng, có thể thực thi, tránh mô tả mơ hồ như “cố gắng làm tốt nhất”。</li>
+            <li>
+              Ghi rõ bối cảnh công việc thường dùng, ví dụ: trách nhiệm bộ phận, nhiệm vụ thường
+              gặp, cách sử dụng cơ sở tri thức。
+            </li>
+            <li>
+              Làm rõ sở thích trả lời, ví dụ phong cách ngôn ngữ, mức độ chi tiết, có ưu tiên đưa ra
+              kết luận không。
+            </li>
+            <li>
+              Ghi rõ thuật ngữ kinh doanh và tên gọi cố định, giúp Agent Giữ cách diễn đạt nhất
+              quán。
+            </li>
+            <li>
+              Rõ ràng yêu cầu sử dụng tài liệu, ví dụ ưu tiên trích dẫn từ kho kiến thức nào, nội
+              dung nào cần được xác nhận kỹ lưỡng。
+            </li>
+            <li>
+              Làm rõ ranh giới hợp tác, ví dụ khi không chắc chắn hãy đặt câu hỏi trước, khi liên
+              quan đến quyết định quan trọng hãy đưa ra phương án trước khi thực hiện。
+            </li>
+            <li>
+              Ưu tiên sử dụng quy tắc rõ ràng, có thể thực thi, tránh mô tả mơ hồ như “cố gắng làm
+              tốt nhất”。
+            </li>
           </ul>
         </section>
       </div>
@@ -392,7 +415,13 @@ const loadWorkspacePreview = async (entry) => {
     const file = await normalizePreviewFile(entry, response)
     applyPreviewFile(requestId, entry, file)
   } catch (error) {
-    showPreviewError(requestId, entry, error, 'Tải bản xem trước tệp thất bại:', 'Tải bản xem trước tệp thất bại')
+    showPreviewError(
+      requestId,
+      entry,
+      error,
+      'Tải bản xem trước tệp thất bại:',
+      'Tải bản xem trước tệp thất bại'
+    )
   } finally {
     finishPreviewRequest(requestId)
   }

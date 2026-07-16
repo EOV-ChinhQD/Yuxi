@@ -5,7 +5,8 @@
       <div class="header-content">
         <div class="section-title">API Key quản lý</div>
         <p class="section-description">
-          cho các cuộc gọi hệ thống bên ngoài Agent giao diện đàm thoại。Khóa chỉ được hiển thị một lần，Hãy giữ nó đúng cách。
+          cho các cuộc gọi hệ thống bên ngoài Agent giao diện đàm thoại。Khóa chỉ được hiển thị một
+          lần，Hãy giữ nó đúng cách。
         </p>
       </div>
       <div class="header-actions">
@@ -107,7 +108,10 @@
     >
       <a-form layout="vertical" :model="createForm">
         <a-form-item label="Tên" required>
-          <a-input v-model:value="createForm.name" placeholder="Chẳng hạn như：môi trường sản xuấtAPI" />
+          <a-input
+            v-model:value="createForm.name"
+            placeholder="Chẳng hạn như：môi trường sản xuấtAPI"
+          />
         </a-form-item>
         <a-form-item label="Thời gian hết hạn">
           <a-date-picker

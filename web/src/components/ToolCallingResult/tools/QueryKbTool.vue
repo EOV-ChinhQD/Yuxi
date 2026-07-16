@@ -18,8 +18,8 @@
 
         <div v-if="hasGraphData(parsedResult(resultContent))" class="graph-result-card">
           <div class="graph-summary">
-            Tìm kiếm phổ: thực thể {{ parsedResult(resultContent).entities.length }} một, mối quan hệ
-            {{ parsedResult(resultContent).relationships.length }} Bài viết, Trích dẫn
+            Tìm kiếm phổ: thực thể {{ parsedResult(resultContent).entities.length }} một, mối quan
+            hệ {{ parsedResult(resultContent).relationships.length }} Bài viết, Trích dẫn
             {{ parsedResult(resultContent).references.length }} Bài viết
           </div>
 
@@ -115,7 +115,9 @@ const args = computed(() => {
   }
 })
 
-const toolName = computed(() => props.toolCall.name || props.toolCall.function?.name || 'cơ sở tri thức')
+const toolName = computed(
+  () => props.toolCall.name || props.toolCall.function?.name || 'cơ sở tri thức'
+)
 
 const operationLabel = computed(() => `${toolName.value} Tìm kiếm`)
 

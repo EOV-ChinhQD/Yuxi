@@ -59,7 +59,9 @@ const summaryText = computed(() => {
   const startLine = props.result.start_line || 0
   const endLine = props.result.end_line || 0
   const totalLines = props.result.total_lines || 0
-  const moreText = props.result.has_more_after ? `，đoạn tiếp theo offset ${props.result.next_offset}` : ''
+  const moreText = props.result.has_more_after
+    ? `，đoạn tiếp theo offset ${props.result.next_offset}`
+    : ''
   return `Mở tài liệu: Không. ${startLine}-${endLine} được rồi / tổng cộng ${totalLines} được rồi${moreText}`
 })
 

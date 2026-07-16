@@ -28,8 +28,14 @@ BUILTIN_PROVIDERS: list[dict[str, Any]] = [
             {"id": "gemini-2.5-flash", "type": "chat", "display_name": "gemini-2.5-flash"},
             {"id": "gemini-2.0-flash", "type": "chat", "display_name": "gemini-2.0-flash"},
             {"id": "gemini-1.5-pro", "type": "chat", "display_name": "gemini-1.5-pro"},
-            {"id": "gemini-embedding-2", "type": "embedding", "display_name": "gemini-embedding-2", "dimension": 768, "batch_size": 100}
-        ]
+            {
+                "id": "gemini-embedding-2",
+                "type": "embedding",
+                "display_name": "gemini-embedding-2",
+                "dimension": 768,
+                "batch_size": 100,
+            },
+        ],
     },
     {
         "provider_id": "deepseek",
@@ -236,6 +242,15 @@ BUILTIN_PROVIDERS: list[dict[str, Any]] = [
         "rerank_models_endpoint": "https://api.siliconflow.com/v1/models?sub_type=reranker",
     },
     {
+        "provider_id": "nvidia",
+        "display_name": "NVIDIA",
+        "provider_type": "openai",
+        "base_url": "https://integrate.api.nvidia.com/v1",
+        "api_key_env": "NVIDIA_API_KEY",
+        "capabilities": ["chat"],
+        "models_endpoint": "https://integrate.api.nvidia.com/v1/models",
+    },
+    {
         "provider_id": "ollama",
         "display_name": "Ollama (Local)",
         "base_url": "http://host.docker.internal:11434/v1",
@@ -244,7 +259,7 @@ BUILTIN_PROVIDERS: list[dict[str, Any]] = [
         "enabled_models": [
             {"id": "qwen2.5:7b", "type": "chat", "display_name": "qwen2.5:7b"},
             {"id": "qwen2.5:1.5b", "type": "chat", "display_name": "qwen2.5:1.5b"},
-            {"id": "phi3:mini", "type": "chat", "display_name": "phi3:mini"}
-        ]
+            {"id": "phi3:mini", "type": "chat", "display_name": "phi3:mini"},
+        ],
     },
 ]

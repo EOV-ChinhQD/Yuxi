@@ -4,7 +4,8 @@
       <div class="header-content">
         <div class="section-title">Cấu hình người dùng(Beta)</div>
         <p class="section-description">
-          Cấu hình cài đặt riêng cho người dùng hiện tại. Hiện tại là phiên bản preview thử nghiệm, chưa đưa vào tính năng mới, chỉ mở rộng khả năng kỹ thuật.。
+          Cấu hình cài đặt riêng cho người dùng hiện tại. Hiện tại là phiên bản preview thử nghiệm,
+          chưa đưa vào tính năng mới, chỉ mở rộng khả năng kỹ thuật.。
         </p>
       </div>
       <div class="header-actions">
@@ -26,7 +27,10 @@
               <span class="config-title">Có bật không Memory</span>
               <span class="reserved-badge">Công tắc dự trữ</span>
             </div>
-            <p class="config-description">Hiện tại chỉ lưu giá trị cấu hình, chưa kết nối với logic vận hành của trợ lý thông minh。</p>
+            <p class="config-description">
+              Hiện tại chỉ lưu giá trị cấu hình, chưa kết nối với logic vận hành của trợ lý thông
+              minh。
+            </p>
           </div>
           <a-switch :checked="draftEnableMemory" @change="draftEnableMemory = Boolean($event)" />
         </div>

@@ -118,34 +118,38 @@ class KnowledgeGraphRepository:
             event_entities = []
 
             for event in events:
-                event_rows.append({
-                    "event_id": event["event_id"],
-                    "kb_id": kb_id,
-                    "file_id": file_id,
-                    "chunk_id": chunk_id,
-                    "title": event["title"],
-                    "summary": event.get("summary", ""),
-                    "content": event["content"],
-                    "category": event.get("category"),
-                    "keywords": event.get("keywords"),
-                    "level": event.get("level", 0),
-                    "rank": event.get("rank", 0),
-                    "event_version": event.get("event_version"),
-                    "status": event.get("status", "pending"),
-                    "confidence": event.get("confidence"),
-                    "importance": event.get("importance"),
-                    "event_type": event.get("event_type"),
-                    "temporal_info": event.get("temporal_info"),
-                    "event_embedding": event.get("event_embedding"),
-                })
-                
-                for entity in event.get("entities", []):
-                    event_entities.append({
+                event_rows.append(
+                    {
                         "event_id": event["event_id"],
-                        "entity_id": entity["entity_id"],
-                        "weight": entity.get("weight", 1.0),
-                        "relation_type": entity.get("relation_type"),
-                    })
+                        "kb_id": kb_id,
+                        "file_id": file_id,
+                        "chunk_id": chunk_id,
+                        "title": event["title"],
+                        "summary": event.get("summary", ""),
+                        "content": event["content"],
+                        "category": event.get("category"),
+                        "keywords": event.get("keywords"),
+                        "level": event.get("level", 0),
+                        "rank": event.get("rank", 0),
+                        "event_version": event.get("event_version"),
+                        "status": event.get("status", "pending"),
+                        "confidence": event.get("confidence"),
+                        "importance": event.get("importance"),
+                        "event_type": event.get("event_type"),
+                        "temporal_info": event.get("temporal_info"),
+                        "event_embedding": event.get("event_embedding"),
+                    }
+                )
+
+                for entity in event.get("entities", []):
+                    event_entities.append(
+                        {
+                            "event_id": event["event_id"],
+                            "entity_id": entity["entity_id"],
+                            "weight": entity.get("weight", 1.0),
+                            "relation_type": entity.get("relation_type"),
+                        }
+                    )
 
             if event_rows:
                 event_stmt = insert(KnowledgeGraphEvent).values(event_rows)
@@ -210,9 +214,7 @@ class KnowledgeGraphRepository:
             await session.execute(
                 delete(KnowledgeGraphEntityMention).where(KnowledgeGraphEntityMention.file_id == file_id)
             )
-            await session.execute(
-                delete(KnowledgeGraphEvent).where(KnowledgeGraphEvent.file_id == file_id)
-            )
+            await session.execute(delete(KnowledgeGraphEvent).where(KnowledgeGraphEvent.file_id == file_id))
 
             orphan_triple_ids: list[str] = []
             if affected_triple_ids:
@@ -279,10 +281,7 @@ class KnowledgeGraphRepository:
         async with pg_manager.get_async_session_context() as session:
             stmt = (
                 select(KnowledgeGraphEntity)
-                .where(
-                    KnowledgeGraphEntity.kb_id == kb_id,
-                    KnowledgeGraphEntity.name.ilike(f"%{query_text}%")
-                )
+                .where(KnowledgeGraphEntity.kb_id == kb_id, KnowledgeGraphEntity.name.ilike(f"%{query_text}%"))
                 .limit(limit)
             )
             res = await session.execute(stmt)
@@ -301,14 +300,11 @@ class KnowledgeGraphRepository:
         if not names:
             return []
         from yuxi.knowledge.graphs.graph_utils import normalize_entity_name
+
         normalized_names = [normalize_entity_name(name) for name in names]
         async with pg_manager.get_async_session_context() as session:
-            stmt = (
-                select(KnowledgeGraphEntity)
-                .where(
-                    KnowledgeGraphEntity.kb_id == kb_id,
-                    KnowledgeGraphEntity.normalized_name.in_(normalized_names)
-                )
+            stmt = select(KnowledgeGraphEntity).where(
+                KnowledgeGraphEntity.kb_id == kb_id, KnowledgeGraphEntity.normalized_name.in_(normalized_names)
             )
             res = await session.execute(stmt)
             entities = res.scalars().all()
@@ -331,10 +327,7 @@ class KnowledgeGraphRepository:
             stmt = (
                 select(KnowledgeGraphEventEntity.event_id)
                 .join(KnowledgeGraphEvent, KnowledgeGraphEvent.event_id == KnowledgeGraphEventEntity.event_id)
-                .where(
-                    KnowledgeGraphEvent.kb_id == kb_id,
-                    KnowledgeGraphEventEntity.entity_id.in_(entity_ids)
-                )
+                .where(KnowledgeGraphEvent.kb_id == kb_id, KnowledgeGraphEventEntity.entity_id.in_(entity_ids))
             )
             if exclude_event_ids:
                 stmt = stmt.where(KnowledgeGraphEventEntity.event_id.notin_(exclude_event_ids))
@@ -345,6 +338,7 @@ class KnowledgeGraphRepository:
         if not event_ids:
             return {}
         from collections import defaultdict
+
         async with pg_manager.get_async_session_context() as session:
             stmt_events = select(KnowledgeGraphEvent).where(KnowledgeGraphEvent.event_id.in_(event_ids))
             res_events = await session.execute(stmt_events)

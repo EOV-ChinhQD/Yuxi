@@ -225,7 +225,11 @@ def _find_query_target(
             logger.info(f"Fuzzy KB match: '{normalized_input}' → '{actual_id}' (only KB available, auto-selected)")
             return target_info, actual_id, None
 
-    return None, None, f"Tài nguyên kho kiến thức '{normalized_input}' không tồn tại hoặc chưa được bật trong phiên hội thoại hiện tại"
+    return (
+        None,
+        None,
+        f"Tài nguyên kho kiến thức '{normalized_input}' không tồn tại hoặc chưa được bật trong phiên hội thoại hiện tại",
+    )
 
 
 async def _build_query_output(target_kb_id: str, result: Any) -> Any:
@@ -233,14 +237,14 @@ async def _build_query_output(target_kb_id: str, result: Any) -> Any:
         out = SearchOutputSchema(**result).model_dump()
     else:
         out = KnowledgeBase.build_search_output(target_kb_id, result)
-        
+
     from yuxi.utils.auth_utils import AuthUtils
+
     if isinstance(out, dict) and isinstance(out.get("results"), list):
         for item in out["results"]:
             if "content" in item and isinstance(item["content"], str):
                 item["content"] = AuthUtils.sign_markdown_images(item["content"])
     return out
-
 
 
 async def _rewrite_query(query: str, model_spec: str) -> str:
@@ -259,7 +263,9 @@ CÂU HỎI MỚI:"""
         model = select_model(model_spec=model_spec)
         response = await asyncio.wait_for(model.call(prompt, stream=False), timeout=10.0)
         rewritten = response.content.strip()
-        if (rewritten.startswith('"') and rewritten.endswith('"')) or (rewritten.startswith("'") and rewritten.endswith("'")):
+        if (rewritten.startswith('"') and rewritten.endswith('"')) or (
+            rewritten.startswith("'") and rewritten.endswith("'")
+        ):
             rewritten = rewritten[1:-1].strip()
         return rewritten
     except Exception as e:
@@ -271,7 +277,7 @@ CÂU HỎI MỚI:"""
 async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, runtime: ToolRuntime = None) -> Any:
     """Tìm kiếm nội dung trong kho kiến thức được chỉ định.
 
-    Sử dụng công cụ này khi người dùng cần truy vấn nội dung cụ thể. kb_id là ID tài nguyên kho kiến thức; 
+    Sử dụng công cụ này khi người dùng cần truy vấn nội dung cụ thể. kb_id là ID tài nguyên kho kiến thức;
     file_id trong kết quả trả về có thể tiếp tục được sử dụng cho find_kb_document hoặc open_kb_document.
     """
     if not kb_id:
@@ -315,19 +321,25 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
             if route_type == RouteType.CHIT_CHAT:
                 logger.info("[QueryKB] CHIT_CHAT detected. Returning empty results.")
                 result = {"results": [], "answer": ""}
-                
+
             elif route_type == RouteType.OUT_OF_DOMAIN:
                 logger.info("[QueryKB] OUT_OF_DOMAIN detected. Returning system message.")
                 result = {"results": [], "answer": "Tôi không có thông tin về vấn đề này."}
-                
+
             elif route_type == RouteType.AMBIGUOUS:
                 logger.info("[QueryKB] AMBIGUOUS detected. Requesting clarification.")
-                result = {"results": [], "answer": "Câu hỏi chưa rõ ràng. Bạn vui lòng làm rõ ý định hoặc chỉ định tài liệu cụ thể (nếu cần tóm tắt)."}
-                
+                result = {
+                    "results": [],
+                    "answer": "Câu hỏi chưa rõ ràng. Bạn vui lòng làm rõ ý định hoặc chỉ định tài liệu cụ thể (nếu cần tóm tắt).",
+                }
+
             elif route_type == RouteType.STRUCTURED_AGGREGATION:
                 logger.info("[QueryKB] STRUCTURED_AGGREGATION detected.")
-                result = {"results": [], "answer": "Hệ thống RAG hiện tại không hỗ trợ việc đếm, tính toán hoặc thống kê trên dữ liệu văn bản."}
-                
+                result = {
+                    "results": [],
+                    "answer": "Hệ thống RAG hiện tại không hỗ trợ việc đếm, tính toán hoặc thống kê trên dữ liệu văn bản.",
+                }
+
             elif route_type == RouteType.EXACT_MATCH:
                 logger.info("[QueryKB] EXACT_MATCH detected. Using keyword search.")
                 kwargs["search_mode"] = "keyword"
@@ -335,14 +347,14 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
                     result = await retriever(current_query, **kwargs)
                 else:
                     result = retriever(current_query, **kwargs)
-                    
+
             elif route_type == RouteType.SUMMARIZATION:
                 logger.info("[QueryKB] SUMMARIZATION detected. Using NAIVE_SEARCH for general summarization context.")
                 if inspect.iscoroutinefunction(retriever):
                     result = await retriever(current_query, **kwargs)
                 else:
                     result = retriever(current_query, **kwargs)
-                    
+
             elif route_type == RouteType.MULTI_HOP:
                 is_multi_hop, sub_queries = await detect_and_decompose(current_query, llm_model_spec)
                 if is_multi_hop:
@@ -353,15 +365,20 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
                         result = await retriever(current_query, **kwargs)
                     else:
                         result = retriever(current_query, **kwargs)
-                        
-            else: # NAIVE_SEARCH
+
+            else:  # NAIVE_SEARCH
                 if inspect.iscoroutinefunction(retriever):
                     result = await retriever(current_query, **kwargs)
                 else:
                     result = retriever(current_query, **kwargs)
 
             # Check if we should retry: only for real search intents that yielded no results
-            is_search_route = route_type in (RouteType.EXACT_MATCH, RouteType.SUMMARIZATION, RouteType.MULTI_HOP, RouteType.NAIVE_SEARCH)
+            is_search_route = route_type in (
+                RouteType.EXACT_MATCH,
+                RouteType.SUMMARIZATION,
+                RouteType.MULTI_HOP,
+                RouteType.NAIVE_SEARCH,
+            )
             has_results = False
             if isinstance(result, dict) and result.get("results"):
                 has_results = True
@@ -370,14 +387,16 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
 
             if is_search_route and not has_results and attempts < MAX_REWRITE_ATTEMPTS:
                 attempts += 1
-                logger.info(f"[QueryKB] 0 results found. Retrying with RETRY_WITH_REWRITE (Attempt {attempts}/{MAX_REWRITE_ATTEMPTS})...")
-                
+                logger.info(
+                    f"[QueryKB] 0 results found. Retrying with RETRY_WITH_REWRITE (Attempt {attempts}/{MAX_REWRITE_ATTEMPTS})..."
+                )
+
                 # Rewrite query
                 rewritten_query = await _rewrite_query(current_query, llm_model_spec)
                 logger.info(f"[QueryKB] Rewrote query: '{current_query}' -> '{rewritten_query}'")
                 current_query = rewritten_query
                 continue
-                
+
             break
 
         return await _build_query_output(target_kb_id, result)
@@ -550,7 +569,9 @@ _KB_FILE_SCAN_LIMIT = 5000
 class SearchFileInput(BaseModel):
     """Model input tìm kiếm tệp"""
 
-    kb_name: str | None = Field(default=None, description="Tên kho kiến thức, để trống để tìm kiếm tất cả kho kiến thức")
+    kb_name: str | None = Field(
+        default=None, description="Tên kho kiến thức, để trống để tìm kiếm tất cả kho kiến thức"
+    )
     query: str | None = Field(default=None, description="Từ khóa tìm kiếm, để trống để trả về tất cả các tệp")
     offset: int = Field(default=0, ge=0, description="Độ lệch offset, bắt đầu từ 0")
     limit: int = Field(default=300, ge=1, le=5000, description="Giới hạn số lượng trả về, mặc định 300")

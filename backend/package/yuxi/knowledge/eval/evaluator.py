@@ -28,7 +28,7 @@ def build_answer_prompt(query: str, retrieved_chunks: list[dict[str, Any]], max_
         f"Contextual information:{context_text}\n\n"
         f"User questions:{query}\n\n"
         "Please answer the question accurately based on contextual information.\n\n"
-        "Nếu thông tin không đủ trong context, hãy trả lời \"Không đủ thông tin để trả lời\".\n\n"
+        'Nếu thông tin không đủ trong context, hãy trả lời "Không đủ thông tin để trả lời".\n\n'
     )
 
 
@@ -69,21 +69,28 @@ async def evaluate_question(
     select_model_fn: Callable[..., Any],
 ) -> dict[str, Any]:
     query = question_data["query"]
-    
+
     try:
         from yuxi.knowledge.retrieval.router import SemanticRouter, RouteType
+
         model_spec = retrieval_config.get("llm_model_spec") or "gpt-4o-mini"
         route_type, route_details = await SemanticRouter.route(query, llm_model_spec=model_spec)
         logger.info(f"[Eval] Router decided: {route_type.value} - {route_details}")
-        
+
         if route_type == RouteType.CHIT_CHAT:
             query_result = {"answer": "", "chunks": []}
         elif route_type == RouteType.OUT_OF_DOMAIN:
             query_result = {"answer": "Tôi không có thông tin về vấn đề này.", "chunks": []}
         elif route_type == RouteType.AMBIGUOUS:
-            query_result = {"answer": "Câu hỏi chưa rõ ràng. Bạn vui lòng làm rõ ý định hoặc chỉ định tài liệu cụ thể.", "chunks": []}
+            query_result = {
+                "answer": "Câu hỏi chưa rõ ràng. Bạn vui lòng làm rõ ý định hoặc chỉ định tài liệu cụ thể.",
+                "chunks": [],
+            }
         elif route_type == RouteType.STRUCTURED_AGGREGATION:
-            query_result = {"answer": "Hệ thống RAG hiện tại không hỗ trợ việc đếm, tính toán hoặc thống kê.", "chunks": []}
+            query_result = {
+                "answer": "Hệ thống RAG hiện tại không hỗ trợ việc đếm, tính toán hoặc thống kê.",
+                "chunks": [],
+            }
         elif route_type == RouteType.EXACT_MATCH:
             retrieval_config_copy = retrieval_config.copy()
             retrieval_config_copy["search_mode"] = "keyword"
@@ -98,16 +105,16 @@ async def evaluate_question(
             elif isinstance(decompose_result, dict):
                 is_multi_hop = decompose_result.get("is_multi_hop", False)
                 sub_queries = decompose_result.get("sub_queries", [])
-                
+
             if is_multi_hop:
                 mh_retriever = MultiHopRetriever(
-                    kb_id=kb_id, 
+                    kb_id=kb_id,
                     embedding_model_spec=retrieval_config.get("embedding_model_spec", "bge-m3"),
-                    llm_model_spec=model_spec
+                    llm_model_spec=model_spec,
                 )
-                
+
                 # We need to map parallel_retrieve differently since MultiHopRetriever has retrieve()
-                # But for eval we just fallback or use basic retrieve 
+                # But for eval we just fallback or use basic retrieve
                 # (Yuxi implementation of MultiHopRetriever doesn't have parallel_retrieve directly, it has retrieve)
                 retrieved_chunks_raw = await mh_retriever.retrieve(query)
                 query_result = {"answer": "", "chunks": retrieved_chunks_raw}
@@ -116,11 +123,11 @@ async def evaluate_question(
                 query_result = await kb_instance.aquery(query, kb_id, **retrieval_config)
         else:
             query_result = await kb_instance.aquery(query, kb_id, **retrieval_config)
-            
+
     except Exception as e:
         logger.error(f"[Eval] Router error: {e}. Fallback to naive search.")
         query_result = await kb_instance.aquery(query, kb_id, **retrieval_config)
-        
+
     generated_answer, retrieved_chunks = normalize_query_result(query_result)
     generated_answer = await generate_answer_if_needed(
         query=query,
@@ -142,7 +149,9 @@ async def evaluate_question(
 
     if has_gold_answers and question_data.get("gold_answer"):
         if judge_llm:
-            context_text = "\n\n".join([chunk.get("content", "") for chunk in retrieved_chunks[:5] if chunk.get("content")])
+            context_text = "\n\n".join(
+                [chunk.get("content", "") for chunk in retrieved_chunks[:5] if chunk.get("content")]
+            )
             answer_scores = await EvaluationMetricsCalculator.calculate_answer_metrics(
                 query=query,
                 generated_answer=generated_answer,
@@ -184,10 +193,10 @@ def aggregate_metrics(
     if answer_metrics_list:
         scores = [m.get("accuracy", m.get("score", 0)) for m in answer_metrics_list]
         overall_metrics["answer_accuracy"] = sum(scores) / len(scores) if scores else 0.0
-        
+
         groundedness = [m.get("groundedness", 0) for m in answer_metrics_list]
         overall_metrics["answer_groundedness"] = sum(groundedness) / len(groundedness) if groundedness else 0.0
-        
+
         coherence = [m.get("coherence", 0) for m in answer_metrics_list]
         overall_metrics["answer_coherence"] = sum(coherence) / len(coherence) if coherence else 0.0
 

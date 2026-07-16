@@ -1,6 +1,11 @@
 <template>
   <!-- Hộp phương thức danh sách phản hồi -->
-  <a-modal v-model:open="modalVisible" title="Chi tiết phản hồi của người dùng" width="1200px" :footer="null">
+  <a-modal
+    v-model:open="modalVisible"
+    title="Chi tiết phản hồi của người dùng"
+    width="1200px"
+    :footer="null"
+  >
     <a-space style="margin-bottom: 16px">
       <a-segmented
         v-model:value="feedbackFilter"

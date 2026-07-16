@@ -52,7 +52,9 @@
                       :alt="`${agent.label}biểu tượng`"
                     />
                     <span class="config-dropdown-item-label">{{ agent.label }}</span>
-                    <span v-if="agent.isBuiltin" class="config-dropdown-item-badge">Tích hợp sẵn</span>
+                    <span v-if="agent.isBuiltin" class="config-dropdown-item-badge"
+                      >Tích hợp sẵn</span
+                    >
                     <Check
                       v-if="agent.value === selectedAgentId"
                       :size="14"
@@ -61,7 +63,8 @@
                   </button>
 
                   <div v-if="hasActiveThread" class="config-dropdown-hint">
-                    Cuộc trò chuyện hiện tại có một nhân viên được liên kết với nó，Cuộc trò chuyện mới có thể được chuyển đổi。
+                    Cuộc trò chuyện hiện tại có một tác nhân được liên kết với nó. Cuộc trò chuyện
+                    mới có thể được chuyển đổi.
                   </div>
 
                   <div class="config-dropdown-divider"></div>
@@ -72,7 +75,7 @@
                     @click="openAgentManagement"
                   >
                     <Settings2 :size="15" class="config-dropdown-item-icon" />
-                    <span class="config-dropdown-item-label">Đại lý quản lý</span>
+                    <span class="config-dropdown-item-label">Quản lý tác nhân</span>
                   </button>
                 </div>
               </template>
@@ -243,15 +246,17 @@ const loadAgentBackends = async () => {
 const handleAgentSwitch = async (agentId, hasActiveThread) => {
   if (!agentId || agentId === selectedAgentId.value) return
   if (hasActiveThread) {
-    message.info('Cuộc trò chuyện hiện tại có một nhân viên được liên kết với nó，Vui lòng tạo một cuộc trò chuyện mới và chuyển đổi')
+    message.info(
+      'Cuộc trò chuyện hiện tại có một tác nhân được liên kết với nó. Vui lòng tạo một cuộc trò chuyện mới và chuyển đổi.'
+    )
     return
   }
   try {
     await agentStore.selectAgent(agentId)
     agentDropdownOpen.value = false
   } catch (error) {
-    console.error('Lỗi chuyển đổi đại lý:', error)
-    message.error('Không thể chuyển đổi đại lý')
+    console.error('Lỗi chuyển đổi tác nhân:', error)
+    message.error('Không thể chuyển đổi tác nhân')
   }
 }
 
@@ -265,14 +270,14 @@ const handleAgentSaved = async () => {
 const openAgentManagement = async () => {
   agentDropdownOpen.value = false
   if (!selectedAgentId.value) {
-    message.warning('Vui lòng chọn đại lý trước')
+    message.warning('Vui lòng chọn tác nhân trước')
     return
   }
   try {
     await loadAgentBackends()
     await agentEditModalRef.value?.openEdit(selectedAgentId.value)
   } catch (error) {
-    message.error(error.message || 'Không thể mở cấu hình đại lý')
+    message.error(error.message || 'Không thể mở cấu hình tác nhân')
   }
 }
 </script>

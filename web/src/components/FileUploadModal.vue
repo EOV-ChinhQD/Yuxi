@@ -14,7 +14,7 @@
             :loading="chunkLoading"
             :disabled="!canSubmit"
           >
-            Thêm到Tài liệu kiến thức
+            Thêm vào Cơ sở tri thức
           </a-button>
         </div>
       </div>
@@ -31,7 +31,9 @@
           />
         </div>
         <div class="auto-index-toggle">
-          <a-checkbox v-model:checked="autoIndex">Tự động thêm vào thư viện sau khi tải lên</a-checkbox>
+          <a-checkbox v-model:checked="autoIndex"
+            >Tự động thêm vào thư viện sau khi tải lên</a-checkbox
+          >
         </div>
       </div>
 
@@ -176,7 +178,9 @@
       <!-- PDF/Hình ảnhOCRNhắc nhở (AlertTối ưu kiểu dáng) -->
       <div v-if="hasPdfOrImageFiles && !isOcrEnabled" class="inline-alert warning">
         <Info :size="16" />
-        <span>Phát hiệnPDFhoặc tệp hình ảnh, khuyến nghị bật OCR Để trích xuất nội dung văn bản</span>
+        <span
+          >Phát hiệnPDFhoặc tệp hình ảnh, khuyến nghị bật OCR Để trích xuất nội dung văn bản</span
+        >
       </div>
 
       <!-- Khu vực tải lên tệp -->
@@ -199,7 +203,9 @@
         >
           <p class="ant-upload-text">Nhấp chuột hoặc kéo tệp vào đây</p>
           <p class="ant-upload-hint">Các loại được hỗ trợ: {{ uploadHint }}</p>
-          <div class="zip-tip" v-if="hasZipFiles">📦 ZIPGói sẽ tự động giải nén và trích xuất Markdown Với hình ảnh</div>
+          <div class="zip-tip" v-if="hasZipFiles">
+            📦 ZIPGói sẽ tự động giải nén và trích xuất Markdown Với hình ảnh
+          </div>
         </a-upload-dragger>
 
         <div v-if="showAggregateProgress" class="upload-progress-card">
@@ -245,9 +251,13 @@
             <div class="progress-tip" v-else>Hiện tại không có tệp thất bại。</div>
 
             <div class="progress-tip" v-if="hasPendingUploads">
-              Tải lên thư mục áp dụng chế độ hàng đợi, tối đa tải lên đồng thời {{ MAX_UPLOAD_CONCURRENCY }} tệp。
+              Tải lên thư mục áp dụng chế độ hàng đợi, tối đa tải lên đồng thời
+              {{ MAX_UPLOAD_CONCURRENCY }} tệp。
             </div>
-            <div class="progress-tip" v-else>Hàng đợi tải lên đã hoàn thành, có thể nhấp 'Thêm vào kiến thức' để tiếp tục bước tiếp theo。</div>
+            <div class="progress-tip" v-else>
+              Hàng đợi tải lên đã hoàn thành, có thể nhấp 'Thêm vào kiến thức' để tiếp tục bước tiếp
+              theo。
+            </div>
           </div>
         </div>
       </div>
@@ -319,7 +329,11 @@
 
         <div class="url-empty-tip" v-else>
           <Info :size="16" />
-          <span>{{ workspaceLoading ? 'Đang tải tệp không gian làm việc' : 'Hiện tại thư mục này không có tệp tin' }}</span>
+          <span>{{
+            workspaceLoading
+              ? 'Đang tải tệp không gian làm việc'
+              : 'Hiện tại thư mục này không có tệp tin'
+          }}</span>
         </div>
       </div>
 
@@ -336,7 +350,9 @@
           <div class="url-actions">
             <span class="url-hint">
               Hỗ trợ dán hàng loạt, tự động lọc dòng trống。
-              <span class="warning-text">Cần thiết lập danh sách trắng, xem chi tiết trong tài liệu</span>
+              <span class="warning-text"
+                >Cần thiết lập danh sách trắng, xem chi tiết trong tài liệu</span
+              >
             </span>
             <a-button
               type="primary"
@@ -859,7 +875,9 @@ const loadWorkspaceFiles = async (path = workspaceCurrentPath.value) => {
     workspaceItems.value = entries
   } catch (error) {
     console.error('Tải tệp không gian làm việc thất bại:', error)
-    message.error('Tải tệp không gian làm việc thất bại: ' + (error.message || 'Lỗi không xác định'))
+    message.error(
+      'Tải tệp không gian làm việc thất bại: ' + (error.message || 'Lỗi không xác định')
+    )
   } finally {
     workspaceLoading.value = false
   }
@@ -1062,7 +1080,8 @@ const getOcrStatus = (engine) => {
   return current?.status || 'unknown'
 }
 
-const getOcrStatusLabel = (engine) => ocrStatusLabels[getOcrStatus(engine)] || 'Trạng thái không xác định'
+const getOcrStatusLabel = (engine) =>
+  ocrStatusLabels[getOcrStatus(engine)] || 'Trạng thái không xác định'
 
 const getOcrDescription = (engine) => {
   const option = ocrEngineOptions.find((item) => item.value === engine)
@@ -1077,7 +1096,7 @@ const getOcrDescription = (engine) => {
     configured: 'Token Được cấu hình, sẽ được xác thực khi phân tích',
     unavailable: 'Dịch vụ không khả dụng',
     unhealthy: 'Ngoại lệ dịch vụ',
-    timeout: 'Dịch vụ检查Hết thời gian',
+    timeout: 'Kiểm tra dịch vụ hết thời gian',
     error: 'Ngoại lệ dịch vụ',
     checking: 'Đang kiểm tra trạng thái dịch vụ',
     unknown: option?.description || 'Trạng thái dịch vụ không xác định'
@@ -1542,7 +1561,9 @@ const chunkData = async () => {
     }
 
     if (skippedDuplicates > 0) {
-      message.warning(`Phát hiện ${skippedDuplicates} lần lặp lại URL Nội dung, đã giữ phần đầu tiên và bỏ qua các phần còn lại`)
+      message.warning(
+        `Phát hiện ${skippedDuplicates} lần lặp lại URL Nội dung, đã giữ phần đầu tiên và bỏ qua các phần còn lại`
+      )
     }
 
     try {

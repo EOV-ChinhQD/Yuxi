@@ -54,6 +54,7 @@ class RetrievalMetrics:
     def ndcg_at_k(retrieved_ids: list[str], relevant_ids: list[str], k: int) -> float:
         """Tính NDCG@K"""
         import math
+
         relevant_set = set(relevant_ids)
         dcg = 0.0
         for i, doc_id in enumerate(retrieved_ids[:k]):
@@ -62,7 +63,7 @@ class RetrievalMetrics:
         idcg = 0.0
         for i in range(min(k, len(relevant_set))):
             idcg += 1.0 / math.log2(i + 2)
-        
+
         if idcg == 0.0:
             return 0.0
         return dcg / idcg
@@ -72,21 +73,35 @@ class AnswerMetrics:
     """Tính toán các chỉ số đánh giá câu trả lời (Answer Metrics)"""
 
     @staticmethod
-    async def judge_correctness(query: str, generated_answer: str, gold_answer: str, judge_llm: Any, context: str = "") -> dict[str, Any]:
+    async def judge_correctness(
+        query: str, generated_answer: str, gold_answer: str, judge_llm: Any, context: str = ""
+    ) -> dict[str, Any]:
         """
         Sử dụng LLM-as-Judge để đánh giá đa chiều câu trả lời (Accuracy, Groundedness, Coherence).
         """
         if not generated_answer:
-            return {"accuracy": 0.0, "groundedness": 0.0, "coherence": 0.0, "score": 0.0, "reasoning": "Không có câu trả lời được sinh ra"}
+            return {
+                "accuracy": 0.0,
+                "groundedness": 0.0,
+                "coherence": 0.0,
+                "score": 0.0,
+                "reasoning": "Không có câu trả lời được sinh ra",
+            }
         if not gold_answer:
-            return {"accuracy": 0.0, "groundedness": 0.0, "coherence": 0.0, "score": 0.0, "reasoning": "Không có câu trả lời mẫu"}
+            return {
+                "accuracy": 0.0,
+                "groundedness": 0.0,
+                "coherence": 0.0,
+                "score": 0.0,
+                "reasoning": "Không có câu trả lời mẫu",
+            }
 
         prompt = textwrap.dedent(f"""Bạn là một giám khảo công bằng. Hãy đánh giá câu trả lời do AI sinh ra dựa trên thang điểm từ 1-10 cho các tiêu chí sau:
 
             Câu hỏi: {query}
             
             Ngữ cảnh tham chiếu (Context):
-            {context if context else 'Không cung cấp ngữ cảnh'}
+            {context if context else "Không cung cấp ngữ cảnh"}
 
             Câu trả lời chuẩn (Standard Answer):
             {gold_answer}
@@ -118,7 +133,7 @@ class AnswerMetrics:
             content = content.strip()
 
             result = json_repair.loads(content)
-            
+
             accuracy = float(result.get("accuracy", 0.0)) / 10.0 if result.get("accuracy") else 0.0
             groundedness = float(result.get("groundedness", 0.0)) / 10.0 if result.get("groundedness") else 0.0
             coherence = float(result.get("coherence", 0.0)) / 10.0 if result.get("coherence") else 0.0
@@ -128,11 +143,17 @@ class AnswerMetrics:
                 "groundedness": groundedness,
                 "coherence": coherence,
                 "score": accuracy,
-                "reasoning": result.get("reasoning", "")
+                "reasoning": result.get("reasoning", ""),
             }
         except Exception as e:
             logger.error(f"LLM đánh giá thất bại: {e}")
-            return {"accuracy": 0.0, "groundedness": 0.0, "coherence": 0.0, "score": 0.0, "reasoning": f"Lỗi trong quá trình đánh giá: {str(e)}"}
+            return {
+                "accuracy": 0.0,
+                "groundedness": 0.0,
+                "coherence": 0.0,
+                "score": 0.0,
+                "reasoning": f"Lỗi trong quá trình đánh giá: {str(e)}",
+            }
 
 
 class EvaluationMetricsCalculator:
@@ -181,17 +202,19 @@ class EvaluationMetricsCalculator:
 
         ndcgs = [m["ndcg@10"] for m in retrieval_metrics_list if m and "ndcg@10" in m]
         if ndcgs:
-             return sum(ndcgs) / len(ndcgs)
+            return sum(ndcgs) / len(ndcgs)
 
         recalls = [m["recall@10"] for m in retrieval_metrics_list if m and "recall@10" in m]
         return sum(recalls) / len(recalls) if recalls else None
 
+
 class OCRMetrics:
     """Tính toán các chỉ số lỗi cho OCR"""
-    
+
     @staticmethod
     def calculate_cer_wer(reference_text: str, generated_text: str) -> dict[str, float]:
         """Tính toán CER (Character Error Rate) và WER (Word Error Rate) bằng thuật toán Levenshtein"""
+
         def levenshtein_distance(s1: list, s2: list) -> int:
             if len(s1) < len(s2):
                 return levenshtein_distance(s2, s1)

@@ -3,7 +3,7 @@ import json
 import uuid
 from typing import Any
 from langchain.agents.middleware import AgentMiddleware, AgentState
-from langchain_core.messages import AIMessage, AnyMessage
+from langchain_core.messages import AIMessage
 from langgraph.runtime import Runtime
 from deepagents.middleware.patch_tool_calls import PatchToolCallsMiddleware
 from langchain.agents import create_agent
@@ -11,9 +11,9 @@ from langchain.agents.middleware import ModelRetryMiddleware, TodoListMiddleware
 
 _GARBAGE_PREFIXES = ("portun", "leton", "iciary", "дажe", "дажe")
 _BARE_JSON_TOOL_PATTERN = re.compile(
-    r'\{[^{}]*"name"\s*:\s*"(?P<name>[^"]+)"[^{}]*"arguments"\s*:\s*(?P<args>\{[^{}]*\})[^{}]*\}',
-    re.DOTALL
+    r'\{[^{}]*"name"\s*:\s*"(?P<name>[^"]+)"[^{}]*"arguments"\s*:\s*(?P<args>\{[^{}]*\})[^{}]*\}', re.DOTALL
 )
+
 
 class OllamaToolCallParserMiddleware(AgentMiddleware):
     """Parses raw tool call strings from Ollama assistant messages.
@@ -47,7 +47,7 @@ class OllamaToolCallParserMiddleware(AgentMiddleware):
     def _strip_garbage(text: str) -> str:
         for prefix in _GARBAGE_PREFIXES:
             if text.lower().startswith(prefix.lower()):
-                text = text[len(prefix):].strip()
+                text = text[len(prefix) :].strip()
         return text
 
     @staticmethod
@@ -61,12 +61,14 @@ class OllamaToolCallParserMiddleware(AgentMiddleware):
             for match in re.findall(r"<tool_call>\s*(.*?)\s*</tool_call>", content, re.DOTALL):
                 try:
                     data = json.loads(match.strip())
-                    tool_calls.append({
-                        "name": data.get("name"),
-                        "args": data.get("arguments", {}),
-                        "id": f"call_{uuid.uuid4().hex[:8]}",
-                        "type": "tool_call",
-                    })
+                    tool_calls.append(
+                        {
+                            "name": data.get("name"),
+                            "args": data.get("arguments", {}),
+                            "id": f"call_{uuid.uuid4().hex[:8]}",
+                            "type": "tool_call",
+                        }
+                    )
                 except Exception:
                     pass
             if tool_calls:
@@ -85,13 +87,15 @@ class OllamaToolCallParserMiddleware(AgentMiddleware):
             try:
                 data = json.loads(m.group(0))
                 if "name" in data:
-                    tool_calls.append({
-                        "name": data["name"],
-                        "args": data.get("arguments", {}),
-                        "id": f"call_{uuid.uuid4().hex[:8]}",
-                        "type": "tool_call",
-                    })
-                    cleaned = (content[: m.start()] + content[m.end():]).strip()
+                    tool_calls.append(
+                        {
+                            "name": data["name"],
+                            "args": data.get("arguments", {}),
+                            "id": f"call_{uuid.uuid4().hex[:8]}",
+                            "type": "tool_call",
+                        }
+                    )
+                    cleaned = (content[: m.start()] + content[m.end() :]).strip()
                     cleaned = OllamaToolCallParserMiddleware._strip_garbage(cleaned)
                     return tool_calls, cleaned
             except Exception:
@@ -122,6 +126,7 @@ class OllamaToolCallParserMiddleware(AgentMiddleware):
 
         if modified:
             from langgraph.types import Overwrite
+
             return {"messages": Overwrite(messages)}
         return None
 
@@ -241,9 +246,14 @@ class ChatbotAgent(BaseAgent):
 
         model_spec = resolve_chat_model_spec(context.model)
         resolved_tools = await resolve_configured_runtime_tools(context)
-        is_test = any(str(kb.get("name") or "").startswith("TEST_RAG_PIPELINE_") for kb in getattr(context, "_visible_knowledge_bases", []))
+        is_test = any(
+            str(kb.get("name") or "").startswith("TEST_RAG_PIPELINE_")
+            for kb in getattr(context, "_visible_knowledge_bases", [])
+        )
         if is_test:
-            resolved_tools = [t for t in resolved_tools if t.name not in ("ask_user_question", "install_skill", "list_kbs")]
+            resolved_tools = [
+                t for t in resolved_tools if t.name not in ("ask_user_question", "install_skill", "list_kbs")
+            ]
 
         graph = create_agent(
             model=load_chat_model(fully_specified_name=model_spec),

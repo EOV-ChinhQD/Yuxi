@@ -104,11 +104,15 @@ const getAgentShareAllowedLevels = () => {
   return userStore.isAdmin ? ['global', 'department', 'user'] : ['user']
 }
 
-const agentModalTitle = computed(() => (editingAgentId.value ? 'Chỉnh sửa AI' : 'Thêm trí tuệ nhân tạo mới'))
+const agentModalTitle = computed(() =>
+  editingAgentId.value ? 'Chỉnh sửa AI' : 'Thêm trí tuệ nhân tạo mới'
+)
 const agentPreviewDefaultIcon = computed(() =>
   editingAgentId.value ? generatePixelAvatar(editingAgentId.value) : ''
 )
-const agentPreviewName = computed(() => agentForm.name || editingAgentId.value || 'đại lý thông minh')
+const agentPreviewName = computed(
+  () => agentForm.name || editingAgentId.value || 'đại lý thông minh'
+)
 const selectedBackendOption = computed(() =>
   props.backendOptions.find((backend) => backend.value === agentForm.backend_id)
 )
@@ -314,7 +318,11 @@ defineExpose({
         'create-mode': !editingAgentId
       }"
     >
-      <aside v-if="showAgentModalSidebar" class="agent-modal-sidebar" aria-label="Nhóm cấu hình tác nhân">
+      <aside
+        v-if="showAgentModalSidebar"
+        class="agent-modal-sidebar"
+        aria-label="Nhóm cấu hình tác nhân"
+      >
         <button
           v-for="item in agentModalMenuItems"
           :key="item.key"
@@ -364,7 +372,9 @@ defineExpose({
                     <div class="agent-icon-mask">
                       <RefreshCw v-if="agentIconUploading" :size="16" class="spinning" />
                       <Upload v-else :size="16" />
-                      <span>{{ agentForm.icon ? 'Thay đổi biểu tượng' : 'Tải lên biểu tượng' }}</span>
+                      <span>{{
+                        agentForm.icon ? 'Thay đổi biểu tượng' : 'Tải lên biểu tượng'
+                      }}</span>
                     </div>
                   </div>
                 </a-upload>

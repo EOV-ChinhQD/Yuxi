@@ -1,13 +1,13 @@
 import re
-import json
 import asyncio
 from enum import Enum
-from typing import Tuple, Dict, Any, List
+from typing import Any
 
 import json_repair
 
 from yuxi.utils import logger
 from yuxi.models import select_model
+
 
 class RouteType(str, Enum):
     # --- Pre-Retrieval Classification (Định tuyến trước khi tìm kiếm) ---
@@ -25,18 +25,33 @@ class RouteType(str, Enum):
     # kích hoạt cơ chế rewrite query và thử lại tối đa 1 lần (MAX_REWRITE_ATTEMPTS = 1).
     RETRY_WITH_REWRITE = "RETRY_WITH_REWRITE"
 
+
 class SemanticRouter:
     """
     Định tuyến ngữ nghĩa cho truy vấn người dùng, giảm thiểu các cuộc gọi
     vector DB không cần thiết và chống ảo giác.
     """
-    
+
     # Heuristics cho Chit-chat (Full match hoặc rất ngắn)
-    _CHIT_CHAT_PATTERN = re.compile(r"^(chào|xin chào|chào bạn|hi|hello|cảm ơn|thank you|ok|okay)[\s!\.]*$", re.IGNORECASE)
-    
+    _CHIT_CHAT_PATTERN = re.compile(
+        r"^(chào|xin chào|chào bạn|hi|hello|cảm ơn|thank you|ok|okay)[\s!\.]*$", re.IGNORECASE
+    )
+
+    # Heuristics cho Exact Match (Số hiệu văn bản, hợp đồng, quyết định...)
+    _EXACT_MATCH_PATTERN = re.compile(
+        r"\b(hd|tt|nđ|qđ|tt-gdtx|luật)-\d+[\w/-]*\b|\b(thông tư|nghị định|quyết định|hợp đồng)\s+(số\s+)?\d+[\w/-]*\b",
+        re.IGNORECASE,
+    )
+
+    # Heuristics cho Summarization (Yêu cầu tóm tắt tài liệu cụ thể)
+    _SUMMARIZATION_PATTERN = re.compile(
+        r"^(tóm tắt|sơ lược|tóm lược)\s+(tài liệu|văn bản|hợp đồng|quy chế|quy định|thông tư|nghị định)\s+.+$",
+        re.IGNORECASE,
+    )
+
     # Ngưỡng tự tin tối thiểu từ LLM, nếu thấp hơn sẽ fallback về NAIVE_SEARCH
     CONFIDENCE_THRESHOLD = 0.7
-    
+
     @classmethod
     def _heuristic_check(cls, query: str) -> RouteType | None:
         """Kiểm tra nhanh bằng Regex trước khi gọi LLM."""
@@ -44,11 +59,21 @@ class SemanticRouter:
         if cls._CHIT_CHAT_PATTERN.match(query_clean):
             logger.info(f"[SemanticRouter] Heuristic matched CHIT_CHAT for query: '{query}'")
             return RouteType.CHIT_CHAT
-            
+
+        if cls._EXACT_MATCH_PATTERN.search(query_clean):
+            logger.info(f"[SemanticRouter] Heuristic matched EXACT_MATCH for query: '{query}'")
+            return RouteType.EXACT_MATCH
+
+        if cls._SUMMARIZATION_PATTERN.match(query_clean):
+            logger.info(f"[SemanticRouter] Heuristic matched SUMMARIZATION for query: '{query}'")
+            return RouteType.SUMMARIZATION
+
         return None
 
     @classmethod
-    async def route(cls, query: str, llm_model_spec: str = "gpt-4o-mini", chat_history: List[Dict[str, str]] = None) -> Tuple[RouteType, Dict[str, Any]]:
+    async def route(
+        cls, query: str, llm_model_spec: str = "gpt-4o-mini", chat_history: list[dict[str, str]] = None
+    ) -> tuple[RouteType, dict[str, Any]]:
         """
         Phân loại câu hỏi thành 1 trong 8 Route Types.
         Trả về (RouteType, details_dict).
@@ -60,68 +85,74 @@ class SemanticRouter:
 
         # 2. LLM Classification
         logger.info(f"[SemanticRouter] Calling LLM Router for query: '{query[:60]}...'")
-        
-        prompt = f"""Bạn là bộ định tuyến truy vấn (Semantic Router) của một hệ thống RAG doanh nghiệp. 
-Nhiệm vụ của bạn là phân loại câu hỏi của người dùng vào ĐÚNG MỘT trong các nhãn sau.
 
-CÁC NHÃN ĐỊNH TUYẾN:
-1. CHIT_CHAT: Giao tiếp thông thường toàn câu (chào hỏi, cảm ơn).
-2. OUT_OF_DOMAIN: Hỏi vấn đề ngoài lề (Thời tiết, tin tức chung, lịch sử, toán học cơ bản không liên quan công việc).
-3. AMBIGUOUS: Truy vấn quá mơ hồ ("Tìm tài liệu đó đi" mà không nói tài liệu nào).
-4. EXACT_MATCH: Truy vấn có chứa MÃ SỐ, ID CỤ THỂ, SỐ HIỆU VĂN BẢN (VD: HD-1234, thông tư 15) và chỉ nhằm mục đích tra cứu thông tin của văn bản đó.
-5. SUMMARIZATION: Yêu cầu tóm tắt TOÀN BỘ một tài liệu/quy chế cụ thể. Lưu ý: Nếu yêu cầu tóm tắt nhưng không nói rõ tài liệu nào, hãy chọn AMBIGUOUS.
-6. STRUCTURED_AGGREGATION: Các câu hỏi tính toán, đếm số lượng, tổng doanh thu ("Có bao nhiêu hợp đồng trong tháng 5?").
-7. MULTI_HOP: So sánh, đối chiếu, tổng hợp đa chiều giữa từ 2 đối tượng/vấn đề trở lên ("So sánh quy trình A và quy trình B").
-8. NAIVE_SEARCH: Tra cứu kiến thức, định nghĩa, thông tin thông thường ("Quy định nghỉ phép là gì?"). Chọn nhãn này nếu không chắc chắn.
+        prompt = f"""Select the best routing label for this enterprise query.
+Labels:
+1. CHIT_CHAT: General greeting/thanking.
+2. OUT_OF_DOMAIN: Out-of-scope (weather, math, history).
+3. AMBIGUOUS: Vague queries (e.g. "find that file").
+4. EXACT_MATCH: Searching a specific ID/code (e.g. TT-15, HD-102).
+5. SUMMARIZATION: Summarize a specific document.
+6. STRUCTURED_AGGREGATION: Counting, summation, database query.
+7. MULTI_HOP: Comparing/synthesizing multiple documents.
+8. NAIVE_SEARCH: General search. Fallback if unsure.
 
-TRUY VẤN CỦA NGƯỜI DÙNG:
-"{query}"
+Query: "{query}"
 
-YÊU CẦU ĐẦU RA: 
-Trích xuất dưới dạng JSON hợp lệ với cấu trúc sau, KHÔNG giải thích thêm:
+Output ONLY valid JSON:
 {{
-  "route_type": "<CHỌN_1_NHÃN_Ở_TRÊN>",
-  "confidence_score": <số thực từ 0.0 đến 1.0>,
-  "reasoning": "<Lý do ngắn gọn dưới 20 từ>"
-}}
-"""
+  "route_type": "<LABEL>",
+  "confidence_score": <float 0-1>,
+  "reasoning": "<10-word explanation>"
+}}"""
         try:
             from yuxi.models.providers.cache import model_cache
+
             actual_model_spec = llm_model_spec
             if not model_cache.get_model_info(actual_model_spec):
                 available = model_cache.get_all_specs("chat")
                 if available:
                     actual_model_spec = available[0].spec
-                    logger.info(f"[SemanticRouter] Fallback model spec from '{llm_model_spec}' to '{actual_model_spec}'")
+                    logger.info(
+                        f"[SemanticRouter] Fallback model spec from '{llm_model_spec}' to '{actual_model_spec}'"
+                    )
             model = select_model(model_spec=actual_model_spec)
             response = await asyncio.wait_for(model.call(prompt, stream=False), timeout=10.0)
             raw = response.content.strip()
-            
+
             # Tìm JSON trong output
-            match = re.search(r'\{[\s\S]*\}', raw)
+            match = re.search(r"\{[\s\S]*\}", raw)
             if not match:
                 logger.warning(f"[SemanticRouter] LLM output not JSON. Raw: {raw}. Fallback to NAIVE_SEARCH")
                 return RouteType.NAIVE_SEARCH, {"confidence_score": 0.0, "reasoning": "JSON parse error"}
-                
+
             data = json_repair.loads(match.group())
             route_str = data.get("route_type", "NAIVE_SEARCH").upper()
             confidence = float(data.get("confidence_score", 0.0))
             reasoning = data.get("reasoning", "")
-            
+
             if route_str not in RouteType.__members__:
                 logger.warning(f"[SemanticRouter] Invalid route type '{route_str}'. Fallback to NAIVE_SEARCH")
-                return RouteType.NAIVE_SEARCH, {"confidence_score": confidence, "reasoning": f"Invalid type parsed: {route_str}"}
-            
+                return RouteType.NAIVE_SEARCH, {
+                    "confidence_score": confidence,
+                    "reasoning": f"Invalid type parsed: {route_str}",
+                }
+
             final_route = RouteType[route_str]
-            
+
             if confidence < cls.CONFIDENCE_THRESHOLD:
-                logger.warning(f"[SemanticRouter] Low confidence {confidence} for route {final_route.value}. Fallback to NAIVE_SEARCH")
-                return RouteType.NAIVE_SEARCH, {"confidence_score": confidence, "reasoning": f"Low confidence fallback. Original reasoning: {reasoning}"}
-                
+                logger.warning(
+                    f"[SemanticRouter] Low confidence {confidence} for route {final_route.value}. Fallback to NAIVE_SEARCH"
+                )
+                return RouteType.NAIVE_SEARCH, {
+                    "confidence_score": confidence,
+                    "reasoning": f"Low confidence fallback. Original reasoning: {reasoning}",
+                }
+
             logger.info(f"[SemanticRouter] Successfully routed to {final_route.value} (conf: {confidence})")
             return final_route, data
-            
-        except asyncio.TimeoutError:
+
+        except TimeoutError:
             logger.error("[SemanticRouter] LLM timeout. Fallback to NAIVE_SEARCH")
             return RouteType.NAIVE_SEARCH, {"confidence_score": 0.0, "reasoning": "Timeout error"}
         except Exception as e:

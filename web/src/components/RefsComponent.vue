@@ -6,7 +6,9 @@
         class="item btn"
         :class="{ disabled: feedbackState.hasSubmitted }"
         @click="likeThisResponse(msg)"
-        :title="feedbackState.hasSubmitted && feedbackState.rating === 'like' ? 'Đã thích' : 'thích'"
+        :title="
+          feedbackState.hasSubmitted && feedbackState.rating === 'like' ? 'Đã thích' : 'thích'
+        "
       >
         <ThumbsUp size="12" :fill="feedbackState.rating === 'like' ? 'currentColor' : 'none'" />
       </span>
@@ -15,7 +17,9 @@
         :class="{ disabled: feedbackState.hasSubmitted }"
         @click="dislikeThisResponse(msg)"
         :title="
-          feedbackState.hasSubmitted && feedbackState.rating === 'dislike' ? 'Không thích' : 'Bấm vào để không thích'
+          feedbackState.hasSubmitted && feedbackState.rating === 'dislike'
+            ? 'Không thích'
+            : 'Bấm vào để không thích'
         "
       >
         <ThumbsDown

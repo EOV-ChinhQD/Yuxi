@@ -116,7 +116,10 @@
                     <section class="form-section">
                       <div class="form-section-title">
                         <span>Cấu hình kết nối</span>
-                        <small>Định cấu hình các tham số kết nối cần thiết cho phương thức truyền hiện tại。</small>
+                        <small
+                          >Định cấu hình các tham số kết nối cần thiết cho phương thức truyền hiện
+                          tại。</small
+                        >
                       </div>
                       <template
                         v-if="
@@ -169,7 +172,10 @@
                     <section class="form-section">
                       <div class="form-section-title">
                         <span>Cấu hình nâng cao</span>
-                        <small>Tiêu đề yêu cầu、Các thông số khởi động và biến môi trường sẽ ảnh hưởng trực tiếp MCP chạy。</small>
+                        <small
+                          >Tiêu đề yêu cầu、Các thông số khởi động và biến môi trường sẽ ảnh hưởng
+                          trực tiếp MCP chạy。</small
+                        >
                       </div>
                       <template
                         v-if="
@@ -184,7 +190,8 @@
                             class="config-textarea"
                           />
                           <div class="form-helper">
-                            Vui lòng nhập hợp pháp JSON vật thể，Để trống để không gửi tiêu đề yêu cầu bổ sung。
+                            Vui lòng nhập hợp pháp JSON vật thể，Để trống để không gửi tiêu đề yêu
+                            cầu bổ sung。
                           </div>
                         </a-form-item>
                       </template>

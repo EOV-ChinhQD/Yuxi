@@ -18,7 +18,9 @@
         <template #icon>
           <WandSparkles size="14" />
         </template>
-        <span v-if="!loading" class="ai-text">{{ modelValue?.trim() ? 'đánh bóng' : 'tạo ra' }}</span>
+        <span v-if="!loading" class="ai-text">{{
+          modelValue?.trim() ? 'đánh bóng' : 'tạo ra'
+        }}</span>
       </a-button>
     </a-tooltip>
   </div>

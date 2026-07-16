@@ -4,7 +4,8 @@
       <div class="header-content">
         <div class="section-title">Biến môi trường Sandbox</div>
         <p class="section-description">
-          Cấu hình biến môi trường Agent Sandbox cho người dùng hiện tại. Các biến này sẽ được đưa vào khi tạo sandbox mới và ghi đè sandbox.env toàn cục cùng tên.
+          Cấu hình biến môi trường Agent Sandbox cho người dùng hiện tại. Các biến này sẽ được đưa
+          vào khi tạo sandbox mới và ghi đè sandbox.env toàn cục cùng tên.
         </p>
       </div>
       <div class="header-actions">
@@ -18,7 +19,9 @@
       </div>
     </div>
 
-    <div class="env-tip">Chỉ có hiệu lực cho sandbox mới được tạo, không cập nhật nóng cho sandbox đang chạy.</div>
+    <div class="env-tip">
+      Chỉ có hiệu lực cho sandbox mới được tạo, không cập nhật nóng cho sandbox đang chạy.
+    </div>
 
     <a-spin :spinning="loading">
       <McpEnvEditor

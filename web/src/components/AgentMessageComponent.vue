@@ -66,8 +66,12 @@
       <!-- khối thông báo lỗi -->
       <div v-if="displayError" class="error-hint">
         <span v-if="getErrorMessage">{{ getErrorMessage }}</span>
-        <span v-else-if="message.error_type === 'interrupted'">Việc tạo câu trả lời bị gián đoạn</span>
-        <span v-else-if="message.error_type === 'unexpect'">Ngoại lệ xảy ra trong quá trình tạo</span>
+        <span v-else-if="message.error_type === 'interrupted'"
+          >Việc tạo câu trả lời bị gián đoạn</span
+        >
+        <span v-else-if="message.error_type === 'unexpect'"
+          >Ngoại lệ xảy ra trong quá trình tạo</span
+        >
         <span v-else-if="message.error_type === 'content_guard_blocked'"
           >Đã phát hiện nội dung nhạy cảm，Đầu ra bị gián đoạn</span
         >

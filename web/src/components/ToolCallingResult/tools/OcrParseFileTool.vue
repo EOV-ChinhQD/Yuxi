@@ -22,7 +22,9 @@
           <span class="value">{{ resultData.char_count }}</span>
         </div>
         <pre v-if="resultData?.preview" class="preview">{{ resultData.preview }}</pre>
-        <div v-if="resultData?.truncated" class="hint">Xem trước đã bị cắt ngắn, vui lòng đọc tệp kết quả để xem nội dung đầy đủ。</div>
+        <div v-if="resultData?.truncated" class="hint">
+          Xem trước đã bị cắt ngắn, vui lòng đọc tệp kết quả để xem nội dung đầy đủ。
+        </div>
       </div>
     </template>
   </BaseToolCall>

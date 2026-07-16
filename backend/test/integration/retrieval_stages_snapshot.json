@@ -1,0 +1,44 @@
+{
+    "stage3": {
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "recall@10": 1.0,
+        "ndcg@10": 1.0,
+        "mrr@10": 1.0
+    },
+    "stage4": {
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0,
+        "recall@10": 1.0,
+        "ndcg@10": 1.0,
+        "mrr@10": 1.0
+    },
+    "stage5": {
+        "pre_rerank_recall@1": 1.0,
+        "pre_rerank_recall@3": 1.0,
+        "pre_rerank_recall@5": 1.0,
+        "pre_rerank_recall@10": 1.0,
+        "pre_rerank_ndcg@10": 1.0,
+        "pre_rerank_mrr@10": 1.0,
+        "post_stage1_recall@1": 1.0,
+        "post_stage1_recall@3": 1.0,
+        "post_stage1_recall@5": 1.0,
+        "post_stage1_recall@10": 1.0,
+        "post_stage1_ndcg@10": 1.0,
+        "post_stage1_mrr@10": 1.0,
+        "final_recall@1": 1.0,
+        "recall@1": 1.0,
+        "final_recall@3": 1.0,
+        "recall@3": 1.0,
+        "final_recall@5": 1.0,
+        "recall@5": 1.0,
+        "final_recall@10": 1.0,
+        "recall@10": 1.0,
+        "final_ndcg@10": 1.0,
+        "ndcg@10": 1.0,
+        "final_mrr@10": 1.0,
+        "mrr@10": 1.0
+    }
+}

@@ -27,7 +27,7 @@ export const agentApi = {
    */
   generateTitle: async (query, modelSpec) => {
     const response = await apiPost('/api/chat/call', {
-      query: `Tạo tiêu đề ngắn dựa trên cuộc trò chuyện sau（nhất30nhân vật，Có cả tiếng Trung và tiếng Anh），không bao gồm markdown đánh dấu：\n\n${query.slice(0, 2000)}`,
+      query: `Tạo tiêu đề ngắn gọn (tối đa 30 ký tự) dựa trên cuộc trò chuyện sau, chỉ sử dụng tiếng Việt, không bao gồm các định dạng markdown:\n\n${query.slice(0, 2000)}`,
       meta: { model_spec: modelSpec }
     })
     return response.response

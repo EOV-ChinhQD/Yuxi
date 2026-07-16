@@ -113,7 +113,9 @@ def _normalize_presented_artifact_path(filepath: str, runtime: ToolRuntime) -> s
         raise ValueError(f"Chỉ cho phép hiển thị các tệp dưới {outputs_virtual_prefix}/: {normalized_input}") from exc
 
     if relative_path.parts and relative_path.parts[0] in _PRESENT_ARTIFACTS_INTERNAL_DIR_NAMES:
-        raise ValueError(f"Không cho phép hiển thị tệp giai đoạn gọi công cụ: {outputs_virtual_prefix}/{relative_path.as_posix()}")
+        raise ValueError(
+            f"Không cho phép hiển thị tệp giai đoạn gọi công cụ: {outputs_virtual_prefix}/{relative_path.as_posix()}"
+        )
 
     return f"{outputs_virtual_prefix}/{relative_path.as_posix()}"
 
@@ -157,7 +159,9 @@ def present_artifacts(
     return Command(
         update={
             "artifacts": normalized_paths,
-            "messages": [ToolMessage(content="Đã hiển thị sản phẩm giao nộp cho người dùng", tool_call_id=tool_call_id)],
+            "messages": [
+                ToolMessage(content="Đã hiển thị sản phẩm giao nộp cho người dùng", tool_call_id=tool_call_id)
+            ],
         }
     )
 

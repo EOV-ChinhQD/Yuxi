@@ -4,7 +4,9 @@
     <div class="header-section">
       <div class="header-content">
         <div class="section-title">Quản lý bộ phận</div>
-        <p class="section-description">Phòng hệ thống quản lý，Người dùng thuộc bộ phận sẽ được cách ly và quản lý。</p>
+        <p class="section-description">
+          Phòng hệ thống quản lý，Người dùng thuộc bộ phận sẽ được cách ly và quản lý。
+        </p>
       </div>
       <div class="header-actions">
         <a-button
@@ -122,7 +124,8 @@
 
         <template v-if="!departmentManagement.editMode">
           <p class="admin-section-hint">
-            Khi tạo phòng ban cũng phải tạo quản trị viên，Quản trị viên này sẽ chịu trách nhiệm quản lý người dùng trong bộ phận này
+            Khi tạo phòng ban cũng phải tạo quản trị viên，Quản trị viên này sẽ chịu trách nhiệm
+            quản lý người dùng trong bộ phận này
           </p>
 
           <a-form-item label="Quản trị viênUID" required class="form-item">

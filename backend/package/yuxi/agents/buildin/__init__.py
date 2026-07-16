@@ -11,7 +11,7 @@ from yuxi.utils.singleton import SingletonMeta
 class AgentManager(metaclass=SingletonMeta):
     def __init__(self):
         self._classes = {}
-        self._instances = {}  
+        self._instances = {}
 
     def register_agent(self, agent_class):
         self._classes[agent_class.__name__] = agent_class
@@ -21,12 +21,11 @@ class AgentManager(metaclass=SingletonMeta):
             self.get_agent(agent_id)
 
     def get_agent(self, agent_id, reload=False, reload_graph=False, **kwargs):
-        
+
         if reload or agent_id not in self._instances:
             agent_class = self._classes[agent_id]
             self._instances[agent_id] = agent_class()
 
-        
         if reload_graph and agent_id in self._instances:
             self._instances[agent_id].reload_graph()
 

@@ -93,9 +93,14 @@ export async function apiRequest(url, options = {}, requiresAuth = true, respons
 
         // Kiểm tra xem có phải khôngtokenĐã hết hạn（errorMessage Hợp nhất thành chuỗi，tránh đồ vật detail gọi includes lỗi ném）
         const isTokenExpired =
-          errorMessage?.includes('Mã thông báo đã hết hạn') || errorMessage?.includes('token expired')
+          errorMessage?.includes('Mã thông báo đã hết hạn') ||
+          errorMessage?.includes('token expired')
 
-        message.error(isTokenExpired ? 'Đăng nhập đã hết hạn，Vui lòng đăng nhập lại' : 'Xác thực không thành công，Vui lòng đăng nhập lại')
+        message.error(
+          isTokenExpired
+            ? 'Đăng nhập đã hết hạn，Vui lòng đăng nhập lại'
+            : 'Xác thực không thành công，Vui lòng đăng nhập lại'
+        )
 
         // Nếu người dùng hiện cho rằng họ đã đăng nhập，sau đó đăng xuất
         if (userStore.isLoggedIn) {
@@ -112,7 +117,8 @@ export async function apiRequest(url, options = {}, requiresAuth = true, respons
         error.message = 'Không có quyền thực hiện thao tác này'
         throw error
       } else if (response.status === 500) {
-        error.message = 'Lỗi nội bộ máy chủ，Vui lòng sử dụng docker logs api-dev Xem nhật ký chi tiết'
+        error.message =
+          'Lỗi nội bộ máy chủ，Vui lòng sử dụng docker logs api-dev Xem nhật ký chi tiết'
         throw error
       }
 

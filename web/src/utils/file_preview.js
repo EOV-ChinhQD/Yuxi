@@ -181,7 +181,8 @@ export const normalizePreviewResponse = async (response, baseFile = {}) => {
     content: null,
     previewType,
     supported: previewType !== 'unsupported',
-    message: previewType === 'unsupported' ? 'Tệp hiện tại không hỗ trợ xem trước，Hãy tải về và xem' : '',
+    message:
+      previewType === 'unsupported' ? 'Tệp hiện tại không hỗ trợ xem trước，Hãy tải về và xem' : '',
     previewUrl: window.URL.createObjectURL(blob)
   }
 }

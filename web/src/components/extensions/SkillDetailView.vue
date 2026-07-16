@@ -111,7 +111,10 @@
               <div class="config-header">
                 <div class="text">
                   <h3>Trạng thái chia sẻ và kích hoạt</h3>
-                  <p>kiểm soát việc này Skill Nó có sẵn không，và người dùng nào có thể chọn và chạy nó。</p>
+                  <p>
+                    kiểm soát việc này Skill Nó có sẵn không，và người dùng nào có thể chọn và chạy
+                    nó。
+                  </p>
                 </div>
                 <a-button
                   v-if="canManageCurrentSkill"
@@ -129,7 +132,8 @@
                   <div class="settings-card-main">
                     <div class="settings-card-title">Trạng thái đã bật</div>
                     <div class="settings-card-desc">
-                      Sau khi vô hiệu hóa tính năng này Skill Sẽ không xuất hiện trong các tài nguyên tùy chọn，Sẽ không tham gia Agent Tải khi chạy。
+                      Sau khi vô hiệu hóa tính năng này Skill Sẽ không xuất hiện trong các tài
+                      nguyên tùy chọn，Sẽ không tham gia Agent Tải khi chạy。
                     </div>
                   </div>
                   <div class="settings-card-action">
@@ -144,11 +148,13 @@
                   <div class="settings-card-main">
                     <div class="settings-card-title">Phạm vi hiệu quả</div>
                     <div class="settings-card-desc">
-                      Kiểm soát những người dùng nào có thể chọn và sử dụng cái này trong thời gian chạy Skill。
+                      Kiểm soát những người dùng nào có thể chọn và sử dụng cái này trong thời gian
+                      chạy Skill。
                     </div>
                   </div>
                   <div v-if="isBuiltinInstalledSkill" class="readonly-scope-hint">
-                    Tích hợp sẵn Skill Đã sửa lỗi cho phạm vi hiệu quả toàn cầu，Việc có tham gia vào thời gian chạy hay không có thể được kiểm soát bằng cách bật trạng thái。
+                    Tích hợp sẵn Skill Đã sửa lỗi cho phạm vi hiệu quả toàn cầu，Việc có tham gia
+                    vào thời gian chạy hay không có thể được kiểm soát bằng cách bật trạng thái。
                   </div>
                   <div v-else-if="isReadOnlySkill" class="readonly-scope-hint">
                     hiện tại Skill Chỉ đọc cho bạn，Phạm vi hiệu quả không thể được sửa đổi。
@@ -173,7 +179,10 @@
               <div class="config-header">
                 <div class="text">
                   <h3>Tuyên bố phụ thuộc</h3>
-                  <p>cấu hình cái này Skill công cụ cần thiết、MCP và những người khác Skill phụ thuộc vào。</p>
+                  <p>
+                    cấu hình cái này Skill công cụ cần thiết、MCP và những người khác Skill phụ
+                    thuộc vào。
+                  </p>
                 </div>
                 <a-button
                   v-if="canEditSkillDependencies"
@@ -277,7 +286,11 @@
                             </div>
                           </div>
                           <div v-else class="selection-empty">
-                            {{ group.options.length ? 'Không có sự phụ thuộc phù hợp' : 'Chưa có phụ thuộc tùy chọn nào' }}
+                            {{
+                              group.options.length
+                                ? 'Không có sự phụ thuộc phù hợp'
+                                : 'Chưa có phụ thuộc tùy chọn nào'
+                            }}
                           </div>
                         </div>
                       </template>
@@ -471,7 +484,8 @@ const dependencyGroups = computed(() => [
     title: 'Skill phụ thuộc vào',
     shortTitle: 'Skill',
     description: 'Khai báo các mục khác cần được nạp cùng nhau Skill。',
-    dropdownHint: 'phụ thuộc vào Skill sẽ đi theo hiện tại Skill Nhập phạm vi có thể đọc được trong thời gian chạy cùng nhau。',
+    dropdownHint:
+      'phụ thuộc vào Skill sẽ đi theo hiện tại Skill Nhập phạm vi có thể đọc được trong thời gian chạy cùng nhau。',
     emptyText: 'Không khai báo Skill phụ thuộc vào',
     options: skillDependencyOptions.value
   }
@@ -666,7 +680,8 @@ const confirmDeleteSkill = () => {
   const actionText = 'Xóa'
   Modal.confirm({
     title: `Xác nhận${actionText}Kỹ năng「${target.slug}」？`,
-    content: 'Không thể phục hồi sau khi xóa，Tất cả các tập tin và cấu hình sẽ biến mất vĩnh viễn。',
+    content:
+      'Không thể phục hồi sau khi xóa，Tất cả các tập tin và cấu hình sẽ biến mất vĩnh viễn。',
     okText: `Xác nhận${actionText}`,
     okType: 'danger',
     cancelText: 'Hủy bỏ',

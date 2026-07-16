@@ -1,7 +1,7 @@
 import re
 import json
 import asyncio
-from typing import List, Dict, Tuple, Any
+from typing import Any
 import json_repair
 
 from yuxi.utils import logger
@@ -23,13 +23,15 @@ _SINGLE_HOP_EXCLUDE = re.compile(
     re.IGNORECASE,
 )
 
+
 def _heuristic_is_multi_hop(question: str) -> bool:
     """Kiểm tra nhanh bằng regex trước khi gọi LLM."""
     if _SINGLE_HOP_EXCLUDE.search(question) and not _MULTI_HOP_PATTERNS.search(question):
         return False
     return bool(_MULTI_HOP_PATTERNS.search(question))
 
-async def detect_and_decompose(question: str, llm_model_spec: str) -> Tuple[bool, List[str]]:
+
+async def detect_and_decompose(question: str, llm_model_spec: str) -> tuple[bool, list[str]]:
     """
     Phát hiện multi-hop và phân rã câu hỏi thành sub-queries.
     Returns: (is_multi_hop, sub_queries)
@@ -38,8 +40,8 @@ async def detect_and_decompose(question: str, llm_model_spec: str) -> Tuple[bool
         logger.debug(f"[MultiHop] Heuristic: single-hop — '{question[:60]}'")
         return False, []
 
-    logger.info(f"[MultiHop] Heuristic triggered, calling LLM decomposer...")
-    
+    logger.info("[MultiHop] Heuristic triggered, calling LLM decomposer...")
+
     prompt = f"""Phân tích câu hỏi sau và trả về JSON. Không giải thích thêm.
 
 Multi-hop = câu hỏi SO SÁNH hoặc hỏi về ÍT NHẤT 2 thực thể/thiết bị/quy trình khác nhau.
@@ -63,7 +65,7 @@ Lưu ý: nếu is_multi_hop=false thì sub_queries=[]. Tối đa 3 sub_queries.
         raw = response.content.strip()
 
         # Tìm JSON trong output
-        match = re.search(r'\{[\s\S]*\}', raw)
+        match = re.search(r"\{[\s\S]*\}", raw)
         if not match:
             logger.warning("[MultiHop] LLM did not return valid JSON, fallback to single-hop")
             return False, []
@@ -72,32 +74,27 @@ Lưu ý: nếu is_multi_hop=false thì sub_queries=[]. Tối đa 3 sub_queries.
         is_multi = bool(data.get("is_multi_hop", False))
         sub_queries = [q.strip() for q in data.get("sub_queries", []) if q.strip()]
 
-        logger.info(
-            f"[MultiHop] is_multi_hop={is_multi} | reason={data.get('reason', '')} | "
-            f"sub_queries={sub_queries}"
-        )
+        logger.info(f"[MultiHop] is_multi_hop={is_multi} | reason={data.get('reason', '')} | sub_queries={sub_queries}")
 
         if not is_multi or len(sub_queries) < 2:
             return False, []
 
         return True, sub_queries[:3]  # Tối đa 3 sub-queries
 
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.warning("[MultiHop] LLM decomposer timeout — fallback to single-hop")
         return False, []
     except Exception as e:
         logger.warning(f"[MultiHop] Decompose error: {e} — fallback to single-hop")
         return False, []
 
-async def multi_hop_retrieve_labeled(
-    sub_queries: List[str],
-    retriever: Any,
-    **kwargs
-) -> Dict[str, Any]:
+
+async def multi_hop_retrieve_labeled(sub_queries: list[str], retriever: Any, **kwargs) -> dict[str, Any]:
     """
     Chạy retriever song song cho từng sub-query và gộp kết quả có gắn nhãn nguồn.
     """
-    async def _retrieve_one(sub_q: str) -> List[Dict[str, Any]]:
+
+    async def _retrieve_one(sub_q: str) -> list[dict[str, Any]]:
         try:
             res = await retriever(sub_q, **kwargs)
             chunks = res.get("results", [])
@@ -110,16 +107,13 @@ async def multi_hop_retrieve_labeled(
             logger.error(f"[MultiHop] Retrieve failed for '{sub_q}': {e}")
             return []
 
-    tasks = [
-        _retrieve_one(q)
-        for q in sub_queries
-    ]
+    tasks = [_retrieve_one(q) for q in sub_queries]
     results = await asyncio.gather(*tasks)
 
     # Gộp & loại bỏ trùng lặp dựa trên chunk_id hoặc content
     seen_ids = set()
     merged_results = []
-    
+
     for chunk_list in results:
         for chunk in chunk_list:
             cid = chunk.get("chunk_id") or chunk.get("content", "")[:50]
@@ -128,10 +122,8 @@ async def multi_hop_retrieve_labeled(
                 merged_results.append(chunk)
 
     logger.info(f"[MultiHop] Merged {len(merged_results)} unique chunks from {len(sub_queries)} sub-queries")
-    
-    return {
-        "results": merged_results
-    }
+
+    return {"results": merged_results}
 
 
 class MultiHopRetriever:
@@ -205,18 +197,18 @@ Kết quả dạng JSON array chứa event_id:"""
             recalled_entity_ids = [e["id"] for e in entities]
         else:
             query_entities = await self._extract_named_entities(query)
+            logger.info(f"[MultiHop] Extracted entities: {query_entities}")
             if query_entities:
                 exact_entities = await self.graph_repo.search_entities_by_name(self.kb_id, query_entities)
                 recalled_entity_ids = [e["id"] for e in exact_entities]
-                
+
                 embed_model = select_embedding_model(self.embedding_model_spec)
                 for ent_name in query_entities:
-                    vector = await embed_model.encode(ent_name)
                     vector_entities = await self.vector_store.search_entities(
                         kb_id=self.kb_id,
                         query_text=ent_name,
                         embedding_model_spec=self.embedding_model_spec,
-                        top_k=entity_top_k
+                        top_k=entity_top_k,
                     )
                     for ve in vector_entities:
                         if ve["id"] not in recalled_entity_ids:
@@ -228,10 +220,7 @@ Kết quả dạng JSON array chứa event_id:"""
             entity_event_ids = await self.graph_repo.get_event_ids_by_entity_ids(self.kb_id, recalled_entity_ids)
 
         vector_events = await self.vector_store.search_events(
-            kb_id=self.kb_id,
-            query_text=query,
-            embedding_model_spec=self.embedding_model_spec,
-            top_k=multi_top_k
+            kb_id=self.kb_id, query_text=query, embedding_model_spec=self.embedding_model_spec, top_k=multi_top_k
         )
         vector_event_ids = [ve["id"] for ve in vector_events]
 
@@ -243,7 +232,7 @@ Kết quả dạng JSON array chứa event_id:"""
         # 3. Mở rộng đa bước (Expand Hops)
         tracked_event_ids = set(seed_event_ids)
         tracked_entity_ids = set(recalled_entity_ids)
-        
+
         current_events = await self.graph_repo.get_events_with_entity_ids(seed_event_ids)
         expanded_event_ids = list(seed_event_ids)
 
@@ -276,23 +265,22 @@ Kết quả dạng JSON array chứa event_id:"""
             return []
 
         milvus_matches = await self.vector_store.search_events(
-            kb_id=self.kb_id,
-            query_text=query,
-            embedding_model_spec=self.embedding_model_spec,
-            top_k=max_events
+            kb_id=self.kb_id, query_text=query, embedding_model_spec=self.embedding_model_spec, top_k=max_events
         )
         match_scores = {m["id"]: m["score"] for m in milvus_matches}
 
         coarse_ranked = []
         for ev in candidate_events:
             score = match_scores.get(ev["event_id"], 0.1)
-            coarse_ranked.append({
-                "id": ev["event_id"],
-                "title": ev["title"],
-                "content": ev["content"],
-                "summary": ev["summary"],
-                "score": score
-            })
+            coarse_ranked.append(
+                {
+                    "id": ev["event_id"],
+                    "title": ev["title"],
+                    "content": ev["content"],
+                    "summary": ev["summary"],
+                    "score": score,
+                }
+            )
 
         coarse_ranked.sort(key=lambda x: x["score"], reverse=True)
         coarse_ranked = coarse_ranked[:max_events]
@@ -302,10 +290,11 @@ Kết quả dạng JSON array chứa event_id:"""
 
         # 6. Lấy chunks tương ứng với các Event được chọn
         from yuxi.storage.postgres.manager import pg_manager
+
         async with pg_manager.get_async_session_context() as session:
             from sqlalchemy import select
             from yuxi.storage.postgres.models_knowledge import KnowledgeGraphEvent, KnowledgeChunk
-            
+
             stmt = (
                 select(KnowledgeChunk, KnowledgeGraphEvent.event_id)
                 .join(KnowledgeGraphEvent, KnowledgeGraphEvent.chunk_id == KnowledgeChunk.chunk_id)
@@ -321,10 +310,12 @@ Kết quả dạng JSON array chứa event_id:"""
                     continue
                 seen_chunks.add(chunk_row.chunk_id)
                 idx = selected_event_ids.index(event_id) if event_id in selected_event_ids else 99
-                results.append({
-                    "chunk_id": chunk_row.chunk_id,
-                    "content": chunk_row.content,
-                    "score": 1.0 - (idx * 0.05),
-                    "file_id": chunk_row.file_id,
-                })
+                results.append(
+                    {
+                        "chunk_id": chunk_row.chunk_id,
+                        "content": chunk_row.content,
+                        "score": 1.0 - (idx * 0.05),
+                        "file_id": chunk_row.file_id,
+                    }
+                )
             return results

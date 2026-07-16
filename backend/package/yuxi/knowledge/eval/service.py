@@ -291,7 +291,9 @@ class EvaluationService:
         if generation_mode == "graph_enhanced":
             indexed_count = await self.chunk_repo.count_graph_indexed_by_kb_id(kb_id)
             if indexed_count <= 0:
-                raise ValueError("Kho kiến thức hiện tại chưa hoàn thành chỉ mục đồ thị, không thể sử dụng tăng cường đồ thị")
+                raise ValueError(
+                    "Kho kiến thức hiện tại chưa hoàn thành chỉ mục đồ thị, không thể sử dụng tăng cường đồ thị"
+                )
         build_metadata = {
             "source": "generated",
             "status": "pending",
@@ -338,7 +340,11 @@ class EvaluationService:
         )
         build_metadata["task_id"] = task.id
         await self.eval_repo.update_dataset(dataset_id, {"build_metadata": build_metadata})
-        return {"dataset_id": dataset_id, "task_id": task.id, "message": "Evaluation dataset generation task has been submitted"}
+        return {
+            "dataset_id": dataset_id,
+            "task_id": task.id,
+            "message": "Evaluation dataset generation task has been submitted",
+        }
 
     async def _update_dataset_build_metadata(
         self, dataset_id: str, metadata: dict[str, Any], **updates
@@ -390,7 +396,9 @@ class EvaluationService:
                 await report_progress(100, "Knowledge base does not exist")
                 raise ValueError("Knowledge Base not found")
             if kb_instance.kb_type != "milvus":
-                await report_progress(100, "Only supports commonrag/Milvus Type knowledge base generates evaluation data set")
+                await report_progress(
+                    100, "Only supports commonrag/Milvus Type knowledge base generates evaluation data set"
+                )
                 raise ValueError("Unsupported KB type for dataset generation")
 
             questions = []
@@ -463,7 +471,9 @@ class EvaluationService:
                     kb_instance = await knowledge_base.aget_kb(kb_id)
                     if kb_instance:
                         retrieval_config = kb_instance._get_default_query_params(kb_id).get("options", {})
-                logger.info(f"from knowledge base {kb_id} Load retrieval configuration: {list(retrieval_config.keys())}")
+                logger.info(
+                    f"from knowledge base {kb_id} Load retrieval configuration: {list(retrieval_config.keys())}"
+                )
             except Exception as e:
                 logger.error(f"Failed to obtain knowledge base retrieval configuration: {e}")
 

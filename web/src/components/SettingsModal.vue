@@ -12,7 +12,11 @@
     :bodyStyle="{ padding: 0 }"
   >
     <div class="settings-container">
-      <button class="settings-close-btn lucide-icon-btn" @click="handleClose" aria-label="Đóng cài đặt">
+      <button
+        class="settings-close-btn lucide-icon-btn"
+        @click="handleClose"
+        aria-label="Đóng cài đặt"
+      >
         <X :size="16" />
       </button>
 
@@ -91,7 +95,8 @@
           </div>
           <p class="star-card-title">cho Yuxi nhấp chuột Star</p>
           <p class="star-card-description">
-            Nếu dự án này giúp bạn，chào mừng đến GitHub ánh sáng một Star，hãy để nhiều người xem nó hơn。
+            Nếu dự án này giúp bạn，chào mừng đến GitHub ánh sáng một Star，hãy để nhiều người xem
+            nó hơn。
           </p>
           <a
             class="star-card-link"

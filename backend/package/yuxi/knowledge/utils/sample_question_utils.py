@@ -87,7 +87,9 @@ async def generate_database_sample_questions(kb_id: str, count: int = 10) -> dic
 
     kb_type = (db_info.get("kb_type") or "").lower()
     if not KnowledgeBaseFactory.get_kb_class(kb_type).supports_documents:
-        raise HTTPException(status_code=400, detail=f"{db_info.get('name') or kb_type} không hỗ trợ tạo câu hỏi kiểm tra dựa trên tệp")
+        raise HTTPException(
+            status_code=400, detail=f"{db_info.get('name') or kb_type} không hỗ trợ tạo câu hỏi kiểm tra dựa trên tệp"
+        )
 
     db_name = db_info.get("name", "")
     all_files = db_info.get("files", {})
@@ -95,7 +97,9 @@ async def generate_database_sample_questions(kb_id: str, count: int = 10) -> dic
         raise HTTPException(status_code=400, detail="Không có file trong kho kiến thức")
 
     files_info = build_sample_question_file_list(all_files)
-    logger.info(f"Start generating knowledge base questions, knowledge base: {db_name}, Number of files: {len(files_info)}, Number of questions: {count}")
+    logger.info(
+        f"Start generating knowledge base questions, knowledge base: {db_name}, Number of files: {len(files_info)}, Number of questions: {count}"
+    )
 
     model = select_model(model_spec=config.default_model)
     messages = [

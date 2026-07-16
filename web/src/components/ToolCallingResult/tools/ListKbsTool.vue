@@ -32,7 +32,9 @@ const props = defineProps({
   }
 })
 
-const toolName = computed(() => props.toolCall.name || props.toolCall.function?.name || 'cơ sở tri thức')
+const toolName = computed(
+  () => props.toolCall.name || props.toolCall.function?.name || 'cơ sở tri thức'
+)
 
 const operationLabel = computed(() => `${toolName.value} danh sách`)
 

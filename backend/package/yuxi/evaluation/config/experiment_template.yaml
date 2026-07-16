@@ -1,0 +1,16 @@
+# Mẫu cấu hình Evaluation Manifest chuẩn cho thực nghiệm đánh giá RAG tại Yuxi
+# Hãy copy mẫu này và thay thế các thông số tương ứng khi tạo Experiment mới.
+
+experiment_id: EXP_YYYY_MM_DD_SUFFIX
+dataset: internal_snapshot_v1
+embedding:
+  provider: openai  # openai, huggingface, local
+  model: text-embedding-3-small
+  revision: "2025-01"  # Phiên bản cứng để chống drift hình học
+chunker: structural_v2  # naive_standard, structural_v2, semantic_v1
+retriever: hybrid_alpha  # vector_only, hybrid_alpha, graph_multi_hop
+reranker: qwen_rerank  # qwen_rerank, bge_reranker, null
+llm: gemini-2.5-flash
+prompt_version: v2_trimmed
+nli_version: v2_smart_filtering
+date: 2026-07-15

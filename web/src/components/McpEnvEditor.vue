@@ -163,9 +163,9 @@ watch(
   () => props.modelValue,
   (value) => {
     const normalized = normalizeEnvObject(value)
-    // 传入值若只是本组件 emit Nếu có tiếng vọng ra ngoài, bỏ qua việc tái xây dựng rows。Nếu không key Các hàng trống
-    // (vừa nhấp vào hàng mới hoặc đang nhập) key Nhưng value Dòng trống khác sẽ bị
-    // rows -> object -> rows Việc đồng bộ hóa qua lại bị bỏ qua, dẫn đến không thể thêm biến môi trường mới。
+    // Nếu giá trị truyền vào chỉ là do component này emit ra, bỏ qua việc xây dựng lại rows. Nếu không, các hàng trống sẽ bị mất.
+    // (vừa nhấp vào hàng mới hoặc đang nhập nhưng value dòng trống khác sẽ bị
+    // rows -> object -> rows Việc đồng bộ hóa qua lại bị bỏ qua, dẫn đến không thể thêm biến môi trường mới.
     if (JSON.stringify(normalized) === JSON.stringify(rowsToObject(rows.value))) {
       return
     }

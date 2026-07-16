@@ -231,7 +231,11 @@ def remove_contents_table(sections: list[str] | list[tuple[str, str]], eng: bool
     i = 0
     while i < len(sections):
         line = re.sub(r"( |　|\u3000)+", "", _get_text(sections[i]).split("@@")[0], flags=re.IGNORECASE)
-        if not re.match(r"(contents|Table of contents|Table of contents|tableofcontents|Acknowledgments|acknowledge)$", line, flags=re.IGNORECASE):
+        if not re.match(
+            r"(contents|Table of contents|Table of contents|tableofcontents|Acknowledgments|acknowledge)$",
+            line,
+            flags=re.IGNORECASE,
+        ):
             i += 1
             continue
 

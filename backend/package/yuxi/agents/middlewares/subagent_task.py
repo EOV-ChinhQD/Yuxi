@@ -92,8 +92,12 @@ SUBAGENT_CANCEL_DESCRIPTION = """Cancel a running subagent run by run_id."""
 
 SUBAGENT_AWAIT_DESCRIPTION = """Wait for a subagent run to finish and return its final result."""
 
-TASK_DESCRIPTION_ARG = "Mô tả nhiệm vụ cần sub-agent hoàn thành độc lập, bao gồm ngữ cảnh cần thiết và kết quả mong muốn."
-SUBAGENT_SLUG_ARG = "Định danh (slug) của sub-agent cần gọi, phải là một trong những loại khả dụng được liệt kê trong mô tả công cụ."
+TASK_DESCRIPTION_ARG = (
+    "Mô tả nhiệm vụ cần sub-agent hoàn thành độc lập, bao gồm ngữ cảnh cần thiết và kết quả mong muốn."
+)
+SUBAGENT_SLUG_ARG = (
+    "Định danh (slug) của sub-agent cần gọi, phải là một trong những loại khả dụng được liệt kê trong mô tả công cụ."
+)
 TASK_THREAD_ID_ARG = "Tùy chọn. ID thread của sub-agent hiện có muốn tiếp tục, thường đến từ kết quả công cụ task trước đó; không điền cho nhiệm vụ mới."
 ASYNC_THREAD_ID_ARG = "Tùy chọn. ID thread của sub-agent nền muốn tiếp tục, đến từ thread_id do subagent_start trả về trước đó; không điền cho nhiệm vụ mới."
 SUBAGENT_RUN_ID_ARG = "ID chạy (run ID) của sub-agent, được trả về bởi subagent_start."
@@ -404,7 +408,9 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
             }
             if wait_timed_out:
                 payload["wait_timed_out"] = True
-                payload["message"] = "Sub-agent vẫn đang chạy, chờ kết quả cuối cùng đã hết thời gian; vui lòng truy vấn lại sau."
+                payload["message"] = (
+                    "Sub-agent vẫn đang chạy, chờ kết quả cuối cùng đã hết thời gian; vui lòng truy vấn lại sau."
+                )
             subagent_run = subagent_service.serialize_subagent_run_state(run)
             return _json_tool_command(payload, runtime.tool_call_id, subagent_run=subagent_run)
 

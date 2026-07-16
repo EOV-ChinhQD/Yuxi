@@ -21,7 +21,11 @@
               class="config-alert"
             />
             <!-- Hiển thị tất cả các mục cấu hình một cách thống nhất -->
-            <a-empty v-if="isCurrentSegmentEmpty" description="Chưa có mục cấu hình" class="config-empty" />
+            <a-empty
+              v-if="isCurrentSegmentEmpty"
+              description="Chưa có mục cấu hình"
+              class="config-empty"
+            />
             <template v-for="(value, key) in filteredConfigurableItems" :key="key">
               <a-form-item :label="getConfigLabel(key, value)" :name="key" class="config-item">
                 <p v-if="value.description" class="config-description">{{ value.description }}</p>
@@ -246,8 +250,8 @@
                 >
                   <AlertTriangle :size="14" />
                   <span>
-                    Đã bật cơ sở kiến thức，nhưng không được chọn knowledge-base Skill。Agent
-                    Tìm kiếm cơ sở kiến thức có thể không được gọi、Mở tài liệu và các công cụ khác。
+                    Đã bật cơ sở kiến thức，nhưng không được chọn knowledge-base Skill。Agent Tìm
+                    kiếm cơ sở kiến thức có thể không được gọi、Mở tài liệu và các công cụ khác。
                   </span>
                 </div>
               </a-form-item>

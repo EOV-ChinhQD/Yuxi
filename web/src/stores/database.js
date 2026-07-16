@@ -19,7 +19,9 @@ export const useDatabaseStore = defineStore('database', () => {
   const kbId = ref(null)
   const fileDetailFileId = ref(null)
   const documentFiles = ref([])
-  const folderBreadcrumbs = ref([{ file_id: null, filename: 'Tất cả các tập tin', path_prefix: '' }])
+  const folderBreadcrumbs = ref([
+    { file_id: null, filename: 'Tất cả các tập tin', path_prefix: '' }
+  ])
 
   const queryParams = ref([])
   const meta = reactive({})
@@ -277,7 +279,9 @@ export const useDatabaseStore = defineStore('database', () => {
           if (successCount > 0 && failureCount === 0) {
             message.success(`đã xóa thành công ${successCount} tập tin`)
           } else if (successCount > 0 && failureCount > 0) {
-            message.warning(`đã xóa thành công ${successCount} tập tin，${failureCount} Xóa tập tin không thành công`)
+            message.warning(
+              `đã xóa thành công ${successCount} tập tin，${failureCount} Xóa tập tin không thành công`
+            )
           } else if (failureCount > 0) {
             message.error(`${failureCount} Xóa tập tin không thành công`)
           }
@@ -438,7 +442,11 @@ export const useDatabaseStore = defineStore('database', () => {
 
   async function addFiles({ items, contentType, params, parentId }) {
     if (items.length === 0) {
-      message.error(contentType === 'file' ? 'Vui lòng tải tập tin lên trước' : 'Vui lòng nhập một liên kết web hợp lệ')
+      message.error(
+        contentType === 'file'
+          ? 'Vui lòng tải tập tin lên trước'
+          : 'Vui lòng nhập một liên kết web hợp lệ'
+      )
       return
     }
 
@@ -452,7 +460,10 @@ export const useDatabaseStore = defineStore('database', () => {
       if (data.status === 'success' || data.status === 'queued') {
         const itemType = contentType === 'file' ? 'tập tin' : 'URL'
         enableAutoRefresh('auto')
-        message.success(data.message || `${itemType}Đã gửi để xử lý，Vui lòng kiểm tra tiến độ trong trung tâm tác vụ`)
+        message.success(
+          data.message ||
+            `${itemType}Đã gửi để xử lý，Vui lòng kiểm tra tiến độ trong trung tâm tác vụ`
+        )
         if (data.task_id) {
           taskerStore.registerQueuedTask({
             task_id: data.task_id,

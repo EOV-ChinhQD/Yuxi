@@ -40,7 +40,9 @@
                 <div class="evaluation-start-dropdown" @click.stop>
                   <div class="dropdown-header">
                     <div class="dropdown-title">Cấu hình đánh giá này</div>
-                    <div class="dropdown-subtitle">Bắt đầu đánh giá sau khi chọn đường cơ sở đánh giá và các mô hình tùy chọn</div>
+                    <div class="dropdown-subtitle">
+                      Bắt đầu đánh giá sau khi chọn đường cơ sở đánh giá và các mô hình tùy chọn
+                    </div>
                   </div>
 
                   <div class="dropdown-model-fields">
@@ -195,7 +197,8 @@
           </div>
 
           <div v-else class="last-evaluation-empty">
-            Chưa có hồ sơ đánh giá，Sau khi bắt đầu đánh giá, kết quả mới nhất sẽ được hiển thị tại đây.。
+            Chưa có hồ sơ đánh giá，Sau khi bắt đầu đánh giá, kết quả mới nhất sẽ được hiển thị tại
+            đây.。
           </div>
         </div>
 
@@ -260,7 +263,9 @@
     <div v-if="resultModalVisible" class="evaluation-detail-overlay">
       <div class="evaluation-detail-panel">
         <div class="evaluation-detail-titlebar">
-          <div class="evaluation-detail-title">Kết quả đánh giá - {{ getRunName(selectedResult) }}</div>
+          <div class="evaluation-detail-title">
+            Kết quả đánh giá - {{ getRunName(selectedResult) }}
+          </div>
           <a-button
             type="text"
             size="small"
@@ -300,7 +305,9 @@
                 <span v-else>-</span>
               </span>
               <span class="summary-item">Tổng số câu hỏi：{{ selectedResult.total_items }}</span>
-              <span class="summary-item">Số lần hoàn thành：{{ selectedResult.completed_items }}</span>
+              <span class="summary-item"
+                >Số lần hoàn thành：{{ selectedResult.completed_items }}</span
+              >
               <span class="summary-item">
                 Tổng thời gian sử dụng：{{
                   evaluationStats.totalDuration
@@ -364,7 +371,8 @@
               showSizeChanger: true,
               pageSizeOptions: ['10', '20', '50', '100'],
               showQuickJumper: true,
-              showTotal: (total, range) => `Không. ${range[0]}-${range[1]} Bài viết，tổng cộng ${total} Bài viết`,
+              showTotal: (total, range) =>
+                `Không. ${range[0]}-${range[1]} Bài viết，tổng cộng ${total} Bài viết`,
               onChange: handlePageChange,
               onShowSizeChange: handlePageSizeChange
             }"
@@ -530,9 +538,12 @@ const configForm = reactive({
 })
 
 const evaluationStartHint = computed(() => {
-  if (!selectedDataset.value?.has_gold_answers) return 'Điểm chuẩn hiện tại chỉ thực hiện đánh giá truy xuất，Không cần chọn mẫu。'
-  if (!configForm.answer_llm && !configForm.judge_llm) return 'Khi không chọn mẫu，Chỉ đánh giá tìm kiếm sẽ được thực hiện。'
-  if (configForm.answer_llm && configForm.judge_llm) return 'Đánh giá tìm kiếm và đánh giá câu trả lời sẽ được thực hiện。'
+  if (!selectedDataset.value?.has_gold_answers)
+    return 'Điểm chuẩn hiện tại chỉ thực hiện đánh giá truy xuất，Không cần chọn mẫu。'
+  if (!configForm.answer_llm && !configForm.judge_llm)
+    return 'Khi không chọn mẫu，Chỉ đánh giá tìm kiếm sẽ được thực hiện。'
+  if (configForm.answer_llm && configForm.judge_llm)
+    return 'Đánh giá tìm kiếm và đánh giá câu trả lời sẽ được thực hiện。'
   return 'Mô hình tạo câu trả lời và mô hình đánh giá câu trả lời cần được lựa chọn đồng thời。'
 })
 
@@ -788,7 +799,9 @@ const loadDatasets = async (showSuccessMessage = false) => {
 
       // Nếu bạn làm mới theo cách thủ công，Hiển thị thông báo thành công
       if (showSuccessMessage) {
-        message.success(`Đã làm mới，tìm thấy ${completedDatasets.length} một điểm chuẩn có thể đánh giá được`)
+        message.success(
+          `Đã làm mới，tìm thấy ${completedDatasets.length} một điểm chuẩn có thể đánh giá được`
+        )
       }
     } else {
       console.error('Định dạng phản hồi không như mong đợi:', response)
@@ -860,7 +873,9 @@ const startEvaluation = async () => {
   const runName = configForm.name.trim()
 
   if (hasAnswerModel !== hasJudgeModel) {
-    message.warning('Mô hình phát điện và mô hình đánh giá phải được chọn cùng lúc hoặc không được chọn cùng lúc.')
+    message.warning(
+      'Mô hình phát điện và mô hình đánh giá phải được chọn cùng lúc hoặc không được chọn cùng lúc.'
+    )
     return
   }
   if (!runName) {

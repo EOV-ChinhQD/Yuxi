@@ -208,9 +208,7 @@ class KnowledgeChunkRepository:
     async def update_neo4j_sync_status(self, chunk_id: str, status: str) -> None:
         async with pg_manager.get_async_session_context() as session:
             await session.execute(
-                update(KnowledgeChunk)
-                .where(KnowledgeChunk.chunk_id == chunk_id)
-                .values(neo4j_sync_status=status)
+                update(KnowledgeChunk).where(KnowledgeChunk.chunk_id == chunk_id).values(neo4j_sync_status=status)
             )
 
     async def list_by_neo4j_status(self, kb_id: str, status: str, limit: int) -> list[KnowledgeChunk]:

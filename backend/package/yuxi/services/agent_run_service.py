@@ -52,7 +52,9 @@ from yuxi.utils.hash_utils import hash_id
 from yuxi.utils.logging_config import logger
 
 SSE_HEARTBEAT_SECONDS = int(os.getenv("RUN_SSE_HEARTBEAT_SECONDS", "15"))  # Thời gian SSE rảnh trước khi gửi heartbeat
-SSE_MAX_CONNECTION_MINUTES = int(os.getenv("RUN_SSE_MAX_CONNECTION_MINUTES", "30"))  # Thời gian tồn tại tối đa của kết nối SSE
+SSE_MAX_CONNECTION_MINUTES = int(
+    os.getenv("RUN_SSE_MAX_CONNECTION_MINUTES", "30")
+)  # Thời gian tồn tại tối đa của kết nối SSE
 SSE_POLL_INTERVAL_SECONDS = float(os.getenv("RUN_SSE_POLL_INTERVAL_SECONDS", "1.0"))  # Khoảng cách polling SSE
 RUN_PROGRESS_RECENT_EVENT_SCAN_LIMIT = 100
 RUN_PROGRESS_MESSAGE_LIMIT = 3
@@ -653,7 +655,9 @@ async def prepare_agent_run_creation_scope(
             if not parent_run or parent_run.conversation_thread_id != conversation_thread_id:
                 raise HTTPException(status_code=404, detail="Lượt chạy cần khôi phục không tồn tại")
             if parent_run.status != "interrupted":
-                raise HTTPException(status_code=409, detail="Chỉ lượt chạy bị ngắt (interrupted run) mới có thể khôi phục")
+                raise HTTPException(
+                    status_code=409, detail="Chỉ lượt chạy bị ngắt (interrupted run) mới có thể khôi phục"
+                )
             parent_payload = parent_run.input_payload
             if not isinstance(parent_payload, dict) or not parent_payload.get("model_spec"):
                 raise HTTPException(status_code=409, detail="Lượt chạy cần khôi phục thiếu ảnh chụp mô hình")

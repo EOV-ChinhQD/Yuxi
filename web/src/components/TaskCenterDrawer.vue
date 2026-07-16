@@ -220,15 +220,25 @@ const hasTasks = computed(() => filteredTasks.value.length > 0)
 const emptyHint = computed(() => {
   switch (statusFilter.value) {
     case 'active':
-      return { title: 'Không có nhiệm vụ nào đang diễn ra', subtitle: 'Không có tác vụ nền nào hiện đang thực thi。' }
+      return {
+        title: 'Không có nhiệm vụ nào đang diễn ra',
+        subtitle: 'Không có tác vụ nền nào hiện đang thực thi。'
+      }
     case 'success':
-      return { title: 'Chưa hoàn thành nhiệm vụ nào', subtitle: 'Các tác vụ nền được thực hiện thành công sẽ được hiển thị ở đây。' }
+      return {
+        title: 'Chưa hoàn thành nhiệm vụ nào',
+        subtitle: 'Các tác vụ nền được thực hiện thành công sẽ được hiển thị ở đây。'
+      }
     case 'failed':
-      return { title: 'Chưa có nhiệm vụ thất bại nào', subtitle: 'Các tác vụ nền bị lỗi hoặc bị hủy sẽ xuất hiện ở đây。' }
+      return {
+        title: 'Chưa có nhiệm vụ thất bại nào',
+        subtitle: 'Các tác vụ nền bị lỗi hoặc bị hủy sẽ xuất hiện ở đây。'
+      }
     default:
       return {
         title: 'Chưa có nhiệm vụ nào',
-        subtitle: 'Sau khi gửi các tác vụ nền như nhập cơ sở kiến thức,，Tiến trình theo thời gian thực sẽ được hiển thị ở đây（Chỉ hiển thị gần đây nhất 100 nhiệm vụ）。'
+        subtitle:
+          'Sau khi gửi các tác vụ nền như nhập cơ sở kiến thức,，Tiến trình theo thời gian thực sẽ được hiển thị ở đây（Chỉ hiển thị gần đây nhất 100 nhiệm vụ）。'
       }
   }
 })

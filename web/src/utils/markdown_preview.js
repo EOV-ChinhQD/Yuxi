@@ -184,26 +184,28 @@ const createRenderer = ({ themeName, highlighter }) => {
     .use(taskLists, { enabled: false, label: false, labelAfter: false })
     .use(markdownItFrontmatterCard)
 
-  const defaultImageRenderer = md.renderer.rules.image || function(tokens, idx, options, env, self) {
-    return self.renderToken(tokens, idx, options);
-  };
-  md.renderer.rules.image = function(tokens, idx, options, env, self) {
-    const token = tokens[idx];
-    const srcIndex = token.attrIndex('src');
+  const defaultImageRenderer =
+    md.renderer.rules.image ||
+    function (tokens, idx, options, env, self) {
+      return self.renderToken(tokens, idx, options)
+    }
+  md.renderer.rules.image = function (tokens, idx, options, env, self) {
+    const token = tokens[idx]
+    const srcIndex = token.attrIndex('src')
     if (srcIndex >= 0) {
-      let src = token.attrs[srcIndex][1];
+      let src = token.attrs[srcIndex][1]
       if (src && src.startsWith('/api/')) {
-        const authToken = localStorage.getItem('user_token');
+        const authToken = localStorage.getItem('user_token')
         if (authToken) {
-          const separator = src.includes('?') ? '&' : '?';
-          token.attrs[srcIndex][1] = `${src}${separator}token=${encodeURIComponent(authToken)}`;
+          const separator = src.includes('?') ? '&' : '?'
+          token.attrs[srcIndex][1] = `${src}${separator}token=${encodeURIComponent(authToken)}`
         }
       }
     }
-    return defaultImageRenderer(tokens, idx, options, env, self);
-  };
+    return defaultImageRenderer(tokens, idx, options, env, self)
+  }
 
-  return md;
+  return md
 }
 
 const getRenderer = async (theme, needsHighlight) => {

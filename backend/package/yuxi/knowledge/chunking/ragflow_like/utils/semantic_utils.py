@@ -21,7 +21,9 @@ def _ensure_punkt_tab() -> None:
     try:
         nltk.data.find("tokenizers/punkt_tab")
     except LookupError as e:
-        raise RuntimeError("Thiếu tài nguyên NLTK punkt_tab. Vui lòng chạy: python -m nltk.downloader punkt_tab trước") from e
+        raise RuntimeError(
+            "Thiếu tài nguyên NLTK punkt_tab. Vui lòng chạy: python -m nltk.downloader punkt_tab trước"
+        ) from e
 
     _punkt_checked = True
 

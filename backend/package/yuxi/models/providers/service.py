@@ -88,7 +88,9 @@ def _validate_models_capabilities(enabled_models: list[dict], capabilities: set[
     """Verify that the types of all models in enabled_models are within the scope of provider capabilities."""
     for model in enabled_models or []:
         if model["type"] not in capabilities:
-            raise ValueError(f"type={model['type']} của model {model['id']} không nằm trong khả năng của provider {sorted(capabilities)}")
+            raise ValueError(
+                f"type={model['type']} của model {model['id']} không nằm trong khả năng của provider {sorted(capabilities)}"
+            )
 
 
 _FIELD_DEFAULTS: dict[str, Any] = {

@@ -388,7 +388,11 @@ class Tasker:
             task = Task.from_dict(record.to_dict())
             if task.status not in TERMINAL_STATUSES:
                 # After the process is restarted, the memory queue has been lost and cannot be continued, and is marked as failed.
-                task.message = "Task interrupted when service restarts" if task.status == "running" else "The task did not continue execution when the service was restarted"
+                task.message = (
+                    "Task interrupted when service restarts"
+                    if task.status == "running"
+                    else "The task did not continue execution when the service was restarted"
+                )
                 task.status = "failed"
                 task.updated_at = utc_isoformat()
                 await self._persist_task(task)

@@ -24,7 +24,10 @@
     </PageShoulder>
 
     <div v-if="filteredTools.length === 0" class="extension-card-grid-empty-state">
-      <a-empty :image="false" :description="searchQuery ? 'Không có công cụ phù hợp' : 'Chưa có công cụ nào'" />
+      <a-empty
+        :image="false"
+        :description="searchQuery ? 'Không có công cụ phù hợp' : 'Chưa có công cụ nào'"
+      />
     </div>
 
     <ExtensionCardGrid v-else>
@@ -131,7 +134,12 @@ const currentTool = ref(null)
 const detailVisible = ref(false)
 
 const categories = ['buildin', 'knowledge', 'mysql', 'debug']
-const categoryLabels = { buildin: 'Công cụ tích hợp', knowledge: 'cơ sở tri thức', mysql: 'MySQL', debug: 'Gỡ lỗi' }
+const categoryLabels = {
+  buildin: 'Công cụ tích hợp',
+  knowledge: 'cơ sở tri thức',
+  mysql: 'MySQL',
+  debug: 'Gỡ lỗi'
+}
 const categoryColors = { buildin: 'blue', knowledge: 'purple', mysql: 'green', debug: 'orange' }
 
 const getToolSlug = (tool) => tool?.slug || tool?.id || ''

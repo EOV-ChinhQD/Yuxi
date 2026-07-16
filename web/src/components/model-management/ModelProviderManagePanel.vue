@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   Globe,
@@ -20,6 +20,8 @@ import { modelIcons } from '@/utils/modelIcon'
 import PageShoulder from '@/components/shared/PageShoulder.vue'
 import InfoCard from '@/components/shared/InfoCard.vue'
 import ExtensionCardGrid from '@/components/extensions/ExtensionCardGrid.vue'
+import ProviderCatalogModal from './ProviderCatalogModal.vue'
+import ProviderConfigModal from './ProviderConfigModal.vue'
 
 const configStore = useConfigStore()
 const loading = ref(false)
@@ -31,36 +33,11 @@ const searchQuery = ref('')
 const modelTestLoadingBySpec = ref({})
 const modelTestResultBySpec = ref({})
 
-const PROVIDER_TYPE_OPTIONS = [
-  { value: 'openai', label: 'OpenAI Completions API' },
-  { value: 'anthropic', label: 'Anthropic Messages API' }
-]
-
-const providerTypeLabelMap = Object.fromEntries(
-  PROVIDER_TYPE_OPTIONS.map((option) => [option.value, option.label])
-)
-
-// Provider form state
-const showProviderModal = ref(false)
-const editingProviderId = ref(null) // null = creating, string = editing
-const providerForm = reactive({
-  provider_id: '',
-  display_name: '',
-  provider_type: 'openai',
-  default_protocol: 'openai_compatible',
-  base_url: '',
-  embedding_base_url: '',
-  rerank_base_url: '',
-  models_endpoint: '/models',
-  embedding_models_endpoint: '/embeddings/models',
-  rerank_models_endpoint: '',
-  api_key_env: '',
-  api_key: '',
-  capabilities: ['chat'],
-  is_enabled: true,
-  headers_text: '{}',
-  extra_text: '{}'
-})
+// Modals state
+const showCatalogModal = ref(false)
+const showConfigModal = ref(false)
+const configModalMode = ref('quick') // 'quick' | 'full' | 'edit'
+const selectedProviderForConfig = ref(null)
 
 // Model form state
 const showModelModal = ref(false)
@@ -131,8 +108,15 @@ const getProviderIcon = (provider) => {
   return modelIcons[providerId] || modelIcons[providerType] || modelIcons.default
 }
 
-const getProviderTypeLabel = (providerType) =>
-  providerTypeLabelMap[providerType] || providerType || '-'
+const getProviderTypeLabel = (providerType) => {
+  const map = {
+    openai: 'OpenAI Completions API',
+    anthropic: 'Anthropic Messages API',
+    gemini: 'Google Gemini API',
+    openrouter: 'OpenRouter API'
+  }
+  return map[providerType] || providerType || '-'
+}
 
 const getIconUrl = (icon) => {
   if (!icon) return modelIcons.default
@@ -190,7 +174,9 @@ const isDefaultModel = (providerId, modelId) =>
   defaultModelSpec.value === buildModelSpec(providerId, modelId)
 
 const warnDefaultModelProtected = () => {
-  message.warning('Mô hình mặc định hiện tại đang sử dụng nhà cung cấp hoặc mô hình này, vui lòng chuyển đổi mô hình mặc định trước')
+  message.warning(
+    'Mô hình mặc định hiện tại đang sử dụng nhà cung cấp hoặc mô hình này, vui lòng chuyển đổi mô hình mặc định trước'
+  )
 }
 
 const isModelTesting = (providerId, modelId) =>
@@ -273,19 +259,6 @@ const editingModelTypeOptions = computed(() => {
   return types.map((c) => ({ value: c, label: c }))
 })
 
-const parseJsonObject = (text, label) => {
-  try {
-    const parsed = JSON.parse(text || '{}')
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-      throw new Error(`${label} phải là JSON vật thể`)
-    }
-    return parsed
-  } catch {
-    throw new Error(`${label} Định dạng không chính xác`)
-  }
-}
-
-const formatJsonText = (value) => JSON.stringify(value || {}, null, 2)
 const loadProviders = async () => {
   loading.value = true
   try {
@@ -311,150 +284,56 @@ function getProviderInfo(provider) {
 
 function getProviderStatus(provider) {
   if (!provider.is_enabled) return { label: 'Chưa bật', level: 'info' }
-  if (provider.credential_status === 'warning') return { label: 'Thiếu thông tin xác thực', level: 'warning' }
+  if (provider.credential_status === 'warning')
+    return { label: 'Thiếu thông tin xác thực', level: 'warning' }
   if (provider.is_enabled) return { label: '', level: 'success' }
   return null
 }
 
+const handleSelectCatalogProvider = ({ mode, provider }) => {
+  if (mode === 'quick' && provider) {
+    selectedProviderForConfig.value = {
+      provider_id: provider.provider_id,
+      display_name: provider.display_name,
+      provider_type: provider.provider_type || 'openai',
+      default_protocol: '',
+      base_url: provider.base_url || '',
+      embedding_base_url: provider.embedding_base_url || '',
+      rerank_base_url: provider.rerank_base_url || '',
+      models_endpoint: provider.models_endpoint || '/models',
+      embedding_models_endpoint: provider.embedding_models_endpoint || '/embeddings/models',
+      rerank_models_endpoint: provider.rerank_models_endpoint || '',
+      api_key_env: provider.api_key_env || '',
+      api_key: '',
+      capabilities: provider.capabilities || ['chat'],
+      is_enabled: true,
+      is_builtin: true,
+      headers_json: {},
+      extra_json: {}
+    }
+  } else {
+    selectedProviderForConfig.value = null
+  }
+  configModalMode.value = mode
+  showConfigModal.value = true
+}
+
 const openCreateProviderModal = () => {
-  editingProviderId.value = null
-  Object.assign(providerForm, {
-    provider_id: '',
-    display_name: '',
-    provider_type: 'openai',
-    default_protocol: '',
-    base_url: '',
-    embedding_base_url: '',
-    rerank_base_url: '',
-    models_endpoint: '/models',
-    embedding_models_endpoint: '/embeddings/models',
-    rerank_models_endpoint: '',
-    api_key_env: '',
-    api_key: '',
-    capabilities: ['chat'],
-    is_enabled: true,
-    headers_text: '{}',
-    extra_text: '{}'
-  })
-  showProviderModal.value = true
+  showCatalogModal.value = true
 }
 
 const openEditProviderModal = (provider) => {
-  editingProviderId.value = provider.provider_id
-  Object.assign(providerForm, {
-    provider_id: provider.provider_id,
-    display_name: provider.display_name,
-    provider_type: provider.provider_type || 'openai',
-    default_protocol: '',
-    base_url: provider.base_url || '',
-    embedding_base_url: provider.embedding_base_url || '',
-    rerank_base_url: provider.rerank_base_url || '',
-    models_endpoint: provider.models_endpoint ?? '',
-    embedding_models_endpoint: provider.embedding_models_endpoint ?? '',
-    rerank_models_endpoint: provider.rerank_models_endpoint ?? '',
-    api_key_env: provider.api_key_env || '',
-    api_key: provider.api_key || '',
-    capabilities: provider.capabilities?.length ? provider.capabilities : ['chat'],
-    is_enabled: provider.is_enabled !== false,
-    headers_text: formatJsonText(provider.headers_json),
-    extra_text: formatJsonText(provider.extra_json)
-  })
-  showProviderModal.value = true
+  selectedProviderForConfig.value = provider
+  configModalMode.value = 'edit'
+  showConfigModal.value = true
 }
 
-const buildProviderPayload = () => ({
-  provider_id: providerForm.provider_id || undefined,
-  display_name: providerForm.display_name,
-  provider_type: providerForm.provider_type,
-  default_protocol: null,
-  base_url: providerForm.base_url,
-  embedding_base_url: providerForm.embedding_base_url || null,
-  rerank_base_url: providerForm.rerank_base_url || null,
-  models_endpoint: providerForm.models_endpoint || null,
-  embedding_models_endpoint: providerForm.embedding_models_endpoint || null,
-  rerank_models_endpoint: providerForm.rerank_models_endpoint || null,
-  api_key_env: providerForm.api_key_env || null,
-  api_key: providerForm.api_key || null,
-  capabilities: providerForm.capabilities,
-  is_enabled: providerForm.is_enabled,
-  headers_json: parseJsonObject(providerForm.headers_text, 'Tiêu đề yêu cầu'),
-  extra_json: parseJsonObject(providerForm.extra_text, 'cấu hình mở rộng')
-})
-
-const createProvider = async () => {
-  saving.value = true
-  try {
-    await modelProviderApi.createProvider(buildProviderPayload())
-    message.success('Nhà cung cấp đã được tạo')
-    showProviderModal.value = false
-    await loadProviders()
-  } catch (error) {
-    message.error(error.message || 'Tạo không thành công')
-  } finally {
-    saving.value = false
+const handleDeletedProvider = (providerId) => {
+  if (currentProviderForModels.value?.provider_id === providerId) {
+    showModelsModal.value = false
+    currentProviderForModels.value = null
   }
-}
-
-const saveProvider = async () => {
-  if (
-    editingProviderId.value &&
-    providerContainsDefaultModel(providerForm.provider_id) &&
-    providerForm.is_enabled === false
-  ) {
-    warnDefaultModelProtected()
-    return
-  }
-
-  saving.value = true
-  try {
-    await modelProviderApi.updateProvider(providerForm.provider_id, buildProviderPayload())
-    message.success('Đã lưu nhà cung cấp')
-    showProviderModal.value = false
-    await loadProviders()
-  } catch (error) {
-    message.error(error.message || 'Lưu không thành công')
-  } finally {
-    saving.value = false
-  }
-}
-
-const deleteProvider = async (provider) => {
-  if (providerContainsDefaultModel(provider.provider_id)) {
-    warnDefaultModelProtected()
-    return
-  }
-
-  Modal.confirm({
-    title: `Xóa ${provider.display_name}`,
-    content: 'Việc xóa sẽ không ảnh hưởng đến cấu hình model cũ hiện đang được hệ thống sử dụng.。',
-    okText: 'Xóa',
-    okType: 'danger',
-    cancelText: 'Hủy bỏ',
-    async onOk() {
-      try {
-        await modelProviderApi.deleteProvider(provider.provider_id)
-        message.success('Đã xóa')
-        if (currentProviderForModels.value?.provider_id === provider.provider_id) {
-          showModelsModal.value = false
-          currentProviderForModels.value = null
-        }
-        if (editingProviderId.value === provider.provider_id) {
-          showProviderModal.value = false
-          editingProviderId.value = null
-        }
-        await loadProviders()
-      } catch (error) {
-        message.error(error.message || 'Xóa không thành công')
-      }
-    }
-  })
-}
-
-const deleteProviderFromEdit = async () => {
-  const provider = providers.value.find((p) => p.provider_id === editingProviderId.value)
-  if (provider) {
-    deleteProvider(provider)
-  }
+  loadProviders()
 }
 
 const toggleProviderEnabled = async (provider, checked) => {
@@ -745,164 +624,23 @@ defineExpose({
       </InfoCard>
     </ExtensionCardGrid>
 
-    <!-- Provider Edit Modal -->
-    <a-modal
-      v-model:open="showProviderModal"
-      :title="editingProviderId ? 'Chỉnh sửa nhà cung cấp' : 'Thêm nhà cung cấp mới'"
-      :width="560"
-      :confirm-loading="saving"
-    >
-      <template #footer>
-        <div class="provider-modal-footer">
-          <a-button
-            v-if="editingProviderId"
-            danger
-            class="lucide-icon-btn"
-            @click="deleteProviderFromEdit"
-          >
-            <Trash2 :size="14" />
-            Xóa nhà cung cấp
-          </a-button>
-          <span v-else></span>
-          <div class="provider-modal-footer-actions">
-            <a-button @click="showProviderModal = false">Hủy bỏ</a-button>
-            <a-button
-              type="primary"
-              :loading="saving"
-              @click="editingProviderId ? saveProvider() : createProvider()"
-            >
-              Xác nhận
-            </a-button>
-          </div>
-        </div>
-      </template>
-      <div class="modal-form">
-        <div class="form-row">
-          <label class="form-label">
-            <span>Provider ID</span>
-            <a-input
-              v-model:value="providerForm.provider_id"
-              :disabled="!!editingProviderId"
-              placeholder="my-provider"
-            />
-          </label>
-          <label class="form-label">
-            <span>tên hiển thị</span>
-            <a-input v-model:value="providerForm.display_name" placeholder="My Provider" />
-          </label>
-        </div>
+    <!-- Provider Catalog Modal -->
+    <ProviderCatalogModal
+      v-model:open="showCatalogModal"
+      :active-providers="providers"
+      @select="handleSelectCatalogProvider"
+    />
 
-        <div class="form-row">
-          <label class="form-label">
-            <span>Base URL</span>
-            <a-input
-              v-model:value="providerForm.base_url"
-              placeholder="https://api.example.com/v1"
-            />
-          </label>
-          <label class="form-label">
-            <span>Provider Type</span>
-            <a-select v-model:value="providerForm.provider_type">
-              <a-select-option
-                v-for="option in PROVIDER_TYPE_OPTIONS"
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </a-select-option>
-            </a-select>
-          </label>
-        </div>
-
-        <div class="form-row">
-          <label class="form-label">
-            <span>API Key Env</span>
-            <a-input v-model:value="providerForm.api_key_env" placeholder="Tên biến môi trường" />
-          </label>
-          <label class="form-label">
-            <span>API Key</span>
-            <a-input-password v-model:value="providerForm.api_key" />
-          </label>
-        </div>
-
-        <div class="form-row">
-          <label class="form-label">
-            <span>Models Endpoint</span>
-            <a-input v-model:value="providerForm.models_endpoint" placeholder="/models" />
-          </label>
-        </div>
-
-        <template v-if="providerForm.capabilities.includes('embedding')">
-          <div class="form-row">
-            <label class="form-label">
-              <span>Embedding Base URL</span>
-              <a-input
-                v-model:value="providerForm.embedding_base_url"
-                placeholder="https://api.example.com/v1/embeddings"
-              />
-            </label>
-            <label class="form-label">
-              <span>Embedding Endpoint</span>
-              <a-input
-                v-model:value="providerForm.embedding_models_endpoint"
-                placeholder="/embeddings/models"
-              />
-            </label>
-          </div>
-        </template>
-
-        <template v-if="providerForm.capabilities.includes('rerank')">
-          <div class="form-row">
-            <label class="form-label">
-              <span>Rerank Base URL</span>
-              <a-input
-                v-model:value="providerForm.rerank_base_url"
-                placeholder="https://api.example.com/v1/rerank"
-              />
-            </label>
-            <label class="form-label">
-              <span>Rerank Endpoint</span>
-              <a-input
-                v-model:value="providerForm.rerank_models_endpoint"
-                placeholder="Điền theo tài liệu của nhà cung cấp，Để trống để không tự động tải"
-              />
-            </label>
-          </div>
-        </template>
-
-        <label class="form-label full-width">
-          <span>khả năng</span>
-          <a-select v-model:value="providerForm.capabilities" mode="multiple">
-            <a-select-option value="chat">chat</a-select-option>
-            <a-select-option value="embedding">embedding</a-select-option>
-            <a-select-option value="rerank">rerank</a-select-option>
-          </a-select>
-        </label>
-
-        <div class="form-switch">
-          <span>Trạng thái</span>
-          <a-switch
-            v-model:checked="providerForm.is_enabled"
-            checked-children="kích hoạt"
-            un-checked-children="vô hiệu hóa"
-          />
-        </div>
-
-        <a-collapse expand-icon-position="end" :ghost="true" class="advanced-collapse">
-          <a-collapse-panel key="advanced" header="Cấu hình nâng cao">
-            <label class="form-label full-width">
-              <span>Tiêu đề yêu cầu JSON</span>
-              <a-textarea v-model:value="providerForm.headers_text" :rows="4" placeholder="{}" />
-            </label>
-
-            <label class="form-label full-width">
-              <span>cấu hình mở rộng JSON</span>
-              <a-textarea v-model:value="providerForm.extra_text" :rows="4" placeholder="{}" />
-            </label>
-          </a-collapse-panel>
-        </a-collapse>
-      </div>
-    </a-modal>
+    <!-- Provider Setup/Config Modal -->
+    <ProviderConfigModal
+      v-model:open="showConfigModal"
+      :mode="configModalMode"
+      :initial-data="selectedProviderForConfig"
+      :provider-contains-default-model="providerContainsDefaultModel"
+      :warn-default-model-protected="warnDefaultModelProtected"
+      @saved="loadProviders"
+      @deleted="handleDeletedProvider"
+    />
     <!-- Models Management Modal -->
     <a-modal
       v-model:open="showModelsModal"
@@ -1019,7 +757,9 @@ defineExpose({
         <!-- Remote Models Section -->
         <div class="models-section">
           <div class="remote-header">
-            <h4 class="models-section-title">mô hình ứng viên từ xa ({{ filteredRemoteModels.length }})</h4>
+            <h4 class="models-section-title">
+              mô hình ứng viên từ xa ({{ filteredRemoteModels.length }})
+            </h4>
             <a-input
               v-if="remoteModelsMap[currentProviderForModels.provider_id]?.length"
               v-model:value="remoteModelSearch[currentProviderForModels.provider_id]"

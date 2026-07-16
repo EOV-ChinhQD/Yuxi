@@ -2,20 +2,25 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
+
 @dataclass
 class ChunkMetadata:
     """Metadata ngữ cảnh cho chunk — KHÔNG ghi vào raw text."""
-    heading_path: list[str] = field(default_factory=list)   # ["H1 Title", "H2 Section"]
-    section_type: str = ""                                   # "text", "table", "equation", "code"
+
+    heading_path: list[str] = field(default_factory=list)  # ["H1 Title", "H2 Section"]
+    section_type: str = ""  # "text", "table", "equation", "code"
     page_number: int | None = None
-    depth: int = 0                                           # Heading depth in tree
+    depth: int = 0  # Heading depth in tree
+
 
 @dataclass
 class ChunkResult:
     """Output chuẩn hóa từ mọi Chunker."""
-    content: str                                             # Raw text, KHÔNG chứa context prefix
+
+    content: str  # Raw text, KHÔNG chứa context prefix
     metadata: ChunkMetadata = field(default_factory=ChunkMetadata)
     token_count: int = 0
+
 
 class BaseChunker(ABC):
     """Interface cho tất cả chunker implementations."""

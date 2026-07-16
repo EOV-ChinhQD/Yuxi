@@ -1,7 +1,8 @@
 <template>
   <div class="kb-result-grouped-list">
     <div v-if="showSummary" class="result-summary">
-      tìm thấy {{ normalizedChunks.length }} đoạn tài liệu liên quan，từ {{ fileGroupList.length }} tập tin
+      tìm thấy {{ normalizedChunks.length }} đoạn tài liệu liên quan，từ
+      {{ fileGroupList.length }} tập tin
     </div>
 
     <div class="kb-results" v-if="normalizedChunks.length > 0">
@@ -196,7 +197,9 @@ const getLineRange = (chunk) => {
   const startLine = Number(chunk?.metadata?.start_line || 0)
   const endLine = Number(chunk?.metadata?.end_line || 0)
   if (!startLine || !endLine) return ''
-  return startLine === endLine ? `Không. ${startLine} được rồi` : `Không. ${startLine}-${endLine} được rồi`
+  return startLine === endLine
+    ? `Không. ${startLine} được rồi`
+    : `Không. ${startLine}-${endLine} được rồi`
 }
 
 const openChunkDetail = (chunk, index) => {

@@ -1,0 +1,14 @@
+# Cấu hình Baseline Bất biến (Immutable) của Naive RAG tại Yuxi
+# Dùng để đối chiếu đo lường độ suy thoái (Regression) hoặc cải tiến của các thử nghiệm sau này.
+
+experiment_id: BASELINE_V1
+dataset: internal_snapshot_v1
+embedding:
+  provider: openai
+  model: text-embedding-3-small
+  revision: "2025-01"
+chunker: naive_standard
+retriever: vector_only
+reranker: null
+llm: gemini-1.5-flash
+date: 2026-07-15

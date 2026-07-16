@@ -183,7 +183,10 @@
               />
 
               <div class="bottom-actions" v-if="conversations.length > 0">
-                <p class="note">Current Agent: {{ currentThreadAgentName }}; please note to verify the reliability of the content</p>
+                <p class="note">
+                  Current Agent: {{ currentThreadAgentName }}; please note to verify the reliability
+                  of the content
+                </p>
               </div>
             </div>
           </div>
@@ -830,7 +833,9 @@ const getArtifactMetaLabel = (path) => {
 const getSubagentRunName = (run) => {
   const subagentSlug = run?.subagent_slug ? String(run.subagent_slug) : ''
   return (
-    run?.subagent_name || currentSubagentOptionBySlug.value.get(subagentSlug)?.name || 'Trợ lý thông minh con'
+    run?.subagent_name ||
+    currentSubagentOptionBySlug.value.get(subagentSlug)?.name ||
+    'Trợ lý thông minh con'
   )
 }
 
@@ -958,8 +963,8 @@ const currentAgent = computed(() => {
 })
 const currentChatId = computed(() => currentThreadId.value)
 
-// ==================== Bộ phủ mô hình cấp độ trò chuyện ====================
-// Nhấn线程记忆用户Chọncủa模型；Chưa chọn时回退到đại lý thông minh配置của模型。
+// ==================== Ghi đè mô hình ở cấp độ hội thoại ====================
+// Lưu lựa chọn mô hình của người dùng theo thread. Nếu chưa chọn thì quay về mô hình cấu hình của tác nhân.
 const DRAFT_MODEL_KEY = '__draft__'
 const selectedModelByThread = reactive({})
 const agentDefaultModel = computed(
@@ -1350,10 +1355,10 @@ const shouldSuppressRefsForApproval = () =>
     approvalState.threadId && currentChatId.value === approvalState.threadId && isProcessing.value
   )
 
-// Xác định xem một lượt hội thoại đã 'kết thúc' chưa, tức là có thể hiển thị refs（Nguồn/Hành động栏）：
-// - 后面紧跟của下一轮Với human message 开头（ngay lập tức用户Kích hoạt了新一轮）→ Đã收尾；
-// - 它是最后一轮，且当前没有正在生成回复 → Đã收尾。
-// 反之（后面跟của是没有 human message của AI Tiếp tục, ví dụ resume Tiếp tục viết; hoặc vẫn đang trong quá trình tạo) → Chưa hoàn thành, không hiển thị。
+// Xác định xem một lượt hội thoại đã 'kết thúc' chưa, tức là có thể hiển thị refs (Nguồn/Thanh hành động):
+// - Phía sau có ngay lượt hội thoại tiếp theo bắt đầu bằng tin nhắn của người dùng (human message) -> Đã kết thúc.
+// - Đây là lượt hội thoại cuối cùng và hiện tại không có phản hồi nào đang được tạo -> Đã kết thúc.
+// Ngược lại (phía sau không có human message mà là AI tiếp tục viết, hoặc vẫn đang trong quá trình tạo) -> Chưa hoàn thành, không hiển thị.
 const isConversationSettled = (conv) => {
   const convs = conversations.value
   const idx = convs.indexOf(conv)
@@ -1402,12 +1407,10 @@ const getThreadOngoingMessages = (threadId) => {
 
 const onGoingConvMessages = computed(() => getThreadOngoingMessages(currentChatId.value))
 
-// Để sâu hơn TaskTool Đọc quỹ đạo thời gian thực của luồng con / định vị khi chạy lần đầu child_thread_id
+// Đọc quỹ đạo thời gian thực của luồng con / định vị khi chạy lần đầu child_thread_id
 provide('getThreadOngoingMessages', getThreadOngoingMessages)
 provide('getSubagentThreadIdByToolCall', getSubagentThreadIdByToolCall)
 
-// phân tích父级 ongoing Tất cả trong task Cuộc gọi công cụ (theo thứ tự tin nhắn), thống nhất cung cấp cho bảng điều khiển và 판단 trạng thái.
-// Lưu ý：ongoing Trong thời gian task củaCông cụ结果不流式（只有 message_delta/tool_call sự kiện), vì vậy ở đây
 // hasResult Trong giai đoạn phát trực tiếp luôn là false，Không thể dựa vào nó để xác định trạng thái。
 const ongoingTaskCalls = computed(() => {
   const calls = []
@@ -1487,7 +1490,7 @@ const taskDescriptionByToolCallId = computed(() => {
   return map
 })
 
-// Backend nhấn run_id Gộp持久化状态；流式期của临时 task mục chưa có run_id，Chỉ dùng để gọi công cụ id Ghép nối vị trí trống。
+// Backend gộp trạng thái bền vững theo run_id; các mục task tạm thời trong giai đoạn stream chưa có run_id, chỉ dùng ID cuộc gọi công cụ để điền vào vị trí trống.
 const displaySubagentRuns = computed(() => {
   const descByToolCall = taskDescriptionByToolCallId.value
   const merged = currentSubagentRuns.value.map((run) => {
@@ -1503,7 +1506,7 @@ const displaySubagentRuns = computed(() => {
   const transientIdIndex = new Map()
   merged.forEach((run, index) => {
     if (run.run_id) runIdIndex.set(String(run.run_id), index)
-    // Các mục bền vững (đồng thời mang run_id 与 id）Cũng theo cách gọi công cụ id Tạo chỉ mục, nếu không, mục giữ chỗ truyền dòng sẽ không tìm thấy nó và sẽ trùng lặp thành một dòng bổ sung trong bảng điều khiển。
+    // Các mục bền vững (chứa cả run_id và id) cũng được tạo chỉ mục theo ID cuộc gọi công cụ, nếu không, mục giữ chỗ của stream sẽ không tìm thấy và sẽ bị lặp thành một dòng thừa trên bảng điều khiển.
     if (run.id) transientIdIndex.set(String(run.id), index)
   })
   runningSubagentRunsFromStream.value.forEach((run) => {
@@ -2138,7 +2141,7 @@ const fetchThreadMessages = async ({ agentId, threadId, delay = 0 }) => {
   }
 }
 
-// Phục hồi跨 phiên: Sử dụng bản ghi tin nhắn gần nhất của người dùng model_spec Khôi phục lựa chọn mô hình
+// Phục hồi qua phiên: Sử dụng bản ghi tin nhắn gần nhất của người dùng (model_spec) để khôi phục lựa chọn mô hình
 const restoreThreadModelSelection = (threadId, history) => {
   if (selectedModelByThread[threadId]) return
   for (let i = history.length - 1; i >= 0; i -= 1) {
@@ -2348,13 +2351,19 @@ const selectChat = async (chatId) => {
     return
   }
 
-  if (!AgentValidator.validateAgentIdWithError(targetAgentId, 'Chọn cuộc hội thoại', handleValidationError))
+  if (
+    !AgentValidator.validateAgentIdWithError(
+      targetAgentId,
+      'Chọn cuộc hội thoại',
+      handleValidationError
+    )
+  )
     return
 
   // Ngắt luồng đầu ra của chủ đề trước (nếu có)）
   if (previousThreadId && previousThreadId !== chatId) {
     stopThreadStream(previousThreadId)
-    // run Chỉ ngắt kết nối trong chế độ SSE Đăng ký, không hủy任务在后台运行
+    // Chỉ ngắt kết nối đăng ký SSE của run, không hủy tác vụ đang chạy nền
     stopRunStreamSubscription(previousThreadId)
   }
 
@@ -2794,7 +2803,7 @@ const showMsgRefs = (msg, conv) => {
     return false
   }
 
-  // 该Thông báo所在对话未收尾（后面跟của是没有 human message của AI Không hiển thị khi tiếp tục hoặc vẫn đang tạo
+  // Cuộc hội thoại chứa tin nhắn này chưa kết thúc (phía sau không có human message mà là AI tiếp tục viết hoặc vẫn đang tạo), không hiển thị
   if (!isConversationSettled(conv)) {
     return false
   }

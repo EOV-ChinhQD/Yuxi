@@ -6,7 +6,9 @@
         <template v-if="userStore.isSuperAdmin">
           <div class="setting-row two-cols">
             <div class="col-item">
-              <div class="setting-label">{{ items?.default_model?.des || 'Mô hình hội thoại mặc định' }}</div>
+              <div class="setting-label">
+                {{ items?.default_model?.des || 'Mô hình hội thoại mặc định' }}
+              </div>
               <div class="setting-content">
                 <ModelSelectorComponent
                   @select-model="handleChatModelSelect"
@@ -112,7 +114,8 @@
     <div v-if="userStore.isAdmin" class="section-title">Liên kết dịch vụ</div>
     <div v-if="userStore.isAdmin">
       <p class="section-description">
-        Truy cập nhanh vào các dịch vụ bên ngoài liên quan đến hệ thống，cần phải localhost Thay thế bằng thực tế IP địa chỉ。
+        Truy cập nhanh vào các dịch vụ bên ngoài liên quan đến hệ thống，cần phải localhost Thay thế
+        bằng thực tế IP địa chỉ。
       </p>
       <div class="services-grid">
         <div class="service-link-card">

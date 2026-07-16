@@ -245,7 +245,9 @@ def parse_pdf(file, params=None):
         )
         # Nếu tài liệu có text layer sạch trên toàn bộ các trang, tự động tắt OCR
         if analysis["recommended_ocr"] == "disable" and opt_ocr != "disable":
-            logger.info("[Density Analyzer] PDF contains high-quality text layer on all pages. Automatically disabling OCR.")
+            logger.info(
+                "[Density Analyzer] PDF contains high-quality text layer on all pages. Automatically disabling OCR."
+            )
             opt_ocr = "disable"
     except Exception as e:
         logger.warning(f"[Density Analyzer] Failed to analyze PDF density, falling back to original OCR config: {e}")
@@ -278,11 +280,8 @@ def parse_pdf(file, params=None):
         return pdfreader(file, params=processor_params)
     except Exception as e:  # noqa: BLE001
         raise DocumentProcessorException(
-            f"Tất cả các bộ xử lý PDF đều thất bại. Lỗi cuối: {last_error}",
-            opt_ocr,
-            "all_parsers_failed"
+            f"Tất cả các bộ xử lý PDF đều thất bại. Lỗi cuối: {last_error}", opt_ocr, "all_parsers_failed"
         ) from e
-
 
 
 def parse_image(file, params=None):

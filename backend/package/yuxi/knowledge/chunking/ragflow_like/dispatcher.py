@@ -70,6 +70,7 @@ def _dispatch_markdown_parser(
 from yuxi.core.feature_manager import FeatureManager
 from yuxi.knowledge.chunking.base import ChunkResult
 
+
 def _build_chunk_records_from_results(
     chunk_results: list[ChunkResult], file_id: str, filename: str, source_text: str | None = None
 ) -> list[dict[str, Any]]:
@@ -190,11 +191,13 @@ def chunk_markdown(
     if FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING):
         if preset_id == "general":
             from yuxi.knowledge.chunking.structural_chunker import StructuralChunker
+
             chunker = StructuralChunker()
         else:
             from yuxi.knowledge.chunking.naive_chunker import NaiveChunker
+
             chunker = NaiveChunker()
-        
+
         chunk_results = chunker.chunk(markdown_content, parser_config)
         return _build_chunk_records_from_results(chunk_results, file_id, filename, markdown_content)
 
@@ -205,5 +208,5 @@ def chunk_markdown(
 def chunk_file(
     file_content: str, file_id: str, filename: str, processing_params: dict[str, Any]
 ) -> list[dict[str, Any]]:
-    
+
     return chunk_markdown(file_content, file_id, filename, processing_params)

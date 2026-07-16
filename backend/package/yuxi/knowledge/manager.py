@@ -9,8 +9,14 @@ from yuxi.utils import logger
 from yuxi.utils.datetime_utils import utc_isoformat
 from yuxi.utils.share_config import SHARE_ACCESS_LEVELS, normalize_share_config
 
+import time
+
 DEFAULT_SHARE_CONFIG = {"access_level": "global", "department_ids": [], "user_uids": []}
 ACCESS_LEVELS = SHARE_ACCESS_LEVELS
+
+# Request-level cache with short TTL (10s) to avoid redundant queries in ReAct loops
+_db_cache = {}
+_DB_CACHE_TTL = 10
 
 
 class KnowledgeBaseManager:
@@ -171,7 +177,14 @@ class KnowledgeBaseManager:
         )
 
     async def get_databases(self) -> dict:
-        """Get all database information"""
+        """Get information about all knowledge bases"""
+        cache_key = "all_databases"
+        now = time.time()
+        if cache_key in _db_cache:
+            cached_data, expire = _db_cache[cache_key]
+            if now < expire:
+                return cached_data
+
         from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
 
         kb_repo = KnowledgeBaseRepository()
@@ -202,7 +215,10 @@ class KnowledgeBaseManager:
             db_info["additional_params"] = kb_instance.normalize_additional_params(row.additional_params)
             db_info["created_by"] = row.created_by
             all_databases.append(db_info)
-        return {"databases": all_databases}
+
+        result = {"databases": all_databases}
+        _db_cache[cache_key] = (result, time.time() + _DB_CACHE_TTL)
+        return result
 
     @staticmethod
     def _database_info_accessible(user: dict, db_info: dict) -> bool:
@@ -287,6 +303,14 @@ class KnowledgeBaseManager:
                 "department_id": user.department_id,
             }
 
+        user_uid = user_info.get("uid")
+        cache_key = f"db_user_{user_uid}_{user_info.get('role')}_{user_info.get('department_id')}"
+        now = time.time()
+        if cache_key in _db_cache:
+            cached_data, expire = _db_cache[cache_key]
+            if now < expire:
+                return cached_data
+
         user_role = user_info.get("role")
         user_dept = user_info.get("department_id")
         logger.info(f"Getting databases for user with role {user_role} and department {user_dept}")
@@ -301,7 +325,9 @@ class KnowledgeBaseManager:
             database for database in all_databases if self._database_info_accessible(user_info, database)
         ]
 
-        return {"databases": filtered_databases}
+        result = {"databases": filtered_databases}
+        _db_cache[cache_key] = (result, time.time() + _DB_CACHE_TTL)
+        return result
 
     async def database_name_exists(self, database_name: str) -> bool:
         """Check if the knowledge base name already exists"""
@@ -446,11 +472,12 @@ class KnowledgeBaseManager:
         """Asynchronous query knowledge base"""
         if caller_uid is not None:
             from yuxi.repositories.user_repository import UserRepository
+
             user_repo = UserRepository()
             user = await user_repo.get_by_uid(caller_uid)
             if not user:
                 raise PermissionError(f"User {caller_uid} not found")
-            
+
             user_info = {
                 "uid": user.uid,
                 "role": user.role,
@@ -820,7 +847,9 @@ class KnowledgeBaseManager:
             current_additional_params = kb.additional_params or {}
             current_graph_config = current_additional_params.get("graph_build_config") or {}
             if current_graph_config.get("locked") and "graph_build_config" in additional_params:
-                raise ValueError("Cấu hình trích xuất đồ thị đã bị khóa, vui lòng sử dụng API reset đồ thị để cấu hình lại")
+                raise ValueError(
+                    "Cấu hình trích xuất đồ thị đã bị khóa, vui lòng sử dụng API reset đồ thị để cấu hình lại"
+                )
 
             merged_additional_params = kb_instance.normalize_additional_params(
                 deep_merge(current_additional_params, additional_params)
@@ -1042,7 +1071,9 @@ class KnowledgeBaseManager:
             logger.warning("Milvus inconsistencies：")
             logger.warning(f"  Number of missing sets: {len(milvus_missing)}")
             for collection_info in milvus_missing:
-                logger.warning(f"    - gather: {collection_info['collection_name']}, Number of entities: {collection_info['count']}")
+                logger.warning(
+                    f"    - gather: {collection_info['collection_name']}, Number of entities: {collection_info['count']}"
+                )
             logger.warning(f"  Number of missing file records: {len(milvus_files_missing)}")
             for file_info in milvus_files_missing:
                 logger.warning(
@@ -1051,8 +1082,12 @@ class KnowledgeBaseManager:
                 )
 
         logger.warning("=" * 80)
-        logger.warning(f"Total: missing collection {total_missing_collections} , missing file records {total_missing_files} indivual")
-        logger.warning("Recommendation: Check these inconsistent data and perform data cleaning or metadata repair if necessary")
+        logger.warning(
+            f"Total: missing collection {total_missing_collections} , missing file records {total_missing_files} indivual"
+        )
+        logger.warning(
+            "Recommendation: Check these inconsistent data and perform data cleaning or metadata repair if necessary"
+        )
         logger.warning("=" * 80)
 
     async def manual_consistency_check(self) -> dict:

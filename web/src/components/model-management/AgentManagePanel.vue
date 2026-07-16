@@ -129,7 +129,8 @@ const deleteAgent = async (agent) => {
   }
   Modal.confirm({
     title: `xóa ${agent.name}`,
-    content: 'Không thể khôi phục sau khi xóa, các cuộc trò chuyện lịch sử đã liên kết với trí tuệ nhân tạo vẫn giữ thông tin liên kết gốc。',
+    content:
+      'Không thể khôi phục sau khi xóa, các cuộc trò chuyện lịch sử đã liên kết với trí tuệ nhân tạo vẫn giữ thông tin liên kết gốc。',
     okText: 'xóa',
     okType: 'danger',
     cancelText: 'Hủy',
@@ -171,7 +172,10 @@ defineExpose({
     </PageShoulder>
 
     <div v-if="groupedAgents.length === 0" class="agent-empty-state">
-      <a-empty :image="false" :description="searchQuery ? 'Không có tác nhân khớp' : 'Chưa có AI'" />
+      <a-empty
+        :image="false"
+        :description="searchQuery ? 'Không có tác nhân khớp' : 'Chưa có AI'"
+      />
     </div>
 
     <template v-else>

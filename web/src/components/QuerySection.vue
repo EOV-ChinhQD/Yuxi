@@ -15,7 +15,11 @@
             <div class="search-actions">
               <span class="query-hint">Enter Tìm kiếm nội dung cơ sở kiến thức</span>
               <div style="display: flex; gap: 12px; align-items: center">
-                <a-tooltip :title="showRawData ? 'Chuyển sang hiển thị được định dạng' : 'Chuyển sang dữ liệu thô'">
+                <a-tooltip
+                  :title="
+                    showRawData ? 'Chuyển sang hiển thị được định dạng' : 'Chuyển sang dữ liệu thô'
+                  "
+                >
                   <a-button
                     type="text"
                     shape="circle"
@@ -113,7 +117,9 @@
         <div v-else-if="showQuerySuggestions" class="query-suggestions">
           <div v-if="loadingQuestions || generatingQuestions" class="suggestions-loading">
             <a-spin size="small" />
-            <span>{{ generatingQuestions ? 'Tạo câu hỏi mẫu...' : 'Đang tải câu hỏi mẫu...' }}</span>
+            <span>{{
+              generatingQuestions ? 'Tạo câu hỏi mẫu...' : 'Đang tải câu hỏi mẫu...'
+            }}</span>
           </div>
 
           <div v-else-if="queryExamples.length > 0" class="suggestions-list">

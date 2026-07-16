@@ -239,7 +239,9 @@ def format_query_result(result: list[dict[str, Any]]) -> str:
 
 def run_query(sql: str, timeout: int) -> str:
     if not MySQLSecurityChecker.validate_sql(sql):
-        raise ValueError("Câu lệnh SQL chứa thao tác không an toàn hoặc có khả năng bị tấn công SQL Injection, vui lòng kiểm tra lại câu lệnh SQL")
+        raise ValueError(
+            "Câu lệnh SQL chứa thao tác không an toàn hoặc có khả năng bị tấn công SQL Injection, vui lòng kiểm tra lại câu lệnh SQL"
+        )
 
     if not MySQLSecurityChecker.validate_timeout(timeout):
         raise ValueError("Tham số timeout phải nằm trong khoảng 1-600")
@@ -263,7 +265,9 @@ def build_query_error(exc: Exception, sql: str) -> str:
         error_msg += "2. Sử dụng mệnh đề LIMIT để giới hạn số dòng trả về\n"
         error_msg += "3. Tăng giá trị tham số timeout (tối đa 600 giây)"
     elif "table" in str(exc).lower() and "doesn't exist" in str(exc).lower():
-        error_msg += "\n\n💡 Gợi ý: Bảng không tồn tại, vui lòng sử dụng scripts/list_tables.py để xem các tên bảng khả dụng"
+        error_msg += (
+            "\n\n💡 Gợi ý: Bảng không tồn tại, vui lòng sử dụng scripts/list_tables.py để xem các tên bảng khả dụng"
+        )
     elif "column" in str(exc).lower() and "doesn't exist" in str(exc).lower():
         error_msg += "\n\n💡 Gợi ý: Cột không tồn tại, vui lòng sử dụng scripts/describe_table.py để xem cấu trúc bảng"
     elif "not enough arguments for format string" in str(exc).lower():
@@ -278,7 +282,9 @@ def build_query_error(exc: Exception, sql: str) -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Thực thi truy vấn MySQL SQL chỉ đọc")
     parser.add_argument("--sql", required=True, help="SQL query statement to be executed")
-    parser.add_argument("--timeout", type=int, default=60, help="Query timeout (seconds), default 60 seconds, maximum 600 seconds")
+    parser.add_argument(
+        "--timeout", type=int, default=60, help="Query timeout (seconds), default 60 seconds, maximum 600 seconds"
+    )
     return parser.parse_args()
 
 

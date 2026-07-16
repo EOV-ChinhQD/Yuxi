@@ -314,9 +314,9 @@
                     <a href="https://skills.sh/" target="_blank" rel="noopener noreferrer"
                       >skills.sh</a
                     >
-                    để tìm kiếm các skill mã nguồn mở. Cũng hỗ trợ từng Skill từ ModelScope
-                    địa chỉ, chỉ có thể cài đặt một lần：`https://modelscope.cn/skills/&lt;skill-id&gt;`。 Skill
-                    ID có thể lấy tại
+                    để tìm kiếm các skill mã nguồn mở. Cũng hỗ trợ từng Skill từ ModelScope địa chỉ,
+                    chỉ có thể cài đặt một lần：`https://modelscope.cn/skills/&lt;skill-id&gt;`。
+                    Skill ID có thể lấy tại
                     <a href="https://modelscope.cn/skills" target="_blank" rel="noopener noreferrer"
                       >Chợ Skill ModelScope</a
                     >
@@ -423,7 +423,8 @@
                     </a-button>
                   </div>
                   <div class="repo-hint-text">
-                    Nhập từ khóa để tìm kiếm các Skill mã nguồn mở trên skills.sh và tải về hàng loạt.
+                    Nhập từ khóa để tìm kiếm các Skill mã nguồn mở trên skills.sh và tải về hàng
+                    loạt.
                   </div>
 
                   <!-- Danh sách kết quả tìm kiếm -->
@@ -565,7 +566,9 @@
           >
             <div class="draft-item-main">
               <div class="draft-item-title">{{ item.name || item.slug }}</div>
-              <div class="draft-item-desc">{{ item.description || item.error || 'Không có mô tả' }}</div>
+              <div class="draft-item-desc">
+                {{ item.description || item.error || 'Không có mô tả' }}
+              </div>
               <div v-if="item.warnings?.length" class="draft-item-warning">
                 {{ item.warnings.join('；') }}
               </div>
@@ -625,32 +628,28 @@ const RECOMMENDED_SKILLS = [
   {
     slug: 'frontend-design',
     name: 'frontend-design',
-    description:
-      'Cung cấp gợi ý thiết kế giao diện UI/UX.',
+    description: 'Cung cấp gợi ý thiết kế giao diện UI/UX.',
     source: 'https://modelscope.cn/skills/@anthropics/frontend-design',
     aliases: ['frontend-design', 'Frontend Design']
   },
   {
     slug: 'docx',
     name: 'docx',
-    description:
-      'Đọc, chỉnh sửa và tạo tài liệu Word DOCX.',
+    description: 'Đọc, chỉnh sửa và tạo tài liệu Word DOCX.',
     source: 'https://modelscope.cn/skills/@anthropics/docx',
     aliases: ['docx', 'DOCX']
   },
   {
     slug: 'xlsx',
     name: 'xlsx',
-    description:
-      'Đọc, phân tích và tạo bảng tính Excel XLSX.',
+    description: 'Đọc, phân tích và tạo bảng tính Excel XLSX.',
     source: 'https://modelscope.cn/skills/@anthropics/xlsx',
     aliases: ['xlsx', 'XLSX']
   },
   {
     slug: 'pdf',
     name: 'pdf',
-    description:
-      'Đọc, trích xuất và phân tích nội dung tài liệu PDF.',
+    description: 'Đọc, trích xuất và phân tích nội dung tài liệu PDF.',
     source: 'https://modelscope.cn/skills/@anthropics/pdf',
     aliases: ['pdf', 'PDF']
   }
@@ -783,7 +782,7 @@ const filteredRepoSkills = computed(() => {
   )
 })
 
-// 批量Chọn/Bỏ chọn/Xóa trắng管理
+// Quản lý Chọn hàng loạt/Bỏ chọn/Xóa sạch
 const handleRepoSelectAll = () => {
   selectedRepoSkills.value = filteredRepoSkills.value.map((item) => item.name)
 }
@@ -881,7 +880,8 @@ const openSkillPreview = async (skill) => {
     skillPreviewMarkdown.value = result?.data?.content || ''
   } catch (error) {
     if (requestSeq !== previewRequestSeq || previewSkill.value?.slug !== skill.slug) return
-    skillPreviewError.value = error?.response?.data?.detail || error.message || 'Đọc SKILL.md thất bại'
+    skillPreviewError.value =
+      error?.response?.data?.detail || error.message || 'Đọc SKILL.md thất bại'
   } finally {
     if (requestSeq === previewRequestSeq) skillPreviewLoading.value = false
   }
@@ -936,7 +936,9 @@ const handleToggleSkillEnabled = async (skill) => {
     }
     message.success(`Skill đã được ${enabled ? 'bật' : 'tắt'}`)
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || 'Cập nhật trạng thái Skill thất bại')
+    message.error(
+      error?.response?.data?.detail || error.message || 'Cập nhật trạng thái Skill thất bại'
+    )
   } finally {
     togglingSkillSlugs.value = togglingSkillSlugs.value.filter((slug) => slug !== skill.slug)
   }
@@ -953,7 +955,8 @@ const confirmDeletePreviewSkill = () => {
 
   Modal.confirm({
     title: `Gỡ cài đặt ${target.name || target.slug}`,
-    content: 'Sau khi gỡ cài đặt sẽ xóa bản ghi cơ sở dữ liệu và tệp cục bộ, thao tác không thể khôi phục.',
+    content:
+      'Sau khi gỡ cài đặt sẽ xóa bản ghi cơ sở dữ liệu và tệp cục bộ, thao tác không thể khôi phục.',
     okText: 'Gỡ cài đặt',
     okType: 'danger',
     cancelText: 'Hủy',
@@ -1024,7 +1027,9 @@ const handleBatchDelete = () => {
         if (failList.length === 0) {
           message.success(`Xóa hàng loạt thành công, đã xóa ${successList.length} kỹ năng`)
         } else {
-          message.warning(`Hoàn tất xóa hàng loạt: Thành công ${successList.length}, Thất bại ${failList.length}`)
+          message.warning(
+            `Hoàn tất xóa hàng loạt: Thành công ${successList.length}, Thất bại ${failList.length}`
+          )
         }
 
         exitBatchDeleteMode()
@@ -1262,7 +1267,9 @@ const handleRecommendedSkillInstall = async (skill) => {
       message.success('Phân tích hoàn tất, vui lòng xác nhận phạm vi áp dụng của Skill')
     }
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || 'Phân tích Skill đề xuất thất bại')
+    message.error(
+      error?.response?.data?.detail || error.message || 'Phân tích Skill đề xuất thất bại'
+    )
   } finally {
     installingRecommendedSources.value = installingRecommendedSources.value.filter(
       (source) => source !== skill.source
@@ -1319,7 +1326,9 @@ const handleSearchRemoteSkills = async () => {
       message.success(`Tìm thấy ${searchedSkills.value.length}  Skills`)
     }
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || 'Tìm kiếm Skills từ xa thất bại')
+    message.error(
+      error?.response?.data?.detail || error.message || 'Tìm kiếm Skills từ xa thất bại'
+    )
   } finally {
     searchingRemoteSkills.value = false
   }
@@ -1353,7 +1362,9 @@ const startInstallRemoteSkills = async () => {
       message.success('Phân tích hoàn tất, vui lòng xác nhận phạm vi áp dụng của Skill')
     }
   } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || 'Phân tích Skill từ xa thất bại')
+    message.error(
+      error?.response?.data?.detail || error.message || 'Phân tích Skill từ xa thất bại'
+    )
   } finally {
     installingRemoteSkill.value = false
   }
@@ -2069,7 +2080,7 @@ defineExpose({
   font-size: 12px;
 }
 
-/* Xóa trắng历史记录Nhấn钮nội dung — Biểu tượng在左文字在右，水平居中 */
+/* Nội dung nút Xóa lịch sử — Biểu tượng bên trái chữ bên phải, căn giữa ngang */
 .clear-history-btn-content {
   display: flex;
   align-items: center;

@@ -231,7 +231,9 @@ class Skill(Base):
     __tablename__ = "skills"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    slug = Column(String(128), nullable=False, unique=True, index=True, comment="Skill unique identifier (directory name)")
+    slug = Column(
+        String(128), nullable=False, unique=True, index=True, comment="Skill unique identifier (directory name)"
+    )
     name = Column(String(128), nullable=False, comment="Skill name (from SKILL.md frontmatter.name）")
     description = Column(Text, nullable=False, comment="Skill description (from SKILL.md frontmatter.description）")
     source_type = Column(
@@ -242,7 +244,11 @@ class Skill(Base):
     skill_dependencies = Column(JSON, nullable=False, default=list, comment="List of other skill slugs it depends on")
     dir_path = Column(String(512), nullable=False, comment="Skill directory path (relative to save_dir)")
     version = Column(String(64), nullable=True, comment="Skill version (built-in skill uses semantic version)")
-    content_hash = Column(String(128), nullable=True, comment="Skill directory content hash (calculated when the built-in skill is installed)")
+    content_hash = Column(
+        String(128),
+        nullable=True,
+        comment="Skill directory content hash (calculated when the built-in skill is installed)",
+    )
     share_config = Column(JSON, nullable=False, default=dict, comment="Sharing permission configuration")
     enabled = Column(Boolean, nullable=False, default=True, comment="Whether to enable")
     created_by = Column(String(64), nullable=True)
@@ -626,9 +632,13 @@ class ModelProvider(Base):
     __tablename__ = "model_providers"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    provider_id = Column(String(100), nullable=False, unique=True, index=True, comment="Supplier Stability Identification")
+    provider_id = Column(
+        String(100), nullable=False, unique=True, index=True, comment="Supplier Stability Identification"
+    )
     display_name = Column(String(100), nullable=False, comment="display name")
-    provider_type = Column(String(32), nullable=False, default="openai", comment="Supplier adaptation type, default openai")
+    provider_type = Column(
+        String(32), nullable=False, default="openai", comment="Supplier adaptation type, default openai"
+    )
 
     default_protocol = Column(String(64), nullable=True, comment="Default protocol, such as openai_compatible")
     base_url = Column(String(500), nullable=False, comment="API Base URL")
@@ -893,14 +903,14 @@ class FailedJob(Base):
     __tablename__ = "failed_jobs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    job_type = Column(String(100), nullable=False)   # "process_agent_run"
+    job_type = Column(String(100), nullable=False)  # "process_agent_run"
     job_id = Column(String(255), nullable=True)
-    payload = Column(JSON, nullable=False)            # full ARQ payload
+    payload = Column(JSON, nullable=False)  # full ARQ payload
     error_type = Column(String(100), nullable=True)
     error_message = Column(Text, nullable=True)
     failed_at = Column(DateTime, default=utc_now_naive)
     retry_count = Column(Integer, default=0)
-    status = Column(String(20), default="failed")    # failed/replayed/ignored
+    status = Column(String(20), default="failed")  # failed/replayed/ignored
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -999,21 +1009,22 @@ class AuditLog(Base):
     Uses Hash Chain to prevent post-insert modifications.
     Note: To be partitioned by created_at at the DB level.
     """
+
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     uid = Column(String(255), nullable=False, index=True)
     conversation_id = Column(String(64), nullable=True, index=True)
     request_id = Column(String(64), nullable=True)
-    
+
     raw_query = Column(Text, nullable=False)
     response_content = Column(Text, nullable=True)
-    
+
     source_refs = Column(JSON, nullable=True)  # Store chunk_id/file_id only, NO FULL TEXT
     grounding_scores = Column(JSON, nullable=True)
-    
+
     created_at = Column(DateTime, default=utc_now_naive, nullable=False, index=True)
-    
+
     prev_hash = Column(String(64), nullable=True)  # SHA-256 of the previous row
     log_hash = Column(String(64), nullable=False, unique=True)  # SHA-256 of (content + prev_hash)
 

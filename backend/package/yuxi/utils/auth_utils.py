@@ -26,18 +26,24 @@ def _get_or_create_dev_env(name: str, value_factory) -> str:
     if value:
         return value
     if _is_production_env():
-        raise ValueError(f"{name} chưa được cấu hình, vui lòng thiết lập giá trị ngẫu nhiên tĩnh trong .env.prod cho môi trường sản xuất")
+        raise ValueError(
+            f"{name} chưa được cấu hình, vui lòng thiết lập giá trị ngẫu nhiên tĩnh trong .env.prod cho môi trường sản xuất"
+        )
 
     value = value_factory()
     os.environ[name] = value
-    print(f"{name} Not configured. The development environment has automatically generated a temporary random value, which will be regenerated after the service is restarted.")
+    print(
+        f"{name} Not configured. The development environment has automatically generated a temporary random value, which will be regenerated after the service is restarted."
+    )
     return value
 
 
 def _get_jwt_secret_key() -> str:
     secret_key = _get_or_create_dev_env("JWT_SECRET_KEY", lambda: secrets.token_hex(32))
     if _is_production_env() and secret_key == PUBLIC_DEFAULT_JWT_SECRET_KEY:
-        raise ValueError("JWT_SECRET_KEY không thể sử dụng khóa mặc định công khai, vui lòng tạo khóa mạnh ngẫu nhiên mới")
+        raise ValueError(
+            "JWT_SECRET_KEY không thể sử dụng khóa mặc định công khai, vui lòng tạo khóa mạnh ngẫu nhiên mới"
+        )
     return secret_key
 
 
@@ -111,6 +117,7 @@ class AuthUtils:
         import hmac
         import hashlib
         import time
+
         expires_at = int(time.time()) + expires_in_seconds
         message = f"{object_name}:{expires_at}"
         sig = hmac.new(_get_jwt_secret_key().encode(), message.encode(), hashlib.sha256).hexdigest()
@@ -122,6 +129,7 @@ class AuthUtils:
         import hmac
         import hashlib
         import time
+
         try:
             if ":" not in token:
                 return False
@@ -139,11 +147,12 @@ class AuthUtils:
     def sign_markdown_images(text: str, expires_in_seconds: int = 7200) -> str:
         """Find all /api/v1/knowledge/images/ URLs in markdown and sign them with a token."""
         import re
+
         if not isinstance(text, str):
             return text
-        
-        pattern = r'(/api/v1/knowledge/images/([^\)\"\s\?]+))'
-        
+
+        pattern = r"(/api/v1/knowledge/images/([^\)\"\s\?]+))"
+
         def replace_match(match):
             full_url = match.group(1)
             object_name = match.group(2)
@@ -151,7 +160,5 @@ class AuthUtils:
             if "?" in full_url:
                 return f"{full_url}&token={token}"
             return f"{full_url}?token={token}"
-            
+
         return re.sub(pattern, replace_match, text)
-
-

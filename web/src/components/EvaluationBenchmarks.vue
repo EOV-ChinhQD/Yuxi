@@ -434,7 +434,8 @@ const paginationConfig = computed(() => ({
   current: previewPagination.value.current,
   pageSize: previewPagination.value.pageSize,
   total: previewPagination.value.total,
-  showTotal: (total, range) => `Không. ${range[0]}-${range[1]} Bài viết，tổng cộng ${total} Bài viết`,
+  showTotal: (total, range) =>
+    `Không. ${range[0]}-${range[1]} Bài viết，tổng cộng ${total} Bài viết`,
   showSizeChanger: true,
   pageSizeOptions: ['10', '20', '50', '100'],
   showQuickJumper: true,
@@ -607,7 +608,9 @@ const loadPreviewQuestions = async () => {
 // Xem trước điểm chuẩn
 const previewDataset = async (benchmark) => {
   if (!isDatasetCompleted(benchmark)) {
-    message.warning('Việc xem trước chỉ có thể được thực hiện sau khi đường cơ sở đánh giá được tạo.')
+    message.warning(
+      'Việc xem trước chỉ có thể được thực hiện sau khi đường cơ sở đánh giá được tạo.'
+    )
     return
   }
 

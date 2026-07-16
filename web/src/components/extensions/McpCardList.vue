@@ -20,7 +20,9 @@
     >
       <a-empty
         :image="false"
-        :description="searchQuery ? 'Không có trận đấu MCP' : 'Chưa có MCP，Bấm vào nút bên trên để thêm'"
+        :description="
+          searchQuery ? 'Không có trận đấu MCP' : 'Chưa có MCP，Bấm vào nút bên trên để thêm'
+        "
       />
     </div>
 
@@ -53,7 +55,9 @@
         </InfoCard>
       </ExtensionCardGrid>
 
-      <div v-if="filteredDisabledServers.length" class="extension-section-header">Có thể được thêm vào</div>
+      <div v-if="filteredDisabledServers.length" class="extension-section-header">
+        Có thể được thêm vào
+      </div>
       <ExtensionCardGrid v-if="filteredDisabledServers.length" :min-width="360">
         <InfoCard
           v-for="server in filteredDisabledServers"

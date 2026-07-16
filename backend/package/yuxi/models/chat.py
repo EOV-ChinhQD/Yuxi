@@ -58,7 +58,9 @@ def select_model(model_spec: str, **kwargs) -> LangChainChatAdapter:
     if not info:
         available = model_cache.get_all_specs("chat")
         available_ids = [item.spec for item in available[:10]]
-        raise ValueError(f"Không tìm thấy model: '{model_spec}'. Các model chat khả dụng ({len(available)}): {available_ids}")
+        raise ValueError(
+            f"Không tìm thấy model: '{model_spec}'. Các model chat khả dụng ({len(available)}): {available_ids}"
+        )
 
     if info.model_type != "chat":
         raise ValueError(f"Model {model_spec} is not a chat model (type={info.model_type})")

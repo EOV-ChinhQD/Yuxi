@@ -78,19 +78,28 @@
             @download="downloadFile"
           />
           <div v-else class="preview-empty">
-            <div class="preview-empty-title">Sau khi chọn sản phẩm bàn giao của mình, bạn có thể xem trước chúng tại đây</div>
-            <div class="preview-empty-desc">Bạn cũng có thể mở danh sách tập tin，Duyệt tập tin trong không gian làm việc hiện tại。</div>
+            <div class="preview-empty-title">
+              Sau khi chọn sản phẩm bàn giao của mình, bạn có thể xem trước chúng tại đây
+            </div>
+            <div class="preview-empty-desc">
+              Bạn cũng có thể mở danh sách tập tin，Duyệt tập tin trong không gian làm việc hiện
+              tại。
+            </div>
           </div>
         </div>
 
         <div v-if="treePaneVisible" class="tree-pane">
-          <div v-if="!threadId" class="empty">Có thể xem không gian làm việc sau khi tạo cuộc trò chuyện</div>
+          <div v-if="!threadId" class="empty">
+            Có thể xem không gian làm việc sau khi tạo cuộc trò chuyện
+          </div>
           <div v-else-if="loadingFiles" class="empty">Đang tải hệ thống tập tin...</div>
           <div v-else-if="filesystemError" class="empty error-state">
             <div>{{ filesystemError }}</div>
             <a-button type="link" size="small" @click="refreshFileSystem">Thử lại</a-button>
           </div>
-          <div v-else-if="!fileTreeData.length" class="empty">Không gian làm việc hiện tại trống</div>
+          <div v-else-if="!fileTreeData.length" class="empty">
+            Không gian làm việc hiện tại trống
+          </div>
           <div v-else class="file-tree-container">
             <FileTreeComponent
               v-model:selectedKeys="selectedKeys"
@@ -483,8 +492,12 @@ const confirmDeleteNode = (node) => {
   const fileName = node?.title || getFileName(node?.fileData)
   const isDirectory = !node?.isLeaf
   Modal.confirm({
-    title: isDirectory ? `Xác nhận xóa thư mục「${fileName}」？` : `Xác nhận xóa tập tin「${fileName}」？`,
-    content: isDirectory ? 'Thư mục và tất cả nội dung của nó sẽ bị xóa，Không thể phục hồi sau khi xóa。' : 'Không thể phục hồi sau khi xóa。',
+    title: isDirectory
+      ? `Xác nhận xóa thư mục「${fileName}」？`
+      : `Xác nhận xóa tập tin「${fileName}」？`,
+    content: isDirectory
+      ? 'Thư mục và tất cả nội dung của nó sẽ bị xóa，Không thể phục hồi sau khi xóa。'
+      : 'Không thể phục hồi sau khi xóa。',
     okText: 'Xóa',
     okType: 'danger',
     cancelText: 'Hủy bỏ',
@@ -500,7 +513,9 @@ const confirmDeleteNode = (node) => {
         message.success(isDirectory ? 'Đã xóa thư mục thành công' : 'Đã xóa tệp thành công')
       } catch (error) {
         console.error(isDirectory ? 'Không xóa được thư mục:' : 'Không thể xóa tập tin:', error)
-        message.error(error?.message || (isDirectory ? 'Không xóa được thư mục' : 'Không thể xóa tập tin'))
+        message.error(
+          error?.message || (isDirectory ? 'Không xóa được thư mục' : 'Không thể xóa tập tin')
+        )
       } finally {
         const latestDeletingPaths = new Set(deletingPaths.value)
         latestDeletingPaths.delete(node.key)

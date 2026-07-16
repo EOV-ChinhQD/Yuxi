@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import base64
 import uuid
+import time
+import math
+import threading
+from collections import deque
 from contextlib import suppress
 from datetime import datetime
 from pathlib import PurePosixPath
@@ -22,6 +26,95 @@ from deepagents.backends.protocol import (
 )
 from deepagents.backends.sandbox import MAX_BINARY_BYTES, BaseSandbox
 from deepagents.backends.utils import _get_file_type
+
+
+class SandboxMetricsCollector:
+    def __init__(self, max_history: int = 1000):
+        self._lock = threading.Lock()
+        self.runtimes = deque(maxlen=max_history)
+        self.timeouts = 0
+        self.crashes = 0
+        self.total_runs = 0
+        self.tool_failures = 0
+        self.retries = 0
+        self.fallbacks = 0
+        self.cache_misses = 0
+        self.hallucinations_detected = 0
+        self.nli_timeouts = 0
+
+    def record_run(self, runtime: float, is_timeout: bool, is_crash: bool):
+        with self._lock:
+            self.total_runs += 1
+            if is_timeout:
+                self.timeouts += 1
+            elif is_crash:
+                self.crashes += 1
+            else:
+                self.runtimes.append(runtime)
+
+    def record_event(self, event_type: str):
+        with self._lock:
+            if event_type == "tool_failure":
+                self.tool_failures += 1
+            elif event_type == "retry":
+                self.retries += 1
+            elif event_type == "fallback":
+                self.fallbacks += 1
+            elif event_type == "cache_miss":
+                self.cache_misses += 1
+            elif event_type == "hallucination_detected":
+                self.hallucinations_detected += 1
+            elif event_type == "nli_timeout":
+                self.nli_timeouts += 1
+
+    def get_metrics(self) -> dict:
+        with self._lock:
+            runtimes_list = list(self.runtimes)
+            if not runtimes_list:
+                median_rt = 0.0
+                p95_rt = 0.0
+                avg_rt = 0.0
+            else:
+                sorted_val = sorted(runtimes_list)
+                n = len(sorted_val)
+                if n % 2 == 1:
+                    median_rt = sorted_val[n // 2]
+                else:
+                    median_rt = (sorted_val[n // 2 - 1] + sorted_val[n // 2]) / 2.0
+
+                k = (n - 1) * 0.95
+                f = math.floor(k)
+                c = math.ceil(k)
+                if f == c:
+                    p95_rt = sorted_val[int(k)]
+                else:
+                    p95_rt = sorted_val[int(f)] * (c - k) + sorted_val[int(c)] * (k - f)
+
+                avg_rt = sum(runtimes_list) / n
+
+            timeout_rate = (self.timeouts / self.total_runs) if self.total_runs > 0 else 0.0
+            crash_rate = (self.crashes / self.total_runs) if self.total_runs > 0 else 0.0
+
+            return {
+                "total_runs": self.total_runs,
+                "timeouts": self.timeouts,
+                "crashes": self.crashes,
+                "timeout_rate": timeout_rate,
+                "crash_rate": crash_rate,
+                "median_runtime": median_rt,
+                "p95_runtime": p95_rt,
+                "average_runtime": avg_rt,
+                "tool_failures": self.tool_failures,
+                "retries": self.retries,
+                "fallbacks": self.fallbacks,
+                "cache_misses": self.cache_misses,
+                "hallucinations_detected": self.hallucinations_detected,
+                "nli_timeouts": self.nli_timeouts,
+            }
+
+
+sandbox_metrics = SandboxMetricsCollector()
+
 
 from yuxi import config as conf
 from yuxi.agents.skills.service import sync_thread_readable_skills
@@ -361,6 +454,7 @@ class ProvisionerSandboxBackend(BaseSandbox):
         Output is normalized to text and truncated to the configured maximum
         payload size before being returned.
         """
+        start_time = time.time()
         try:
             kwargs: dict[str, Any] = {"command": command}
             if timeout is not None:
@@ -376,14 +470,37 @@ class ProvisionerSandboxBackend(BaseSandbox):
                 output = encoded[: self._max_output_bytes].decode("utf-8", errors="ignore")
                 truncated = True
 
+            runtime = time.time() - start_time
+            sandbox_metrics.record_run(runtime, is_timeout=False, is_crash=False)
+
             return ExecuteResponse(
                 output=output,
                 exit_code=exit_code if isinstance(exit_code, int) else None,
                 truncated=truncated,
             )
         except Exception as exc:  # noqa: BLE001
-            logger.error(f"Sandbox execute failed for thread {self._thread_id}: {exc}")
-            return ExecuteResponse(output=f"Error: {exc}", exit_code=1, truncated=False)
+            runtime = time.time() - start_time
+            exc_str = str(exc).lower()
+            if "timeout" in exc_str or "timed out" in exc_str:
+                sandbox_metrics.record_run(runtime, is_timeout=True, is_crash=False)
+                logger.warning(f"Sandbox execution timeout for thread {self._thread_id}: {exc}")
+                return ExecuteResponse(
+                    output="Quá trình chạy mã (code execution) mất quá nhiều thời gian và đã bị hủy. Dưới đây là phân tích dựa trên thông tin hiện có hoặc bạn có thể thử lại.",
+                    exit_code=124,
+                    truncated=False,
+                )
+            elif "name resolution" in exc_str or "connection refused" in exc_str or "connection error" in exc_str:
+                sandbox_metrics.record_run(runtime, is_timeout=False, is_crash=True)
+                logger.warning(f"Sandbox connection failed for thread {self._thread_id}: {exc}")
+                return ExecuteResponse(
+                    output="Lỗi kết nối tới môi trường chạy mã (Sandbox). Hệ thống Sandbox đang khởi động lại hoặc tạm thời bị gián đoạn. Vui lòng đợi 1-2 phút rồi thử lại.",
+                    exit_code=1,
+                    truncated=False,
+                )
+            else:
+                sandbox_metrics.record_run(runtime, is_timeout=False, is_crash=True)
+                logger.error(f"Sandbox execute failed (crash) for thread {self._thread_id}: {exc}")
+                return ExecuteResponse(output=f"FatalError: Sandbox crashed. {exc}", exit_code=1, truncated=False)
 
     def ls(self, path: str) -> LsResult:
         """List direct children of an allowed sandbox path with lightweight metadata."""

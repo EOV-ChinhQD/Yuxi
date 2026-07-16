@@ -11,7 +11,9 @@
       <a-result status="error" :title="error.title" :sub-title="error.message">
         <template #extra>
           <a-button type="primary" @click="retryLoad">Thử lại</a-button>
-          <a-button :href="faqUrl" target="_blank" rel="noopener noreferrer">Câu hỏi thường gặp</a-button>
+          <a-button :href="faqUrl" target="_blank" rel="noopener noreferrer"
+            >Câu hỏi thường gặp</a-button
+          >
         </template>
       </a-result>
     </div>
@@ -175,7 +177,10 @@
                   </div>
                 </div>
 
-                <p class="flow-caption">Agent khởi tạo truy vấn · Engine kết hợp vector và đồ thị · Truy xuất kiến thức tăng cường tạo</p>
+                <p class="flow-caption">
+                  Agent khởi tạo truy vấn · Engine kết hợp vector và đồ thị · Truy xuất kiến thức
+                  tăng cường tạo
+                </p>
               </div>
 
               <div class="stat-row" v-if="realtimeStats.length">
@@ -382,7 +387,8 @@ const checkHealth = async () => {
   } catch (e) {
     error.value = {
       title: 'Kết nối dịch vụ thất bại',
-      message: 'Dịch vụ backend không phản hồi, vui lòng kiểm tra xem dịch vụ có đang chạy bình thường không'
+      message:
+        'Dịch vụ backend không phản hồi, vui lòng kiểm tra xem dịch vụ có đang chạy bình thường không'
     }
     throw e
   }

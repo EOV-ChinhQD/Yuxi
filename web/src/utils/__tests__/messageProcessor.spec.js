@@ -2,7 +2,11 @@ import assert from 'node:assert/strict'
 
 import { MessageProcessor } from '../messageProcessor.js'
 
-const databases = [{ name: 'Thư viện tài chính và thuế' }, { name: 'DifyKB' }, { name: 'LightGraphKB' }]
+const databases = [
+  { name: 'Thư viện tài chính và thuế' },
+  { name: 'DifyKB' },
+  { name: 'LightGraphKB' }
+]
 
 const run = () => {
   const conv = {
@@ -113,7 +117,10 @@ const run = () => {
     type: 'ai',
     content: '<think>quá trình suy luận</think>câu trả lời cuối cùng'
   })
-  assert.deepEqual(assistantBody, { content: 'câu trả lời cuối cùng', reasoningContent: 'quá trình suy luận' })
+  assert.deepEqual(assistantBody, {
+    content: 'câu trả lời cuối cùng',
+    reasoningContent: 'quá trình suy luận'
+  })
 
   console.log('messageProcessor extractKnowledgeChunksFromConversation: all assertions passed')
 }

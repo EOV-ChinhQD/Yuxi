@@ -1,7 +1,6 @@
 import asyncio
 import os
 import sys
-from typing import Any, Dict
 
 # Đảm bảo import path đúng
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -9,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from yuxi.storage.postgres.manager import pg_manager
 from yuxi.core.queue import RAGWorker
 from yuxi.utils.logging_config import logger
+
 
 async def handle_extract_knowledge(payload: dict) -> None:
     kb_id = payload["kb_id"]
@@ -51,17 +51,20 @@ async def handle_extract_knowledge(payload: dict) -> None:
     raw_entities = extraction_result.get("entities") or []
     raw_entities_records = []
     from yuxi.knowledge.graphs.graph_utils import compute_entity_id, normalize_entity_name
+
     for raw_ent in raw_entities:
         label = raw_ent.get("type") or "Entity"
         name = raw_ent.get("name") or ""
         norm_name = normalize_entity_name(name)
         ent_id = compute_entity_id(kb_id, norm_name, label)
-        raw_entities_records.append({
-            "entity_id": ent_id,
-            "text": name,
-            "label": label,
-            "attributes": [raw_ent.get("description") or ""],
-        })
+        raw_entities_records.append(
+            {
+                "entity_id": ent_id,
+                "text": name,
+                "label": label,
+                "attributes": [raw_ent.get("description") or ""],
+            }
+        )
 
     resolver = EntityResolver()
     resolved_entities = await resolver.resolve_entities(kb_id, raw_entities_records)
@@ -69,14 +72,16 @@ async def handle_extract_knowledge(payload: dict) -> None:
     # 5. Dựng bản ghi Sự kiện (Event)
     event_id = hashstr(f"{kb_id}:event:{chunk_id}", length=32)
     raw_event = extraction_result.get("event") or {}
-    
+
     event_entities = []
     for entity in resolved_entities:
-        event_entities.append({
-            "entity_id": entity["entity_id"],
-            "weight": 1.0,
-            "relation_type": "MENTIONS",
-        })
+        event_entities.append(
+            {
+                "entity_id": entity["entity_id"],
+                "weight": 1.0,
+                "relation_type": "MENTIONS",
+            }
+        )
 
     event_record = {
         "event_id": event_id,
@@ -125,17 +130,19 @@ async def handle_extract_knowledge(payload: dict) -> None:
     )
     logger.info(f"Successfully processed and stored Event & Entity resolution for chunk {chunk_id}")
 
+
 async def start_worker() -> None:
     # Khởi tạo kết nối DB
     pg_manager.initialize()
-    
+
     worker = RAGWorker()
     worker.register_handler("EXTRACT_KNOWLEDGE", handle_extract_knowledge)
-    
+
     try:
         await worker.start()
     except asyncio.CancelledError:
         worker.stop()
+
 
 if __name__ == "__main__":
     asyncio.run(start_worker())

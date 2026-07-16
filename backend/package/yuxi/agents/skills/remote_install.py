@@ -313,7 +313,9 @@ async def prepare_remote_skills_batch(
         for original_index, name in zip(valid_indices, normalized_skills):
             installed_dir = _find_skill_dir(skills_dir, name)
             if installed_dir is None:
-                error_msg = "CLI Installation failed" if cli_failed else "skills CLI Expected skills catalog not generated"
+                error_msg = (
+                    "CLI Installation failed" if cli_failed else "skills CLI Expected skills catalog not generated"
+                )
                 results[original_index] = {"slug": name, "success": False, "error": error_msg}
             else:
                 results[original_index] = {"slug": name, "success": True, "source_dir": installed_dir}

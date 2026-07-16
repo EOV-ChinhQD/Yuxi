@@ -4,7 +4,10 @@
       <div v-if="!isGraphSupported" class="graph-disabled">
         <div class="disabled-content">
           <h4>Sơ đồ tri thức không có sẵn</h4>
-          <p>Loại cơ sở kiến thức hiện tại "{{ kbTypeLabel }}" Không hỗ trợ chức năng biểu đồ tri thức。</p>
+          <p>
+            Loại cơ sở kiến thức hiện tại "{{ kbTypeLabel }}" Không hỗ trợ chức năng biểu đồ tri
+            thức。
+          </p>
           <p>chỉ Milvus Loại cơ sở tri thức hỗ trợ đồ thị tri thức。</p>
         </div>
       </div>
@@ -175,7 +178,9 @@
               <div class="status-row">
                 <span class="status-label">Trạng thái</span>
                 <a-tag v-if="isBuildActive" color="blue" size="small">Đang xây dựng</a-tag>
-                <a-tag v-else-if="isBuildFailed" color="red" size="small">Xây dựng không thành công</a-tag>
+                <a-tag v-else-if="isBuildFailed" color="red" size="small"
+                  >Xây dựng không thành công</a-tag
+                >
                 <a-tag v-else-if="graphBuildStatus?.locked" color="green" size="small"
                   >được cấu hình</a-tag
                 >
@@ -453,7 +458,8 @@ const graphIndexDotStatus = computed(() => {
 })
 
 const graphIndexButtonTitle = computed(() => {
-  if (hasPendingGraphChunks.value) return `Quản lý chỉ mục，${pendingGraphChunks.value} Để được lập chỉ mục`
+  if (hasPendingGraphChunks.value)
+    return `Quản lý chỉ mục，${pendingGraphChunks.value} Để được lập chỉ mục`
   if (isGraphIndexComplete.value) return 'Quản lý chỉ mục，Tất cả được lập chỉ mục'
   if (isBuildActive.value) return 'Quản lý chỉ mục，Lập chỉ mục'
   return 'Quản lý chỉ mục'
@@ -472,7 +478,9 @@ const toggleSettingsPanel = () => {
 const isEditingGraphConfig = computed(() => Boolean(graphBuildStatus.value?.locked))
 
 const graphConfigTitle = computed(() =>
-  isEditingGraphConfig.value ? 'Sửa đổi cấu hình trích xuất bản đồ' : 'Định cấu hình trình trích xuất biểu đồ'
+  isEditingGraphConfig.value
+    ? 'Sửa đổi cấu hình trích xuất bản đồ'
+    : 'Định cấu hình trình trích xuất biểu đồ'
 )
 
 const stopBuildStatusPoll = () => {
@@ -529,9 +537,12 @@ const graphDataEmptyTitle = computed(() =>
   searchInput.value.trim() ? 'Không tìm thấy thực thể phù hợp' : 'Chưa có biểu đồ kiến thức'
 )
 const graphDataEmptyDescription = computed(() => {
-  if (searchInput.value.trim()) return 'Thay đổi từ khóa hoặc điều chỉnh cài đặt bản đồ trước khi tìm kiếm lại。'
-  if (isBuildActive.value) return 'Chỉ số đồ thị đang chạy，Các thực thể và mối quan hệ sẽ được hiển thị sau khi hoàn thành。'
-  if (hasPendingGraphChunks.value) return 'Hiện tại vẫn chưa được lập chỉ mục Chunk，Các thực thể và mối quan hệ sẽ được hiển thị sau khi lập chỉ mục hoàn tất.。'
+  if (searchInput.value.trim())
+    return 'Thay đổi từ khóa hoặc điều chỉnh cài đặt bản đồ trước khi tìm kiếm lại。'
+  if (isBuildActive.value)
+    return 'Chỉ số đồ thị đang chạy，Các thực thể và mối quan hệ sẽ được hiển thị sau khi hoàn thành。'
+  if (hasPendingGraphChunks.value)
+    return 'Hiện tại vẫn chưa được lập chỉ mục Chunk，Các thực thể và mối quan hệ sẽ được hiển thị sau khi lập chỉ mục hoàn tất.。'
   return 'Không có thực thể hoặc mối quan hệ nào có thể được hiển thị trong cơ sở kiến thức hiện tại.。'
 })
 
@@ -617,7 +628,11 @@ const configureGraphBuild = async () => {
       extractor_type: 'llm',
       extractor_options: buildExtractorOptions()
     })
-    message.success(isEditingGraphConfig.value ? 'Cấu hình trích xuất phổ đã được cập nhật' : 'Đã lưu cấu hình trích xuất phổ')
+    message.success(
+      isEditingGraphConfig.value
+        ? 'Cấu hình trích xuất phổ đã được cập nhật'
+        : 'Đã lưu cấu hình trích xuất phổ'
+    )
     showGraphConfig.value = false
     await loadGraphBuildStatus()
   } catch (e) {
@@ -649,7 +664,8 @@ const startGraphBuild = async () => {
 const confirmResetGraph = () => {
   Modal.confirm({
     title: 'Xóa và xây dựng lại bản đồ',
-    content: 'Cơ sở kiến thức sẽ bị xóa tại Neo4j tập bản đồ ở，đặt lại Chunk Trạng thái bản đồ，Và xóa kết quả trích xuất và cấu hình。',
+    content:
+      'Cơ sở kiến thức sẽ bị xóa tại Neo4j tập bản đồ ở，đặt lại Chunk Trạng thái bản đồ，Và xóa kết quả trích xuất và cấu hình。',
     okText: 'Xác nhận đặt lại',
     cancelText: 'Hủy bỏ',
     onOk: resetGraphBuild

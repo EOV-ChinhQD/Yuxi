@@ -109,7 +109,9 @@ def render_preview_too_large_payload() -> dict:
 def _office_converter_executable() -> str:
     executable = shutil.which("soffice") or shutil.which("libreoffice")
     if not executable:
-        raise OfficePreviewConversionError("Xem trước Office PDF phụ thuộc vào LibreOffice, vui lòng cài đặt soffice/libreoffice trước")
+        raise OfficePreviewConversionError(
+            "Xem trước Office PDF phụ thuộc vào LibreOffice, vui lòng cài đặt soffice/libreoffice trước"
+        )
     return executable
 
 
@@ -154,14 +156,20 @@ def _convert_office_to_pdf_sync(filename: str, content: bytes) -> bytes:
             ) from exc
         if result.returncode != 0:
             detail = (result.stderr or result.stdout).decode("utf-8", errors="ignore").strip()
-            raise OfficePreviewConversionError(f"Chuyển đổi tệp Office sang PDF thất bại: {detail or 'LibreOffice thực thi thất bại'}")
+            raise OfficePreviewConversionError(
+                f"Chuyển đổi tệp Office sang PDF thất bại: {detail or 'LibreOffice thực thi thất bại'}"
+            )
         if not output_path.exists():
             detail = (result.stderr or result.stdout).decode("utf-8", errors="ignore").strip()
-            raise OfficePreviewConversionError(f"Chuyển đổi tệp Office sang PDF thất bại: Không tạo được tệp PDF。{detail}")
+            raise OfficePreviewConversionError(
+                f"Chuyển đổi tệp Office sang PDF thất bại: Không tạo được tệp PDF。{detail}"
+            )
 
         pdf_content = output_path.read_bytes()
         if not pdf_content.startswith(b"%PDF-"):
-            raise OfficePreviewConversionError("Chuyển đổi tệp Office sang PDF thất bại: Tệp đầu ra không phải là PDF hợp lệ")
+            raise OfficePreviewConversionError(
+                "Chuyển đổi tệp Office sang PDF thất bại: Tệp đầu ra không phải là PDF hợp lệ"
+            )
         return pdf_content
 
 

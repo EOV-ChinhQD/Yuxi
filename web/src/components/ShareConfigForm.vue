@@ -47,7 +47,11 @@
                   <div class="selection-dropdown" @mousedown.stop @click.stop>
                     <div class="selection-dropdown-header">
                       <div class="selection-dropdown-title">
-                        {{ option.value === 'department' ? 'các phòng ban có thể tiếp cận' : 'Người dùng có thể truy cập' }}
+                        {{
+                          option.value === 'department'
+                            ? 'các phòng ban có thể tiếp cận'
+                            : 'Người dùng có thể truy cập'
+                        }}
                       </div>
                       <div class="selection-dropdown-subtitle">
                         {{ getAccessSummary(option.value) }}
@@ -58,7 +62,9 @@
                       size="small"
                       allow-clear
                       class="selection-search"
-                      :placeholder="option.value === 'department' ? 'Bộ phận tìm kiếm' : 'Tìm kiếm người dùng'"
+                      :placeholder="
+                        option.value === 'department' ? 'Bộ phận tìm kiếm' : 'Tìm kiếm người dùng'
+                      "
                       @mousedown.stop
                       @click.stop
                     />
@@ -320,8 +326,10 @@ const setAccessLevel = (accessLevel) => {
 
 const getAccessSummary = (accessLevel) => {
   if (accessLevel === 'global') return 'Có thể truy cập được cho tất cả người dùng'
-  if (accessLevel === 'department') return `${config.department_ids.length} các bộ phận có thể truy cập`
-  if (accessLevel === 'user' && config.user_uids.length === 1) return 'Chỉ có thể truy cập được cho chính bạn'
+  if (accessLevel === 'department')
+    return `${config.department_ids.length} các bộ phận có thể truy cập`
+  if (accessLevel === 'user' && config.user_uids.length === 1)
+    return 'Chỉ có thể truy cập được cho chính bạn'
   return `${config.user_uids.length} Người dùng có thể truy cập`
 }
 
@@ -418,19 +426,32 @@ const validate = () => {
 
   if (config.access_level === 'department') {
     if (!currentDepartmentId.value) {
-      return { valid: false, message: 'Bạn không thuộc bộ phận nào，Không thể sử dụng chế độ chia sẻ khoa' }
+      return {
+        valid: false,
+        message: 'Bạn không thuộc bộ phận nào，Không thể sử dụng chế độ chia sẻ khoa'
+      }
     }
     if (!config.department_ids.includes(currentDepartmentId.value)) {
-      return { valid: false, message: 'Bộ phận của bạn phải nằm trong phạm vi bộ phận có thể truy cập được' }
+      return {
+        valid: false,
+        message: 'Bộ phận của bạn phải nằm trong phạm vi bộ phận có thể truy cập được'
+      }
     }
     return { valid: true, message: '' }
   }
 
   if (!currentUserUid.value) {
-    return { valid: false, message: 'Không thể có được người dùng hiện tại，Không thể sử dụng chế độ truy cập được chỉ định' }
+    return {
+      valid: false,
+      message:
+        'Không thể có được người dùng hiện tại，Không thể sử dụng chế độ truy cập được chỉ định'
+    }
   }
   if (!config.user_uids.includes(currentUserUid.value)) {
-    return { valid: false, message: 'Người dùng hiện tại phải ở trong phạm vi người dùng có thể truy cập' }
+    return {
+      valid: false,
+      message: 'Người dùng hiện tại phải ở trong phạm vi người dùng có thể truy cập'
+    }
   }
   return { valid: true, message: '' }
 }

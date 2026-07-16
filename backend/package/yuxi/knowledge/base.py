@@ -131,7 +131,9 @@ class KnowledgeBase(ABC):
     def _ensure_metadata_loaded(self):
         """Make sure metadata is loaded (lazy loading)"""
         if not self._metadata_loaded:
-            logger.warning(f"{self.kb_type}: Metadata has not been loaded, please ensure KnowledgeBaseManager has called load_metadata()")
+            logger.warning(
+                f"{self.kb_type}: Metadata has not been loaded, please ensure KnowledgeBaseManager has called load_metadata()"
+            )
 
     @staticmethod
     def _normalize_timestamp(value: Any) -> str | None:

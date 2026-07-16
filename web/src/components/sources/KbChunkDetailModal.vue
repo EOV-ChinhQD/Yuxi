@@ -62,7 +62,9 @@ const lineRange = computed(() => {
   const startLine = Number(props.chunk?.metadata?.start_line || 0)
   const endLine = Number(props.chunk?.metadata?.end_line || 0)
   if (!startLine || !endLine) return ''
-  return startLine === endLine ? `Không. ${startLine} được rồi` : `Không. ${startLine}-${endLine} được rồi`
+  return startLine === endLine
+    ? `Không. ${startLine} được rồi`
+    : `Không. ${startLine}-${endLine} được rồi`
 })
 </script>
 

@@ -1,12 +1,7 @@
 <template>
   <section v-if="normalizedArtifacts.length" class="artifacts-list">
     <div v-for="file in normalizedArtifacts" :key="file.path" class="artifact-card">
-      <button
-        type="button"
-        class="item-main"
-        :title="`mở ${file.name}`"
-        @click="openPreview(file)"
-      >
+      <button type="button" class="item-main" :title="`mở ${file.name}`" @click="openPreview(file)">
         <FileTypeIcon :name="file.path" :size="20" class="item-icon" />
         <div class="item-meta">
           <div class="item-name">{{ file.name }}</div>

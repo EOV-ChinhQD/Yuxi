@@ -15,9 +15,7 @@ from yuxi.repositories.conversation_repository import ConversationRepository
 from yuxi.storage.postgres.manager import pg_manager
 from yuxi.utils.logging_config import logger
 
-SANDBOX_PATH_HINT = (
-    "Vui lòng sử dụng /home/gem/user-data/workspace/..., /home/gem/user-data/uploads/... hoặc /home/gem/user-data/outputs/..."
-)
+SANDBOX_PATH_HINT = "Vui lòng sử dụng /home/gem/user-data/workspace/..., /home/gem/user-data/uploads/... hoặc /home/gem/user-data/outputs/..."
 MAX_SANDBOX_SKILL_FILES = 1000
 
 
@@ -29,7 +27,8 @@ class InstallSkillInput(BaseModel):
         "2. Kho Git: owner/repo hoặc URL GitHub đầy đủ"
     )
     skill_names: list[str] | None = Field(
-        default=None, description="Danh sách skill slug cần cài đặt khi cài đặt qua Git (ít nhất một). Bỏ qua tham số này khi cài đặt bằng đường dẫn Sandbox."
+        default=None,
+        description="Danh sách skill slug cần cài đặt khi cài đặt qua Git (ít nhất một). Bỏ qua tham số này khi cài đặt bằng đường dẫn Sandbox.",
     )
 
 
@@ -49,7 +48,9 @@ def _collect_sandbox_file_paths(backend, remote_dir: str, file_paths: list[str] 
             _collect_sandbox_file_paths(backend, path, file_paths)
         else:
             if len(file_paths) >= MAX_SANDBOX_SKILL_FILES:
-                raise ValueError(f"Số lượng tệp trong thư mục Skill vượt quá giới hạn (tối đa {MAX_SANDBOX_SKILL_FILES} tệp)")
+                raise ValueError(
+                    f"Số lượng tệp trong thư mục Skill vượt quá giới hạn (tối đa {MAX_SANDBOX_SKILL_FILES} tệp)"
+                )
             file_paths.append(path)
     return file_paths
 
@@ -172,11 +173,19 @@ async def _run_install_task(
 
     if not uid or not thread_id:
         return Command(
-            update={"messages": [ToolMessage(content="Lỗi: Không thể lấy thông tin phiên hội thoại hiện tại", tool_call_id=tool_call_id)]}
+            update={
+                "messages": [
+                    ToolMessage(
+                        content="Lỗi: Không thể lấy thông tin phiên hội thoại hiện tại", tool_call_id=tool_call_id
+                    )
+                ]
+            }
         )
     if not source:
         return Command(
-            update={"messages": [ToolMessage(content="Lỗi: Nguồn Skill không được để trống", tool_call_id=tool_call_id)]}
+            update={
+                "messages": [ToolMessage(content="Lỗi: Nguồn Skill không được để trống", tool_call_id=tool_call_id)]
+            }
         )
 
     personal_share_config = _personal_skill_share_config(uid)
@@ -261,7 +270,9 @@ async def _run_install_task(
             for item in failed_items:
                 lines.append(f"❌ Cài đặt thất bại ({item['slug']}): {item.get('error', 'Lỗi không xác định')}")
         if not config_success:
-            lines.append("⚠️ Đã thêm tiện ích mở rộng Skill này (chỉ có hiệu lực trong phiên hiện tại, chưa được ghi vào cấu hình Agent hiện tại)")
+            lines.append(
+                "⚠️ Đã thêm tiện ích mở rộng Skill này (chỉ có hiệu lực trong phiên hiện tại, chưa được ghi vào cấu hình Agent hiện tại)"
+            )
         if not installed_slugs and not failed_items:
             lines.append("ℹ️ Không tìm thấy kỹ năng cần cài đặt")
 

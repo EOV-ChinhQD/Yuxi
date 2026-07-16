@@ -335,7 +335,9 @@ async def update_mindmap_incremental(kb_id: str, user_prompt: str = "") -> dict[
     """Incremental mind map update: pure deletion of scenes does not require AI, and AI integration is called when new ones are added."""
     kb = await KnowledgeBaseRepository().get_by_kb_id(kb_id)
     if kb is None or not kb.mindmap:
-        raise HTTPException(status_code=400, detail="Kho kiến thức không có sơ đồ tư duy hiện tại, vui lòng tạo toàn bộ")
+        raise HTTPException(
+            status_code=400, detail="Kho kiến thức không có sơ đồ tư duy hiện tại, vui lòng tạo toàn bộ"
+        )
 
     current_files, total = await _load_mindmap_current_files(kb_id, list((kb.mindmap_file_ids or {}).keys()))
     db_name = kb.name or "knowledge base"

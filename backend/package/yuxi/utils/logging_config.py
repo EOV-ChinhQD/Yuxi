@@ -16,6 +16,7 @@ import contextvars
 # Global log context for tracking request_id and run_id across async tasks
 log_context = contextvars.ContextVar("log_context", default={"request_id": "-", "run_id": "-"})
 
+
 def set_log_context(request_id: str | None = None, run_id: str | None = None):
     current = log_context.get().copy()
     if request_id is not None:
@@ -24,8 +25,10 @@ def set_log_context(request_id: str | None = None, run_id: str | None = None):
         current["run_id"] = run_id
     return log_context.set(current)
 
+
 def reset_log_context(token):
     log_context.reset(token)
+
 
 def _log_patcher(record):
     ctx = log_context.get()

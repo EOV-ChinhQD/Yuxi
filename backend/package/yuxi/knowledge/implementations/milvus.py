@@ -34,15 +34,16 @@ from yuxi.utils import hashstr, logger
 
 MILVUS_AVAILABLE = True
 CONTENT_SPARSE_FIELD = "content_sparse"
-CONTENT_ANALYZER_PARAMS = {"type": "chinese"}
+CONTENT_ANALYZER_PARAMS = {"type": "standard"}
 VECTOR_METRIC_TYPE = "COSINE"
 MILVUS_CHUNK_EMBED_BATCH_SIZE = 200
-MILVUS_QUERY_OFFLOAD_LIMIT = 8
+MILVUS_QUERY_OFFLOAD_LIMIT = 8                                          
 
 try:
     from pyvi import ViTokenizer
 except ImportError:
     ViTokenizer = None
+
 
 def _tokenize_vietnamese(text: str) -> str:
     if ViTokenizer is not None and text:
@@ -51,6 +52,7 @@ def _tokenize_vietnamese(text: str) -> str:
         except Exception:
             pass
     return text
+
 
 _milvus_query_offload_semaphore_refs: dict[
     int,
@@ -103,8 +105,16 @@ class MilvusRetrievalConfig:
             "type": "select",
             "options": [
                 {"value": "vector", "label": "Tìm kiếm vector", "description": "Chỉ sử dụng độ tương đồng vector"},
-                {"value": "keyword", "label": "Tìm kiếm toàn văn BM25", "description": "Chỉ sử dụng tìm kiếm BM25 của Milvus"},
-                {"value": "hybrid", "label": "Tìm kiếm hỗn hợp", "description": "Tìm kiếm kết hợp vector Milvus và BM25"},
+                {
+                    "value": "keyword",
+                    "label": "Tìm kiếm toàn văn BM25",
+                    "description": "Chỉ sử dụng tìm kiếm BM25 của Milvus",
+                },
+                {
+                    "value": "hybrid",
+                    "label": "Tìm kiếm hỗn hợp",
+                    "description": "Tìm kiếm kết hợp vector Milvus và BM25",
+                },
             ],
             "description": "Chọn chế độ tìm kiếm",
         },
@@ -175,11 +185,19 @@ class MilvusRetrievalConfig:
     )
     include_distances: bool = field(
         default=True,
-        metadata={"label": "Hiển thị độ tương đồng", "type": "boolean", "description": "Hiển thị điểm tương đồng trong kết quả"},
+        metadata={
+            "label": "Hiển thị độ tương đồng",
+            "type": "boolean",
+            "description": "Hiển thị điểm tương đồng trong kết quả",
+        },
     )
     use_graph_retrieval: bool = field(
         default=False,
-        metadata={"label": "Bật tìm kiếm đồ thị", "type": "boolean", "description": "Có bật tìm kiếm khuếch tán thực thể và bộ ba (triplet) hay không"},
+        metadata={
+            "label": "Bật tìm kiếm đồ thị",
+            "type": "boolean",
+            "description": "Có bật tìm kiếm khuếch tán thực thể và bộ ba (triplet) hay không",
+        },
     )
     use_consensus_retrieval: bool = field(
         default=True,
@@ -296,7 +314,11 @@ class MilvusRetrievalConfig:
     )
     use_reranker: bool = field(
         default=False,
-        metadata={"label": "Bật reranker", "type": "boolean", "description": "Có sử dụng model tinh lọc để xếp hạng lại kết quả tìm kiếm hay không"},
+        metadata={
+            "label": "Bật reranker",
+            "type": "boolean",
+            "description": "Có sử dụng model tinh lọc để xếp hạng lại kết quả tìm kiếm hay không",
+        },
     )
     reranker_model: str = field(
         default="",
@@ -639,15 +661,20 @@ class MilvusKB(KnowledgeBase):
         errors = [result for result in results if isinstance(result, Exception)]
         if not errors:
             from yuxi.core.feature_manager import FeatureManager
+
             if FeatureManager.is_enabled(FeatureManager.EVENT_EXTRACTION):
                 from yuxi.core.queue import QueueClient
+
                 for chunk in chunks:
-                    await QueueClient.publish("EXTRACT_KNOWLEDGE", {
-                        "kb_id": kb_id,
-                        "file_id": file_id,
-                        "chunk_id": chunk["chunk_id"],
-                        "content": chunk["content"],
-                    })
+                    await QueueClient.publish(
+                        "EXTRACT_KNOWLEDGE",
+                        {
+                            "kb_id": kb_id,
+                            "file_id": file_id,
+                            "chunk_id": chunk["chunk_id"],
+                            "content": chunk["content"],
+                        },
+                    )
             return
 
         logger.error(f"Chunk double-write failed for file {file_id}, rolling back PostgreSQL and Milvus chunks")
@@ -680,7 +707,7 @@ class MilvusKB(KnowledgeBase):
         chunk_batch_size = max(int(chunk_batch_size), 1)
         for start in range(0, len(chunks), chunk_batch_size):
             batch_chunks = chunks[start : start + chunk_batch_size]
-            
+
             texts = []
             for chunk in batch_chunks:
                 content = chunk["content"]
@@ -725,12 +752,12 @@ class MilvusKB(KnowledgeBase):
         # 2. Phân loại new chunks
         chunks_to_embed = []
         chunks_to_reuse = []
-        
+
         for idx, chunk in enumerate(new_chunks):
             h = hashstr(chunk["content"])
             chunk["chunk_index"] = idx
             chunk["chunk_version"] = "v1.0"
-            
+
             if h in existing_map:
                 old_chunk = existing_map[h]
                 chunk["status"] = "ready"
@@ -744,16 +771,18 @@ class MilvusKB(KnowledgeBase):
         reused_embeddings = []
         if chunks_to_reuse:
             old_ids = [item[1] for item in chunks_to_reuse]
-            expr = f'chunk_id in {json.dumps(old_ids)}'
-            
+            expr = f"chunk_id in {json.dumps(old_ids)}"
+
             def _query_milvus_embeddings():
                 return collection.query(expr=expr, output_fields=["chunk_id", "embedding"], limit=len(old_ids))
-            
+
             try:
                 milvus_results = await asyncio.to_thread(_query_milvus_embeddings)
                 embedding_map = {res["chunk_id"]: res["embedding"] for res in milvus_results}
             except Exception as exc:
-                logger.warning(f"Failed to query existing embeddings from Milvus: {exc}. Falling back to embedding all chunks.")
+                logger.warning(
+                    f"Failed to query existing embeddings from Milvus: {exc}. Falling back to embedding all chunks."
+                )
                 embedding_map = {}
 
             for chunk, old_id in chunks_to_reuse:
@@ -768,17 +797,20 @@ class MilvusKB(KnowledgeBase):
         chunks_to_delete = [ec for ec in existing_chunks if hashstr(ec.content) not in new_hashes]
         if chunks_to_delete:
             del_ids = [ec.chunk_id for ec in chunks_to_delete]
-            
+
             # Xóa khỏi Postgres
             async with pg_manager.get_async_session_context() as session:
                 from sqlalchemy import delete
                 from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
+
                 await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.chunk_id.in_(del_ids)))
-                
+
             # Xóa khỏi Milvus
-            expr_del = f'chunk_id in {json.dumps(del_ids)}'
+            expr_del = f"chunk_id in {json.dumps(del_ids)}"
+
             def _delete_milvus():
                 collection.delete(expr_del)
+
             try:
                 await asyncio.to_thread(_delete_milvus)
             except Exception as exc:
@@ -923,6 +955,7 @@ class MilvusKB(KnowledgeBase):
 
             # Clean up existing chunks if any (for re-indexing)
             from yuxi.core.feature_manager import FeatureManager
+
             if FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING):
                 await self._incremental_index_file(kb_id, file_id, collection, chunks, embedding_function)
             else:
@@ -1010,7 +1043,11 @@ class MilvusKB(KnowledgeBase):
                 )
 
                 # Reparse the file as markdown
-                parse_params = {**resolved_params, "image_bucket": "knowledgebases", "image_prefix": f"{kb_id}/kb-images"}
+                parse_params = {
+                    **resolved_params,
+                    "image_bucket": "knowledgebases",
+                    "image_prefix": f"{kb_id}/kb-images",
+                }
                 markdown_content = await Parser.aparse(source=file_path, params=parse_params)
 
                 # Regenerate chunks
@@ -1086,17 +1123,20 @@ class MilvusKB(KnowledgeBase):
 
     async def aquery(self, query_text: str, kb_id: str, agent_call: bool = False, **kwargs) -> list[dict]:
         """Asynchronous query knowledge base using Strategy Pattern."""
-        from yuxi.core.feature_manager import feature_manager
-        
-        use_graph_retrieval = bool(kwargs.get("use_graph_retrieval", False)) or \
-                               bool(self.databases_meta.get(kb_id, {}).get("use_graph_retrieval", False)) or \
-                               feature_manager.is_enabled("ENABLE_EVENT_EXTRACTION")
-                               
+        from yuxi.core.feature_manager import FeatureManager
+
+        use_graph_retrieval = (
+            bool(kwargs.get("use_graph_retrieval", False))
+            or bool(self.databases_meta.get(kb_id, {}).get("use_graph_retrieval", False))
+            or FeatureManager.is_enabled("ENABLE_EVENT_EXTRACTION")
+        )
+
         if use_graph_retrieval:
             from yuxi.knowledge.retrieval.dispatcher import RetrievalDispatcher
+
             dispatcher = RetrievalDispatcher()
             return await dispatcher.dispatch(query_text, self, kb_id, **kwargs)
-            
+
         return await self._query_factual(query_text, kb_id, agent_call, **kwargs)
 
     async def _query_factual(self, query_text: str, kb_id: str, agent_call: bool = False, **kwargs) -> list[dict]:
@@ -1271,14 +1311,14 @@ class MilvusKB(KnowledgeBase):
                         w_naive=consensus_weight_vector,
                         w_local=consensus_weight_local,
                         w_relation=consensus_weight_relation,
-                        w_event=consensus_weight_event
+                        w_event=consensus_weight_event,
                     )
 
                     consensus_chunk_ids = await retriever.consensus_search(
                         query=query_text,
                         retrieved_chunks=retrieved_chunks,
                         top_k_each_method=max(int(merged_kwargs.get("graph_entity_top_k", 10)), 1),
-                        final_k=recall_top_k
+                        final_k=recall_top_k,
                     )
 
                     if consensus_chunk_ids:
@@ -1288,7 +1328,9 @@ class MilvusKB(KnowledgeBase):
                         for idx, cid in enumerate(consensus_chunk_ids):
                             if cid in chunks_by_id:
                                 score = 1.0 - (idx * 0.001)
-                                retrieved_chunks.append(self._build_chunk_from_record(chunks_by_id[cid], score, score_field="score"))
+                                retrieved_chunks.append(
+                                    self._build_chunk_from_record(chunks_by_id[cid], score, score_field="score")
+                                )
                 else:
                     graph_chunks = await self._retrieve_graph_chunks(query_text, kb_id, retrieved_chunks, merged_kwargs)
                     if graph_chunks:
@@ -1333,10 +1375,12 @@ class MilvusKB(KnowledgeBase):
                     stage1_reranker = get_reranker(stage1_reranker_model)
                     try:
                         documents_text = [chunk["content"] for chunk in retrieved_chunks]
-                        stage1_scores = await stage1_reranker.acompute_score([query_text, documents_text], normalize=True)
+                        stage1_scores = await stage1_reranker.acompute_score(
+                            [query_text, documents_text], normalize=True
+                        )
                         for chunk, score in zip(retrieved_chunks, stage1_scores):
                             chunk["stage1_score"] = float(score)
-                        
+
                         retrieved_chunks.sort(key=lambda item: item.get("stage1_score", 0.0), reverse=True)
                         retrieved_chunks = retrieved_chunks[:stage1_top_k]
                         stage1_success = True
@@ -1344,9 +1388,13 @@ class MilvusKB(KnowledgeBase):
                         await stage1_reranker.aclose()
                     stage1_elapsed = time.time() - stage1_start
                 except Exception as exc:  # noqa: BLE001
-                    logger.error(f"[Two-Stage Rerank] Stage 1 reranking failed: {exc}. Falling back: keeping all original chunks for Stage 2.")
+                    logger.error(
+                        f"[Two-Stage Rerank] Stage 1 reranking failed: {exc}. Falling back: keeping all original chunks for Stage 2."
+                    )
             elif enable_stage1_prefilter:
-                logger.info(f"[Two-Stage Rerank] Prefiltering chunks down to {stage1_top_k} using original hybrid scores.")
+                logger.info(
+                    f"[Two-Stage Rerank] Prefiltering chunks down to {stage1_top_k} using original hybrid scores."
+                )
                 retrieved_chunks = retrieved_chunks[:stage1_top_k]
 
             # --- STAGE 2 (Lọc tinh) ---
@@ -1356,7 +1404,9 @@ class MilvusKB(KnowledgeBase):
                     stage2_reranker = get_reranker(reranker_model)
                     try:
                         documents_text = [chunk["content"] for chunk in retrieved_chunks]
-                        stage2_scores = await stage2_reranker.acompute_score([query_text, documents_text], normalize=True)
+                        stage2_scores = await stage2_reranker.acompute_score(
+                            [query_text, documents_text], normalize=True
+                        )
                         for chunk, score in zip(retrieved_chunks, stage2_scores):
                             chunk["rerank_score"] = float(score)
 
@@ -1367,7 +1417,9 @@ class MilvusKB(KnowledgeBase):
                         await stage2_reranker.aclose()
                     stage2_elapsed = time.time() - stage2_start
                 except Exception as exc:  # noqa: BLE001
-                    logger.error(f"[Two-Stage Rerank] Stage 2 reranking failed: {exc}. Falling back to previous best scores.")
+                    logger.error(
+                        f"[Two-Stage Rerank] Stage 2 reranking failed: {exc}. Falling back to previous best scores."
+                    )
                     if stage1_success:
                         retrieved_chunks.sort(key=lambda item: item.get("stage1_score", 0.0), reverse=True)
                     else:

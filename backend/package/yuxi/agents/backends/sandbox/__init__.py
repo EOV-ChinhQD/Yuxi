@@ -1,4 +1,4 @@
-from .backend import ProvisionerSandboxBackend
+from .backend import ProvisionerSandboxBackend, sandbox_metrics
 from .paths import (
     VIRTUAL_PATH_PREFIX,
     ensure_thread_dirs,
@@ -44,4 +44,5 @@ __all__ = [
     "virtual_path_for_thread_file",
     "USER_DATA_PATH",
     "SKILLS_PATH",
+    "sandbox_metrics",
 ]

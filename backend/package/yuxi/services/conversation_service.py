@@ -214,7 +214,9 @@ def _normalize_parse_method(file_name: str, parse_method: str | None) -> str:
 
     if method not in allowed_methods:
         allowed = ", ".join(allowed_methods)
-        raise HTTPException(status_code=400, detail=f"Phương thức phân tích cú pháp không được hỗ trợ: {method}, tùy chọn: {allowed}")
+        raise HTTPException(
+            status_code=400, detail=f"Phương thức phân tích cú pháp không được hỗ trợ: {method}, tùy chọn: {allowed}"
+        )
     return method
 
 
@@ -695,7 +697,9 @@ async def confirm_tmp_thread_attachments_view(
 
         if len(file_content) > MAX_ATTACHMENT_SIZE_BYTES:
             max_size_mb = MAX_ATTACHMENT_SIZE_BYTES // (1024 * 1024)
-            raise HTTPException(status_code=400, detail=f"Tệp đính kèm quá lớn, hiện tại chỉ hỗ trợ các tệp dưới {max_size_mb} MB")
+            raise HTTPException(
+                status_code=400, detail=f"Tệp đính kèm quá lớn, hiện tại chỉ hỗ trợ các tệp dưới {max_size_mb} MB"
+            )
 
         parsed_markdown = None
         parsed_object_name = str(item.get("parsed_object_name") or "")
@@ -710,7 +714,9 @@ async def confirm_tmp_thread_attachments_view(
             except StorageError as exc:
                 raise HTTPException(status_code=400, detail=f"Đọc và phân tích tệp đính kèm thất bại: {exc}") from exc
             except UnicodeDecodeError as exc:
-                raise HTTPException(status_code=400, detail="Nội dung tệp đính kèm phân tích không phải là văn bản Markdown hợp lệ") from exc
+                raise HTTPException(
+                    status_code=400, detail="Nội dung tệp đính kèm phân tích không phải là văn bản Markdown hợp lệ"
+                ) from exc
 
         prepared_items.append(
             {
@@ -786,7 +792,9 @@ async def upload_thread_attachment_view(
     file_size = len(file_content)
     if file_size > MAX_ATTACHMENT_SIZE_BYTES:
         max_size_mb = MAX_ATTACHMENT_SIZE_BYTES // (1024 * 1024)
-        raise HTTPException(status_code=400, detail=f"Tệp đính kèm quá lớn, hiện tại chỉ hỗ trợ các tệp dưới {max_size_mb} MB")
+        raise HTTPException(
+            status_code=400, detail=f"Tệp đính kèm quá lớn, hiện tại chỉ hỗ trợ các tệp dưới {max_size_mb} MB"
+        )
     materialized = await _materialize_attachment_files(
         thread_id=thread_id,
         uid=str(conversation.uid),

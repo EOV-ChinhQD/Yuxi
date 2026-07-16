@@ -1,22 +1,21 @@
-import asyncio
-from typing import Any, Dict, List, Set
+from typing import Any
 from sqlalchemy import select, update
 from yuxi.storage.postgres.manager import pg_manager
 from yuxi.storage.postgres.models_knowledge import KnowledgeGraphEntity
 from yuxi.knowledge.graphs.graph_utils import normalize_entity_name
-from yuxi.utils.logging_config import logger
+
 
 class EntityResolver:
     """Bộ giải quyết thực thể (Entity Resolution) chuẩn hóa và đồng bộ các bí danh (aliases) về Canonical Name."""
 
-    async def resolve_entities(self, kb_id: str, entities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def resolve_entities(self, kb_id: str, entities: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
         Nhận vào danh sách thực thể thô và cập nhật các trường canonical_name, aliases.
-        
+
         Args:
             kb_id: ID cơ sở tri thức
             entities: Danh sách các dict thực thể dạng {"text": "...", "label": "...", "attributes": [...], "entity_id": "..."}
-            
+
         Returns:
             Danh sách thực thể đã được điền canonical_name và aliases.
         """
@@ -35,17 +34,17 @@ class EntityResolver:
 
         # 3. Xây dựng bản đồ ánh xạ nhanh để tra cứu
         # Tra cứu theo normalized_name -> canonical_name
-        name_to_canonical: Dict[str, str] = {}
+        name_to_canonical: dict[str, str] = {}
         # Tra cứu theo alias -> canonical_name
-        alias_to_canonical: Dict[str, str] = {}
+        alias_to_canonical: dict[str, str] = {}
         # Lưu trữ đối tượng DB entity để cập nhật aliases sau này
-        db_entity_map: Dict[str, KnowledgeGraphEntity] = {}
+        db_entity_map: dict[str, KnowledgeGraphEntity] = {}
 
         for db_ent in db_entities:
             c_name = db_ent.canonical_name or db_ent.name
             name_to_canonical[db_ent.normalized_name] = c_name
             db_entity_map[c_name] = db_ent
-            
+
             aliases = db_ent.aliases or []
             for alias in aliases:
                 norm_alias = normalize_entity_name(alias)
@@ -53,19 +52,19 @@ class EntityResolver:
 
         # 4. Thực hiện ánh xạ thực thể mới
         resolved_entities = []
-        entities_to_update_aliases: Dict[str, Set[str]] = {}
+        entities_to_update_aliases: dict[str, set[str]] = {}
 
         for ent in entities:
             name = ent.get("text", "")
             norm_name = normalize_entity_name(name)
-            
+
             # Kiểm tra xem thực thể này đã được ánh xạ canonical_name chưa
             canonical_name = name_to_canonical.get(norm_name) or alias_to_canonical.get(norm_name)
-            
+
             if canonical_name:
                 # Tìm thấy canonical name hiện tại -> Ghi nhận canonical_name
                 ent["canonical_name"] = canonical_name
-                
+
                 # Cập nhật aliases của canonical entity
                 if canonical_name not in entities_to_update_aliases:
                     entities_to_update_aliases[canonical_name] = set()
@@ -75,7 +74,7 @@ class EntityResolver:
                 canonical_name = name
                 ent["canonical_name"] = canonical_name
                 ent["aliases"] = [name]
-                
+
                 # Thêm vào bộ nhớ cache tạm thời để các thực thể trùng lặp tiếp theo trong cùng lô có thể nhận diện được
                 name_to_canonical[norm_name] = canonical_name
 
@@ -94,7 +93,7 @@ class EntityResolver:
                     if db_ent_obj:
                         current_aliases = set(db_ent_obj.aliases) if db_ent_obj.aliases else {c_name}
                         current_aliases.update(new_aliases)
-                        
+
                         # Cập nhật trực tiếp trên model
                         await session.execute(
                             update(KnowledgeGraphEntity)

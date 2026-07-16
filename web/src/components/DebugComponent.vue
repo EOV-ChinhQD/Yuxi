@@ -46,7 +46,13 @@
             </template>
             {{ state.isFullscreen ? 'Thoát toàn màn hình' : 'toàn màn hình' }}
           </a-button>
-          <a-tooltip :title="state.autoRefresh ? 'Nhấp để dừng làm mới tự động' : 'Nhấp để bật tính năng làm mới tự động'">
+          <a-tooltip
+            :title="
+              state.autoRefresh
+                ? 'Nhấp để dừng làm mới tự động'
+                : 'Nhấp để bật tính năng làm mới tự động'
+            "
+          >
             <a-button
               :type="state.autoRefresh ? 'primary' : 'default'"
               :class="{ 'auto-refresh-button': state.autoRefresh }"

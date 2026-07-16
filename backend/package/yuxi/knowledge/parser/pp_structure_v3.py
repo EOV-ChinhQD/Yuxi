@@ -261,7 +261,9 @@ class PPStructureV3Parser(BaseDocumentProcessor):
             # Record statistics
             summary = result.get("summary", {})
             if summary:
-                logger.info(f"  statistics: {summary.get('total_tables', 0)} sheet, {summary.get('total_formulas', 0)} formula")
+                logger.info(
+                    f"  statistics: {summary.get('total_tables', 0)} sheet, {summary.get('total_formulas', 0)} formula"
+                )
 
             return text
 

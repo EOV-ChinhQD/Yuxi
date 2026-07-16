@@ -513,7 +513,9 @@ def _validate_skill_slug_value(slug: str, *, field_name: str) -> str:
     if len(slug) > 128:
         raise ValueError(f"SKILL.md frontmatter.{field_name} length cannot exceed 128")
     if not SKILL_NAME_PATTERN.match(slug):
-        raise ValueError(f"SKILL.md frontmatter.{field_name} must be lowercase letters/numbers/hyphens, and cannot contain consecutive hyphens")
+        raise ValueError(
+            f"SKILL.md frontmatter.{field_name} must be lowercase letters/numbers/hyphens, and cannot contain consecutive hyphens"
+        )
     return slug
 
 
@@ -852,7 +854,11 @@ async def prepare_remote_skill_install(
         for result in preparation.results:
             if not result.get("success"):
                 items.append(
-                    {"slug": result.get("slug", ""), "success": False, "error": result.get("error", "Installation failed")}
+                    {
+                        "slug": result.get("slug", ""),
+                        "success": False,
+                        "error": result.get("error", "Installation failed"),
+                    }
                 )
                 continue
             item = await _stage_skill_draft_item(
@@ -912,7 +918,11 @@ async def confirm_skill_install_draft(
     for draft_item in data.get("items") or []:
         if not draft_item.get("success", True):
             results.append(
-                {"slug": draft_item.get("slug", ""), "success": False, "error": draft_item.get("error", "Installation failed")}
+                {
+                    "slug": draft_item.get("slug", ""),
+                    "success": False,
+                    "error": draft_item.get("error", "Installation failed"),
+                }
             )
             continue
 
@@ -921,7 +931,9 @@ async def confirm_skill_install_draft(
             results.append({"slug": slug, "success": False, "error": "Skill slug không hợp lệ"})
             continue
         if await repo.exists_slug(slug) or (skills_root / slug).exists():
-            results.append({"slug": slug, "success": False, "error": "Skill slug Already occupied, please re-parse and install"})
+            results.append(
+                {"slug": slug, "success": False, "error": "Skill slug Already occupied, please re-parse and install"}
+            )
             continue
 
         source_dir = (draft_dir / str(draft_item.get("source_dir", ""))).resolve()
@@ -945,7 +957,13 @@ async def confirm_skill_install_draft(
                 final_dir = skills_root / slug
                 if final_dir.exists():
                     shutil.rmtree(temp_target, ignore_errors=True)
-                    results.append({"slug": slug, "success": False, "error": "Skill slug Already occupied, please re-parse and install"})
+                    results.append(
+                        {
+                            "slug": slug,
+                            "success": False,
+                            "error": "Skill slug Already occupied, please re-parse and install",
+                        }
+                    )
                     continue
                 temp_target.rename(final_dir)
 
