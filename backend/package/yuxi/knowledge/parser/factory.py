@@ -76,6 +76,13 @@ class DocumentProcessorFactory:
         # Use caching to avoid duplicate creation
         cache_key = cls._build_cache_key(processor_type, kwargs)
         if cache_key not in _PROCESSOR_CACHE:
+            DEPRECATED_PARSERS = {"rapid_ocr", "mineru_ocr", "pp_structure_v3_ocr"}
+            if processor_type in DEPRECATED_PARSERS:
+                import warnings
+                msg = f"Parser '{processor_type}' is deprecated because it lacks stable layout detection for RAG. Please migrate to cloud-based OCR APIs like 'mineru_official'."
+                warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                logger.warning(f"[Deprecation] {msg}")
+                
             processor_class = cls._load_processor_class(processor_type)
             _PROCESSOR_CACHE[cache_key] = processor_class(**kwargs)
             logger.debug(f"Create a document processor: {processor_type}")
@@ -131,7 +138,10 @@ class DocumentProcessorFactory:
             dict: The health status of each processor
         """
         health_status = {}
+        DEPRECATED_PARSERS = {"rapid_ocr", "mineru_ocr", "pp_structure_v3_ocr"}
         for processor_type in cls.PROCESSOR_TYPES:
+            if processor_type in DEPRECATED_PARSERS:
+                continue
             health_status[processor_type] = cls.check_health(processor_type)
         return health_status
 
@@ -140,7 +150,9 @@ class DocumentProcessorFactory:
         async def run_check(processor_type: str) -> tuple[str, dict[str, Any]]:
             return processor_type, await asyncio.to_thread(cls.check_health, processor_type)
 
-        results = await asyncio.gather(*(run_check(processor_type) for processor_type in cls.PROCESSOR_TYPES))
+        DEPRECATED_PARSERS = {"rapid_ocr", "mineru_ocr", "pp_structure_v3_ocr"}
+        active_processors = [pt for pt in cls.PROCESSOR_TYPES if pt not in DEPRECATED_PARSERS]
+        results = await asyncio.gather(*(run_check(processor_type) for processor_type in active_processors))
         return {processor_type: health for processor_type, health in results}
 
     @classmethod

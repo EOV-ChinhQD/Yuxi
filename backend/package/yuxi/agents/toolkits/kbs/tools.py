@@ -17,6 +17,7 @@ from yuxi.knowledge.schemas import (
     SearchOutputSchema,
 )
 from yuxi.utils import logger
+from yuxi.models import select_model
 
 # ========== Các hàm công cụ kho kiến thức chung ==========
 

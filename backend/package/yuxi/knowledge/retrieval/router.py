@@ -3,10 +3,16 @@ import asyncio
 from enum import Enum
 from typing import Any
 
+import json
 import json_repair
-
+import hashlib
+import os
 from yuxi.utils import logger
 from yuxi.models import select_model
+from yuxi.storage.redis.manager import get_async_redis_client
+
+ENABLE_ROUTER_CACHE = os.getenv("ENABLE_ROUTER_CACHE", "True").lower() in ("true", "1", "yes")
+ROUTER_CACHE_PREFIX = "yuxi:router:cache:"
 
 
 class RouteType(str, Enum):
@@ -25,6 +31,10 @@ class RouteType(str, Enum):
     # kích hoạt cơ chế rewrite query và thử lại tối đa 1 lần (MAX_REWRITE_ATTEMPTS = 1).
     RETRY_WITH_REWRITE = "RETRY_WITH_REWRITE"
 
+def _get_cache_ttl(route_type: RouteType) -> int:
+    if route_type in (RouteType.CHIT_CHAT, RouteType.OUT_OF_DOMAIN, RouteType.AMBIGUOUS):
+        return 86400  # 1 day
+    return 3600  # 1 hour
 
 class SemanticRouter:
     """
@@ -51,6 +61,10 @@ class SemanticRouter:
 
     # Ngưỡng tự tin tối thiểu từ LLM, nếu thấp hơn sẽ fallback về NAIVE_SEARCH
     CONFIDENCE_THRESHOLD = 0.7
+
+    @staticmethod
+    def _normalize_query(query: str) -> str:
+        return query.strip().lower()
 
     @classmethod
     def _heuristic_check(cls, query: str) -> RouteType | None:
@@ -83,7 +97,26 @@ class SemanticRouter:
         if heuristic_route:
             return heuristic_route, {"confidence_score": 1.0, "reasoning": "Heuristic match"}
 
-        # 2. LLM Classification
+        # 2. Redis Exact-Match Cache
+        cache_key = None
+        redis = None
+        if ENABLE_ROUTER_CACHE:
+            try:
+                redis = await get_async_redis_client()
+                if redis:
+                    query_hash = hashlib.md5(cls._normalize_query(query).encode("utf-8")).hexdigest()
+                    cache_key = f"{ROUTER_CACHE_PREFIX}{query_hash}"
+                    cached_val = await redis.get(cache_key)
+                    if cached_val:
+                        cached_data = json.loads(cached_val)
+                        route_str = cached_data.get("route_type")
+                        if route_str in RouteType.__members__:
+                            logger.info(f"[SemanticRouter] Cache hit for query '{query}', route: {route_str}")
+                            return RouteType[route_str], {"confidence_score": 1.0, "reasoning": "Cache hit"}
+            except Exception as e:
+                logger.warning(f"[SemanticRouter] Redis cache read failed: {e}")
+
+        # 3. LLM Classification
         logger.info(f"[SemanticRouter] Calling LLM Router for query: '{query[:60]}...'")
 
         prompt = f"""Select the best routing label for this enterprise query.
@@ -150,6 +183,14 @@ Output ONLY valid JSON:
                 }
 
             logger.info(f"[SemanticRouter] Successfully routed to {final_route.value} (conf: {confidence})")
+            
+            if redis and cache_key:
+                try:
+                    ttl = _get_cache_ttl(final_route)
+                    await redis.setex(cache_key, ttl, json.dumps(data))
+                except Exception as e:
+                    logger.warning(f"[SemanticRouter] Failed to write cache: {e}")
+
             return final_route, data
 
         except TimeoutError:

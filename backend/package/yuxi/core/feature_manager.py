@@ -15,6 +15,8 @@ class FeatureManager:
     def is_enabled(cls, flag: str) -> bool:
         if flag in cls._overrides:
             return cls._overrides[flag]
+        if flag == cls.STRUCTURAL_CHUNKING:
+            return True
         return os.getenv(flag, "false").lower() in ("true", "1", "yes")
 
     @classmethod

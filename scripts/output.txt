@@ -1,0 +1,40 @@
+Bytecode compiled 51251 files in 493ms
+[32m07-15 15:02:56[0m [1mINFO[0m [36mapp.py:93[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1mLoading config from saves/config/base.toml[0m
+[32m07-15 15:03:01[0m [1mINFO[0m [36mmanager.py:89[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1mPostgreSQL manager initialized for knowledge base: postgresql+asyncpg://postgres:postgres://***[0m
+/app/package/yuxi/knowledge/implementations/milvus.py:385: PyMilvusDeprecationWarning: `connections.connect` is an ORM-style PyMilvus API and will be removed in PyMilvus 3.1. Use `MilvusClient` instead.
+  connections.connect(alias=self.connection_alias, uri=self.milvus_uri, token=self.milvus_token)
+/app/package/yuxi/knowledge/implementations/milvus.py:389: PyMilvusDeprecationWarning: `db.list_database` is an ORM-style PyMilvus API and will be removed in PyMilvus 3.1. Use `MilvusClient` instead.
+  if self.milvus_db not in db.list_database():
+[32m07-15 15:03:01[0m [33m[1mWARNING[0m [36mmilvus.py:393[0m: [[35mreq:-[0m|[36mrun:-[0m] - [33m[1mDatabase operation failed, using default: <ConnectionNotExistException: (code=1, message=should create connection first.)>[0m
+[32m07-15 15:03:01[0m [1mINFO[0m [36mmilvus.py:395[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1mConnected to Milvus at http://milvus:19530[0m
+[32m07-15 15:03:01[0m [1mINFO[0m [36mmilvus.py:379[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1mMilvusKB initialized[0m
+[32m07-15 15:03:01[0m [1mINFO[0m [36mfactory.py:52[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1mCreated milvus knowledge base instance at saves/knowledge_base_data/milvus_data[0m
+[32m07-15 15:03:01[0m [1mINFO[0m [36mmanager.py:104[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1mCreated milvus knowledge base instance[0m
+[32m07-15 15:03:01[0m [1mINFO[0m [36mbase.py:1539[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1mLoaded milvus metadata from database for 95 databases[0m
+[32m07-15 15:03:02[0m [1mINFO[0m [36mrouter.py:62[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1m[SemanticRouter] Calling LLM Router for query: 'Tại sao GraphRAG của Microsoft lại bị đánh giá là kém hiệu q...'[0m
+[32m07-15 15:03:02[0m [1mINFO[0m [36mchat.py:66[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1mSelecting model: gemini_compatible:gemini-2.5-flash (provider_type=gemini)[0m
+[32m07-15 15:03:02[0m [1mINFO[0m [36m__init__.py:45[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1mRunning in docker, using https://generativelanguage.googleapis.com/v1beta as base url[0m
+[32m07-15 15:03:02[0m [34m[1mDEBUG[0m [36mmodels.py:45[0m: [[35mreq:-[0m|[36mrun:-[0m] - [34m[1mLoading model gemini_compatible:gemini-2.5-flash with provider_type=gemini[0m
+[32m07-15 15:03:08[0m [1mINFO[0m [36mrouter.py:121[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1m[SemanticRouter] Successfully routed to MULTI_HOP (conf: 0.95)[0m
+[32m07-15 15:03:08[0m [1mINFO[0m [36mdispatcher.py:160[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1m[RetrievalDispatcher] Query: 'Tại sao GraphRAG của Microsoft lại bị đánh giá là kém hiệu q...' routed to: MULTI_HOP[0m
+[32m07-15 15:03:08[0m [1mINFO[0m [36mdispatcher.py:117[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1m[MultiHopStrategy] Executing multi-hop relation retrieval for query: 'Tại sao GraphRAG của Microsoft lại bị đánh giá là kém hiệu q'[0m
+/app/package/yuxi/knowledge/graphs/milvus_graph_vector_store.py:45: PyMilvusDeprecationWarning: `connections.has_connection` is an ORM-style PyMilvus API and will be removed in PyMilvus 3.1. Use `MilvusClient` instead.
+  if not connections.has_connection(self.connection_alias):
+/app/package/yuxi/knowledge/graphs/milvus_graph_vector_store.py:46: PyMilvusDeprecationWarning: `connections.connect` is an ORM-style PyMilvus API and will be removed in PyMilvus 3.1. Use `MilvusClient` instead.
+  connections.connect(alias=self.connection_alias, uri=self.milvus_uri, token=self.milvus_token)
+/app/package/yuxi/knowledge/graphs/milvus_graph_vector_store.py:48: PyMilvusDeprecationWarning: `db.list_database` is an ORM-style PyMilvus API and will be removed in PyMilvus 3.1. Use `MilvusClient` instead.
+  if self.milvus_db not in db.list_database():
+[32m07-15 15:03:08[0m [33m[1mWARNING[0m [36mmilvus_graph_vector_store.py:52[0m: [[35mreq:-[0m|[36mrun:-[0m] - [33m[1mMilvus graph database operation failed, using default: <ConnectionNotExistException: (code=1, message=should create connection first.)>[0m
+[32m07-15 15:03:08[0m [33m[1mWARNING[0m [36mmulti_hop_retriever.py:164[0m: [[35mreq:-[0m|[36mrun:-[0m] - [33m[1m[MultiHop] Failed to extract entities via LLM: Không tìm thấy model: 'gpt-4o-mini'. Các model chat khả dụng (15): ['gemini_compatible:gemini-2.5-flash', 'gemini_compatible:gemini-2.0-flash', 'gemini_compatible:gemini-1.5-pro', 'ollama:qwen2.5:7b', 'ollama:qwen2.5:1.5b', 'ollama:phi3:mini', 'openrouter:meta-llama/llama-3.3-70b-instruct:free', 'openrouter:qwen/qwen3-coder:free', 'openrouter:google/gemma-4-31b-it:free', 'openrouter:cohere/north-mini-code:free'][0m
+/usr/local/lib/python3.13/concurrent/futures/thread.py:59: PyMilvusDeprecationWarning: `utility.has_collection` is an ORM-style PyMilvus API and will be removed in PyMilvus 3.1. Use `MilvusClient` instead.
+  result = self.fn(*self.args, **self.kwargs)
+[32m07-15 15:03:08[0m [1mINFO[0m [36mmulti_hop_retriever.py:240[0m: [[35mreq:-[0m|[36mrun:-[0m] - [1m[MultiHop] No seed events found, returning empty.[0m
+Querying KB kb_yolstgjixa: Tại sao GraphRAG của Microsoft lại bị đánh giá là kém hiệu quả và tốn kém chi phí (exorbitant expense) khi đối mặt với sự thay đổi dữ liệu liên tục trong môi trường thực tế so với LightRAG?
+
+=== RESULTS ===
+[0] Score: 1.0
+Content: 🤖 **Bộ định tuyến RAG Yuxi**
+* **Ý định**: `MULTI_HOP`
+* **Chiến lược**: `MultiHopStrategy`
+* **Lý do**: So sánh hiệu quả và chi phí giữa GraphRAG và LightRAG.
+

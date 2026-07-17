@@ -162,6 +162,10 @@ class LocalContainerProvisionerBackend:
         self._sandbox_host = os.getenv("DOCKER_SANDBOX_HOST", "host.docker.internal")
         self._health_timeout_seconds = int(os.getenv("SANDBOX_HEALTH_TIMEOUT_SECONDS", "300"))
         self._sandbox_env = load_sandbox_env()
+        self._network_disabled = os.getenv("SANDBOX_NETWORK_DISABLED", "True").lower() in ("true", "1", "yes")
+        self._mem_limit = os.getenv("SANDBOX_MEM_LIMIT", "512m")
+        self._nano_cpus = int(os.getenv("SANDBOX_NANO_CPUS", "500000000")) # 0.5 CPU
+        self._pids_limit = int(os.getenv("SANDBOX_PIDS_LIMIT", "100"))
 
         try:
             self._client = docker.from_env()
@@ -419,12 +423,17 @@ class LocalContainerProvisionerBackend:
                     str(thread_skills): {"bind": "/home/gem/skills", "mode": "ro"},
                 },
                 "ports": {f"{self._container_port}/tcp": None},
-                "security_opt": ["seccomp=unconfined"],
+                "cap_drop": ["ALL"],
+                "mem_limit": self._mem_limit,
+                "nano_cpus": self._nano_cpus,
+                "pids_limit": self._pids_limit,
                 # The sandbox image expects /home/gem to be writable during boot.
                 # Keep it ephemeral and mount persistent user-data underneath it.
-                "tmpfs": {"/home/gem": "rw,exec,mode=777"},
+                "tmpfs": {"/home/gem": "rw,mode=777"},
             }
-            if self._network:
+            if self._network_disabled:
+                run_kwargs["network_disabled"] = True
+            elif self._network:
                 run_kwargs["network"] = self._network
             sandbox_env = merged_sandbox_env(self._sandbox_env, env or {})
             if sandbox_env:

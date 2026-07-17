@@ -69,6 +69,17 @@ class ConsensusRetriever:
         self.w_event = w_event
         self.graph_service = MilvusGraphService()
 
+    async def _load_dynamic_weights(self) -> dict | None:
+        try:
+            from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
+            repo = KnowledgeBaseRepository()
+            kb = await repo.get_by_kb_id(self.kb_id)
+            if kb and kb.metadata_ and "consensus_weights" in kb.metadata_:
+                return kb.metadata_["consensus_weights"]
+        except Exception as e:
+            logger.warning(f"[Consensus] Failed to load dynamic weights for KB {self.kb_id}: {e}")
+        return None
+
     def _detect_query_type(self, query: str) -> str:
         query_lower = query.lower()
         if any(kw in query_lower for kw in _RELATION_KEYWORDS):
@@ -291,12 +302,22 @@ Từ khóa:"""
             )
 
             # Thiết lập trọng số consensus
-            base_weights = {
-                "w_naive": self.w_naive,
-                "w_local": self.w_local,
-                "w_relation": self.w_relation,
-                "w_event": self.w_event,
-            }
+            dynamic_weights = await self._load_dynamic_weights()
+            if dynamic_weights:
+                base_weights = {
+                    "w_naive": dynamic_weights.get("w_naive", self.w_naive),
+                    "w_local": dynamic_weights.get("w_local", self.w_local),
+                    "w_relation": dynamic_weights.get("w_relation", self.w_relation),
+                    "w_event": dynamic_weights.get("w_event", self.w_event),
+                }
+                logger.info(f"[Consensus] Using dynamic weights from KB metadata: {base_weights}")
+            else:
+                base_weights = {
+                    "w_naive": self.w_naive,
+                    "w_local": self.w_local,
+                    "w_relation": self.w_relation,
+                    "w_event": self.w_event,
+                }
             weights = self._get_weights_for_query(query, base_weights)
             W_NAIVE = weights["w_naive"]
             W_LOCAL = weights["w_local"]

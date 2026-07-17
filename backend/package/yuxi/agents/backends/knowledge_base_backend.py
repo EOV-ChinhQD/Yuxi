@@ -35,7 +35,7 @@ async def resolve_visible_knowledge_bases_for_context(context) -> list[dict[str,
                 return -1
 
         latest_test_db = max(test_dbs, key=get_suffix)
-        databases = [latest_test_db]
+        databases = [db for db in databases if not str(db.get("name") or "").startswith("TEST_RAG_PIPELINE_")] + [latest_test_db]
     enabled_knowledges = getattr(context, "knowledges", None)
     if enabled_knowledges is not None:
         enabled_ids = {str(value).strip() for value in enabled_knowledges if str(value).strip()}

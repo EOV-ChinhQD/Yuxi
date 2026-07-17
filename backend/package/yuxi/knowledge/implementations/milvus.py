@@ -1636,6 +1636,8 @@ class MilvusKB(KnowledgeBase):
                     "ent_ids": chunk.ent_ids,
                     "tags": chunk.tags,
                     "extraction_result": chunk.extraction_result,
+                    "heading_path": chunk.heading_path,
+                    "section_type": chunk.section_type,
                 }
                 for chunk in chunks
             ]

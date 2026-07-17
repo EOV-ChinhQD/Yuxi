@@ -645,7 +645,25 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
             "file_path": file_path,
         }
 
-        response = handler(request.override(messages=[*new_messages, *preserved_messages]))
+        response_messages = [*new_messages, *preserved_messages]
+        import os
+        if os.getenv("ENABLE_NEW_SUMMARY_MIDDLEWARE", "True").lower() in ("true", "1", "yes"):
+            max_input_tokens = self._get_profile_limits()
+            if max_input_tokens:
+                while len(preserved_messages) > 1:
+                    current_tokens = self._count_request_tokens(
+                        [*new_messages, *preserved_messages],
+                        system_message=request.system_message,
+                        tools=request.tools,
+                    )
+                    if current_tokens <= max_input_tokens:
+                        break
+                    # Drop the oldest message from preserved_messages to fit token budget
+                    dropped = preserved_messages.pop(0)
+                    logger.warning(f"[SummaryMiddleware] Dropping message {type(dropped).__name__} to fit token budget.")
+                response_messages = [*new_messages, *preserved_messages]
+
+        response = handler(request.override(messages=response_messages))
         update: dict[str, Any] = {"_summarization_event": new_event}
         if new_state_tail:
             update["messages"] = list(new_state_tail)
@@ -741,7 +759,25 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
             "file_path": file_path,
         }
 
-        response = await handler(request.override(messages=[*new_messages, *preserved_messages]))
+        response_messages = [*new_messages, *preserved_messages]
+        import os
+        if os.getenv("ENABLE_NEW_SUMMARY_MIDDLEWARE", "True").lower() in ("true", "1", "yes"):
+            max_input_tokens = self._get_profile_limits()
+            if max_input_tokens:
+                while len(preserved_messages) > 1:
+                    current_tokens = self._count_request_tokens(
+                        [*new_messages, *preserved_messages],
+                        system_message=request.system_message,
+                        tools=request.tools,
+                    )
+                    if current_tokens <= max_input_tokens:
+                        break
+                    # Drop the oldest message from preserved_messages to fit token budget
+                    dropped = preserved_messages.pop(0)
+                    logger.warning(f"[SummaryMiddleware] Dropping message {type(dropped).__name__} to fit token budget.")
+                response_messages = [*new_messages, *preserved_messages]
+
+        response = await handler(request.override(messages=response_messages))
         update: dict[str, Any] = {"_summarization_event": new_event}
         if new_state_tail:
             update["messages"] = list(new_state_tail)
