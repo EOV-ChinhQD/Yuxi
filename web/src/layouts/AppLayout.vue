@@ -294,7 +294,7 @@ provide('settingsModal', {
         <button
           v-if="!sidebarCollapsed"
           type="button"
-          class="sidebar-toggle"
+          class="sidebar-toggle interactive-item"
           aria-label="Thu gọn thanh bên"
           @click="toggleSidebar"
         >
@@ -305,7 +305,7 @@ provide('settingsModal', {
         <RouterLink
           v-if="primaryNavItem"
           :to="primaryNavItem.path"
-          class="nav-item"
+          class="nav-item interactive-item"
           :class="{ active: isNavItemActive(primaryNavItem) }"
           :active-class="primaryNavItem.action ? '' : 'active'"
           @click.stop
@@ -320,12 +320,12 @@ provide('settingsModal', {
               size="18"
             />
           </a-tooltip>
-          <span class="nav-text">{{ primaryNavItem.name }}</span>
+          <span class="nav-text text-truncate-sidebar">{{ primaryNavItem.name }}</span>
         </RouterLink>
 
         <button
           type="button"
-          class="nav-item"
+          class="nav-item interactive-item"
           :class="{ active: conversationSearchOpen }"
           @click.stop="openConversationSearch"
         >
@@ -333,7 +333,7 @@ provide('settingsModal', {
             <template #title>Search chat</template>
             <Search class="icon" size="18" />
           </a-tooltip>
-          <span class="nav-text">Search chat</span>
+          <span class="nav-text text-truncate-sidebar">Search chat</span>
         </button>
 
         <RouterLink
@@ -341,7 +341,7 @@ provide('settingsModal', {
           :key="index"
           :to="item.path"
           v-show="!item.hidden"
-          class="nav-item"
+          class="nav-item interactive-item"
           :class="{ active: isNavItemActive(item) }"
           :active-class="item.action ? '' : 'active'"
           @click.stop
@@ -354,7 +354,7 @@ provide('settingsModal', {
               size="18"
             />
           </a-tooltip>
-          <span class="nav-text">{{ item.name }}</span>
+          <span class="nav-text text-truncate-sidebar">{{ item.name }}</span>
         </RouterLink>
       </div>
       <div class="fill">
@@ -373,12 +373,12 @@ provide('settingsModal', {
         />
       </div>
       <div class="foo">
-        <div class="github nav-item" @click.stop>
+        <div class="github nav-item interactive-item" @click.stop>
           <a-tooltip placement="right" :open="sidebarCollapsed ? undefined : false">
             <template #title>Chào mừng Star</template>
             <a href="https://github.com/xerrors/Yuxi" target="_blank" class="github-link">
               <GithubOutlined class="icon" />
-              <span class="nav-text">GitHub</span>
+              <span class="nav-text text-truncate-sidebar">GitHub</span>
               <span v-if="githubStars > 0" class="github-stars">
                 <span class="star-count">{{ (githubStars / 1000).toFixed(1) }}k</span>
               </span>
@@ -391,7 +391,7 @@ provide('settingsModal', {
             <template v-if="userStore.isAdmin" #actions>
               <a-tooltip placement="top" title="Trung tâm nhiệm vụ">
                 <button
-                  class="user-task-center"
+                  class="user-task-center interactive-item"
                   :class="{ active: isDrawerOpen }"
                   type="button"
                   aria-label="Trung tâm nhiệm vụ"
@@ -480,6 +480,7 @@ provide('settingsModal', {
   width: 100%;
   height: 100vh;
   min-width: var(--min-width);
+  background-color: var(--main-5); /* Sidebar background bleeds to app-layout */
 }
 
 div.header,
@@ -491,6 +492,14 @@ div.header,
 #app-router-view {
   flex: 1 1 auto;
   overflow-y: auto;
+  background-color: var(--bg-surface-elevated, var(--gray-0));
+  border-radius: 16px 0 0 16px;
+  box-shadow: var(--shadow-premium-2);
+  margin-top: 8px;
+  margin-bottom: 8px;
+  border-left: 1px solid var(--gray-100);
+  border-top: 1px solid var(--gray-100);
+  border-bottom: 1px solid var(--gray-100);
 }
 
 .header {
@@ -500,10 +509,10 @@ div.header,
   justify-content: flex-start;
   align-items: stretch;
   gap: 16px;
-  background-color: var(--main-5);
+  background-color: transparent; /* Changed from var(--main-5) because parent has it */
   height: 100%;
   width: @sidebar-width;
-  border-right: 1px solid var(--gray-100);
+  border-right: none; /* Removed to enhance the premium depth effect */
   padding: @sidebar-padding;
   overflow: hidden;
   user-select: none;
@@ -592,19 +601,6 @@ div.header,
     border-radius: 8px;
     background: transparent;
     color: var(--gray-600);
-    cursor: pointer;
-    transition:
-      background-color 0.2s ease,
-      border-color 0.2s ease,
-      color 0.2s ease;
-
-    &:hover,
-    &:focus-visible {
-      border-color: var(--main-50);
-      background: var(--main-20);
-      color: var(--main-color);
-      outline: none;
-    }
   }
 
   .nav-item {
@@ -639,11 +635,8 @@ div.header,
       min-width: 0;
       max-width: 140px;
       margin-left: 8px;
-      overflow: hidden;
       line-height: 20px;
       font-weight: 450;
-      text-overflow: ellipsis;
-      white-space: nowrap;
       transition:
         opacity 0.12s ease,
         margin-left 0.18s ease,
@@ -681,12 +674,6 @@ div.header,
 
     &.warning {
       color: var(--color-error-500);
-    }
-
-    &:hover {
-      border-color: transparent;
-      background-color: var(--main-20);
-      color: var(--main-color);
     }
 
     &.github {

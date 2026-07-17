@@ -130,6 +130,15 @@
   --shadow-4: rgba(255, 255, 255, 0.16);
   --shadow-5: rgba(255, 255, 255, 0.2);
 
+  /* Premium Shadows Dark Mode */
+  --shadow-premium-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-premium-2: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-premium-3: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-premium-4: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  --shadow-premium-5: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+
+  --bg-surface-elevated: var(--gray-800);
+
   --color-trans-light: rgba(0, 0, 0, 0.85);
   --color-trans-dark: rgba(255, 255, 255, 0.85);
 }

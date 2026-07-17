@@ -8,6 +8,8 @@
 :root {
   --header-height: 45px;
   --min-width: 450px;
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 *,
@@ -25,13 +27,16 @@ body {
   color: var(--gray-900);
   background: var(--gray-0);
   line-height: 1.6;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Roboto', 'HarmonyOS Sans SC', 'Segoe UI',
-    'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 15px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6, .brand-name {
+  font-family: var(--font-display);
+  font-weight: 600;
 }
 
 /* layout */
@@ -107,4 +112,64 @@ body {
 .card-tag.tag-gold {
   background: var(--color-warning-50);
   color: var(--color-warning-900);
+}
+
+/* 8-State System Utilities (Hallmark Pattern) */
+.interactive-item {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  outline: none;
+}
+
+/* State 1: Default (base styles applied by component) */
+
+/* State 2: Hover */
+.interactive-item:hover {
+  background-color: var(--main-20);
+  color: var(--main-color);
+}
+
+/* State 3: Focus-Visible */
+.interactive-item:focus-visible {
+  outline: 2px solid var(--main-400);
+  outline-offset: 2px;
+}
+
+/* State 4: Active */
+.interactive-item:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* State 5: Disabled */
+.interactive-item:disabled,
+.interactive-item.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* State 6, 7, 8: Loading, Error, Success (optional contextual classes) */
+.interactive-item.is-loading {
+  opacity: 0.7;
+  pointer-events: none;
+  cursor: wait;
+}
+
+.interactive-item.has-error {
+  border-color: var(--color-error-500);
+  color: var(--color-error-500);
+}
+
+.interactive-item.is-success {
+  border-color: var(--color-success-500);
+  color: var(--color-success-500);
+}
+
+/* Scoped Text Truncation */
+.text-truncate-sidebar {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
