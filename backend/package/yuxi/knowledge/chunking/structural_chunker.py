@@ -1,7 +1,7 @@
 import re
 from typing import Any
 from yuxi.knowledge.chunking.base import BaseChunker, ChunkResult, ChunkMetadata
-from yuxi.knowledge.chunking.ragflow_like.nlp import count_tokens
+from yuxi.knowledge.chunking.ragflow_like.nlp import count_tokens, hard_split_by_token_limit
 
 
 class DocumentNode:
@@ -24,7 +24,7 @@ class StructuralChunker(BaseChunker):
     Strictly follows token limits and binds context.
     """
 
-    def __init__(self, target_chunk_size=1024):
+    def __init__(self, target_chunk_size=512):
         self.target_size = target_chunk_size
 
     def chunk(self, markdown: str, config: dict[str, Any] | None = None) -> list[ChunkResult]:
@@ -194,6 +194,16 @@ class StructuralChunker(BaseChunker):
     def _add_content_to_chunk(
         self, node: DocumentNode, accum: list[DocumentNode], chunks: list[ChunkResult], context_stack: list[str]
     ):
+        # Split large text/code nodes to prevent bypassing chunk size limit
+        if node.node_type in ["text", "code"] and node.token_count > self.target_size:
+            hard_limit = int(self.target_size * 1.5)
+            splits = hard_split_by_token_limit(node.text, self.target_size, hard_limit)
+            for split_text in splits:
+                split_node = DocumentNode(split_text, node.level, node.node_type, node.metadata)
+                split_node.token_count = count_tokens(split_text)
+                self._add_content_to_chunk(split_node, accum, chunks, context_stack)
+            return
+
         current_tokens = sum(n.token_count for n in accum)
 
         if current_tokens + node.token_count > self.target_size:
@@ -238,6 +248,8 @@ class StructuralChunker(BaseChunker):
                 content_parts.append(f"\n[TABLE_DATA]\n{node.text}\nCaption: {caption}")
             elif node.node_type == "equation":
                 content_parts.append(f"\n[EQUATION]\n{node.text}\n")
+            elif node.node_type == "code":
+                content_parts.append(f"```\n{node.text}\n```")
             else:
                 content_parts.append(node.text)
 

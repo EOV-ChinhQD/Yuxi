@@ -159,9 +159,7 @@ const openProfile = () => {
   align-items: center;
   justify-content: center;
   color: var(--gray-800);
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'Roboto', 'HarmonyOS Sans SC', 'Segoe UI',
-    'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-body);
 }
 
 .user-info-dropdown {

@@ -510,9 +510,7 @@ const showCopiedFeedback = (btn) => {
 .flat-md-preview.yk-markdown-preview {
   max-width: 100%;
   color: var(--gray-1000);
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei',
-    'Hiragino Sans GB', 'Source Han Sans CN', sans-serif;
+  font-family: var(--font-body);
   font-size: 0.9rem;
   line-height: 1.75;
   word-break: break-word;
@@ -643,9 +641,7 @@ const showCopiedFeedback = (btn) => {
   }
 
   code {
-    font-family:
-      'Menlo', 'Monaco', 'Consolas', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei',
-      'Hiragino Sans GB', 'Source Han Sans CN', 'Courier New', monospace;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Consolas', 'Courier New', monospace;
     font-size: 13px;
     line-height: 1.5;
     letter-spacing: 0.025em;

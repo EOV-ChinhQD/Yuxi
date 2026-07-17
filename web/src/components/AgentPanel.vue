@@ -964,8 +964,7 @@ watch(
   align-items: center;
   flex: 1;
   min-width: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   color: var(--gray-800);
 }
