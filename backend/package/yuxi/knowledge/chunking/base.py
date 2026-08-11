@@ -11,6 +11,7 @@ class ChunkMetadata:
     section_type: str = ""  # "text", "table", "equation", "code"
     page_number: int | None = None
     depth: int = 0  # Heading depth in tree
+    chunk_quality: str = ""  # "poor_structure" or empty/good
 
 
 @dataclass

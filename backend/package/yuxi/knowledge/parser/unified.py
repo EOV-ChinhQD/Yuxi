@@ -236,18 +236,19 @@ def parse_pdf(file, params=None):
     from yuxi import config as yuxi_config
 
     params = params or {}
+    trace_id = params.get("file_id") or Path(str(file)).name
 
     # 1. Analyzer
     try:
         analyzer = PDFDensityAnalyzer()
         analysis = analyzer.analyze_document(file)
         logger.info(
-            f"[Density Analyzer] Recommended: {analysis['recommended_ocr']}, "
+            f"[FileID: {trace_id}] [Density Analyzer] Recommended: {analysis['recommended_ocr']}, "
             f"Scan pages: {len(analysis['scan_pages'])}/{analysis['total_pages']}, "
             f"Hybrid pages: {len(analysis['hybrid_pages'])}/{analysis['total_pages']}"
         )
     except Exception as e:
-        logger.warning(f"[Density Analyzer] Failed to analyze PDF density: {e}")
+        logger.warning(f"[FileID: {trace_id}] [Density Analyzer] Failed to analyze PDF density: {e}")
         analysis = {"recommended_ocr": "auto"}
 
     # Policy: explicit param wins, then runtime config, then density-based auto.
@@ -267,11 +268,11 @@ def parse_pdf(file, params=None):
     allow_external = yuxi_config.allow_external_ocr
 
     # Engine chain: user-selected engine first, then registered defaults.
-    CLOUD_ENGINES = {"paddleocr_vl_1_6", "mineru_official", "deepseek_ocr"}
     engine_preference: list[str] = []
     
     if opt_ocr and opt_ocr != "disable" and opt_ocr in DocumentProcessorFactory.PROCESSOR_TYPES:
-        if opt_ocr in CLOUD_ENGINES and not allow_external:
+        if DocumentProcessorFactory.requires_external(opt_ocr) and not allow_external:
+            logger.error(f"[FileID: {trace_id}] Compliance violation: attempt to use external OCR '{opt_ocr}' when ALLOW_EXTERNAL_OCR=false.")
             from yuxi.knowledge.parser.base import DocumentProcessorException
             raise DocumentProcessorException(
                 f"Cannot use {opt_ocr}: External OCR is disabled by compliance policy (ALLOW_EXTERNAL_OCR=false).", 
@@ -286,12 +287,27 @@ def parse_pdf(file, params=None):
             engine_preference.append("rapid_ocr")
     else:
         # Scanned/hybrid PDFs: prefer cloud OCR when allowed, otherwise local OCR.
-        if allow_external:
-            for engine in ("paddleocr_vl_1_6", "mineru_official", "deepseek_ocr"):
-                if engine not in engine_preference:
-                    engine_preference.append(engine)
-        if "rapid_ocr" not in engine_preference:
-            engine_preference.append("rapid_ocr")
+        prioritized_engines = [
+            "paddleocr_vl_1_6",
+            "mineru_official",
+            "deepseek_ocr",
+            "paddleocr_pp_ocrv6",
+            "rapid_ocr",
+            "pp_structure_v3_ocr",
+            "mineru_ocr"
+        ]
+        for engine in prioritized_engines:
+            if engine not in DocumentProcessorFactory.PROCESSOR_TYPES:
+                continue
+            try:
+                is_ext = DocumentProcessorFactory.requires_external(engine)
+            except Exception:
+                is_ext = False
+            
+            if is_ext and not allow_external:
+                continue
+            if engine not in engine_preference:
+                engine_preference.append(engine)
 
     # Resolve images
     image_bucket, image_prefix = _resolve_image_storage_params(params)
@@ -318,16 +334,17 @@ def parse_pdf(file, params=None):
                 )
 
             if result.status == ProcessingStatus.SUCCESS:
+                logger.info(f"[FileID: {trace_id}] [Engine: {engine}] SUCCESS, content length={len(result.content or '')}")
                 return result
 
             if result.status == ProcessingStatus.DEGRADED:
-                logger.warning(f"{engine} returned a DEGRADED result, trying next engine...")
+                logger.warning(f"[FileID: {trace_id}] [Engine: {engine}] DEGRADED result, trying next engine...")
                 last_error = DocumentProcessorException(f"Degraded result from {engine}", engine)
                 continue
 
         except Exception as e:
             last_error = DocumentProcessorException(str(e), engine)
-            logger.warning(f"Engine {engine} failed: {e}")
+            logger.warning(f"[FileID: {trace_id}] [Engine: {engine}] failed: {e}")
 
     # No automatic fallback to the plain-text PyPDF reader; surface the failure explicitly.
     return ProcessingResult(

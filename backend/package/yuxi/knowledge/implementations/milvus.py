@@ -1047,6 +1047,7 @@ class MilvusKB(KnowledgeBase):
                     **resolved_params,
                     "image_bucket": "knowledgebases",
                     "image_prefix": f"{kb_id}/kb-images",
+                    "file_id": file_id,
                 }
                 markdown_content = await Parser.aparse(source=file_path, params=parse_params)
 

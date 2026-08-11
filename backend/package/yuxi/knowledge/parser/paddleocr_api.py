@@ -25,6 +25,7 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
 
     model = ""
     service_name = ""
+    requires_external = True
     default_optional_payload: dict[str, bool] = {}
 
     def __init__(self, api_token: str | None = None, api_url: str | None = None):

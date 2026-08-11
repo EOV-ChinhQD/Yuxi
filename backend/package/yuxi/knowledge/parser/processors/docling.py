@@ -113,10 +113,17 @@ class DoclingProcessor(BaseDocumentProcessor):
                 metadata={"file": path.name, "error_type": "export_error"},
             )
 
-        # Kiểm tra layout confidence (nếu api có support, hiện tại ước tính qua mật độ table/heading)
-        # Giả lập: Nếu OCR được bật nhưng file PDF trả về < 50 chars, coi như degraded
+        # Kiểm tra layout confidence và suy thoái (degraded) bằng ngưỡng động dựa trên số trang
+        page_count = 1
+        if hasattr(result, "pages") and result.pages:
+            try:
+                page_count = len(result.pages)
+            except TypeError:
+                pass
+
+        min_char_limit = max(50, 30 * page_count)
         status = ProcessingStatus.SUCCESS
-        if len(markdown.strip()) < 50:
+        if len(markdown.strip()) < min_char_limit:
             status = ProcessingStatus.DEGRADED
 
         return ProcessingResult(
@@ -124,7 +131,7 @@ class DoclingProcessor(BaseDocumentProcessor):
             engine=self.service_name,
             ocr_used=(ocr_policy != OCRPolicy.DISABLE),
             content=markdown,
-            metadata={"file": path.name},
+            metadata={"file": path.name, "page_count": page_count, "min_char_limit": min_char_limit},
         )
 
     def process_file(self, file_path: str, params: dict[str, Any] | None = None) -> str:

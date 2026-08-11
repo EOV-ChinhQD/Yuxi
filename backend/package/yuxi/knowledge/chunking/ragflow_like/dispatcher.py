@@ -46,6 +46,7 @@ def _build_chunk_records(
                 "status": "pending",
                 "heading_path": cr.metadata.heading_path,
                 "section_type": cr.metadata.section_type or "text",
+                "chunk_quality": getattr(cr.metadata, "chunk_quality", "good") or "good",
             }
         )
 
@@ -93,6 +94,7 @@ def _chunk_with_base_chunker(
         fallback_chunks = NaiveChunker().chunk(markdown_content, parser_config).chunks
         for chunk in fallback_chunks:
             chunk.metadata.section_type = "fallback"
+            chunk.metadata.chunk_quality = "poor_structure"
         chunks = fallback_chunks
 
     return chunks

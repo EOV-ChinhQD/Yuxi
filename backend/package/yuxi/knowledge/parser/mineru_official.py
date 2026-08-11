@@ -21,6 +21,8 @@ from yuxi.utils import hashstr, logger
 class MinerUOfficialParser(BaseDocumentProcessor):
     """MinerU Official API parser"""
 
+    requires_external = True
+
     def __init__(self, api_key: str | None = None):
         self.api_key = api_key or os.getenv("MINERU_API_KEY")
         if not self.api_key:

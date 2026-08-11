@@ -19,6 +19,9 @@ class PDFDensityAnalyzer:
         diversity_weight: float = 0.3,
         garbled_weight: float = 0.3,
         quality_score_threshold: float = 0.4,  # Điểm chất lượng tối thiểu để bỏ qua OCR
+        sample_full_page_limit: int = 15,  # <= N trang thì phân tích toàn bộ
+        sample_stride_groups: int = 5,  # Số trang mỗi nhóm (đầu/giữa/cuối) khi lấy mẫu
+        min_confidence_for_disable: float = 0.9,  # Ngưỡng tin cậy để đề xuất "disable"
     ):
         self.min_chars_threshold = min_chars_threshold
         self.target_chars_page = target_chars_page
@@ -28,6 +31,26 @@ class PDFDensityAnalyzer:
         self.diversity_weight = diversity_weight
         self.garbled_weight = garbled_weight
         self.quality_score_threshold = quality_score_threshold
+        self.sample_full_page_limit = sample_full_page_limit
+        self.sample_stride_groups = sample_stride_groups
+        self.min_confidence_for_disable = min_confidence_for_disable
+
+    def _select_pages_to_analyze(self, num_pages: int) -> tuple[list[int], float]:
+        """Chọn các trang cần phân tích (stratified sampling) và trả về cùng confidence score."""
+        if num_pages <= self.sample_full_page_limit:
+            return list(range(num_pages)), 1.0
+
+        group = self.sample_stride_groups
+        # Nhóm đầu (trừ trang bìa gây sai số), giữa và cuối
+        sampled = set(range(1, group + 1))
+        middle_start = (num_pages - group) // 2
+        sampled.update(range(middle_start, min(middle_start + group, num_pages)))
+        sampled.update(range(num_pages - group, num_pages))
+        sampled_pages = sorted(sampled)
+
+        # Confidence = tỷ lệ trang được lấy mẫu so với tổng số trang
+        confidence = len(sampled_pages) / num_pages
+        return sampled_pages, confidence
 
     def analyze_page(self, page: fitz.Page) -> tuple[str, dict[str, Any]]:
         """Phân tích một trang PDF và trả về nhãn loại trang (text, scan, lai) cùng thông số chi tiết."""
@@ -81,7 +104,7 @@ class PDFDensityAnalyzer:
         return page_type, metrics
 
     def analyze_document(self, file_path: str | Path) -> dict[str, Any]:
-        """Phân tích toàn bộ file PDF để đề xuất cấu hình OCR tối ưu."""
+        """Phân tích file PDF (lấy mẫu phân tầng nếu file dài) để đề xuất cấu hình OCR tối ưu."""
         if isinstance(file_path, str):
             file_path = Path(file_path)
 
@@ -93,7 +116,22 @@ class PDFDensityAnalyzer:
         text_pages = []
         pages_detail = {}
 
-        for page_idx in range(num_pages):
+        # Phân tầng lấy mẫu nếu số trang > 15 để tối ưu hiệu năng
+        is_sampled = False
+        pages_to_analyze = list(range(num_pages))
+        if num_pages > 15:
+            is_sampled = True
+            sampled_indices = set()
+            # 5 trang đầu
+            sampled_indices.update(range(5))
+            # 5 trang giữa
+            mid = num_pages // 2
+            sampled_indices.update(range(mid - 2, mid + 3))
+            # 5 trang cuối
+            sampled_indices.update(range(num_pages - 5, num_pages))
+            pages_to_analyze = sorted(list(sampled_indices))
+
+        for page_idx in pages_to_analyze:
             page = doc[page_idx]
             page_type, metrics = self.analyze_page(page)
             pages_detail[page_idx] = {"page_type": page_type, **metrics}
@@ -104,22 +142,33 @@ class PDFDensityAnalyzer:
             else:
                 text_pages.append(page_idx)
 
-        # Đề xuất cấu hình tối ưu
-        # Nếu > 80% số trang là text layer tốt -> Đề xuất "disable" OCR (tiết kiệm chi phí)
-        # Nếu có trang scan hoặc trang lai -> Đề xuất chạy OCR
+        # Đề xuất cấu hình tối ưu dựa trên mẫu đã phân tích
+        analyzed_count = len(pages_to_analyze)
         total_non_text_pages = len(scan_pages) + len(hybrid_pages)
+        
         if total_non_text_pages == 0:
             recommended_ocr = "disable"
-        elif len(scan_pages) == num_pages:
-            recommended_ocr = "force"  # Bắt buộc chạy OCR toàn tập
+        elif len(scan_pages) == analyzed_count:
+            recommended_ocr = "force"
         else:
-            recommended_ocr = "hybrid"  # Chạy kết hợp hoặc thông minh
+            recommended_ocr = "hybrid"
+
+        # Tính độ tin cậy của phân tích
+        if not is_sampled:
+            confidence_score = 1.0
+        else:
+            # Độ tin cậy tính bằng tỷ lệ của nhóm nhãn chiếm ưu thế
+            dominant_class_count = max(len(scan_pages), len(hybrid_pages), len(text_pages))
+            confidence_score = round(dominant_class_count / analyzed_count, 2)
 
         return {
             "total_pages": num_pages,
+            "analyzed_pages_count": analyzed_count,
+            "is_sampled": is_sampled,
             "scan_pages": scan_pages,
             "hybrid_pages": hybrid_pages,
             "text_pages": text_pages,
             "recommended_ocr": recommended_ocr,
+            "confidence_score": confidence_score,
             "pages_detail": pages_detail,
         }

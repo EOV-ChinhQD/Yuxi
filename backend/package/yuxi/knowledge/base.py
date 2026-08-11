@@ -388,6 +388,7 @@ class KnowledgeBase(ABC):
             params = file_meta.get("processing_params", {}) or {}
             params["image_bucket"] = "knowledgebases"
             params["image_prefix"] = f"{kb_id}/kb-images"
+            params["file_id"] = file_id
 
             markdown_content = await Parser.aparse(
                 source=file_path,

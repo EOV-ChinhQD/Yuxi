@@ -293,3 +293,55 @@ async def test_parser_aparse_image_file_with_mineru_when_available():
     assert isinstance(markdown, str)
     assert len(markdown) > 100
     assert len(markdown.strip()) > 0
+
+
+def test_density_analyzer_with_stratified_sampling(tmp_path: Path):
+    from yuxi.knowledge.parser.density import PDFDensityAnalyzer
+    analyzer = PDFDensityAnalyzer()
+    
+    # Create a PDF with 20 pages (to trigger sampling > 15 pages)
+    file_path = tmp_path / "density_test_sampled.pdf"
+    doc = fitz.open()
+    for i in range(20):
+        page = doc.new_page()
+        # insert > 100 characters
+        page.insert_text((72, 72), f"Page {i} Parser PDF content. This is page {i} text layer. We need to make sure this page has more than 100 characters to pass the threshold test cleanly.")
+    doc.save(str(file_path))
+    doc.close()
+    
+    analysis = analyzer.analyze_document(file_path)
+    assert analysis["total_pages"] == 20
+    assert analysis["is_sampled"] is True
+    assert analysis["analyzed_pages_count"] == 15  # 5 first, 5 middle, 5 last
+    assert analysis["recommended_ocr"] == "disable"
+    assert analysis["confidence_score"] == 1.0  # all pages are clean text
+    assert len(analysis["pages_detail"]) == 15
+
+
+def test_docling_processor_dynamic_degradation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from yuxi.knowledge.parser.processors.docling import DoclingProcessor
+    from yuxi.knowledge.parser.models import ProcessingStatus
+    
+    processor = DoclingProcessor()
+    
+    # Mock DocumentConverter
+    class FakeConverter:
+        def convert(self, path):
+            # 10 pages, but only 200 chars -> degraded (min_char_limit = max(50, 30*10) = 300)
+            fake_doc = SimpleNamespace(
+                export_to_markdown=lambda: "A" * 200
+            )
+            fake_pages = [SimpleNamespace() for _ in range(10)]
+            return SimpleNamespace(
+                status=SimpleNamespace(name="SUCCESS"),
+                document=fake_doc,
+                pages=fake_pages
+            )
+            
+    monkeypatch.setattr(processor, "_get_converter", lambda ocr_policy: FakeConverter())
+    
+    result = processor.process(str(tmp_path / "dummy.pdf"))
+    assert result.status == ProcessingStatus.DEGRADED
+    assert result.metadata["page_count"] == 10
+    assert result.metadata["min_char_limit"] == 300
+

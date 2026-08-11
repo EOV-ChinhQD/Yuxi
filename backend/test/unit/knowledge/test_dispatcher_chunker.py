@@ -30,3 +30,20 @@ def test_dispatcher_with_structural_enabled():
         assert r["status"] == "pending"
     
     FeatureManager.reset_overrides()
+
+
+def test_dispatcher_fallback_to_naive_when_poor_structure():
+    FeatureManager.reset_overrides()
+    FeatureManager.override(FeatureManager.STRUCTURAL_CHUNKING, True)
+    
+    # Very poor structure (no headings)
+    markdown = "Nội dung 1\n\nNội dung 2\n\nNội dung 3"
+    records = chunk_markdown(markdown, "file_123", "test.md", {"chunk_preset_id": "general"})
+    assert len(records) > 0
+    for r in records:
+        assert r["section_type"] == "fallback"
+        assert r["chunk_quality"] == "poor_structure"
+        assert r["heading_path"] == []
+        
+    FeatureManager.reset_overrides()
+

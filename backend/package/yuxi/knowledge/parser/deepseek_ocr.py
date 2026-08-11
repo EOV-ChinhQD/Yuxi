@@ -21,6 +21,8 @@ from yuxi.utils import logger
 class DeepSeekOCRParser(BaseDocumentProcessor):
     """DeepSeek OCR Parser using SiliconFlow API"""
 
+    requires_external = True
+
     # MIME type mapping for supported formats
     MIME_TYPE_MAP = {
         ".pdf": "application/pdf",

@@ -163,6 +163,14 @@ class DocumentProcessorFactory:
         return list(cls.PROCESSOR_TYPES.keys())
 
     @classmethod
+    def requires_external(cls, processor_type: str) -> bool:
+        """Return whether the processor needs an external (cloud) service, without instantiating it."""
+        if processor_type not in cls.PROCESSOR_TYPES:
+            raise ValueError(f"Loại bộ xử lý không được hỗ trợ: {processor_type}")
+        processor_class = cls._load_processor_class(processor_type)
+        return bool(getattr(processor_class, "requires_external", False))
+
+    @classmethod
     def clear_cache(cls):
         """Clear processor cache"""
         _PROCESSOR_CACHE.clear()

@@ -44,6 +44,8 @@ class ServiceHealthCheckException(DocumentProcessorException):
 class BaseDocumentProcessor(ABC):
     """Document Processor Base Class"""
 
+    requires_external: bool = False
+
     @abstractmethod
     def process_file(self, file_path: str, params: dict[str, Any] | None = None) -> str:
         """
