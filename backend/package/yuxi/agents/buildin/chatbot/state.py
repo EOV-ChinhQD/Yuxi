@@ -35,24 +35,27 @@ def merge_subagent_runs(
     if new is None:
         return existing
 
-    merged = [dict(item) for item in existing]
-    run_id_index = {item.get("run_id"): position for position, item in enumerate(merged) if item.get("run_id")}
-    for item in new:
-        run = dict(item)
-        run_id = run.get("run_id")
-        position = None
-        if run_id and run_id in run_id_index:
-            position = run_id_index[run_id]
+    merged_items = []
+    run_id_map = {}
 
-        if position is None:
-            position = len(merged)
-            merged.append(run)
-        else:
-            merged[position] = {**merged[position], **run}
-
+    for item in existing:
+        item_copy = dict(item)
+        run_id = item_copy.get("run_id")
         if run_id:
-            run_id_index[run_id] = position
-    return merged
+            run_id_map[run_id] = item_copy
+        merged_items.append(item_copy)
+
+    for item in new:
+        run_id = item.get("run_id")
+        if run_id and run_id in run_id_map:
+            run_id_map[run_id].update(item)
+        else:
+            item_copy = dict(item)
+            merged_items.append(item_copy)
+            if run_id:
+                run_id_map[run_id] = item_copy
+
+    return merged_items
 
 
 class ChatBotState(BaseState):

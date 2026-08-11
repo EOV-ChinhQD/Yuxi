@@ -34,9 +34,11 @@ class FileStatus:
     PARSING = "parsing"
     PARSED = "parsed"
     ERROR_PARSING = "error_parsing"
+    INDEX_PENDING = "index_pending"
     INDEXING = "indexing"
     INDEXED = "indexed"
     ERROR_INDEXING = "error_indexing"
+    RETRY_PENDING = "retry_pending"
 
 
 INDEXED_STATS_STATUSES = {FileStatus.INDEXED, "done"}

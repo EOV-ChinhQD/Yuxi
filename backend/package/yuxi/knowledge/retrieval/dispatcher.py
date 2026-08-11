@@ -16,7 +16,16 @@ class FactStrategy(BaseRetrievalStrategy):
 
     async def retrieve(self, query: str, kb_instance: Any, kb_id: str, **kwargs) -> list[dict[str, Any]]:
         logger.info(f"[FactStrategy] Executing factual search for query: '{query[:60]}'")
+        from yuxi.knowledge.retrieval.query_rewriter import QueryRewriter
+
+        llm_model_spec = kb_instance.databases_meta.get(kb_id, {}).get("llm_model_spec", "gpt-4o-mini")
+        expansions = await QueryRewriter.rewrite(query, llm_model_spec)
+
         factual_kwargs = {**kwargs, "use_graph_retrieval": False}
+        if expansions:
+            factual_kwargs["bm25_expanded_query"] = " ".join([query] + expansions)
+            logger.debug(f"[FactStrategy] Expanded BM25 query: {factual_kwargs['bm25_expanded_query']}")
+
         return await kb_instance._query_factual(query, kb_id, **factual_kwargs)
 
 
@@ -153,12 +162,13 @@ class CapabilityManager:
 
         try:
             async with pg_manager.get_async_session_context() as session:
-                # Kiểm tra xem có bất kỳ sự kiện nào đã được trích xuất cho KB này hay chưa
-                stmt = select(func.count(KnowledgeGraphEvent.id)).where(KnowledgeGraphEvent.kb_id == kb_id)
+                # Kiểm tra xem có bất kỳ sự kiện nào đã được trích xuất cho KB này hay chưa bằng EXISTS/LIMIT 1
+                stmt = select(1).where(KnowledgeGraphEvent.kb_id == kb_id).limit(1)
                 res = await session.execute(stmt)
-                count = res.scalar() or 0
-                logger.info(f"[CapabilityManager] KB {kb_id} có {count} sự kiện (events) trong đồ thị.")
-                return count > 0
+                has_event = res.scalar() is not None
+                if has_event:
+                    logger.debug(f"[CapabilityManager] KB {kb_id} đồ thị đã sẵn sàng.")
+                return has_event
         except Exception as e:
             logger.warning(f"[CapabilityManager] Lỗi kiểm tra tính sẵn sàng của đồ thị: {e}")
             return False

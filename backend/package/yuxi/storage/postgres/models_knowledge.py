@@ -15,6 +15,9 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+from sqlalchemy import func
 from yuxi.storage.postgres.models_business import Base
 from yuxi.utils.datetime_utils import utc_now_naive
 
@@ -71,8 +74,44 @@ class KnowledgeFile(Base):
     processing_params = Column(JSON_VALUE)
     is_folder = Column(Boolean, default=False)
     error_message = Column(Text)
+    chunking_version = Column(String(64))
+    embedding_version = Column(String(64))
     created_by = Column(String(64))
     updated_by = Column(String(64))
+    created_at = Column(DateTime(timezone=True), default=utc_now_naive)
+    updated_at = Column(DateTime(timezone=True), default=utc_now_naive, onupdate=utc_now_naive)
+
+
+class IndexManifest(Base):
+    """Index tracking manifest for tracking versioning and indexing sessions."""
+
+    __tablename__ = "index_manifests"
+    __table_args__ = (UniqueConstraint("manifest_id", name="uq_index_manifests_manifest_id"),)
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    manifest_id = Column(String(64), unique=True, nullable=False, index=True)
+    file_id = Column(String(64), ForeignKey("knowledge_files.file_id", ondelete="CASCADE"), nullable=False, index=True)
+    index_version = Column(String(64), nullable=False)
+    chunking_version = Column(String(64), nullable=False)
+    embedding_model = Column(String(256), nullable=False)
+    embedding_version = Column(String(64))
+    chunk_count = Column(Integer, default=0)
+    status = Column(String(32), default="active", index=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now_naive)
+    updated_at = Column(DateTime(timezone=True), default=utc_now_naive, onupdate=utc_now_naive)
+
+
+class EmbeddingCache(Base):
+    """Cache table for vectors to support incremental indexing."""
+
+    __tablename__ = "embedding_cache"
+    __table_args__ = (UniqueConstraint("cache_key", name="uq_embedding_cache_key"),)
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cache_key = Column(String(256), unique=True, nullable=False, index=True)
+    file_id = Column(String(64), ForeignKey("knowledge_files.file_id", ondelete="CASCADE"), nullable=False, index=True)
+    vector_id = Column(String(128))  # ID within Milvus if keeping a reference
+    embedding_data = Column(JSON_VALUE)  # Actual vector data if storing in Postgres (optional depending on dimension)
     created_at = Column(DateTime(timezone=True), default=utc_now_naive)
     updated_at = Column(DateTime(timezone=True), default=utc_now_naive, onupdate=utc_now_naive)
 
@@ -351,3 +390,17 @@ class KnowledgeGraphEventEntity(Base):
     weight = Column(Float, default=1.0, nullable=False)
     relation_type = Column(String(256))
     created_at = Column(DateTime(timezone=True), default=utc_now_naive)
+
+class EmbeddingCacheModel(Base):
+    """
+    Caches embedding vectors in Postgres to prevent redundant GPU calls.
+    """
+    __tablename__ = "embedding_cache"
+
+    hash_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    embedding: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        server_default=func.now(), 
+        nullable=False
+    )

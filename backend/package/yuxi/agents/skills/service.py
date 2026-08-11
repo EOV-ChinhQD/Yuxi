@@ -318,12 +318,10 @@ def _build_builtin_skill_dir_path(slug: str) -> str:
 
 
 def _dirs_equal(dir1: Path, dir2: Path) -> bool:
-    """Check if two directories contain the same files"""
+    """Check if two directories contain the same files and identical content"""
     if not dir1.exists() or not dir2.exists():
         return False
-    list1 = sorted([f.relative_to(dir1) for f in dir1.rglob("*") if f.is_file()])
-    list2 = sorted([f.relative_to(dir2) for f in dir2.rglob("*") if f.is_file()])
-    return list1 == list2
+    return _compute_dir_hash(dir1) == _compute_dir_hash(dir2)
 
 
 def _compute_dir_hash(source_dir: Path) -> str:

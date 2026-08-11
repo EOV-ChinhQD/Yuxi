@@ -558,6 +558,42 @@ class KnowledgeFileRepository:
             )
             return result.scalar_one_or_none()
 
+    async def atomic_update_status_and_version(
+        self,
+        *,
+        kb_id: str,
+        file_id: str,
+        allowed_statuses: set[str],
+        data: dict[str, Any],
+        expected_chunking_version: int | None = None,
+        expected_embedding_version: int | None = None,
+    ) -> KnowledgeFile | None:
+        """Atomic state transition that also validates version vectors (Optimistic Locking)."""
+        sanitized_data = self._sanitize_data(data)
+        if not sanitized_data:
+            return await self.get_by_file_id(file_id)
+
+        filters = [
+            KnowledgeFile.kb_id == kb_id,
+            KnowledgeFile.file_id == file_id,
+            KnowledgeFile.status.in_(sorted(allowed_statuses)),
+        ]
+        
+        if expected_chunking_version is not None:
+            filters.append(KnowledgeFile.chunking_version == expected_chunking_version)
+            
+        if expected_embedding_version is not None:
+            filters.append(KnowledgeFile.embedding_version == expected_embedding_version)
+
+        async with pg_manager.get_async_session_context() as session:
+            result = await session.execute(
+                update(KnowledgeFile)
+                .where(*filters)
+                .values(**sanitized_data)
+                .returning(KnowledgeFile)
+            )
+            return result.scalar_one_or_none()
+
     async def delete(self, file_id: str) -> None:
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(select(KnowledgeFile).where(KnowledgeFile.file_id == file_id))

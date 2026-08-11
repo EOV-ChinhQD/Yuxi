@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Callable
 from typing import Any
 
@@ -31,11 +32,16 @@ class DynamicToolMiddleware(AgentMiddleware):
         for mcp_name in self._mcp_servers:
             if mcp_name not in self._all_mcp_tools:
                 logger.info(f"Pre-loading MCP tools from: {mcp_name}")
-                mcp_tools = await get_mcp_tools(mcp_name)
-                self._all_mcp_tools[mcp_name] = mcp_tools
-                # Register MCP tools to middleware.tools
-                self.tools.extend(mcp_tools)
-                logger.info(f"Registered {len(mcp_tools)} tools from {mcp_name}")
+                try:
+                    mcp_tools = await asyncio.wait_for(get_mcp_tools(mcp_name), timeout=5.0)
+                    self._all_mcp_tools[mcp_name] = mcp_tools
+                    # Register MCP tools to middleware.tools
+                    self.tools.extend(mcp_tools)
+                    logger.info(f"Registered {len(mcp_tools)} tools from {mcp_name}")
+                except asyncio.TimeoutError:
+                    logger.error(f"Timeout while pre-loading MCP tools from: {mcp_name}")
+                except Exception as e:
+                    logger.error(f"Failed to load MCP tools from {mcp_name}: {e}")
 
     async def awrap_model_call(
         self, request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]

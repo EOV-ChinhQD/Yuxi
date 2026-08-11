@@ -131,12 +131,42 @@ async def handle_extract_knowledge(payload: dict) -> None:
     logger.info(f"Successfully processed and stored Event & Entity resolution for chunk {chunk_id}")
 
 
+async def handle_sync_milvus_chunks(payload: dict) -> None:
+    kb_id = payload.get("kb_id")
+    file_id = payload.get("file_id")
+    operator_id = payload.get("operator_id")
+    
+    logger.info(f"RAG Worker received SYNC_MILVUS_CHUNKS job for file {file_id} in kb {kb_id}")
+    
+    from yuxi.knowledge.manager import KnowledgeBaseManager
+    
+    # 1. Khởi tạo kết nối DB nếu cần
+    if not pg_manager._initialized:
+        pg_manager.initialize()
+        
+    kb_manager = KnowledgeBaseManager(work_dir="saves")
+    await kb_manager.initialize()
+    
+    # Lấy instance KB
+    kb_instance = await kb_manager._get_kb_for_database(kb_id)
+    if not kb_instance:
+        logger.error(f"KB {kb_id} not found")
+        return
+        
+    # Gọi hàm sync_to_milvus của KB instance
+    if hasattr(kb_instance, "sync_to_milvus"):
+        await kb_instance.sync_to_milvus(kb_id, file_id, operator_id)
+    else:
+        logger.warning(f"KB {kb_id} does not support sync_to_milvus")
+
+
 async def start_worker() -> None:
     # Khởi tạo kết nối DB
     pg_manager.initialize()
 
     worker = RAGWorker()
     worker.register_handler("EXTRACT_KNOWLEDGE", handle_extract_knowledge)
+    worker.register_handler("SYNC_MILVUS_CHUNKS", handle_sync_milvus_chunks)
 
     try:
         await worker.start()

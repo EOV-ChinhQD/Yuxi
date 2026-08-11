@@ -141,8 +141,13 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
     cache_key = (provider, model_id, endpoint, api_key_hash, loop, kwargs_hash)
 
     with _MODEL_CACHE_LOCK:
-        cached = _MODEL_CACHE.get(cache_key)
         now = time.time()
+        # Fix: Evict expired models on access to prevent memory leak
+        expired_keys = [k for k, v in _MODEL_CACHE.items() if now - v.last_used > v.ttl]
+        for k in expired_keys:
+            del _MODEL_CACHE[k]
+
+        cached = _MODEL_CACHE.get(cache_key)
         if cached and (now - cached.last_used <= cached.ttl):
             cached.last_used = now
             cached.hit_count += 1

@@ -1,6 +1,7 @@
 import re
 import json
 import uuid
+import zlib
 from typing import Any
 from sqlalchemy import text, select
 
@@ -62,8 +63,8 @@ class MemoryExtractorTask:
             logger.info(f"Memory extraction skipped for user {uid} due to heuristic filter.")
             return
 
-        # Generate lock key from user ID
-        lock_id = hash(uid) % (2**31 - 1)
+        # Generate lock key from user ID using deterministic crc32 hash
+        lock_id = zlib.crc32(uid.encode("utf-8")) & 0x7FFFFFFF
 
         # 2. Acquire Postgres Advisory Lock & Perform Transaction
         async with pg_manager.get_async_session_context() as session:

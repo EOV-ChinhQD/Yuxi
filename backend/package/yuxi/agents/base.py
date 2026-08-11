@@ -368,6 +368,7 @@ class BaseAgent:
         if checkpointer is None:
             try:
                 checkpointer = AsyncSqliteSaver(await self.get_async_conn())
+                await checkpointer.setup()
             except Exception as e:
                 logger.error(f"Building sqlite checkpointer failed: {e}, Try using memory storage")
                 checkpointer = InMemorySaver()
@@ -389,6 +390,7 @@ class BaseAgent:
 
         try:
             saver = AsyncPostgresSaver(pg_manager.langgraph_pool)
+            await saver.setup()
 
             logger.info(f"{self.name} Using postgres checkpointer")
             return saver

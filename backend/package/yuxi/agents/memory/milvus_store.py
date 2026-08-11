@@ -40,14 +40,18 @@ class MilvusMemoryStore:
 
     def get_embedding_model_info(self) -> tuple:
         """Get spec and info of default embedding model"""
+        from yuxi import config as conf
+
+        default_spec = conf.embed_model
         embed_specs = model_cache.get_all_specs("embedding")
+        
         if embed_specs:
-            # Prefer gemini or models with 768 dimensions
             for spec_info in embed_specs:
-                if "gemini" in spec_info.spec or spec_info.dimension == 768:
+                if spec_info.spec == default_spec:
                     return spec_info.spec, spec_info.dimension or 768
-            return embed_specs[0].spec, embed_specs[0].dimension or 768
-        return "gemini:text-embedding-004", 768
+            # Fallback if default model is not in cache yet but we need dimension
+            return default_spec, 768
+        return default_spec, 768
 
     def get_or_create_collection(self) -> Collection:
         if self.collection is not None:

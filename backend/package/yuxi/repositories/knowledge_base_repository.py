@@ -19,6 +19,13 @@ class KnowledgeBaseRepository:
             result = await session.execute(select(KnowledgeBase).where(KnowledgeBase.kb_id == kb_id))
             return result.scalar_one_or_none()
 
+    async def get_by_kb_ids(self, kb_ids: list[str]) -> list[KnowledgeBase]:
+        if not kb_ids:
+            return []
+        async with pg_manager.get_async_session_context() as session:
+            result = await session.execute(select(KnowledgeBase).where(KnowledgeBase.kb_id.in_(kb_ids)))
+            return list(result.scalars().all())
+
     async def create(self, data: dict[str, Any]) -> KnowledgeBase:
         kb = KnowledgeBase(**data)
         async with pg_manager.get_async_session_context() as session:

@@ -13,7 +13,7 @@ DEFAULT_SUMMARY_THRESHOLD_K = 100  # 100K tokens
 DEFAULT_SUMMARY_KEEP_MESSAGES = 10
 DEFAULT_SUMMARY_TOOL_RESULT_TOKEN_LIMIT = 300
 DEFAULT_SUMMARY_L2_TRIGGER_RATIO = 0.4
-DEFAULT_MAX_EXECUTION_STEPS = 300
+DEFAULT_MAX_EXECUTION_STEPS = 50
 DEFAULT_TOOL_RESULT_EVICTION_K_TOKENS = 3
 DEFAULT_YUXI_SUMMARY_PROMPT = """Bạn là trợ lý nén ngữ cảnh hội thoại.
 Nhiệm vụ của bạn là nén lịch sử trò chuyện dưới đây thành ngữ cảnh có giá trị cao cần thiết để agent tiếp theo tiếp tục làm việc.
@@ -58,8 +58,20 @@ def _role_can_access(auth: str | None, role: str | None) -> bool:
     return False
 
 
+_WORKSPACE_PROMPT_CACHE: dict[str, dict] = {}
+
 def _load_workspace_agents_prompt(thread_id: str, uid: str) -> str:
     prompt_file = sandbox_workspace_agents_prompt_file(thread_id, uid)
+    try:
+        mtime = prompt_file.stat().st_mtime
+    except Exception:
+        return ""
+
+    cache_key = str(prompt_file)
+    cached = _WORKSPACE_PROMPT_CACHE.get(cache_key)
+    if cached and cached["mtime"] == mtime:
+        return cached["content"]
+
     try:
         with prompt_file.open("rb") as buffer:
             content = buffer.read(WORKSPACE_AGENTS_PROMPT_MAX_BYTES + 1)
@@ -74,9 +86,12 @@ def _load_workspace_agents_prompt(thread_id: str, uid: str) -> str:
 
     prompt = content[:WORKSPACE_AGENTS_PROMPT_MAX_BYTES].decode("utf-8", errors="replace").strip()
     if not prompt:
+        _WORKSPACE_PROMPT_CACHE[cache_key] = {"mtime": mtime, "content": ""}
         return ""
     if len(content) > WORKSPACE_AGENTS_PROMPT_MAX_BYTES:
-        return f"{prompt}\n\n[AGENTS.md Content has been truncated]"
+        prompt = f"{prompt}\n\n[AGENTS.md Content has been truncated]"
+    
+    _WORKSPACE_PROMPT_CACHE[cache_key] = {"mtime": mtime, "content": prompt}
     return prompt
 
 

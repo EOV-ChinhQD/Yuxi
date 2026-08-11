@@ -126,10 +126,9 @@ async def build_prompt_with_context(context):
         from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
 
         repo = KnowledgeBaseRepository()
-        for kb_id in active_kbs:
-            kb = await repo.get_by_kb_id(kb_id)
-            if kb:
-                kb_detail_list.append({"kb_id": kb.kb_id, "name": kb.name, "description": kb.description or ""})
+        kbs = await repo.get_by_kb_ids(active_kbs)
+        for kb in kbs:
+            kb_detail_list.append({"kb_id": kb.kb_id, "name": kb.name, "description": kb.description or ""})
 
     if kb_detail_list:
         lines = [f"- kb_id: `{d['kb_id']}`, Mô tả: {d['description']}" for d in kb_detail_list]

@@ -107,6 +107,13 @@ def _write_tool_result(backend, path: str, content: str) -> str | None:
     if backend is None:
         return None
 
+    # TODO(Middlewares): Tool results offloaded to storage do not currently have a TTL.
+    # This may lead to unbound storage growth. Consider implementing a TTL/cleanup job.
+    logger.warning(
+        f"Offloading large tool result to {path}. "
+        "Warning: This system does not automatically clean up offloaded tool results. "
+        "Storage may grow unboundedly."
+    )
     result = backend.write(path, content)
     error = getattr(result, "error", None)
     if not error:

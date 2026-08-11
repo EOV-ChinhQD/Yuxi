@@ -888,13 +888,10 @@ class MilvusKB(KnowledgeBase):
         if kb_id not in self.databases_meta:
             raise ValueError(f"Database {kb_id} not found")
 
-        # Get/Create collection
+        # We don't need Milvus collection yet. But let's check it exists.
         collection = await self._get_milvus_collection(kb_id)
         if not collection:
             raise ValueError(f"Failed to get Milvus collection for {kb_id}")
-
-        embedding_model_spec = self.databases_meta[kb_id].get("embedding_model_spec")
-        embedding_function = self._get_embedding_function(embedding_model_spec)
 
         file_meta = await self._load_file_meta(kb_id, file_id)
         allowed_statuses = {
@@ -902,6 +899,7 @@ class MilvusKB(KnowledgeBase):
             FileStatus.ERROR_INDEXING,
             FileStatus.INDEXED,
             "done",
+            FileStatus.RETRY_PENDING,
         }
         params = resolve_processing_params(
             kb_additional_params=self.databases_meta.get(kb_id, {}).get("metadata"),
@@ -910,14 +908,14 @@ class MilvusKB(KnowledgeBase):
         )
 
         claim_data = {
-            "status": FileStatus.INDEXING,
+            "status": FileStatus.INDEX_PENDING,
             "processing_params": params,
             "error_message": None,
         }
         if operator_id:
             claim_data["updated_by"] = operator_id
 
-        claimed_record = await KnowledgeFileRepository().update_fields_if_status(
+        claimed_record = await KnowledgeFileRepository().atomic_update_status_and_version(
             kb_id=kb_id,
             file_id=file_id,
             allowed_statuses=allowed_statuses,
@@ -952,48 +950,214 @@ class MilvusKB(KnowledgeBase):
             )
 
             chunk_stats = self._calculate_chunk_stats(chunks)
+            
+            # Set status for all chunks to index_pending
+            for chunk in chunks:
+                chunk["status"] = FileStatus.INDEX_PENDING
+                
+            from yuxi.repositories.knowledge_chunk_repository import KnowledgeChunkRepository
+            from yuxi.storage.postgres.manager import pg_manager
+            from sqlalchemy import delete
+            from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
+            from yuxi.core.queue import QueueClient
+            
+            chunk_repo = KnowledgeChunkRepository()
+            pg_records = self._build_chunk_pg_records(kb_id, chunks)
+            
+            # Use a transaction to delete old chunks and insert new ones
+            async with pg_manager.get_async_session_context() as session:
+                await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.file_id == file_id))
+                await chunk_repo.batch_upsert(pg_records, session=session)
+            
+            # Publish event to queue
+            await QueueClient.publish("SYNC_MILVUS_CHUNKS", {
+                "kb_id": kb_id,
+                "file_id": file_id,
+                "operator_id": operator_id
+            })
 
-            # Clean up existing chunks if any (for re-indexing)
-            from yuxi.core.feature_manager import FeatureManager
+            logger.info(f"Prepared chunks for file {file_id} and pushed to queue for embedding/indexing")
 
-            if FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING):
-                await self._incremental_index_file(kb_id, file_id, collection, chunks, embedding_function)
-            else:
-                await self.delete_file_chunks_only(kb_id, file_id)
-                if chunks:
-                    await self._embed_and_store_chunks(kb_id, file_id, collection, chunks, embedding_function)
-
-            logger.info(f"Indexed file {file_id} into Milvus")
-
-            # Update status
-            update_data = {"status": FileStatus.INDEXED, "error_message": None, **chunk_stats}
-            if operator_id:
-                update_data["updated_by"] = operator_id
-            updated_record = await KnowledgeFileRepository().update_fields(
-                file_id=file_id,
-                kb_id=kb_id,
-                data=update_data,
-            )
-            result = (
-                self._file_record_to_meta(updated_record)
-                if updated_record is not None
-                else {
-                    **file_meta,
-                    **chunk_stats,
-                    "status": FileStatus.INDEXED,
-                    "error": None,
-                }
-            )
+            result = {
+                **file_meta,
+                **chunk_stats,
+                "status": FileStatus.INDEX_PENDING,
+                "error": None,
+            }
 
             await self.refresh_database_stats(kb_id)
             return result
 
         except Exception as e:
-            logger.error(f"Indexing failed for {file_id}: {e}")
+            logger.error(f"Indexing preparation failed for {file_id}: {e}")
             update_data = {"status": FileStatus.ERROR_INDEXING, "error_message": str(e)}
             if operator_id:
                 update_data["updated_by"] = operator_id
             await KnowledgeFileRepository().update_fields(file_id=file_id, kb_id=kb_id, data=update_data)
+            raise
+
+    async def sync_to_milvus(self, kb_id: str, file_id: str, operator_id: str | None = None) -> None:
+        """
+        Phase 2 of Indexing: Fetch INDEX_PENDING chunks, embed, insert to Milvus.
+        """
+        if kb_id not in self.databases_meta:
+            raise ValueError(f"Database {kb_id} not found")
+
+        # 1. Update file status to INDEXING
+        from yuxi.repositories.knowledge_file_repository import KnowledgeFileRepository
+        from yuxi.repositories.knowledge_chunk_repository import KnowledgeChunkRepository
+        
+        file_repo = KnowledgeFileRepository()
+        
+        # Ensure we can transition from INDEX_PENDING to INDEXING
+        claimed_record = await file_repo.update_fields_if_status(
+            kb_id=kb_id,
+            file_id=file_id,
+            allowed_statuses={FileStatus.INDEX_PENDING, FileStatus.RETRY_PENDING},
+            data={"status": FileStatus.INDEXING, "updated_by": operator_id}
+        )
+        if not claimed_record:
+            logger.warning(f"File {file_id} is not in INDEX_PENDING state. Skipping sync.")
+            return
+
+        try:
+            # 2. Fetch chunks with status = 'index_pending'
+            chunk_repo = KnowledgeChunkRepository()
+            chunks = await chunk_repo.list_by_file_id(file_id)
+            chunks_to_process = [c for c in chunks if c.status == FileStatus.INDEX_PENDING]
+            
+            if not chunks_to_process:
+                logger.info(f"No pending chunks found for {file_id}. Marking as INDEXED.")
+                await file_repo.update_fields(kb_id=kb_id, file_id=file_id, data={"status": FileStatus.INDEXED})
+                return
+
+            # 3. Embed chunks
+            collection = await self._get_milvus_collection(kb_id)
+            if not collection:
+                raise ValueError(f"Failed to get Milvus collection for {kb_id}")
+                
+            embedding_model_spec = self.databases_meta[kb_id].get("embedding_model_spec")
+            embedding_function = self._get_embedding_function(embedding_model_spec)
+            
+            # Convert SQLAlchemy models to dicts for embedding
+            chunks_dict = []
+            for c in chunks_to_process:
+                chunks_dict.append({
+                    "chunk_id": c.chunk_id,
+                    "file_id": c.file_id,
+                    "content": c.content,
+                    "chunk_index": c.chunk_index,
+                    "start_char_pos": getattr(c, "start_char_pos", None),
+                    "end_char_pos": getattr(c, "end_char_pos", None),
+                    "heading_path": getattr(c, "heading_path", None),
+                    "section_type": getattr(c, "section_type", None)
+                })
+
+            # Delete old chunks from Milvus (all of them)
+            await self._delete_file_chunks_from_milvus(collection, file_id)
+
+            # Embed and insert (this handles Postgres saving inside it, but we can reuse it)
+            # Wait, _embed_and_store_chunks writes to Postgres!
+            # Since we already wrote them to Postgres as index_pending, _embed_and_store_chunks will duplicate them if it does insert!
+            # Let's write a custom embed and milvus insert to avoid duplicate PG inserts.
+            
+            from yuxi.core.embedding import split_into_batches
+            from yuxi.core.embedding_cache import EmbeddingCache
+            
+            batch_size = int(os.getenv("MILVUS_CHUNK_EMBED_BATCH_SIZE", "200"))
+            chunk_batches = split_into_batches(chunks_dict, batch_size)
+            
+            for batch_chunks in chunk_batches:
+                texts = [chunk["content"] for chunk in batch_chunks]
+                
+                # Check cache first
+                cached_embeddings = await EmbeddingCache.get_embeddings(texts, embedding_model_spec)
+                embeddings = []
+                
+                # Texts that need to be embedded
+                texts_to_embed = []
+                indices_to_embed = []
+                
+                for i, emb in enumerate(cached_embeddings):
+                    if emb is None:
+                        texts_to_embed.append(texts[i])
+                        indices_to_embed.append(i)
+                        embeddings.append(None) # placeholder
+                    else:
+                        embeddings.append(emb)
+                        
+                if texts_to_embed:
+                    # Embed missing ones
+                    from yuxi.core.gpu_throttle import GpuThrottle
+                    import os
+                    max_concurrent = int(os.getenv("GPU_MAX_CONCURRENT_EMBEDDINGS", "5"))
+                    
+                    async with GpuThrottle(max_concurrent=max_concurrent):
+                        new_embeddings = await embedding_function(texts_to_embed)
+                        
+                    # Cache them
+                    await EmbeddingCache.set_embeddings(texts_to_embed, new_embeddings, embedding_model_spec)
+                    # Fill back
+                    for idx, new_emb in zip(indices_to_embed, new_embeddings):
+                        embeddings[idx] = new_emb
+                
+                # Insert directly to Milvus
+                entities = [
+                    [chunk["chunk_id"] for chunk in batch_chunks],
+                    [chunk["file_id"] for chunk in batch_chunks],
+                    [chunk["content"] for chunk in batch_chunks],
+                    [chunk.get("start_char_pos", 0) or 0 for chunk in batch_chunks],
+                    [chunk.get("end_char_pos", 0) or 0 for chunk in batch_chunks],
+                    embeddings,
+                    [chunk.get("heading_path", "") or "" for chunk in batch_chunks],
+                    [chunk.get("section_type", "") or "" for chunk in batch_chunks],
+                ]
+                def _insert_milvus_records():
+                    collection.insert(entities)
+                await asyncio.to_thread(_insert_milvus_records)
+            
+            # 4. Update chunk statuses to 'ready'
+            from yuxi.storage.postgres.manager import pg_manager
+            from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
+            from sqlalchemy import update
+            
+            async with pg_manager.get_async_session_context() as session:
+                await session.execute(
+                    update(KnowledgeChunk)
+                    .where(KnowledgeChunk.file_id == file_id)
+                    .where(KnowledgeChunk.status == FileStatus.INDEX_PENDING)
+                    .values(status='ready')
+                )
+                
+                # Also we can create IndexManifest here
+                from yuxi.repositories.index_manifest_repository import IndexManifestRepository
+                manifest_repo = IndexManifestRepository()
+                await manifest_repo.create(
+                    kb_id=kb_id,
+                    file_id=file_id,
+                    chunking_version=claimed_record.chunking_version,
+                    embedding_version=claimed_record.embedding_version,
+                    chunk_count=len(chunks_to_process),
+                    embedding_model=embedding_model_spec,
+                    operator_id=operator_id,
+                    session=session
+                )
+            
+            # 5. Update file status to INDEXED
+            update_data = {"status": FileStatus.INDEXED, "error_message": None}
+            if operator_id:
+                update_data["updated_by"] = operator_id
+            await file_repo.update_fields(file_id=file_id, kb_id=kb_id, data=update_data)
+            
+            await self.refresh_database_stats(kb_id)
+            logger.info(f"Successfully synced {len(chunks_to_process)} chunks to Milvus for file {file_id}")
+
+        except Exception as e:
+            logger.error(f"Sync to Milvus failed for {file_id}: {e}")
+            update_data = {"status": FileStatus.ERROR_INDEXING, "error_message": str(e)}
+            if operator_id:
+                update_data["updated_by"] = operator_id
+            await file_repo.update_fields(file_id=file_id, kb_id=kb_id, data=update_data)
             raise
 
     async def update_content(self, kb_id: str, file_ids: list[str], params: dict | None = None) -> list[dict]:
@@ -1035,14 +1199,15 @@ class MilvusKB(KnowledgeBase):
                     request_params=params,
                 )
                 file_meta["processing_params"] = resolved_params
-                file_meta["status"] = FileStatus.INDEXING
+                file_meta["status"] = FileStatus.INDEX_PENDING
                 await KnowledgeFileRepository().update_fields(
                     file_id=file_id,
                     kb_id=kb_id,
-                    data={"status": FileStatus.INDEXING, "processing_params": resolved_params},
+                    data={"status": FileStatus.INDEX_PENDING, "processing_params": resolved_params},
                 )
 
                 # Reparse the file as markdown
+                from yuxi.knowledge.parser.unified import Parser
                 parse_params = {
                     **resolved_params,
                     "image_bucket": "knowledgebases",
@@ -1051,32 +1216,60 @@ class MilvusKB(KnowledgeBase):
                 }
                 markdown_content = await Parser.aparse(source=file_path, params=parse_params)
 
+                # Save markdown to minio (so it's available for next indexing)
+                markdown_file_path = await self._save_markdown_to_minio(kb_id, file_id, markdown_content)
+                await KnowledgeFileRepository().update_fields(
+                    file_id=file_id,
+                    kb_id=kb_id,
+                    data={"markdown_file": markdown_file_path},
+                )
+
                 # Regenerate chunks
                 chunks = self._split_text_into_chunks(markdown_content, file_id, filename, resolved_params)
                 logger.info(f"Split {filename} into {len(chunks)} chunks")
                 chunk_stats = self._calculate_chunk_stats(chunks)
+                
+                # Set status for all chunks to index_pending
+                for chunk in chunks:
+                    chunk["status"] = FileStatus.INDEX_PENDING
+                    
+                from yuxi.repositories.knowledge_chunk_repository import KnowledgeChunkRepository
+                from yuxi.storage.postgres.manager import pg_manager
+                from sqlalchemy import delete
+                from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
+                from yuxi.core.queue import QueueClient
+                
+                chunk_repo = KnowledgeChunkRepository()
+                pg_records = self._build_chunk_pg_records(kb_id, chunks)
+                
+                # Delete existing chunks first and insert new ones
+                async with pg_manager.get_async_session_context() as session:
+                    await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.file_id == file_id))
+                    await chunk_repo.batch_upsert(pg_records, session=session)
 
-                # Delete existing chunks first, retaining file metadata
-                await self.delete_file_chunks_only(kb_id, file_id)
+                # Publish event to queue
+                await QueueClient.publish("SYNC_MILVUS_CHUNKS", {
+                    "kb_id": kb_id,
+                    "file_id": file_id,
+                    "operator_id": None
+                })
 
-                if chunks:
-                    await self._embed_and_store_chunks(kb_id, file_id, collection, chunks, embedding_function)
-
-                logger.info(f"Updated file {file_path} in Milvus. Done.")
+                logger.info(f"Updated file {file_path} chunks in Postgres and pushed to queue. Done.")
 
                 # Update metadata status
-                file_meta["status"] = FileStatus.INDEXED
+                file_meta["status"] = FileStatus.INDEX_PENDING
                 file_meta.update(chunk_stats)
+                file_meta["markdown_file"] = markdown_file_path
                 await KnowledgeFileRepository().update_fields(
                     file_id=file_id,
                     kb_id=kb_id,
-                    data={"status": FileStatus.INDEXED, "error_message": None, **chunk_stats},
+                    data={"status": FileStatus.INDEX_PENDING, "error_message": None, **chunk_stats},
                 )
                 await self.refresh_database_stats(kb_id)
 
                 # Return updated file information
                 updated_file_meta = file_meta.copy()
-                updated_file_meta["status"] = FileStatus.INDEXED
+                updated_file_meta["status"] = FileStatus.INDEX_PENDING
                 updated_file_meta.update(chunk_stats)
                 updated_file_meta["file_id"] = file_id
                 processed_items_info.append(updated_file_meta)
@@ -1150,6 +1343,7 @@ class MilvusKB(KnowledgeBase):
         # Merge query parameters: kwargs (temporary parameters) have higher priority than query_params (persistent parameters)
         # This allows users to temporarily override persistence configuration within a single query
         merged_kwargs = {**query_params, **kwargs}
+        from yuxi.core.gpu_throttle import GpuThrottle
 
         try:
             # Query parameters (read from merged_kwargs)
@@ -1184,7 +1378,8 @@ class MilvusKB(KnowledgeBase):
             if search_mode == "vector":
                 embedding_model_spec = self.databases_meta[kb_id].get("embedding_model_spec")
                 embedding_function = self._get_embedding_function(embedding_model_spec, sync=True)
-                query_embedding = await _run_milvus_query_io(embedding_function, [query_text])
+                async with GpuThrottle(key="gpu_embed_semaphore", max_concurrent=4):
+                    query_embedding = await _run_milvus_query_io(embedding_function, [query_text])
 
                 search_params = {"metric_type": metric_type, "params": {"nprobe": 10}}
 
@@ -1219,7 +1414,8 @@ class MilvusKB(KnowledgeBase):
                     "params": {"drop_ratio_search": bm25_drop_ratio_search},
                 }
 
-                tokenized_query = _tokenize_vietnamese(query_text) if has_raw_content else query_text
+                bm25_query_text = merged_kwargs.get("bm25_expanded_query", query_text)
+                tokenized_query = _tokenize_vietnamese(bm25_query_text) if has_raw_content else bm25_query_text
 
                 results = await _run_milvus_query_io(
                     collection.search,
@@ -1241,7 +1437,8 @@ class MilvusKB(KnowledgeBase):
             else:
                 embedding_model_spec = self.databases_meta[kb_id].get("embedding_model_spec")
                 embedding_function = self._get_embedding_function(embedding_model_spec, sync=True)
-                query_embedding = await _run_milvus_query_io(embedding_function, [query_text])
+                async with GpuThrottle(key="gpu_embed_semaphore", max_concurrent=4):
+                    query_embedding = await _run_milvus_query_io(embedding_function, [query_text])
                 bm25_top_k = int(merged_kwargs.get("bm25_top_k", recall_top_k))
                 bm25_top_k = max(bm25_top_k, 1)
                 bm25_drop_ratio_search = float(merged_kwargs.get("bm25_drop_ratio_search", 0.0))
@@ -1256,7 +1453,8 @@ class MilvusKB(KnowledgeBase):
                     limit=recall_top_k,
                     expr=file_expr,
                 )
-                tokenized_query = _tokenize_vietnamese(query_text) if has_raw_content else query_text
+                bm25_query_text = merged_kwargs.get("bm25_expanded_query", query_text)
+                tokenized_query = _tokenize_vietnamese(bm25_query_text) if has_raw_content else bm25_query_text
                 bm25_request = AnnSearchRequest(
                     data=[tokenized_query],
                     anns_field=CONTENT_SPARSE_FIELD,
@@ -1376,9 +1574,10 @@ class MilvusKB(KnowledgeBase):
                     stage1_reranker = get_reranker(stage1_reranker_model)
                     try:
                         documents_text = [chunk["content"] for chunk in retrieved_chunks]
-                        stage1_scores = await stage1_reranker.acompute_score(
-                            [query_text, documents_text], normalize=True
-                        )
+                        async with GpuThrottle(key="gpu_rerank_semaphore", max_concurrent=2):
+                            stage1_scores = await stage1_reranker.acompute_score(
+                                [query_text, documents_text], normalize=True
+                            )
                         for chunk, score in zip(retrieved_chunks, stage1_scores):
                             chunk["stage1_score"] = float(score)
 
@@ -1405,9 +1604,10 @@ class MilvusKB(KnowledgeBase):
                     stage2_reranker = get_reranker(reranker_model)
                     try:
                         documents_text = [chunk["content"] for chunk in retrieved_chunks]
-                        stage2_scores = await stage2_reranker.acompute_score(
-                            [query_text, documents_text], normalize=True
-                        )
+                        async with GpuThrottle(key="gpu_rerank_semaphore", max_concurrent=2):
+                            stage2_scores = await stage2_reranker.acompute_score(
+                                [query_text, documents_text], normalize=True
+                            )
                         for chunk, score in zip(retrieved_chunks, stage2_scores):
                             chunk["rerank_score"] = float(score)
 
