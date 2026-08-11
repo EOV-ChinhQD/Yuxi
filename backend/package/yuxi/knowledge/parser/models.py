@@ -1,0 +1,29 @@
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any
+
+
+class ProcessingStatus(str, Enum):
+    SUCCESS = "SUCCESS"
+    DEGRADED = "DEGRADED"
+    FAILED = "FAILED"
+
+
+class OCRPolicy(str, Enum):
+    AUTO = "auto"
+    ENABLE = "enable"
+    DISABLE = "disable"
+
+
+@dataclass
+class ProcessingResult:
+    status: ProcessingStatus
+    engine: str
+    ocr_used: bool
+    content: Any | None = None
+    error: Exception | None = None
+    metadata: dict = field(default_factory=dict)
+
+    @property
+    def success(self) -> bool:
+        return self.status is ProcessingStatus.SUCCESS

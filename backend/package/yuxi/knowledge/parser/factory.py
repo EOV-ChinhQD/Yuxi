@@ -16,6 +16,7 @@ _PROCESSOR_CACHE: dict[str, BaseDocumentProcessor] = {}
 
 # Ánh xạ loại bộ xử lý: processor_type -> (module_path, class_name)
 PROCESSOR_TYPES = {
+    "docling": ("yuxi.knowledge.parser.processors.docling", "DoclingProcessor"),
     "rapid_ocr": ("yuxi.knowledge.parser.rapid_ocr", "RapidOCRParser"),
     "mineru_ocr": ("yuxi.knowledge.parser.mineru", "MinerUParser"),
     "mineru_official": ("yuxi.knowledge.parser.mineru_official", "MinerUOfficialParser"),
@@ -79,10 +80,11 @@ class DocumentProcessorFactory:
             DEPRECATED_PARSERS = {"rapid_ocr", "mineru_ocr", "pp_structure_v3_ocr"}
             if processor_type in DEPRECATED_PARSERS:
                 import warnings
+
                 msg = f"Parser '{processor_type}' is deprecated because it lacks stable layout detection for RAG. Please migrate to cloud-based OCR APIs like 'mineru_official'."
                 warnings.warn(msg, DeprecationWarning, stacklevel=2)
                 logger.warning(f"[Deprecation] {msg}")
-                
+
             processor_class = cls._load_processor_class(processor_type)
             _PROCESSOR_CACHE[cache_key] = processor_class(**kwargs)
             logger.debug(f"Create a document processor: {processor_type}")

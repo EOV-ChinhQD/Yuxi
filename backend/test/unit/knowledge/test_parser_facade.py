@@ -13,6 +13,7 @@ from PIL import Image
 
 from yuxi.knowledge.parser import Parser
 from yuxi.knowledge.parser.factory import DocumentProcessorFactory
+from yuxi.knowledge.parser.models import ProcessingResult, ProcessingStatus
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
@@ -38,7 +39,7 @@ def _build_png(file_path: Path) -> None:
 
 def test_parser_parse_pdf_file_returns_markdown_text(tmp_path: Path):
     file_path = tmp_path / "parser_test.pdf"
-    _build_pdf(file_path, "Parser PDF content")
+    _build_pdf(file_path, "Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade.")
 
     markdown = Parser.parse(str(file_path), params={"ocr_engine": "disable"})
 
@@ -202,7 +203,7 @@ def test_parse_image_ignores_enable_ocr(tmp_path: Path) -> None:
 @pytest.mark.asyncio
 async def test_parser_aparse_pdf_file_returns_markdown_text(tmp_path: Path):
     file_path = tmp_path / "parser_test_async.pdf"
-    _build_pdf(file_path, "Async Parser PDF content")
+    _build_pdf(file_path, "Async Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade.")
 
     markdown = await Parser.aparse(str(file_path), params={"ocr_engine": "disable"})
 
@@ -219,21 +220,30 @@ def test_parse_pdf_uses_config_default_ocr_when_engine_missing(
     import yuxi
 
     file_path = tmp_path / "parser_test.pdf"
-    _build_pdf(file_path, "Parser PDF content")
+    _build_pdf(file_path, "Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade.")
     captured = {}
 
-    def _fake_process_file(processor_type, file, params=None):
-        captured["processor_type"] = processor_type
-        captured["file"] = file
-        captured["params"] = params
-        return "default OCR content"
+    class _FakeProcessor:
+        def __init__(self, processor_type):
+            self.processor_type = processor_type
+
+        def process_file(self, file, params=None):
+            captured["processor_type"] = self.processor_type
+            captured["file"] = file
+            captured["params"] = params
+            return "default OCR content"
+
+    def _fake_get_processor(processor_type, **kwargs):
+        return _FakeProcessor(processor_type)
 
     monkeypatch.setattr(yuxi.config, "default_ocr_engine", "mineru_ocr")
-    monkeypatch.setattr(DocumentProcessorFactory, "process_file", _fake_process_file)
+    monkeypatch.setattr(DocumentProcessorFactory, "get_processor", _fake_get_processor)
 
     result = parser_unified.parse_pdf(str(file_path), params={})
 
-    assert result == "default OCR content"
+    assert isinstance(result, ProcessingResult)
+    assert result.status is ProcessingStatus.SUCCESS
+    assert result.content == "default OCR content"
     assert captured["processor_type"] == "mineru_ocr"
     assert captured["file"] == str(file_path)
 
@@ -245,12 +255,25 @@ def test_parse_pdf_keeps_explicit_disable_when_default_ocr_enabled(
     import yuxi
 
     file_path = tmp_path / "parser_test.pdf"
-    _build_pdf(file_path, "Parser PDF content")
+    _build_pdf(file_path, "Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade.")
+
+    class _FakeProcessor:
+        def process(self, file, params=None):
+            return ProcessingResult(
+                status=ProcessingStatus.SUCCESS,
+                engine="docling",
+                ocr_used=False,
+                content="Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade.",
+            )
+
     monkeypatch.setattr(yuxi.config, "default_ocr_engine", "mineru_ocr")
+    monkeypatch.setattr(DocumentProcessorFactory, "get_processor", lambda processor_type: _FakeProcessor())
 
     result = parser_unified.parse_pdf(str(file_path), params={"ocr_engine": "disable"})
 
-    assert "Parser PDF content" in result
+    assert isinstance(result, ProcessingResult)
+    assert result.status is ProcessingStatus.SUCCESS
+    assert "Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade." in result.content
 
 
 @pytest.mark.asyncio

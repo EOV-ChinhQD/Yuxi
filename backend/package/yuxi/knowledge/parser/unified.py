@@ -231,10 +231,13 @@ def parse_pdf(file, params=None):
     from yuxi.knowledge.parser.base import DocumentProcessorException
     from yuxi.knowledge.parser.factory import DocumentProcessorFactory
     from yuxi.knowledge.parser.density import PDFDensityAnalyzer
+    from yuxi.knowledge.parser.models import OCRPolicy, ProcessingStatus, ProcessingResult
 
-    opt_ocr, processor_params = _resolve_ocr_engine_params(params)
+    from yuxi import config as yuxi_config
 
-    # Tự động phân tích mật độ văn bản của tài liệu PDF để tối ưu hóa quyết định OCR
+    params = params or {}
+
+    # 1. Analyzer
     try:
         analyzer = PDFDensityAnalyzer()
         analysis = analyzer.analyze_document(file)
@@ -243,45 +246,97 @@ def parse_pdf(file, params=None):
             f"Scan pages: {len(analysis['scan_pages'])}/{analysis['total_pages']}, "
             f"Hybrid pages: {len(analysis['hybrid_pages'])}/{analysis['total_pages']}"
         )
-        # Nếu tài liệu có text layer sạch trên toàn bộ các trang, tự động tắt OCR
-        if analysis["recommended_ocr"] == "disable" and opt_ocr != "disable":
-            logger.info(
-                "[Density Analyzer] PDF contains high-quality text layer on all pages. Automatically disabling OCR."
-            )
-            opt_ocr = "disable"
     except Exception as e:
-        logger.warning(f"[Density Analyzer] Failed to analyze PDF density, falling back to original OCR config: {e}")
+        logger.warning(f"[Density Analyzer] Failed to analyze PDF density: {e}")
+        analysis = {"recommended_ocr": "auto"}
+
+    # Policy: explicit param wins, then runtime config, then density-based auto.
+    # An explicit ocr_engine="disable" means "text-layer only, no OCR" and always forces DISABLE.
+    opt_ocr, _ = _resolve_ocr_engine_params(params)
+    policy_str = params.get("ocr_policy") or yuxi_config.ocr_policy or "auto"
+    try:
+        policy = OCRPolicy(str(policy_str))
+    except ValueError:
+        policy = OCRPolicy.AUTO
 
     if opt_ocr == "disable":
-        return pdfreader(file, params=processor_params)
+        policy = OCRPolicy.DISABLE
+    elif policy == OCRPolicy.AUTO:
+        policy = OCRPolicy.DISABLE if analysis.get("recommended_ocr") == "disable" else OCRPolicy.ENABLE
 
-    image_bucket, image_prefix = _resolve_image_storage_params(processor_params)
+    allow_external = yuxi_config.allow_external_ocr
+
+    # Engine chain: user-selected engine first, then registered defaults.
+    CLOUD_ENGINES = {"paddleocr_vl_1_6", "mineru_official", "deepseek_ocr"}
+    engine_preference: list[str] = []
+    
+    if opt_ocr and opt_ocr != "disable" and opt_ocr in DocumentProcessorFactory.PROCESSOR_TYPES:
+        if opt_ocr in CLOUD_ENGINES and not allow_external:
+            from yuxi.knowledge.parser.base import DocumentProcessorException
+            raise DocumentProcessorException(
+                f"Cannot use {opt_ocr}: External OCR is disabled by compliance policy (ALLOW_EXTERNAL_OCR=false).", 
+                opt_ocr
+            )
+        engine_preference.append(opt_ocr)
+    if policy == OCRPolicy.DISABLE:
+        # Text-layer PDFs: local text parser without OCR first, then local OCR fallback.
+        if "docling" not in engine_preference:
+            engine_preference.append("docling")
+        if "rapid_ocr" not in engine_preference:
+            engine_preference.append("rapid_ocr")
+    else:
+        # Scanned/hybrid PDFs: prefer cloud OCR when allowed, otherwise local OCR.
+        if allow_external:
+            for engine in ("paddleocr_vl_1_6", "mineru_official", "deepseek_ocr"):
+                if engine not in engine_preference:
+                    engine_preference.append(engine)
+        if "rapid_ocr" not in engine_preference:
+            engine_preference.append("rapid_ocr")
+
+    # Resolve images
+    image_bucket, image_prefix = _resolve_image_storage_params(params)
+    processor_params = dict(params)
     processor_params.setdefault("image_bucket", image_bucket)
     processor_params.setdefault("image_prefix", image_prefix)
+    processor_params["ocr_policy"] = policy.value
 
-    fallback_chain = [opt_ocr]
-    if opt_ocr != "rapid_ocr":
-        fallback_chain.append("rapid_ocr")
-
+    # Execution
     last_error = None
-    for parser_type in fallback_chain:
+    for engine in engine_preference:
         try:
-            return DocumentProcessorFactory.process_file(parser_type, file, processor_params)
-        except DocumentProcessorException as e:
-            last_error = e
-            logger.warning(f"PDF parser {parser_type} failed, trying next: {e}")
-        except Exception as e:  # noqa: BLE001
-            last_error = e
-            logger.warning(f"PDF parser {parser_type} unexpected error, trying next: {e}")
+            processor = DocumentProcessorFactory.get_processor(engine)
+            if hasattr(processor, "process"):
+                result = processor.process(file, processor_params)
+            else:
+                # Backward-compatible wrapper for processors that only implement process_file
+                content = processor.process_file(file, processor_params)
+                result = ProcessingResult(
+                    status=ProcessingStatus.SUCCESS,
+                    engine=engine,
+                    ocr_used=(policy != OCRPolicy.DISABLE),
+                    content=content,
+                )
 
-    # Final fallback to text-only pdfreader
-    try:
-        logger.warning("All OCR parsers failed. Falling back to text-only PyPDF reader.")
-        return pdfreader(file, params=processor_params)
-    except Exception as e:  # noqa: BLE001
-        raise DocumentProcessorException(
-            f"Tất cả các bộ xử lý PDF đều thất bại. Lỗi cuối: {last_error}", opt_ocr, "all_parsers_failed"
-        ) from e
+            if result.status == ProcessingStatus.SUCCESS:
+                return result
+
+            if result.status == ProcessingStatus.DEGRADED:
+                logger.warning(f"{engine} returned a DEGRADED result, trying next engine...")
+                last_error = DocumentProcessorException(f"Degraded result from {engine}", engine)
+                continue
+
+        except Exception as e:
+            last_error = DocumentProcessorException(str(e), engine)
+            logger.warning(f"Engine {engine} failed: {e}")
+
+    # No automatic fallback to the plain-text PyPDF reader; surface the failure explicitly.
+    return ProcessingResult(
+        status=ProcessingStatus.FAILED,
+        engine="orchestrator",
+        ocr_used=False,
+        error=last_error,
+        metadata={"fallback_chain_exhausted": True},
+    )
 
 
 def parse_image(file, params=None):
@@ -367,7 +422,12 @@ async def _process_file_to_markdown_core(
         file_ext = file_path_obj.suffix.lower()
 
         if file_ext == ".pdf":
-            text = await parse_pdf_async(str(file_path_obj), params=params)
+            parse_result = await parse_pdf_async(str(file_path_obj), params=params)
+            if not parse_result.success:
+                from yuxi.knowledge.parser.base import DocumentProcessorException
+
+                raise DocumentProcessorException(f"Parse PDF failed: {parse_result.error}", parse_result.engine)
+            text = parse_result.content
             result = f"{text}"
 
         elif file_ext in [".txt", ".md"]:

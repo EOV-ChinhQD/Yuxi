@@ -16,6 +16,9 @@ x-api-worker-env: &api-worker-env
   # Phân tích tài liệu (Document parsing)
   MINERU_API_URI: ${MINERU_API_URI:-http://mineru-api:30001}
   PADDLEX_URI: ${PADDLEX_URI:-http://paddlex:8080}
+  # OCR PDF parsing policy (auto | enable | disable); allow_external enables cloud OCR in the chain
+  OCR_POLICY: ${OCR_POLICY:-auto}
+  ALLOW_EXTERNAL_OCR: ${ALLOW_EXTERNAL_OCR:-false}
   # Sandbox related
   YUXI_DOCKER_API_BASE: ${YUXI_DOCKER_API_BASE:-http://localhost}
   SANDBOX_PROVIDER: ${SANDBOX_PROVIDER:-provisioner}

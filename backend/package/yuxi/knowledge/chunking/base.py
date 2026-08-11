@@ -22,12 +22,22 @@ class ChunkResult:
     token_count: int = 0
 
 
+@dataclass
+class ChunkingResult:
+    """Kết quả bọc lại từ các chiến lược chunking (ví dụ: structural), kèm theo điểm đánh giá chất lượng."""
+
+    chunks: list[ChunkResult]
+    strategy: str
+    quality: str  # "GOOD", "POOR"
+    metadata: dict = field(default_factory=dict)
+
+
 class BaseChunker(ABC):
     """Interface cho tất cả chunker implementations."""
 
     @abstractmethod
-    def chunk(self, markdown: str, config: dict[str, Any] | None = None) -> list[ChunkResult]:
-        """Cắt markdown thành danh sách chunks có metadata."""
+    def chunk(self, markdown: str, config: dict[str, Any] | None = None) -> ChunkingResult:
+        """Chunk markdown into a ChunkingResult holding chunks with metadata."""
         pass
 
     def build_context_prefix(self, meta: ChunkMetadata) -> str:

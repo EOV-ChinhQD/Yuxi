@@ -37,7 +37,7 @@ CONTENT_SPARSE_FIELD = "content_sparse"
 CONTENT_ANALYZER_PARAMS = {"type": "standard"}
 VECTOR_METRIC_TYPE = "COSINE"
 MILVUS_CHUNK_EMBED_BATCH_SIZE = 200
-MILVUS_QUERY_OFFLOAD_LIMIT = 8                                          
+MILVUS_QUERY_OFFLOAD_LIMIT = 8
 
 try:
     from pyvi import ViTokenizer

@@ -5,7 +5,7 @@ from yuxi.knowledge.chunking.structural_chunker import StructuralChunker
 def test_naive_chunker_basic():
     chunker = NaiveChunker()
     markdown = "Dòng 1\n\nDòng 2\n\nDòng 3"
-    results = chunker.chunk(markdown, {"chunk_token_num": 512})
+    results = chunker.chunk(markdown, {"chunk_token_num": 512}).chunks
     assert len(results) > 0
     for r in results:
         assert r.content is not None
@@ -21,7 +21,7 @@ Mô tả chi tiết của mục 1.1.
 # Chương 2
 Nội dung chương 2.
 """
-    results = chunker.chunk(markdown)
+    results = chunker.chunk(markdown).chunks
     assert len(results) >= 2
     
     # Check that headings are parsed into metadata
@@ -43,7 +43,7 @@ def hello():
     print("world")
 ```
 """
-    results = chunker.chunk(markdown)
+    results = chunker.chunk(markdown).chunks
     assert len(results) > 0
     # Code block and table should be preserved in content
     content_joined = "\n\n".join([r.content for r in results])

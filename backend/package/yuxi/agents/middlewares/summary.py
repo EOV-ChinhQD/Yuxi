@@ -647,6 +647,7 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
 
         response_messages = [*new_messages, *preserved_messages]
         import os
+
         if os.getenv("ENABLE_NEW_SUMMARY_MIDDLEWARE", "True").lower() in ("true", "1", "yes"):
             max_input_tokens = self._get_profile_limits()
             if max_input_tokens:
@@ -660,7 +661,9 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
                         break
                     # Drop the oldest message from preserved_messages to fit token budget
                     dropped = preserved_messages.pop(0)
-                    logger.warning(f"[SummaryMiddleware] Dropping message {type(dropped).__name__} to fit token budget.")
+                    logger.warning(
+                        f"[SummaryMiddleware] Dropping message {type(dropped).__name__} to fit token budget."
+                    )
                 response_messages = [*new_messages, *preserved_messages]
 
         response = handler(request.override(messages=response_messages))
@@ -761,6 +764,7 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
 
         response_messages = [*new_messages, *preserved_messages]
         import os
+
         if os.getenv("ENABLE_NEW_SUMMARY_MIDDLEWARE", "True").lower() in ("true", "1", "yes"):
             max_input_tokens = self._get_profile_limits()
             if max_input_tokens:
@@ -774,7 +778,9 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
                         break
                     # Drop the oldest message from preserved_messages to fit token budget
                     dropped = preserved_messages.pop(0)
-                    logger.warning(f"[SummaryMiddleware] Dropping message {type(dropped).__name__} to fit token budget.")
+                    logger.warning(
+                        f"[SummaryMiddleware] Dropping message {type(dropped).__name__} to fit token budget."
+                    )
                 response_messages = [*new_messages, *preserved_messages]
 
         response = await handler(request.override(messages=response_messages))

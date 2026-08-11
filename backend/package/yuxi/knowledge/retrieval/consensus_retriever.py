@@ -72,6 +72,7 @@ class ConsensusRetriever:
     async def _load_dynamic_weights(self) -> dict | None:
         try:
             from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
+
             repo = KnowledgeBaseRepository()
             kb = await repo.get_by_kb_id(self.kb_id)
             if kb and kb.metadata_ and "consensus_weights" in kb.metadata_:

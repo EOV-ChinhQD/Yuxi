@@ -1,6 +1,6 @@
 import re
 from typing import Any
-from yuxi.knowledge.chunking.base import BaseChunker, ChunkResult, ChunkMetadata
+from yuxi.knowledge.chunking.base import BaseChunker, ChunkResult, ChunkMetadata, ChunkingResult
 from yuxi.knowledge.chunking.ragflow_like.nlp import count_tokens, hard_split_by_token_limit
 
 
@@ -27,7 +27,7 @@ class StructuralChunker(BaseChunker):
     def __init__(self, target_chunk_size=512):
         self.target_size = target_chunk_size
 
-    def chunk(self, markdown: str, config: dict[str, Any] | None = None) -> list[ChunkResult]:
+    def chunk(self, markdown: str, config: dict[str, Any] | None = None) -> ChunkingResult:
         config = config or {}
         target_size = int(config.get("chunk_token_num", self.target_size) or self.target_size)
         self.target_size = target_size
@@ -35,12 +35,42 @@ class StructuralChunker(BaseChunker):
         # 1. Parse markdown to blocks
         blocks = self._parse_markdown_to_blocks(markdown)
         if not blocks:
-            return []
+            return ChunkingResult(chunks=[], strategy="structural", quality="POOR")
 
         # 2. Build Tree (Heading Hierarchy)
         root = self._build_tree(blocks)
 
-        # 3. Traverse and Chunk
+        # 3. Calculate structural metrics
+        max_depth = 0
+        orphan_tokens = 0
+        total_tokens = 0
+        heading_count = 0
+
+        def traverse(node, depth):
+            nonlocal max_depth, orphan_tokens, total_tokens, heading_count
+            if depth > max_depth:
+                max_depth = depth
+
+            total_tokens += getattr(node, "token_count", 0)
+
+            if node.node_type == "heading":
+                heading_count += 1
+
+            if node.node_type == "text" and depth <= 1:
+                orphan_tokens += getattr(node, "token_count", 0)
+
+            for child in node.children:
+                traverse(child, depth + 1)
+
+        traverse(root, 0)
+        orphan_ratio = orphan_tokens / max(total_tokens, 1)
+
+        quality = "GOOD"
+        # Ngưỡng 0.5 (tạm thời, có thể tinh chỉnh sau benchmark)
+        if orphan_ratio > 0.5 or heading_count == 0:
+            quality = "POOR"
+
+        # 4. Traverse and Chunk
         chunks: list[ChunkResult] = []
         accum: list[DocumentNode] = []
         context_stack: list[str] = []
@@ -51,7 +81,12 @@ class StructuralChunker(BaseChunker):
         if accum:
             self._finalize_chunk(accum, chunks, context_stack)
 
-        return chunks
+        return ChunkingResult(
+            chunks=chunks,
+            strategy="structural",
+            quality=quality,
+            metadata={"tree_depth": max_depth, "orphan_text_ratio": orphan_ratio, "heading_count": heading_count},
+        )
 
     def _parse_markdown_to_blocks(self, markdown: str) -> list[dict]:
         lines = (markdown or "").splitlines()

@@ -15,6 +15,14 @@ from yuxi.utils.logging_config import logger
 
 READONLY_CONFIG_FIELDS = frozenset({"save_dir"})
 DEFAULT_OCR_ENGINE = "rapid_ocr"
+DEFAULT_OCR_POLICY = "auto"
+
+
+def _normalize_ocr_policy(value: Any) -> str:
+    policy = str(value or "").strip().lower() or DEFAULT_OCR_POLICY
+    if policy not in ("auto", "enable", "disable"):
+        raise ValueError(f"Unsupported OCR policy: {policy}")
+    return policy
 
 
 def _get_available_ocr_engines() -> set[str]:
@@ -62,6 +70,10 @@ class Config(BaseModel):
         description="Mô hình LLM kiểm duyệt nội dung",
     )
     default_ocr_engine: str = Field(default=DEFAULT_OCR_ENGINE, description="默认 OCR 解析引擎")
+    ocr_policy: str = Field(default=DEFAULT_OCR_POLICY, description="OCR policy for PDF parsing: auto/enable/disable")
+    allow_external_ocr: bool = Field(
+        default=False, description="Allow cloud-based OCR engines in the PDF fallback chain"
+    )
 
     sandbox_provider: str = Field(default="provisioner", description="Nhà cung cấp sandbox")
     sandbox_provisioner_url: str = Field(
@@ -134,6 +146,12 @@ class Config(BaseModel):
         )
         self.max_nli_claims = int(os.getenv("MAX_NLI_CLAIMS") or self.max_nli_claims or 8)
         self.nli_max_concurrency = int(os.getenv("NLI_MAX_CONCURRENCY") or self.nli_max_concurrency or 3)
+        self.ocr_policy = os.getenv("OCR_POLICY") or self.ocr_policy or DEFAULT_OCR_POLICY
+        self.allow_external_ocr = (os.getenv("ALLOW_EXTERNAL_OCR") or str(self.allow_external_ocr)).lower() in (
+            "true",
+            "1",
+            "yes",
+        )
 
         if self.sandbox_provider.lower() != "provisioner":
             raise ValueError("Only sandbox_provider=provisioner is supported.")
@@ -213,6 +231,10 @@ class Config(BaseModel):
     def _normalize_config_value(self, key: str, value: Any) -> Any:
         if key == "default_ocr_engine":
             return _normalize_default_ocr_engine(value)
+        if key == "ocr_policy":
+            return _normalize_ocr_policy(value)
+        if key == "allow_external_ocr":
+            return str(value).lower() in ("true", "1", "yes")
         return value
 
 

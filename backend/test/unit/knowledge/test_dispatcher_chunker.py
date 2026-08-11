@@ -2,9 +2,9 @@ import pytest
 from yuxi.core.feature_manager import FeatureManager
 from yuxi.knowledge.chunking.ragflow_like.dispatcher import chunk_markdown
 
-def test_dispatcher_with_naive_by_default():
+def test_dispatcher_with_naive_when_disabled():
     FeatureManager.reset_overrides()
-    # FeatureManager disabled by default
+    FeatureManager.override(FeatureManager.STRUCTURAL_CHUNKING, False)
     markdown = "# Chương 1\nNội dung 1\n## Mục 1.1\nNội dung 1.1"
     records = chunk_markdown(markdown, "file_123", "test.md", {"chunk_preset_id": "general"})
     assert len(records) > 0
@@ -13,6 +13,7 @@ def test_dispatcher_with_naive_by_default():
         assert r["heading_path"] == []
         assert r["chunk_version"] == "v1.0"
         assert r["status"] == "pending"
+    FeatureManager.reset_overrides()
 
 def test_dispatcher_with_structural_enabled():
     FeatureManager.reset_overrides()

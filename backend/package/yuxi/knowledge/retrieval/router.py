@@ -31,10 +31,12 @@ class RouteType(str, Enum):
     # kích hoạt cơ chế rewrite query và thử lại tối đa 1 lần (MAX_REWRITE_ATTEMPTS = 1).
     RETRY_WITH_REWRITE = "RETRY_WITH_REWRITE"
 
+
 def _get_cache_ttl(route_type: RouteType) -> int:
     if route_type in (RouteType.CHIT_CHAT, RouteType.OUT_OF_DOMAIN, RouteType.AMBIGUOUS):
         return 86400  # 1 day
     return 3600  # 1 hour
+
 
 class SemanticRouter:
     """
@@ -183,7 +185,7 @@ Output ONLY valid JSON:
                 }
 
             logger.info(f"[SemanticRouter] Successfully routed to {final_route.value} (conf: {confidence})")
-            
+
             if redis and cache_key:
                 try:
                     ttl = _get_cache_ttl(final_route)
