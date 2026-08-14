@@ -455,13 +455,14 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
                 file_path=event.get("file_path"),
             )
 
-    # 重写 _create_summary/_acreate_summary 以在摘要 LLM 调用上挂 TAG_NOSTREAM：父类
-    # 的 model.invoke 带 lc_source 元数据但无 nostream 标记，其 token 流会被 LangGraph
-    # messages stream 捕获并广播到前端，形成 phantom 摘要消息。带 TAG_NOSTREAM 后流式
-    # 层在源头跳过该调用，无需 chat_service 下游过滤，主 messages 流天然只含用户可见回复。
-    # 父类硬编码 invoke config 且无 tags 钩子（self.model 为中间件实例共享属性，并发下不能
-    # 临时换绑 bind(tags=...)），故只能重写；trim/format 是纯同步逻辑，抽到 _build_summary_prompt
-    # 供 sync/async 两条路径共用，避免逐字重复。
+    # Ghi đè _create_summary/_acreate_summary để gắn TAG_NOSTREAM vào lệnh gọi LLM tóm tắt: model.invoke
+    # của lớp cha có metadata lc_source nhưng không có cờ nostream, luồng token của nó sẽ bị LangGraph
+    # messages stream bắt và phát tới frontend, tạo ra tin nhắn tóm tắt ma (phantom). Khi gắn TAG_NOSTREAM,
+    # tầng streaming sẽ bỏ qua lệnh gọi này từ đầu, không cần lọc ở chat_service hạ nguồn, luồng messages chính
+    # sẽ chỉ chứa phản hồi hiển thị cho người dùng.
+    # Lớp cha hardcode invoke config và không có hook tags (self.model là thuộc tính dùng chung giữa các instance
+    # middleware, không thể bind(tags=...) tạm thời khi chạy đồng thời), nên buộc phải ghi đè; trim/format là
+    # logic đồng bộ thuần túy, được tách vào _build_summary_prompt dùng chung cho cả sync/async.
     _SUMMARY_INVOKE_CONFIG = {"metadata": {"lc_source": "summarization"}, "tags": [TAG_NOSTREAM]}
 
     def _build_summary_prompt(self, sanitized: list[AnyMessage]) -> str | None:
@@ -745,9 +746,9 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
                 large_tool_results_prefix=self._large_tool_results_prefix,
             )
 
-        # Offload 与 summary 互相独立，并发执行以避免串行等待一次文件 I/O + 一次
-        # LLM 调用；_SUMMARY_SANITIZED_MESSAGES 的 id 缓存保证两路 sanitize 不会重复
-        # 写入工具结果文件，offload 失败返回 None 时 summary 仍可独立完成。
+        # Offload và summary độc lập với nhau, thực thi đồng thời để tránh chờ tuần tự một lần I/O tệp + một lần
+        # gọi LLM; bộ nhớ đệm id của _SUMMARY_SANITIZED_MESSAGES đảm bảo sanitize hai chiều không ghi trùng
+        # tệp kết quả công cụ, khi offload thất bại trả về None thì summary vẫn có thể hoàn thành độc lập.
         file_path, summary = await asyncio.gather(
             self._aoffload_to_backend(backend, messages_to_summarize),
             self._acreate_summary(messages_to_summarize),

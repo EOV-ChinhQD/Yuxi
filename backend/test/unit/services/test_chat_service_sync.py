@@ -118,7 +118,7 @@ class _FakeConvRepo:
                 "request_id": request_id,
             }
         )
-        return SimpleNamespace(id=1)
+        return SimpleNamespace(id=1, role=role, content=content)
 
     async def get_conversation_by_thread_id(self, thread_id: str):
         return self._conversation(thread_id)
@@ -273,17 +273,17 @@ async def test_save_messages_from_langgraph_state_backfills_run_output_message(m
 @pytest.mark.asyncio
 async def test_build_agent_input_context_merges_workspace_agents_prompt(monkeypatch: pytest.MonkeyPatch):
     def fake_agents_prompt(_thread_id: str, _uid: str) -> str:
-        return "回答前先读取 AGENTS.md"
+        return "Đọc AGENTS.md trước khi trả lời"
 
     monkeypatch.setattr(agent_context, "_load_workspace_agents_prompt", fake_agents_prompt)
 
     context = await agent_context.build_agent_input_context(
-        {"system_prompt": "原始系统提示词", "temperature": 0.1},
+        {"system_prompt": "System prompt gốc", "temperature": 0.1},
         thread_id="thread-1",
         uid="user-1",
     )
 
-    assert context["system_prompt"] == "原始系统提示词\n\n用户工作区 agents/AGENTS.md 内容：\n回答前先读取 AGENTS.md"
+    assert context["system_prompt"] == "System prompt gốc\n\nNội dung agents/AGENTS.md trong không gian làm việc của người dùng:\nĐọc AGENTS.md trước khi trả lời"
     assert context["temperature"] == 0.1
     assert context["thread_id"] == "thread-1"
     assert context["uid"] == "user-1"
@@ -576,9 +576,9 @@ async def test_build_agent_input_context_keeps_prompt_when_workspace_agents_prom
     monkeypatch.setattr(agent_context, "_load_workspace_agents_prompt", _empty_agents_prompt)
 
     context = await agent_context.build_agent_input_context(
-        {"system_prompt": "原始系统提示词"},
+        {"system_prompt": "System prompt gốc"},
         thread_id="thread-1",
         uid="user-1",
     )
 
-    assert context["system_prompt"] == "原始系统提示词"
+    assert context["system_prompt"] == "System prompt gốc"

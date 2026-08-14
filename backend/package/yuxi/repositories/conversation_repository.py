@@ -89,7 +89,7 @@ class ConversationRepository:
         thread_id: str | None = None,
         metadata: dict | None = None,
     ) -> Conversation:
-        """创建对话和统计记录但只 flush，供外层事务继续绑定关系。"""
+        """Tạo bản ghi cuộc hội thoại và thống kê nhưng chỉ flush, dành cho transaction bên ngoài tiếp tục liên kết quan hệ."""
         if not thread_id:
             thread_id = str(uuid_lib.uuid4())
 
@@ -125,7 +125,7 @@ class ConversationRepository:
         thread_id: str | None = None,
         metadata: dict | None = None,
     ) -> Conversation:
-        """创建并提交一个完整对话，适用于不需要外层事务编排的入口。"""
+        """Tạo và commit một cuộc hội thoại hoàn chỉnh, phù hợp cho các điểm gọi không cần sắp xếp transaction bên ngoài."""
         conversation = await self.add_conversation(
             uid=uid,
             agent_id=agent_id,

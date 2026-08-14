@@ -53,7 +53,7 @@ def test_parser_parse_docx_file_returns_markdown_text(tmp_path: Path, monkeypatc
     file_path = tmp_path / "parser_test.docx"
     _build_docx(file_path, "Parser DOCX content")
 
-    # 避免测试依赖 docling 行为，直接验证统一 parser 可回退到 python-docx。
+    # Tránh test phụ thuộc vào docling, trực tiếp xác thực parser thống nhất fallback về python-docx.
     def _raise_docling_error(*args, **kwargs):
         raise RuntimeError("force fallback to python-docx")
 
@@ -278,12 +278,12 @@ def test_parse_pdf_keeps_explicit_disable_when_default_ocr_enabled(
 
 @pytest.mark.asyncio
 async def test_parser_aparse_image_file_with_mineru_when_available():
-    file_path = DATA_DIR / "测试图片.png"
-    assert file_path.exists(), f"测试文件不存在: {file_path}"
+    file_path = DATA_DIR / "test_image.png"
+    assert file_path.exists(), f"Tệp kiểm thử không tồn tại: {file_path}"
 
     health = await asyncio.to_thread(DocumentProcessorFactory.check_health, "mineru_ocr")
     if health.get("status") != "healthy":
-        pytest.skip(f"mineru_ocr 不可用: {health.get('message', 'unknown')}")
+        pytest.skip(f"mineru_ocr không khả dụng: {health.get('message', 'unknown')}")
 
     markdown = await Parser.aparse(
         str(file_path),

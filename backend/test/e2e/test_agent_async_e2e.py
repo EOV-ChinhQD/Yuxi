@@ -30,7 +30,7 @@ async def _create_agent(client: httpx.AsyncClient, headers: dict[str, str], uid:
 
     slug = f"e2e-async-agent-{uuid.uuid4().hex[:8]}"
     context: dict[str, Any] = {
-        "system_prompt": f"你是端到端测试专用智能体。不要调用任何工具，只输出 {EXPECTED_OUTPUT}。",
+        "system_prompt": f"Bạn là Agent chuyên dụng cho kiểm thử E2E. Không gọi công cụ, chỉ xuất {EXPECTED_OUTPUT}.",
         "tools": [],
         "knowledges": [],
         "mcps": [],
@@ -43,10 +43,10 @@ async def _create_agent(client: httpx.AsyncClient, headers: dict[str, str], uid:
     response = await client.post(
         "/api/agent",
         json={
-            "name": f"E2E 异步 Agent {slug[-8:]}",
+            "name": f"E2E Async Agent {slug[-8:]}",
             "slug": slug,
             "backend_id": "ChatbotAgent",
-            "description": "真实异步 Agent E2E 临时智能体",
+            "description": "Agent tạm thời cho kiểm thử E2E bất đồng bộ thực tế",
             "config_json": {"context": context},
             "share_config": {"access_level": "user", "department_ids": [], "user_uids": [uid]},
         },
@@ -97,7 +97,7 @@ async def _create_run(
     response = await client.post(
         "/api/agent/runs",
         json={
-            "query": f"请只回复 {EXPECTED_OUTPUT}，不要添加任何解释。",
+            "query": f"Vui lòng chỉ phản hồi {EXPECTED_OUTPUT}, không thêm giải thích.",
             "agent_slug": agent_slug,
             "thread_id": thread_id,
             "meta": {"request_id": request_id},

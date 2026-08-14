@@ -34,7 +34,7 @@ class AgentRunRepository:
         created_by_run_id: str,
         run_id: str,
     ) -> AgentRun | None:
-        """读取当前父 run 作用域内的子智能体 run，并校验线程关系一致性。"""
+        """Đọc run của Subagent trong phạm vi run cha hiện tại và xác thực tính nhất quán của quan hệ luồng."""
         creator_run = await self.get_run_for_user(created_by_run_id, uid)
         if not creator_run:
             return None
@@ -64,7 +64,7 @@ class AgentRunRepository:
     async def get_latest_subagent_run_by_thread_for_user(
         self, conversation_thread_id: str, uid: str
     ) -> AgentRun | None:
-        """读取某个子线程最近一次子智能体 run，用于状态页和继续线程校验。"""
+        """Đọc lần chạy gần nhất của Subagent trong một luồng con, phục vụ trang trạng thái và xác thực tiếp tục luồng."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -78,7 +78,7 @@ class AgentRunRepository:
         return result.scalar_one_or_none()
 
     async def get_latest_run_by_thread_for_user(self, conversation_thread_id: str, uid: str) -> AgentRun | None:
-        """读取线程最近一次 run，用于恢复查询 checkpoint 时的运行时模型。"""
+        """Đọc lần chạy gần nhất của luồng, dùng để khôi phục model runtime khi truy vấn checkpoint."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -92,7 +92,7 @@ class AgentRunRepository:
         return result.scalar_one_or_none()
 
     async def list_child_runs_for_user(self, created_by_run_id: str, uid: str) -> list[AgentRun]:
-        """列出由指定 run 创建的所有子 run。"""
+        """Liệt kê toàn bộ các run con được tạo bởi run chỉ định."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -104,7 +104,7 @@ class AgentRunRepository:
         return list(result.scalars().all())
 
     async def list_active_child_runs_for_user(self, created_by_run_id: str, uid: str) -> list[AgentRun]:
-        """列出由指定 run 创建且尚未结束的子 run，用于父 run 取消时级联处理。"""
+        """Liệt kê các run con được tạo bởi run chỉ định mà chưa kết thúc, dùng để xử lý hủy theo tầng (cascade) khi run cha bị hủy."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -123,7 +123,7 @@ class AgentRunRepository:
         conversation_thread_id: str,
         uid: str,
     ) -> AgentRun | None:
-        """检查同一用户、智能体、线程上是否已有未结束 run，避免并发写同一线程。"""
+        """Kiểm tra xem cùng người dùng, agent và luồng đã có run chưa kết thúc hay chưa, tránh ghi đồng thời vào cùng một luồng."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -152,7 +152,7 @@ class AgentRunRepository:
         run_type: str = "chat",
         input_message_id: int | None = None,
     ) -> AgentRun:
-        """登记一条 run 记录；输入正文和图片应通过 input_message_id 指向 Message。"""
+        """Đăng ký một bản ghi run; nội dung văn bản và hình ảnh đầu vào nên trỏ tới Message thông qua input_message_id."""
         run = AgentRun(
             id=run_id,
             conversation_thread_id=conversation_thread_id,

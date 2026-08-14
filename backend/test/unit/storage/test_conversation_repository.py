@@ -222,18 +222,18 @@ async def test_search_conversations_by_message_content_excludes_invocation_sourc
     await conversation_session.flush()
     conversation_session.add_all(
         [
-            Message(conversation=normal, role="user", content="导航隐藏检查", message_type="text", created_at=now),
+            Message(conversation=normal, role="user", content="Kiểm tra ẩn điều hướng", message_type="text", created_at=now),
             Message(
                 conversation=agent_call,
                 role="user",
-                content="导航隐藏检查 call",
+                content="Kiểm tra ẩn điều hướng call",
                 message_type="text",
                 created_at=now,
             ),
             Message(
                 conversation=agent_eval,
                 role="user",
-                content="导航隐藏检查 eval",
+                content="Kiểm tra ẩn điều hướng eval",
                 message_type="text",
                 created_at=now,
             ),
@@ -244,7 +244,7 @@ async def test_search_conversations_by_message_content_excludes_invocation_sourc
     repo = ConversationRepository(conversation_session)
     items, has_more = await repo.search_conversations_by_message_content(
         uid="user-a",
-        query="导航隐藏检查",
+        query="Kiểm tra ẩn điều hướng",
         limit=20,
         offset=0,
         exclude_sources=INVOCATION_CONVERSATION_SOURCES,

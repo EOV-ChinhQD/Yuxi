@@ -18,38 +18,38 @@ agent_invocation_router = APIRouter(prefix="/agent-invocation", tags=["agent-inv
 
 
 class AgentCallRunCreate(BaseModel):
-    agent_slug: str = Field(..., description="要调用的智能体 slug")
-    messages: list[dict[str, Any]] = Field(..., description="消息列表，取最后一条 user 消息作为输入")
-    stream: bool = Field(False, description="暂不支持流式，传 true 会返回 422")
+    agent_slug: str = Field(..., description="Slug của Agent cần gọi")
+    messages: list[dict[str, Any]] = Field(..., description="Danh sách tin nhắn, lấy tin nhắn user cuối cùng làm đầu vào")
+    stream: bool = Field(False, description="Tạm thời chưa hỗ trợ stream, truyền true sẽ trả về lỗi 422")
     agent_call_meta: dict[str, Any] = Field(
         default_factory=dict,
-        description="Agent Call 元数据；不允许通过 context 覆盖 Agent 运行上下文",
+        description="Metadata của Agent Call; không cho phép ghi đè ngữ cảnh chạy của Agent qua context",
     )
-    thread_id: str | None = Field(None, description="可选会话线程 ID，不传则自动创建临时线程")
-    request_id: str | None = Field(None, description="可选请求幂等 ID，不传则自动生成")
-    model_spec: str | None = Field(None, description="可选模型覆盖")
-    async_mode: bool = Field(False, description="是否只创建运行并立即返回 run_id")
+    thread_id: str | None = Field(None, description="ID luồng hội thoại tùy chọn, nếu không truyền sẽ tự động tạo luồng tạm")
+    request_id: str | None = Field(None, description="ID idempotent của yêu cầu tùy chọn, nếu không truyền sẽ tự động sinh")
+    model_spec: str | None = Field(None, description="Ghi đè mô hình tùy chọn")
+    async_mode: bool = Field(False, description="Chỉ tạo run và trả về run_id ngay lập tức hay không")
 
 
 class AgentCallRunResultRequest(BaseModel):
-    run_id: str = Field(..., description="AgentRun ID")
-    agent_slug: str | None = Field(None, description="可选，传入时校验 run 归属")
+    run_id: str = Field(..., description="ID của AgentRun")
+    agent_slug: str | None = Field(None, description="Tùy chọn, dùng để kiểm tra quyền sở hữu run khi truyền vào")
 
 
 class AgentEvaluationContext(BaseModel):
-    dataset_name: str | None = Field(None, description="Langfuse dataset 名称")
-    dataset_item_id: str | None = Field(None, description="Langfuse dataset item ID")
-    experiment_name: str | None = Field(None, description="Langfuse experiment/run 名称")
+    dataset_name: str | None = Field(None, description="Tên dataset trên Langfuse")
+    dataset_item_id: str | None = Field(None, description="ID item trong dataset Langfuse")
+    experiment_name: str | None = Field(None, description="Tên experiment/run trên Langfuse")
 
 
 class AgentEvalRunCreate(BaseModel):
-    query: str = Field(..., description="评估样例输入")
-    agent_slug: str = Field(..., description="要运行的智能体 slug")
-    evaluation: AgentEvaluationContext = Field(default_factory=AgentEvaluationContext, description="评估上下文")
-    meta: dict = Field(default_factory=dict, description="可选，请求追踪信息，例如 request_id、attachment_file_ids")
-    image_content: str | None = Field(None, description="可选，base64 图片内容")
-    model_spec: str | None = Field(None, description="可选，对话级模型覆盖，优先级高于智能体配置")
-    include_trajectory_summary: bool = Field(False, description="是否返回轻量工具调用轨迹摘要")
+    query: str = Field(..., description="Dữ liệu đầu vào của mẫu đánh giá")
+    agent_slug: str = Field(..., description="Slug của Agent cần chạy")
+    evaluation: AgentEvaluationContext = Field(default_factory=AgentEvaluationContext, description="Ngữ cảnh đánh giá")
+    meta: dict = Field(default_factory=dict, description="Tùy chọn, thông tin truy vết yêu cầu, ví dụ request_id, attachment_file_ids")
+    image_content: str | None = Field(None, description="Tùy chọn, nội dung ảnh định dạng base64")
+    model_spec: str | None = Field(None, description="Tùy chọn, ghi đè mô hình cấp hội thoại, ưu tiên cao hơn cấu hình Agent")
+    include_trajectory_summary: bool = Field(False, description="Có trả về bản tóm tắt quỹ đạo gọi công cụ gọn nhẹ hay không")
 
 
 @agent_invocation_router.post("/agent-call/runs")
@@ -58,7 +58,7 @@ async def create_agent_call_run(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """创建外部系统 Agent 调用 run，并按 async_mode 决定是否等待最终结果。"""
+    """Tạo run gọi Agent từ hệ thống bên ngoài, và quyết định có chờ kết quả cuối cùng theo async_mode hay không."""
     return await create_agent_call_run_view(
         agent_slug=payload.agent_slug,
         messages=payload.messages,
@@ -79,7 +79,7 @@ async def get_agent_call_run_result(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """读取外部 Agent 调用 run 的 OpenAI-compatible 结果结构。"""
+    """Đọc cấu trúc kết quả tương thích chuẩn OpenAI của run gọi Agent bên ngoài."""
     return await get_agent_call_run_result_view(
         run_id=payload.run_id,
         agent_slug=payload.agent_slug,
@@ -94,7 +94,7 @@ async def create_agent_eval_run(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """运行一次 CLI/Langfuse Agent 评估样例，并阻塞等待最终输出。"""
+    """Chạy một mẫu đánh giá Agent CLI/Langfuse và chặn chờ kết quả đầu ra cuối cùng."""
     return await create_agent_eval_run_view(
         query=payload.query,
         agent_slug=payload.agent_slug,

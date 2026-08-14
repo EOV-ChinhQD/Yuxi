@@ -169,31 +169,31 @@ def present_artifacts(
 class OcrParseFileInput(BaseModel):
     """Parse a sandbox file with OCR and save the Markdown result."""
 
-    file_path: str = Field(description="需要 OCR 解析的沙盒虚拟路径，必须位于 /home/gem/user-data 下")
-    ocr_engine: str | None = Field(default=None, description="可选 OCR 引擎；省略时使用系统默认 OCR 引擎")
+    file_path: str = Field(description="Đường dẫn ảo sandbox cần OCR phân tích, phải nằm trong /home/gem/user-data")
+    ocr_engine: str | None = Field(default=None, description="Engine OCR tùy chọn; nếu bỏ qua sẽ dùng OCR mặc định của hệ thống")
 
 
 OCR_PARSE_FILE_DESCRIPTION = f"""
-将沙盒中的 PDF 或图片文件解析为 Markdown 文本，并把结果保存为文件。
+Phân tích tệp PDF hoặc hình ảnh trong sandbox thành văn bản Markdown và lưu kết quả thành tệp.
 
-使用场景：
-1. 用户上传了 PDF/图片附件，需要提取其中的文字内容
-2. 工作区、uploads 或 outputs 下已有文件，需要转成可读取的 Markdown
-3. 解析结果较长，后续应使用 read_file 读取保存后的 Markdown 文件
+Trường hợp sử dụng:
+1. Người dùng tải lên tệp đính kèm PDF/hình ảnh và cần trích xuất nội dung văn bản
+2. Đã có tệp trong thư mục workspace, uploads hoặc outputs và cần chuyển thành Markdown có thể đọc được
+3. Kết quả phân tích dài, sau đó nên dùng read_file để đọc tệp Markdown đã lưu
 
-注意事项：
-1. file_path 必须是 /home/gem/user-data 下的虚拟路径
-2. 只允许读取 workspace、uploads、outputs 下的普通文件
-3. 解析结果会写入 {VIRTUAL_PATH_OUTPUTS}/{_OCR_OUTPUT_DIR_NAME}/
-4. 工具只返回结果文件路径和短预览，不直接返回完整 OCR 文本
-5. 如需在前端展示结果文件，请再调用 present_artifacts
+Lưu ý:
+1. file_path phải là đường dẫn ảo trong /home/gem/user-data
+2. Chỉ cho phép đọc các tệp thông thường trong workspace, uploads, outputs
+3. Kết quả phân tích sẽ được ghi vào {VIRTUAL_PATH_OUTPUTS}/{_OCR_OUTPUT_DIR_NAME}/
+4. Công cụ chỉ trả về đường dẫn tệp kết quả và bản xem trước ngắn, không trả về toàn bộ văn bản OCR trực tiếp
+5. Nếu cần hiển thị tệp kết quả trên giao diện người dùng, vui lòng gọi tiếp present_artifacts
 """
 
 
 @tool(
     category="buildin",
-    tags=["文件", "OCR"],
-    display_name="OCR 解析文件",
+    tags=["Tệp tin", "OCR"],
+    display_name="Trích xuất OCR tệp tin",
     description=OCR_PARSE_FILE_DESCRIPTION,
     args_schema=OcrParseFileInput,
 )
@@ -230,27 +230,27 @@ def _resolve_ocr_source_path(file_path: str, runtime: ToolRuntime) -> tuple[str,
 
     normalized_input = str(file_path or "").strip()
     if not normalized_input:
-        raise ValueError("文件路径不能为空")
+        raise ValueError("Đường dẫn tệp không được để trống")
 
     virtual_prefix = get_virtual_path_prefix().rstrip("/")
     clean_virtual_path = "/" + normalized_input.lstrip("/")
     if clean_virtual_path != virtual_prefix and not clean_virtual_path.startswith(f"{virtual_prefix}/"):
-        raise ValueError(f"只允许解析 {virtual_prefix} 下的沙盒虚拟路径")
+        raise ValueError(f"Chỉ cho phép phân tích đường dẫn ảo sandbox trong {virtual_prefix}")
 
     relative_path = clean_virtual_path[len(virtual_prefix) :].lstrip("/")
     namespace = Path(relative_path).parts[0] if relative_path else ""
     if namespace not in _OCR_PARSE_ALLOWED_DIRS:
         allowed = ", ".join(f"{virtual_prefix}/{item}" for item in sorted(_OCR_PARSE_ALLOWED_DIRS))
-        raise ValueError(f"只允许解析 {allowed} 下的文件")
+        raise ValueError(f"Chỉ cho phép phân tích tệp trong {allowed}")
 
     try:
         actual_path = resolve_virtual_path(file_thread_id, clean_virtual_path, uid=uid)
     except ValueError as exc:
-        raise ValueError(f"只允许解析 {virtual_prefix} 下的沙盒虚拟路径") from exc
+        raise ValueError(f"Chỉ cho phép phân tích đường dẫn ảo sandbox trong {virtual_prefix}") from exc
     if not actual_path.exists():
-        raise ValueError(f"文件不存在: {clean_virtual_path}")
+        raise ValueError(f"Tệp không tồn tại: {clean_virtual_path}")
     if not actual_path.is_file():
-        raise ValueError(f"路径不是普通文件: {clean_virtual_path}")
+        raise ValueError(f"Đường dẫn không phải là tệp thông thường: {clean_virtual_path}")
 
     return file_thread_id, uid, actual_path
 
@@ -260,9 +260,9 @@ def _resolve_runtime_file_scope(runtime: ToolRuntime) -> tuple[str, str]:
     thread_id = _runtime_scope_value(runtime, "file_thread_id") or _runtime_scope_value(runtime, "thread_id")
     uid = _runtime_scope_value(runtime, "uid")
     if not thread_id:
-        raise ValueError("当前运行时缺少 thread_id")
+        raise ValueError("Runtime hiện tại thiếu thread_id")
     if not uid:
-        raise ValueError("当前运行时缺少 uid")
+        raise ValueError("Runtime hiện tại thiếu uid")
     return thread_id, uid
 
 
@@ -290,7 +290,7 @@ def _resolve_ocr_engine(ocr_engine: str | None) -> str:
     engine = str(ocr_engine or config.default_ocr_engine).strip() or config.default_ocr_engine
     allowed = {"disable", *DocumentProcessorFactory.get_available_processors()}
     if engine not in allowed:
-        raise ValueError(f"不支持的 OCR 引擎: {engine}")
+        raise ValueError(f"Engine OCR không được hỗ trợ: {engine}")
     return engine
 
 

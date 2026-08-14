@@ -6,7 +6,7 @@ import uuid
 
 
 def hashstr(input_string: object, length: int | None = None, with_salt: bool = False, salt: str | None = None) -> str:
-    """生成字符串的 SHA-256 哈希值，可选截断和加盐。"""
+    """Tạo mã băm SHA-256 từ chuỗi, hỗ trợ cắt ngắn và thêm salt tùy chọn."""
     try:
         encoded_string = str(input_string).encode("utf-8")
     except UnicodeEncodeError:
@@ -30,5 +30,5 @@ def hash_id(prefix: str, value: object, length: int = 48) -> str:
 
 
 def subagent_child_thread_id(parent_thread_id: str, agent_slug: str, tool_call_id: str) -> str:
-    """同步 task 子智能体线程 ID：由父线程、子智能体、工具调用确定性派生（须与事件路由保持一致）。"""
+    """ID luồng của Subagent task đồng bộ: được dẫn xuất xác định từ luồng cha, Subagent và lệnh gọi tool (phải khớp với định tuyến sự kiện)."""
     return hash_id("subagent_", f"{parent_thread_id}:{agent_slug}:{tool_call_id}", length=64)

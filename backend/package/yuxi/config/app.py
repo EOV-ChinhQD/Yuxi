@@ -34,7 +34,7 @@ def _get_available_ocr_engines() -> set[str]:
 def _normalize_default_ocr_engine(value: Any) -> str:
     engine = str(value or "").strip() or DEFAULT_OCR_ENGINE
     if engine not in _get_available_ocr_engines():
-        raise ValueError(f"不支持的默认 OCR 引擎: {engine}")
+        raise ValueError(f"Engine OCR mặc định không được hỗ trợ: {engine}")
     return engine
 
 
@@ -69,7 +69,7 @@ class Config(BaseModel):
         default="gemini_compatible:gemini-2.5-flash",
         description="Mô hình LLM kiểm duyệt nội dung",
     )
-    default_ocr_engine: str = Field(default=DEFAULT_OCR_ENGINE, description="默认 OCR 解析引擎")
+    default_ocr_engine: str = Field(default=DEFAULT_OCR_ENGINE, description="Engine phân tích OCR mặc định")
     ocr_policy: str = Field(default=DEFAULT_OCR_POLICY, description="OCR policy for PDF parsing: auto/enable/disable")
     allow_external_ocr: bool = Field(
         default=False, description="Allow cloud-based OCR engines in the PDF fallback chain"
@@ -225,7 +225,7 @@ class Config(BaseModel):
 
     def set_value(self, key: str, value: Any) -> None:
         if not self.can_update(key):
-            raise ValueError(f"配置项不可修改: {key}")
+            raise ValueError(f"Mục cấu hình không thể sửa đổi: {key}")
         setattr(self, key, self._normalize_config_value(key, value))
 
     def _normalize_config_value(self, key: str, value: Any) -> Any:

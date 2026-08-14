@@ -224,7 +224,7 @@ async def list_run_stream_events(
 
 
 async def list_recent_run_stream_events(run_id: str, *, limit: int = 100) -> list[dict]:
-    """从 Redis Stream 反向读取最近的 run events，返回顺序为新到旧。"""
+    """Đọc ngược các sự kiện run gần nhất từ Redis Stream, thứ tự trả về từ mới đến cũ."""
     redis = await get_redis_client()
     key = _event_stream_key(run_id)
     rows = await redis.xrevrange(key, max="+", min="-", count=limit)

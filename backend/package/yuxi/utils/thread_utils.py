@@ -4,9 +4,9 @@ from collections.abc import Mapping
 
 
 def extract_thread_id(value: object, fallback: str | None = None) -> str | None:
-    """从规范化事件结构中提取 thread_id。
+    """Trích xuất thread_id từ cấu trúc sự kiện đã chuẩn hóa.
 
-    只读取当前对象和一层稳定容器字段，避免递归扫描把未规范化的内部结构误判为路由依据。
+    Chỉ đọc đối tượng hiện tại và một tầng trường container ổn định, tránh việc quét đệ quy nhận nhầm các cấu trúc nội bộ chưa chuẩn hóa làm căn cứ định tuyến.
     """
     if not isinstance(value, Mapping):
         return fallback

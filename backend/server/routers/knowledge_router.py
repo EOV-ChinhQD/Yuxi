@@ -1399,7 +1399,7 @@ async def batch_delete_documents(
             await knowledge_base.delete_file(kb_id, doc_id)
             deleted_count += 1
 
-            # 只有成功删除的文件才同步从导图快照移除，避免部分失败导致导图与文件表失同步
+            # Chỉ các tệp đã xóa thành công mới đồng bộ xóa khỏi snapshot mindmap, tránh lỗi cục bộ làm mất đồng bộ giữa mindmap và bảng file
             removed_filename = file_meta_info.get("meta", {}).get("filename", "")
             if removed_filename:
                 mindmap_removals.append((doc_id, removed_filename))
@@ -1407,7 +1407,7 @@ async def batch_delete_documents(
             logger.error(f"Create department {doc_id} fail: {e}, {traceback.format_exc()}")
             failed_items.append({"doc_id": doc_id, "error": str(e)})
 
-    # 同步清理导图快照，移除已删除文件对应的叶子节点
+    # Đồng bộ dọn dẹp snapshot mindmap, xóa các nút lá tương ứng với các tệp đã xóa
     await batch_remove_files_from_mindmap(kb_id, mindmap_removals)
 
     if failed_items:
@@ -1991,7 +1991,7 @@ async def get_knowledge_base_types(current_user: User = Depends(get_admin_user))
 
 @knowledge.get("/chunk-presets")
 async def get_knowledge_chunk_presets(current_user: User = Depends(get_admin_user)):
-    """获取支持的知识库分块策略"""
+    """Lấy danh sách các chiến lược phân đoạn (chunking) được hỗ trợ cho cơ sở tri thức"""
     return {"chunk_presets": get_chunk_preset_options(), "message": "success"}
 
 

@@ -47,7 +47,7 @@ async def test_ocr_parse_file_writes_markdown_to_outputs(tmp_path, monkeypatch: 
     async def fake_aparse(source: str, params: dict | None = None) -> str:
         captured["source"] = source
         captured["params"] = params
-        return "识别结果\n" + ("长文本" * 500)
+        return "Kết quả nhận diện\n" + ("Văn bản dài " * 500)
 
     monkeypatch.setattr(Parser, "aparse", fake_aparse)
 
@@ -60,7 +60,7 @@ async def test_ocr_parse_file_writes_markdown_to_outputs(tmp_path, monkeypatch: 
     output_root = sandbox_outputs_dir(thread_id) / "ocr"
     output_path = output_root / "scan.md"
     assert output_path.exists()
-    assert output_path.read_text(encoding="utf-8").startswith("识别结果")
+    assert output_path.read_text(encoding="utf-8").startswith("Kết quả nhận diện")
     assert result["source_path"] == source_virtual_path
     assert result["parsed_path"] == virtual_path_for_thread_file(thread_id, output_path, uid=uid)
     assert result["ocr_engine"] == "mineru_ocr"
@@ -102,7 +102,7 @@ async def test_ocr_parse_file_uses_default_engine(tmp_path, monkeypatch: pytest.
 async def test_ocr_parse_file_rejects_non_user_data_path(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("yuxi.config.save_dir", str(tmp_path))
 
-    with pytest.raises(ValueError, match="只允许解析"):
+    with pytest.raises(ValueError, match="Chỉ cho phép phân tích"):
         await ocr_parse_file.coroutine(file_path="/etc/passwd", runtime=_runtime())
 
 
@@ -114,7 +114,7 @@ async def test_ocr_parse_file_rejects_directory(tmp_path, monkeypatch: pytest.Mo
     ensure_thread_dirs(thread_id, uid)
     dir_virtual_path = virtual_path_for_thread_file(thread_id, sandbox_workspace_dir(thread_id, uid), uid=uid)
 
-    with pytest.raises(ValueError, match="路径不是普通文件"):
+    with pytest.raises(ValueError, match="Đường dẫn không phải là tệp thông thường"):
         await ocr_parse_file.coroutine(file_path=dir_virtual_path, runtime=_runtime(thread_id=thread_id, uid=uid))
 
 
@@ -122,7 +122,7 @@ async def test_ocr_parse_file_rejects_directory(tmp_path, monkeypatch: pytest.Mo
 async def test_ocr_parse_file_rejects_path_traversal(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("yuxi.config.save_dir", str(tmp_path))
 
-    with pytest.raises(ValueError, match="只允许解析"):
+    with pytest.raises(ValueError, match="Chỉ cho phép phân tích"):
         await ocr_parse_file.coroutine(
             file_path="/home/gem/user-data/../secrets.png",
             runtime=_runtime(),

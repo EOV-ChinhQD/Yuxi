@@ -42,7 +42,7 @@ async def _create_agent(client: httpx.AsyncClient, headers: dict[str, str], uid:
     slug = f"e2e-agent-call-{uuid.uuid4().hex[:8]}"
     context: dict[str, Any] = {
         "system_prompt": (
-            "你是端到端测试专用智能体。不要调用任何工具。如果用户要求输出一个 AGENT_*_E2E_OK 标记，只输出该标记本身。"
+            "Bạn là Agent chuyên dụng cho kiểm thử E2E. Không gọi bất kỳ công cụ nào. Nếu người dùng yêu cầu xuất cờ AGENT_*_E2E_OK, chỉ xuất đúng cờ đó."
         ),
         "tools": [],
         "knowledges": [],
@@ -59,7 +59,7 @@ async def _create_agent(client: httpx.AsyncClient, headers: dict[str, str], uid:
             "name": f"E2E Agent Call {slug[-8:]}",
             "slug": slug,
             "backend_id": "ChatbotAgent",
-            "description": "真实 Agent Call/Eval E2E 临时智能体",
+            "description": "Agent tạm thời cho kiểm thử E2E Agent Call/Eval thực tế",
             "config_json": {"context": context},
             "share_config": {"access_level": "user", "department_ids": [], "user_uids": [uid]},
         },
@@ -162,7 +162,7 @@ async def test_agent_eval_and_agent_call_entrypoints_share_run_invocation_flow(
         eval_response = await e2e_client.post(
             "/api/agent-invocation/eval/runs",
             json={
-                "query": f"请只输出 {EVAL_EXPECTED_OUTPUT}，不要添加任何解释。",
+                "query": f"Vui lòng chỉ xuất {EVAL_EXPECTED_OUTPUT}, không thêm giải thích.",
                 "agent_slug": agent_slug,
                 "evaluation": eval_metadata,
                 "meta": {"request_id": eval_request_id},
@@ -191,7 +191,7 @@ async def test_agent_eval_and_agent_call_entrypoints_share_run_invocation_flow(
             "/api/agent-invocation/agent-call/runs",
             json={
                 "agent_slug": agent_slug,
-                "messages": [{"role": "user", "content": f"请只输出 {CALL_EXPECTED_OUTPUT}，不要添加任何解释。"}],
+                "messages": [{"role": "user", "content": f"Vui lòng chỉ xuất {CALL_EXPECTED_OUTPUT}, không thêm giải thích."}],
                 "request_id": agent_call_request_id,
                 "async_mode": True,
             },

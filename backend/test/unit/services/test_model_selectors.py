@@ -200,7 +200,7 @@ def test_openai_payload_bridges_read_file_image_tool_result_to_user_role():
 
     payload = model._get_request_payload(
         [
-            HumanMessage("读一下这张图"),
+            HumanMessage("Đọc bức ảnh này"),
             AIMessage(
                 content="",
                 tool_calls=[
@@ -249,7 +249,7 @@ def test_openai_payload_inserts_tool_image_user_message_after_parallel_tool_bloc
 
     payload = model._get_request_payload(
         [
-            HumanMessage("读图并列目录"),
+            HumanMessage("Đọc ảnh và liệt kê thư mục"),
             AIMessage(
                 content="",
                 tool_calls=[

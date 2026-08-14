@@ -115,7 +115,7 @@ async def build_agent_input_context(
     agents_prompt = await asyncio.to_thread(_load_workspace_agents_prompt, thread_id, uid)
 
     if agents_prompt:
-        agents_section = f"User workspace agents/AGENTS.md content:\n{agents_prompt}"
+        agents_section = f"Nội dung agents/AGENTS.md trong không gian làm việc của người dùng:\n{agents_prompt}"
         base_prompt = str(input_context.get("system_prompt") or "").rstrip()
         input_context["system_prompt"] = f"{base_prompt}\n\n{agents_section}" if base_prompt else agents_section
 
@@ -128,7 +128,7 @@ def filter_config_by_role(
     role: str | None,
     context_schema: type["BaseContext"] | None = None,
 ) -> dict:
-    """By Context field metadata.auth filter config_json.context。"""
+    """Lọc config_json.context dựa theo metadata.auth của các trường trong Context."""
     if not isinstance(config_json, dict):
         return {}
 

@@ -13,7 +13,7 @@ class SubagentThreadRepository:
         self.db = db_session
 
     async def get_by_child_thread_for_user(self, child_thread_id: str, uid: str) -> SubagentThread | None:
-        """按子线程 ID 查找当前用户可见的父子线程关系。"""
+        """Tìm kiếm quan hệ luồng cha - con người dùng có quyền xem theo ID luồng con."""
         result = await self.db.execute(
             select(SubagentThread).where(
                 SubagentThread.child_thread_id == child_thread_id,
@@ -23,7 +23,7 @@ class SubagentThreadRepository:
         return result.scalar_one_or_none()
 
     async def get_for_user(self, relation_id: int, uid: str) -> SubagentThread | None:
-        """按关系记录主键读取当前用户的子智能体线程关系。"""
+        """Đọc quan hệ luồng của Subagent của người dùng hiện tại theo khóa chính của bản ghi quan hệ."""
         result = await self.db.execute(
             select(SubagentThread).where(
                 SubagentThread.id == relation_id,
@@ -33,7 +33,7 @@ class SubagentThreadRepository:
         return result.scalar_one_or_none()
 
     async def get_by_child_conversation_for_user(self, child_conversation_id: int, uid: str) -> SubagentThread | None:
-        """按子对话 ID 查找父子线程关系，用于从 conversation 反查父线程。"""
+        """Tìm kiếm quan hệ luồng cha - con theo ID cuộc hội thoại con, dùng để tra ngược luồng cha từ conversation."""
         result = await self.db.execute(
             select(SubagentThread).where(
                 SubagentThread.child_conversation_id == child_conversation_id,
@@ -52,7 +52,7 @@ class SubagentThreadRepository:
         subagent_slug: str,
         created_by_run_id: str,
     ) -> SubagentThread:
-        """创建一条父对话到子对话的线程关系记录。"""
+        """Tạo một bản ghi quan hệ luồng từ cuộc hội thoại cha đến cuộc hội thoại con."""
         item = SubagentThread(
             uid=str(uid),
             parent_conversation_id=parent_conversation_id,

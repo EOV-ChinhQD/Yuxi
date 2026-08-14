@@ -28,12 +28,12 @@ def _sse_data(chunk: str) -> dict:
 def test_openai_content_parts_build_and_restore_multimodal_message():
     input_message = build_chat_input_message_from_openai_content(
         [
-            {"type": "text", "text": "看图"},
+            {"type": "text", "text": "Xem ảnh"},
             {"type": "image_url", "image_url": {"url": "https://example.test/image.png"}},
         ]
     )
 
-    assert input_message.content == "看图"
+    assert input_message.content == "Xem ảnh"
     assert input_message.message_type == "multimodal_image"
     assert input_message.image_content is None
     raw_message = input_message.raw_message()
@@ -404,7 +404,7 @@ async def test_stream_agent_run_events_reads_redis_and_ends_on_end_event(monkeyp
                         "run_id": "run-1",
                         "thread_id": "thread-1",
                         "event": "messages",
-                        "payload": {"items": [{"status": "loading", "response": "你"}]},
+                        "payload": {"items": [{"status": "loading", "response": "bạn"}]},
                         "created_at": "2026-05-27T00:00:00+00:00",
                     },
                     "ts": 1700000000000,
@@ -494,10 +494,10 @@ async def test_stream_agent_run_events_compacts_verbose_false(monkeypatch: pytes
                             "response": None,
                             "thread_id": "thread-1",
                             "status": "init",
-                            "meta": {"query": "写一个冒泡排序", "uid": "user-1"},
+                            "meta": {"query": "viết hàm bubble sort", "uid": "user-1"},
                             "msg": {
                                 "role": "user",
-                                "content": "写一个冒泡排序",
+                                "content": "viết hàm bubble sort",
                                 "type": "human",
                                 "image_content": "base64-image-data",
                                 "extra_metadata": {
@@ -558,7 +558,7 @@ async def test_stream_agent_run_events_compacts_verbose_false(monkeypatch: pytes
                         "items": [
                             {
                                 "request_id": "req-1",
-                                "response": "你",
+                                "response": "bạn",
                                 "thread_id": "thread-1",
                                 "status": "loading",
                                 "stream_event": {
@@ -1066,7 +1066,7 @@ async def test_create_agent_run_rejects_active_checkpoint_run(monkeypatch: pytes
     assert db.created_run_kwargs is None
 
 
-# ==================== run 结果基础能力 ====================
+# ==================== Khả năng cơ bản của kết quả run ====================
 
 
 @pytest.mark.asyncio
@@ -1376,7 +1376,7 @@ async def test_create_chat_run_with_image_persists_multimodal_message_type(monke
     db = _patch_agent_run_creation(monkeypatch)
 
     await agent_run_service.create_agent_run_view(
-        input_message=_chat_input("看图", "base64-image"),
+        input_message=_chat_input("Xem ảnh", "base64-image"),
         agent_slug="default",
         thread_id="thread-1",
         meta={"request_id": "req-1"},
@@ -1389,7 +1389,7 @@ async def test_create_chat_run_with_image_persists_multimodal_message_type(monke
     assert db.added[0].image_content == "base64-image"
     raw_message = db.added[0].extra_metadata["raw_message"]
     assert raw_message["type"] == "human"
-    assert raw_message["content"][0] == {"type": "text", "text": "看图"}
+    assert raw_message["content"][0] == {"type": "text", "text": "Xem ảnh"}
     assert raw_message["content"][1]["image_url"]["url"] == "data:image/jpeg;base64,base64-image"
 
 
@@ -1442,7 +1442,7 @@ async def test_create_chat_run_snapshots_system_default_when_agent_model_empty(m
 
 @pytest.mark.asyncio
 async def test_create_resume_run_inherits_parent_model_spec(monkeypatch: pytest.MonkeyPatch):
-    # 即使 resume 入参传了别的模型，也必须沿用父运行的模型
+    # Dù tham số đầu vào resume có truyền mô hình khác thì vẫn phải dùng mô hình của run cha
     db = _patch_agent_run_creation(
         monkeypatch,
         parent_run=SimpleNamespace(

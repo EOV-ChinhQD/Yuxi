@@ -40,7 +40,7 @@ async def _create_sync_agent(client: httpx.AsyncClient, headers: dict[str, str],
 
     slug = f"e2e-sync-agent-{uuid.uuid4().hex[:8]}"
     context: dict[str, Any] = {
-        "system_prompt": "你是端到端测试专用智能体。严格按用户要求简短回答，不调用任何工具。",
+        "system_prompt": "Bạn là Agent chuyên dụng cho kiểm thử E2E. Trả lời ngắn gọn theo đúng yêu cầu người dùng, không gọi công cụ.",
         "tools": [],
         "knowledges": [],
         "mcps": [],
@@ -53,10 +53,10 @@ async def _create_sync_agent(client: httpx.AsyncClient, headers: dict[str, str],
     response = await client.post(
         "/api/agent",
         json={
-            "name": f"E2E 同步 Agent {slug[-8:]}",
+            "name": f"E2E Sync Agent {slug[-8:]}",
             "slug": slug,
             "backend_id": "ChatbotAgent",
-            "description": "真实同步 Agent E2E 临时智能体",
+            "description": "Agent tạm thời cho kiểm thử E2E đồng bộ thực tế",
             "config_json": {"context": context},
             "share_config": {"access_level": "user", "department_ids": [], "user_uids": [uid]},
         },
@@ -84,7 +84,7 @@ async def _load_user(uid: str) -> User:
 async def _consume_sync_stream(*, agent_slug: str, thread_id: str, uid: str, request_id: str) -> list[dict[str, Any]]:
     current_user = await _load_user(uid)
     pg_manager.initialize()
-    input_message = build_chat_input_message("请不要调用工具。请用一句中文回答：同步 Agent 端到端测试正常。")
+    input_message = build_chat_input_message("Không gọi công cụ. Trả lời ngắn gọn: Test E2E Agent đồng bộ bình thường.")
     chunks: list[dict[str, Any]] = []
 
     async with pg_manager.get_async_session_context() as db:
@@ -135,7 +135,7 @@ async def test_sync_agent_stream_persists_messages(
         history_items = history.get("history") or []
         history_text = json.dumps(history, ensure_ascii=False)
         assert request_id in history_text, history
-        assert "同步 Agent 端到端测试正常" in history_text, history
+        assert "Test E2E Agent đồng bộ bình thường" in history_text, history
         assert any(item.get("type") == "human" for item in history_items), history
         assert any(item.get("type") == "ai" and item.get("content") for item in history_items), history
     finally:

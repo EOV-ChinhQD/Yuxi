@@ -292,7 +292,7 @@ async def test_process_agent_run_rejects_unknown_run_type(monkeypatch: pytest.Mo
             "run_id": "run-1",
             "status": "failed",
             "error_type": "invalid_run_type",
-            "error_message": "不支持的 run_type: unknown",
+            "error_message": "run_type không được hỗ trợ: unknown",
         }
     ]
 

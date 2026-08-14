@@ -69,7 +69,7 @@ async def get_logged_in_user(user: User | None = Depends(get_current_user)) -> U
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="请登录后再访问",
+            detail="Vui lòng đăng nhập trước khi truy cập",
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user

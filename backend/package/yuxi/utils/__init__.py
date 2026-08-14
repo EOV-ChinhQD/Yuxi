@@ -25,12 +25,12 @@ def is_text_pdf(pdf_path):
     for page_num in range(total_pages):
         page = doc.load_page(page_num)
         text = page.get_text()
-        if text.strip():  # 检查是否有文本内容
+        if text.strip():  # Kiểm tra xem có nội dung văn bản không
             text_pages += 1
 
-    # 计算有文本内容的页面比例
+    # Tính tỷ lệ số trang có nội dung văn bản
     text_ratio = text_pages / total_pages
-    # 如果超过50%的页面有文本内容，则认为是文本PDF
+    # Nếu hơn 50% số trang có nội dung văn bản thì coi là PDF dạng văn bản
     return text_ratio > 0.5
 
 
@@ -39,7 +39,7 @@ def get_docker_safe_url(base_url):
         return base_url
 
     if os.getenv("RUNNING_IN_DOCKER") == "true":
-        # 替换所有可能的本地地址形式
+        # Thay thế tất cả các dạng địa chỉ local có thể có
         base_url = base_url.replace("http://localhost", "http://host.docker.internal")
         base_url = base_url.replace("http://127.0.0.1", "http://host.docker.internal")
         logger.info(f"Running in docker, using {base_url} as base url")

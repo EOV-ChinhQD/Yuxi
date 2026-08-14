@@ -10,8 +10,8 @@ from yuxi.storage.postgres.manager import pg_manager
 from yuxi.storage.postgres.models_knowledge import KnowledgeFile
 from yuxi.utils.datetime_utils import utc_now_naive
 
-# asyncpg 单条 SQL 参数上限为 32767；按 file_id 批量查询时统一分批，避免
-# mindmap_file_ids 等大尺寸传入触发 `too many parameters` 报错。
+# Giới hạn tham số SQL đơn của asyncpg là 32767; chia batch thống nhất khi truy vấn hàng loạt theo file_id
+# để tránh các đầu vào kích thước lớn như mindmap_file_ids gây lỗi `too many parameters`.
 SQL_IN_BATCH_SIZE = 10_000
 
 

@@ -106,7 +106,7 @@ async def test_attachment_upload_is_reflected_in_agent_state(
 
     test_file = tmp_path / "attachment-state.md"
     test_file.write_text(
-        "# 测试文档\n\n这是一个用于附件状态验证的 Markdown 文件。\n\n- 第一点\n- 第二点\n",
+        "# Tài liệu kiểm thử\n\nĐây là tệp Markdown dùng để xác thực trạng thái đính kèm.\n\n- Điểm thứ nhất\n- Điểm thứ hai\n",
         encoding="utf-8",
     )
 
@@ -135,7 +135,7 @@ async def test_attachment_upload_is_reflected_in_agent_state(
         e2e_headers,
         thread_id=thread_id,
         agent_slug=agent_slug,
-        query="你好，请简单介绍一下你自己。",
+        query="Xin chào, vui lòng giới thiệu ngắn gọn về bản thân.",
     )
 
     await asyncio.sleep(1)

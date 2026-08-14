@@ -114,10 +114,10 @@ async def test_l1_compacted_messages_call_real_chat_model(monkeypatch: pytest.Mo
     backend = _MemoryBackend()
     large_result = "BEGIN\n" + ("raw tool result payload\n" * 200) + "END"
     messages = [
-        HumanMessage(content="请读取工具结果后继续。"),
+        HumanMessage(content="Vui lòng đọc kết quả công cụ rồi tiếp tục."),
         AIMessage(content="", tool_calls=[{"id": "call-1", "name": "query_kb", "args": {}}]),
         ToolMessage(content=large_result, tool_call_id="call-1", name="query_kb"),
-        HumanMessage(content="请只回答 OK。"),
+        HumanMessage(content="Vui lòng chỉ trả lời OK."),
     ]
     middleware = YuxiSummarizationMiddleware(
         model=real_model,

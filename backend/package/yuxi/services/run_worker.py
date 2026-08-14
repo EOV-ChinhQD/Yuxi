@@ -286,7 +286,7 @@ async def _record_failed_job(
 
 
 async def process_agent_run(ctx, run_id: str):
-    """执行队列中的 AgentRun，并只从 run 列 và tin nhắn đầu vào để khôi phục tham số chạy."""
+    """Thực thi AgentRun trong hàng đợi, chỉ khôi phục tham số chạy từ các cột run và tin nhắn đầu vào."""
     from yuxi.utils.logging_config import set_log_context, reset_log_context
 
     token = set_log_context(run_id=run_id)
@@ -305,20 +305,20 @@ async def process_agent_run(ctx, run_id: str):
         return
 
     if not isinstance(run.input_payload, dict):
-        await mark_run_terminal(run_id, "failed", "invalid_input_payload", "run input_payload 必须是对象")
+        await mark_run_terminal(run_id, "failed", "invalid_input_payload", "input_payload của run phải là một đối tượng (object)")
         return
     payload = run.input_payload
     runtime = payload.get("runtime") or {}
     if not isinstance(runtime, dict):
-        await mark_run_terminal(run_id, "failed", "invalid_runtime_payload", "run input_payload.runtime 必须是对象")
+        await mark_run_terminal(run_id, "failed", "invalid_runtime_payload", "input_payload.runtime của run phải là một đối tượng (object)")
         return
 
     input_message = await _load_input_message(run.input_message_id)
     if not input_message:
-        await mark_run_terminal(run_id, "failed", "input_message_not_found", "运行任务缺少输入消息")
+        await mark_run_terminal(run_id, "failed", "input_message_not_found", "Tác vụ chạy thiếu tin nhắn đầu vào")
         return
     if not isinstance(input_message.extra_metadata, dict):
-        await mark_run_terminal(run_id, "failed", "invalid_input_metadata", "输入消息 metadata 必须是对象")
+        await mark_run_terminal(run_id, "failed", "invalid_input_metadata", "metadata của tin nhắn đầu vào phải là một đối tượng (object)")
         return
 
     run_type = run.run_type
@@ -330,7 +330,7 @@ async def process_agent_run(ctx, run_id: str):
     image_content = input_message.image_content
 
     if run_type not in SUPPORTED_RUN_TYPES:
-        await mark_run_terminal(run_id, "failed", "invalid_run_type", f"不支持的 run_type: {run_type}")
+        await mark_run_terminal(run_id, "failed", "invalid_run_type", f"run_type không được hỗ trợ: {run_type}")
         return
 
     user = await _load_user(uid)
@@ -343,7 +343,7 @@ async def process_agent_run(ctx, run_id: str):
     if run_type == "resume":
         resume_input = input_metadata.get("resume")
         if resume_input is None:
-            await mark_run_terminal(run_id, "failed", "resume_input_not_found", "resume run 缺少 resume 输入")
+            await mark_run_terminal(run_id, "failed", "resume_input_not_found", "Lần chạy resume thiếu dữ liệu đầu vào resume")
             return
     else:
         try:
@@ -372,8 +372,8 @@ async def process_agent_run(ctx, run_id: str):
         "created_by_run_id": run.created_by_run_id,
     }
     if run_type == "subagent":
-        # 三个线程 ID 在 subagent_run_service 创建 run 时已写入 runtime，此处不再二次兜底；
-        # 缺失会在 chat_service._apply_subagent_runtime_context 处直接报错。
+        # Ba ID luồng đã được subagent_run_service ghi vào runtime khi tạo run, tại đây không cần fallback lần hai;
+        # Nếu thiếu sẽ báo lỗi trực tiếp tại chat_service._apply_subagent_runtime_context.
         meta["parent_thread_id"] = runtime.get("parent_thread_id")
         meta["file_thread_id"] = runtime.get("file_thread_id")
         meta["skills_thread_id"] = runtime.get("skills_thread_id")
@@ -598,7 +598,7 @@ async def process_agent_run(ctx, run_id: str):
 
 
 async def _load_input_message(message_id: int | None) -> Message | None:
-    """加载 run 绑定的输入消息；worker 从这里恢复 query、resume、图片和请求元数据。"""
+    """Tải tin nhắn đầu vào liên kết với run; worker khôi phục query, resume, hình ảnh và metadata yêu cầu từ đây."""
     if not message_id:
         return None
     async with pg_manager.get_async_session_context() as db:

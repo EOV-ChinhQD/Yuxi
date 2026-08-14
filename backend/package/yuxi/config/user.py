@@ -1,4 +1,4 @@
-"""用户级配置模块。"""
+"""Module cấu hình cấp người dùng."""
 
 from __future__ import annotations
 
@@ -14,15 +14,15 @@ from yuxi.utils.datetime_utils import format_utc_datetime, utc_now_naive
 
 
 class UserConfigSchema(BaseModel):
-    """用户专属配置 schema。"""
+    """Schema cấu hình riêng cho người dùng."""
 
-    enable_memory: bool = Field(default=False, description="是否启用 Memory")
+    enable_memory: bool = Field(default=False, description="Có kích hoạt Memory hay không")
 
     model_config = ConfigDict(extra="forbid")
 
 
 class UserConfig:
-    """用户级配置访问器。每次加载都从 PostgreSQL 查询，不做进程缓存。"""
+    """Bộ truy xuất cấu hình cấp người dùng. Mỗi lần tải đều truy vấn từ PostgreSQL, không lưu cache tiến trình."""
 
     def __init__(self, uid: str, schema: UserConfigSchema | None = None, updated_at: datetime | None = None):
         self.uid = uid

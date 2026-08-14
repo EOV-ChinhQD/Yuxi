@@ -94,14 +94,14 @@ def test_agent_eval_run_rejects_too_long_request_id(monkeypatch: pytest.MonkeyPa
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "request_id 不能超过 64 个字符"
+    assert response.json()["detail"] == "request_id không được vượt quá 64 ký tự"
 
 
 def test_agent_eval_run_returns_504_when_wait_times_out(monkeypatch: pytest.MonkeyPatch):
     async def fake_create_agent_eval_run_view(**_kwargs):
         raise HTTPException(
             status_code=504,
-            detail={"message": "运行仍在进行中，等待最终结果超时", "run": {"status": "running"}},
+            detail={"message": "Lần chạy vẫn đang diễn ra, hết thời gian chờ kết quả cuối cùng", "run": {"status": "running"}},
         )
 
     monkeypatch.setattr(
@@ -117,7 +117,7 @@ def test_agent_eval_run_returns_504_when_wait_times_out(monkeypatch: pytest.Monk
     )
 
     assert response.status_code == 504
-    assert response.json()["detail"]["message"] == "运行仍在进行中，等待最终结果超时"
+    assert response.json()["detail"]["message"] == "Lần chạy vẫn đang diễn ra, hết thời gian chờ kết quả cuối cùng"
     assert response.json()["detail"]["run"]["status"] == "running"
 
 
@@ -206,8 +206,8 @@ def test_agent_call_run_waits_and_wraps_final_result(monkeypatch: pytest.MonkeyP
             "thread_id": "thread-1",
             "status": "completed",
             "request_id": "req-1",
-            "output": "你好",
-            "choices": [{"index": 0, "messages": [{"role": "assistant", "content": "你好"}], "finish_reason": "stop"}],
+            "output": "Xin chào",
+            "choices": [{"index": 0, "messages": [{"role": "assistant", "content": "Xin chào"}], "finish_reason": "stop"}],
             "usage": {"input_tokens": 3, "output_tokens": 2, "total_tokens": 5},
         }
 
@@ -229,8 +229,8 @@ def test_agent_call_run_waits_and_wraps_final_result(monkeypatch: pytest.MonkeyP
 
     assert response.status_code == 200, response.text
     assert response.json()["run_id"] == "run-1"
-    assert response.json()["output"] == "你好"
-    assert response.json()["choices"][0]["messages"] == [{"role": "assistant", "content": "你好"}]
+    assert response.json()["output"] == "Xin chào"
+    assert response.json()["choices"][0]["messages"] == [{"role": "assistant", "content": "Xin chào"}]
     assert response.json()["choices"][0]["finish_reason"] == "stop"
     assert response.json()["usage"] == {"input_tokens": 3, "output_tokens": 2, "total_tokens": 5}
     assert calls["kwargs"]["request_id"] == "req-1"
@@ -240,7 +240,7 @@ def test_agent_call_run_returns_504_when_wait_times_out(monkeypatch: pytest.Monk
     async def fake_create_agent_call_run_view(**_kwargs):
         raise HTTPException(
             status_code=504,
-            detail={"message": "运行仍在进行中，等待最终结果超时", "run": {"status": "running"}},
+            detail={"message": "Lần chạy vẫn đang diễn ra, hết thời gian chờ kết quả cuối cùng", "run": {"status": "running"}},
         )
 
     monkeypatch.setattr(
@@ -256,7 +256,7 @@ def test_agent_call_run_returns_504_when_wait_times_out(monkeypatch: pytest.Monk
     )
 
     assert response.status_code == 504
-    assert response.json()["detail"]["message"] == "运行仍在进行中，等待最终结果超时"
+    assert response.json()["detail"]["message"] == "Lần chạy vẫn đang diễn ra, hết thời gian chờ kết quả cuối cùng"
     assert response.json()["detail"]["run"]["status"] == "running"
 
 
@@ -268,12 +268,12 @@ def test_agent_call_run_rejects_context_override(monkeypatch: pytest.MonkeyPatch
         json={
             "agent_slug": "translator",
             "messages": [{"role": "user", "content": "Hello"}],
-            "agent_call_meta": {"context": {"system_prompt": "只回答中文"}},
+            "agent_call_meta": {"context": {"system_prompt": "chỉ trả lời tiếng Việt"}},
         },
     )
 
     assert response.status_code == 422
-    assert "agent_call_meta.context 不允许覆盖 Agent context" in response.json()["detail"]
+    assert "agent_call_meta.context không cho phép ghi đè ngữ cảnh Agent" in response.json()["detail"]
 
 
 def test_agent_call_run_accepts_openai_text_content_parts(monkeypatch: pytest.MonkeyPatch):
@@ -354,7 +354,7 @@ def test_agent_call_run_accepts_openai_multimodal_content_parts(monkeypatch: pyt
 
 def test_agent_call_run_propagates_agent_not_found(monkeypatch: pytest.MonkeyPatch):
     async def fake_create_agent_call_run_view(**_kwargs):
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent không tồn tại")
 
     monkeypatch.setattr(agent_invocation_router_module, "create_agent_call_run_view", fake_create_agent_call_run_view)
     client = _build_app(monkeypatch)
@@ -365,7 +365,7 @@ def test_agent_call_run_propagates_agent_not_found(monkeypatch: pytest.MonkeyPat
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "智能体不存在"
+    assert response.json()["detail"] == "Agent không tồn tại"
 
 
 def test_agent_call_run_rejects_invalid_boundary_payload(monkeypatch: pytest.MonkeyPatch):
@@ -376,7 +376,7 @@ def test_agent_call_run_rejects_invalid_boundary_payload(monkeypatch: pytest.Mon
         json={"agent_slug": " ", "messages": [{"role": "user", "content": "Hello"}]},
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "agent_slug 不能为空"
+    assert response.json()["detail"] == "agent_slug không được để trống"
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
@@ -390,21 +390,21 @@ def test_agent_call_run_rejects_invalid_boundary_payload(monkeypatch: pytest.Mon
         json={"agent_slug": "translator", "messages": []},
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "messages 不能为空"
+    assert response.json()["detail"] == "messages không được để trống"
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
         json={"agent_slug": "translator", "messages": [{"role": "assistant", "content": "hello"}]},
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "messages 必须包含 user 消息"
+    assert response.json()["detail"] == "messages phải chứa tin nhắn user"
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
         json={"agent_slug": "translator", "messages": [{"role": "user", "content": ""}]},
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "user message content 必须是非空字符串或多模态数组"
+    assert response.json()["detail"] == "Nội dung tin nhắn user phải là chuỗi không rỗng hoặc mảng đa phương tiện"
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
@@ -415,7 +415,7 @@ def test_agent_call_run_rejects_invalid_boundary_payload(monkeypatch: pytest.Mon
         },
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "request_id 不能超过 64 个字符"
+    assert response.json()["detail"] == "request_id không được vượt quá 64 ký tự"
 
 
 def test_agent_call_result_returns_service_payload(monkeypatch: pytest.MonkeyPatch):

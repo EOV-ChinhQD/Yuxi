@@ -132,7 +132,7 @@ async def test_create_agent_call_run_does_not_commit_conversation_before_run_cre
             raise AssertionError("agent-call conversation must not be committed before run creation")
 
     async def fake_create_agent_run_view(**_kwargs):
-        raise HTTPException(status_code=422, detail="未找到可用聊天模型: 'missing:model'")
+        raise HTTPException(status_code=422, detail="Không tìm thấy mô hình chat khả dụng: 'missing:model'")
 
     monkeypatch.setattr(svc, "AgentRepository", AgentRepo)
     monkeypatch.setattr(svc, "AgentRunRepository", _NoExistingRunRepo)
@@ -226,7 +226,7 @@ async def test_create_agent_call_run_waits_and_wraps_final_result(monkeypatch: p
         calls["await_kwargs"] = {"run_id": run_id, "current_uid": current_uid}
         return {
             "status": "completed",
-            "output": "你好",
+            "output": "Xin chào",
             "agent_slug": "translator",
             "thread_id": "thread-1",
             "agent_run_id": run_id,
@@ -251,8 +251,8 @@ async def test_create_agent_call_run_waits_and_wraps_final_result(monkeypatch: p
     )
 
     assert result["run_id"] == "run-1"
-    assert result["output"] == "你好"
-    assert result["choices"][0]["messages"] == [{"role": "assistant", "content": "你好"}]
+    assert result["output"] == "Xin chào"
+    assert result["choices"][0]["messages"] == [{"role": "assistant", "content": "Xin chào"}]
     assert result["choices"][0]["finish_reason"] == "stop"
     assert result["usage"] == {"prompt_tokens": 3, "completion_tokens": 2, "total_tokens": 5}
     assert calls["await_kwargs"] == {"run_id": "run-1", "current_uid": "user-1"}

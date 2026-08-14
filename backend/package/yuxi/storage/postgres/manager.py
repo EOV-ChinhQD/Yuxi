@@ -698,7 +698,7 @@ class PostgresManager(metaclass=SingletonMeta):
                 error_type = COALESCE(ar.error_type, 'active_run_migration_conflict'),
                 error_message = COALESCE(
                     ar.error_message,
-                    '旧库存在同一用户、智能体和线程的重复活跃 AgentRun，迁移时已保留最新一条并终结本记录。'
+                    'Cơ sở dữ liệu cũ tồn tại nhiều AgentRun đang hoạt động trùng lặp cho cùng người dùng, agent và luồng; khi di trú đã giữ lại bản ghi mới nhất và kết thúc bản ghi này.'
                 ),
                 finished_at = COALESCE(ar.finished_at, NOW()),
                 updated_at = NOW()
@@ -729,8 +729,8 @@ class PostgresManager(metaclass=SingletonMeta):
             """,
         ]
         async with self.async_engine.begin() as conn:
-            # 历史未绑定用户的 API Key 会在下方迁移语句里被静默删除，先计数告警
-            # 便于运维凭据失效时回溯；DELETE 之后无法再查询这些 Key。
+            # Các API Key lịch sử chưa liên kết người dùng sẽ bị xóa âm thầm trong câu lệnh di chuyển bên dưới, đếm cảnh báo trước
+            # để thuận tiện truy vết khi thông tin xác thực bảo trì bị vô hiệu hóa; sau lệnh DELETE không thể truy vấn lại các Key này.
             try:
                 unbound_keys_result = await conn.execute(text("SELECT count(*) FROM api_keys WHERE user_id IS NULL"))
                 unbound_keys_count = int(unbound_keys_result.scalar() or 0)
