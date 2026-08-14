@@ -109,3 +109,25 @@ def test_model_cache_save_writes_redis_json(monkeypatch: pytest.MonkeyPatch):
 
     payload = json.loads(redis.data[REDIS_CACHE_KEY])
     assert payload[info.spec]["base_url"] == "https://example.com/v1"
+
+
+def test_model_cache_serializes_and_deserializes_request_body_overrides(monkeypatch: pytest.MonkeyPatch):
+    redis = _FakeRedis()
+    _patch_redis(monkeypatch, redis)
+    cache = ModelCache()
+    info = ModelInfo(
+        provider_id="provider",
+        model_id="deepseek-r1",
+        model_type="chat",
+        display_name="DeepSeek R1",
+        api_key="sk-test",
+        base_url="https://example.com/v1",
+        provider_type="openai",
+        request_body_overrides={"enable_thinking": True, "thinking_budget": 2048},
+    )
+
+    cache._save_cache({info.spec: info})
+    loaded = cache.get_model_info("provider:deepseek-r1")
+
+    assert loaded is not None
+    assert loaded.request_body_overrides == {"enable_thinking": True, "thinking_budget": 2048}

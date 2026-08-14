@@ -11,10 +11,10 @@ import requests
 from yuxi.models.providers.cache import model_cache
 from yuxi.utils import get_docker_safe_url, hashstr, logger
 
-EMBEDDING_RATE_LIMIT_MAX_RETRIES = 5
+EMBEDDING_RATE_LIMIT_MAX_RETRIES = 10
 EMBEDDING_TRANSIENT_MAX_RETRIES = 2
 EMBEDDING_RETRY_MAX_DELAY_SECONDS = 10.0
-EMBEDDING_RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
+EMBEDDING_RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
 def sigmoid(x):
@@ -53,10 +53,7 @@ class BaseEmbeddingModel(ABC):
                 return min(float(retry_after), EMBEDDING_RETRY_MAX_DELAY_SECONDS)
             except ValueError:
                 pass
-        base_delay = 2 ** (retry_index - 1)
-        # Random jitter +/- 20%
-        jitter = base_delay * 0.2 * (random.random() * 2 - 1)
-        return min(float(base_delay + jitter), EMBEDDING_RETRY_MAX_DELAY_SECONDS)
+        return min(float(2 ** (retry_index - 1)), EMBEDDING_RETRY_MAX_DELAY_SECONDS)
 
     def _prepare_retry(
         self,
@@ -76,7 +73,7 @@ class BaseEmbeddingModel(ABC):
                 logger.warning(
                     "Embedding request returned 400 Bad Request: "
                     f"model={self.model}, base_url={self.base_url}, input_count={len(messages)}, "
-                    f"body={response_text[:2000]}"
+                    f"input_lengths={[len(item) for item in messages]}, body={response_text[:2000]}"
                 )
             return None
 
@@ -99,8 +96,9 @@ class BaseEmbeddingModel(ABC):
 
         logger.warning(
             "Retrying embedding request: "
-            f"attempt={next_retry_index}, delay={delay:.1f}s, {reason}, "
-            f"model={self.model}, provider={self.provider}, input_count={len(messages)}"
+            f"{reason}, model={self.model}, base_url={self.base_url}, "
+            f"retry={next_retry_index}/{max_retries}, delay={delay:.1f}s, "
+            f"input_count={len(messages)}, body={response_text[:1000]}"
         )
         return next_retry_index, delay
 
@@ -132,6 +130,13 @@ class BaseEmbeddingModel(ABC):
             try:
                 async with self._semaphore:
                     return await self._arequest(message)
+            except httpx.HTTPStatusError as e:
+                retry = self._prepare_retry(message, retry_index=retry_index, response=e.response, error=e)
+                if retry:
+                    retry_index, delay = retry
+                    await asyncio.sleep(delay)
+                    continue
+                raise
             except Exception as e:
                 response = getattr(e, "response", None)
                 retry = self._prepare_retry(message, retry_index=retry_index, response=response, error=e)

@@ -1,5 +1,34 @@
 # Nhật ký Quyết định (decisions.md)
 
+## Task: Backport Tính năng Cốt lõi Tier 1 từ Upstream Yuxi (2026-08-14)
+
+### 1. Whitelist Tham số Tư duy Suy luận (`request_body_overrides`)
+- **Đã làm**:
+  - Mở rộng dataclass `ModelInfo` (`models/providers/cache.py`) với trường `request_body_overrides: dict[str, Any] | None = None`, hỗ trợ đầy đủ `to_dict()`, `from_dict()`, và `rebuild()`.
+  - Thiết lập danh sách whitelist `ALLOWED_EXTRA_BODY_FIELDS = {"enable_thinking", "reasoning", "reasoning_effort", "thinking", "thinking_budget"}` và kiểm tra phạm vi chỉ cho phép áp dụng trên mô hình `chat` thuộc các nhà cung cấp tương thích OpenAI (`models/providers/service.py`).
+  - Hợp nhất cấu hình `request_body_overrides` vào `extra_body` trong `load_chat_model` (`agents/models.py`). Toàn bộ thông báo lỗi và tài liệu được Việt hóa 100%.
+- **Tại sao**: Cho phép người dùng và hệ thống kích hoạt / điều chỉnh độ sâu suy luận (deep thinking/reasoning) trên các mô hình lý luận thế hệ mới (như DeepSeek R1, Qwen QwQ, OpenAI o1/o3-mini) mà vẫn đảm bảo tính an toàn tham số, loại bỏ nguy cơ injection tham số không xác thực.
+
+### 2. Công cụ Trích xuất & Tải Tệp Gốc Kho Kiến thức (`download_kb_file`)
+- **Đã làm**:
+  - Xây dựng công cụ `@tool download_kb_file` trong `agents/toolkits/kbs/tools.py` cho phép tác nhân lấy tệp gốc hoặc bản xem trước từ kho kiến thức về thư mục sandbox `outputs/` của luồng hội thoại.
+  - Tích hợp hàm bảo vệ chống tấn công duyệt đường dẫn `_resolve_download_output_path` (Path Traversal Protection), xử lý trùng tên tệp an toàn và trả về đường dẫn ảo chuẩn hóa `virtual_path`.
+  - Đăng ký công cụ vào bộ công cụ kho kiến thức chung `get_common_kb_tools()` và danh sách phụ thuộc `tool_dependencies` của builtin skill `knowledge-base`.
+- **Tại sao**: Đáp ứng nhu cầu của các tác nhân lập trình / phân tích dữ liệu cần tiếp cận tệp nhị phân gốc (như CSV, XLSX, PDF, JSON) để chạy mã Python phân tích thay vì chỉ nhận các đoạn trích text vắn tắt từ vector search.
+
+### 3. Chế độ SQLite WAL Mode & Busy Timeout Chống Khóa Concurrency
+- **Đã làm**: Cấu hình các chỉ thị PRAGMA tối ưu trong `get_async_conn()` (`agents/base.py`):
+  `PRAGMA journal_mode=WAL`, `PRAGMA busy_timeout=5000`, `PRAGMA synchronous=NORMAL`.
+- **Tại sao**: Khắc phục triệt để lỗi xung đột `SQLITE_BUSY` khi nhiều luồng / tác nhân ghi lịch sử hội thoại đồng thời vào cơ sở dữ liệu `aio_history.db`, cải thiện hiệu năng I/O thông qua cơ chế Write-Ahead Logging.
+
+### 4. Hiện đại hóa Giấy phép Thuật toán PPR & Tiền Xử lý Tệp PDF (Preflight Check)
+- **Đã làm**:
+  - Thay thế thư viện GPL-2.0 `igraph` bằng thư viện BSD `networkx` cho thuật toán Personalized PageRank (PPR) trong `milvus_graph_service.py` để xếp hạng các đoạn tri thức liên quan dựa trên đồ thị.
+  - Xây dựng module tiền kiểm tra PDF `knowledge/utils/pdf_utils.py` bằng thư viện BSD `pypdfium2` với cơ chế kiểm tra tính toàn vẹn cây trang (Page Tree) và phát hiện tệp có mật khẩu bảo vệ. Tích hợp trực tiếp vào bước 0 của `parse_pdf()` (`knowledge/parser/unified.py`).
+- **Tại sao**: Loại bỏ hoàn toàn rủi ro lây nhiễm giấy phép copyleft GPL vào sản phẩm thương mại; ngăn ngừa hiện tượng crash hoặc treo bộ nhớ (OOM) khi nạp các tệp PDF hỏng/bị mã hóa vào parser trích xuất văn bản.
+
+---
+
 ## Task: Xử lý Toàn diện Nợ Kỹ thuật & Tối ưu hóa Hệ thống Yuxi (2026-08-14)
 
 ### 1. Tách biệt Mã Kiểm thử và Thêm cờ `test_mode` vào `BaseContext` (TD-01, TD-09)

@@ -493,3 +493,54 @@ def test_get_reranker_loads_model_from_cache(monkeypatch):
 
     assert isinstance(reranker, OpenAIReranker)
     assert reranker.model == "namespace/rerank-model"
+
+
+def test_load_chat_model_merges_request_body_overrides_into_extra_body(monkeypatch):
+    info = ModelInfo(
+        provider_id="openai",
+        model_id="deepseek-r1",
+        model_type="chat",
+        display_name="DeepSeek R1",
+        api_key="test-key",
+        base_url="https://example.com/v1",
+        provider_type="openai",
+        request_body_overrides={"enable_thinking": True, "thinking_budget": 4096},
+    )
+    monkeypatch.setattr("yuxi.agents.models.model_cache.get_model_info", lambda spec: info if spec == "openai:deepseek-r1" else None)
+
+    chat_model = load_chat_model("openai:deepseek-r1", extra_body={"custom_flag": "1"})
+    assert chat_model.extra_body == {"custom_flag": "1", "enable_thinking": True, "thinking_budget": 4096}
+
+
+def test_service_validates_request_body_overrides_whitelist():
+    from yuxi.models.providers.service import _normalize_model_item, _validate_request_body_overrides_scope
+
+    # 1. Hợp lệ
+    valid_model = {
+        "id": "deepseek-r1",
+        "type": "chat",
+        "request_body_overrides": {"enable_thinking": True, "reasoning_effort": "high"},
+    }
+    normalized = _normalize_model_item(valid_model)
+    assert normalized["request_body_overrides"] == {"enable_thinking": True, "reasoning_effort": "high"}
+    _validate_request_body_overrides_scope([normalized], "openai")
+
+    # 2. Không thuộc whitelist
+    with pytest.raises(ValueError, match="chứa trường extra_body không được hỗ trợ"):
+        _normalize_model_item({
+            "id": "deepseek-r1",
+            "type": "chat",
+            "request_body_overrides": {"unsupported_field": 123},
+        })
+
+    # 3. Sai loại provider (không tương thích OpenAI)
+    with pytest.raises(ValueError, match="chỉ hỗ trợ nhà cung cấp tương thích OpenAI"):
+        _validate_request_body_overrides_scope([normalized], "anthropic")
+
+    # 4. Sai loại model (không phải chat)
+    with pytest.raises(ValueError, match="chỉ hỗ trợ model loại chat"):
+        _validate_request_body_overrides_scope([{
+            "id": "embed-1",
+            "type": "embedding",
+            "request_body_overrides": {"enable_thinking": True},
+        }], "openai")

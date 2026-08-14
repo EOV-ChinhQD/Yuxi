@@ -42,6 +42,9 @@ class ModelInfo:
     dimension: int | None = None
     batch_size: int = 40
 
+    # Thinking parameter override (OpenAI-compatible chat models) - ponytail: Tier 1 backport
+    request_body_overrides: dict[str, Any] | None = None
+
     @property
     def spec(self) -> str:
         return f"{self.provider_id}:{self.model_id}"
@@ -59,6 +62,7 @@ class ModelInfo:
             "extra": self.extra,
             "dimension": self.dimension,
             "batch_size": self.batch_size,
+            "request_body_overrides": self.request_body_overrides,
         }
 
     @classmethod
@@ -75,6 +79,7 @@ class ModelInfo:
             extra=data.get("extra", {}),
             dimension=data.get("dimension"),
             batch_size=data.get("batch_size", 40),
+            request_body_overrides=data.get("request_body_overrides"),
         )
 
 
@@ -158,6 +163,7 @@ class ModelCache:
                     extra=dict(provider.extra_json or {}),
                     dimension=model.get("dimension"),
                     batch_size=model.get("batch_size", 40),
+                    request_body_overrides=model.get("request_body_overrides"),
                 )
                 new_cache[info.spec] = info
 

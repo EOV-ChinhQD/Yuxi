@@ -238,6 +238,10 @@ def parse_pdf(file, params=None):
     params = params or {}
     trace_id = params.get("file_id") or Path(str(file)).name
 
+    # 0. Preflight check for PDF page tree loadability - ponytail: validate PDF page tree before parsing
+    from yuxi.knowledge.utils.pdf_utils import validate_pdf_page_tree_loadable
+    validate_pdf_page_tree_loadable(file)
+
     # 1. Analyzer
     try:
         analyzer = PDFDensityAnalyzer()

@@ -1,11 +1,17 @@
 """Module công cụ kho kiến thức"""
 
 import inspect
+from pathlib import Path
 from typing import Any
 
 from langgraph.prebuilt.tool_node import ToolRuntime
 from pydantic import BaseModel, Field
 
+from yuxi.agents.backends.sandbox.paths import (
+    ensure_thread_dirs,
+    sandbox_outputs_dir,
+    virtual_path_for_thread_file,
+)
 from yuxi.agents.toolkits.registry import tool
 from yuxi.knowledge.base import KnowledgeBase
 from yuxi.knowledge.schemas import (
@@ -670,6 +676,122 @@ async def search_file(
     }
 
 
+class DownloadKBFileInput(BaseModel):
+    """Model input tải file gốc kho kiến thức"""
+
+    kb_id: str = Field(description="ID hoặc tên tài nguyên kho kiến thức")
+    file_id: str = Field(description="ID tệp kho kiến thức, lấy từ kết quả của query_kb hoặc search_file")
+    save_as: str | None = Field(
+        default=None,
+        description="Tên tệp lưu vào sandbox; để trống nếu muốn dùng tên gốc. Chỉ nhập tên tệp, không kèm đường dẫn thư mục",
+    )
+
+
+@tool(category="knowledge", tags=["kho-kien-thuc"], args_schema=DownloadKBFileInput)
+async def download_kb_file(
+    kb_id: str,
+    file_id: str,
+    save_as: str | None = None,
+    runtime: ToolRuntime = None,
+) -> dict[str, Any] | str:
+    """Tải tệp nhị phân gốc (pdf/docx/xlsx...) của kho kiến thức vào thư mục outputs của sandbox.
+
+    Sử dụng khi cần xử lý cấu trúc tệp gốc: ví dụ dùng openpyxl/pandas đọc ô tính xlsx,
+    hoặc dùng pdfplumber/python-docx phân tích lại bố cục tài liệu.
+    query_kb/open_kb_document chỉ trả về các đoạn trích văn bản, không đáp ứng được các tác vụ cần đối tượng tệp.
+    Đường dẫn virtual_path trả về là đường dẫn nội bộ sandbox, có thể đọc trực tiếp bằng code Python sandbox.
+    kb_id là ID hoặc tên kho kiến thức; file_id lấy từ kết quả của query_kb hoặc search_file.
+    """
+    normalized_kb_id = str(kb_id or "").strip()
+    normalized_file_id = str(file_id or "").strip()
+    if not normalized_kb_id:
+        return "Vui lòng cung cấp kb_id"
+    if not normalized_file_id:
+        return "Vui lòng cung cấp file_id"
+
+    knowledge_base = _get_knowledge_base()
+    retrievers = knowledge_base.get_retrievers()
+    visible_kbs = await _resolve_visible_knowledge_bases_for_query(runtime)
+    target_info, target_kb_id, target_error = _find_query_target(
+        kb_id=normalized_kb_id,
+        retrievers=retrievers,
+        visible_kbs=visible_kbs,
+    )
+    if target_error:
+        return target_error
+
+    try:
+        data = await knowledge_base.get_file_download(target_kb_id, normalized_file_id, variant="original")
+    except ValueError as e:
+        return str(e)
+    except Exception as e:
+        logger.error(f"Tải tệp gốc kho kiến thức thất bại: {e}")
+        return f"Tải tệp gốc kho kiến thức thất bại: {str(e)}"
+
+    file_thread_id = _runtime_thread_id(runtime)
+    uid = _runtime_uid(runtime)
+    if not file_thread_id or not uid:
+        return "Không thể lấy ngữ cảnh sandbox của phiên hiện tại, thiếu file_thread_id hoặc uid"
+
+    output_path = _resolve_download_output_path(file_thread_id, uid, data, normalized_file_id, save_as)
+    try:
+        output_path.write_bytes(data["content"])
+    except OSError as e:
+        logger.error(f"Ghi tệp vào outputs sandbox thất bại: {e}")
+        return f"Ghi tệp vào outputs sandbox thất bại: {str(e)}"
+
+    return {
+        "virtual_path": virtual_path_for_thread_file(file_thread_id, output_path, uid=uid),
+        "filename": data.get("filename") or normalized_file_id,
+        "media_type": data.get("media_type"),
+        "size_bytes": len(data["content"]),
+        "saved_as": output_path.name,
+    }
+
+
+def _runtime_thread_id(runtime: ToolRuntime | None) -> str | None:
+    """Lấy file_thread_id hoặc thread_id từ runtime.context."""
+    context = getattr(runtime, "context", None) if runtime else None
+    if context is None:
+        return None
+    return getattr(context, "file_thread_id", None) or getattr(context, "thread_id", None)
+
+
+def _runtime_uid(runtime: ToolRuntime | None) -> str | None:
+    """Lấy uid từ runtime.context."""
+    context = getattr(runtime, "context", None) if runtime else None
+    if context is None:
+        return None
+    return getattr(context, "uid", None)
+
+
+def _resolve_download_output_path(
+    file_thread_id: str,
+    uid: str,
+    data: dict[str, Any],
+    file_id: str,
+    save_as: str | None,
+) -> Path:
+    """Tính toán đường dẫn lưu tệp trong outputs của sandbox, tránh path traversal và trùng tên."""
+    ensure_thread_dirs(file_thread_id, uid)
+    outputs_dir = sandbox_outputs_dir(file_thread_id)
+
+    wanted_name = (save_as or data.get("filename") or file_id).strip()
+    base_name = Path(wanted_name).name or file_id
+
+    candidate = outputs_dir / base_name
+    if not candidate.exists():
+        return candidate
+
+    stem = candidate.stem
+    suffix = candidate.suffix
+    index = 1
+    while candidate.exists():
+        candidate = outputs_dir / f"{stem}_{index}{suffix}"
+        index += 1
+    return candidate
+
+
 def get_common_kb_tools() -> list:
     """Lấy danh sách các công cụ kho kiến thức chung.
 
@@ -681,5 +803,15 @@ def get_common_kb_tools() -> list:
     - find_kb_document: Định vị từ khóa hoặc regex trong tệp được chỉ định
     - open_kb_document: Mở một phần tài liệu kho kiến thức theo file_id
     - search_file: Tìm kiếm tệp trong kho kiến thức
+    - download_kb_file: Tải tệp gốc kho kiến thức vào thư mục outputs sandbox
     """
-    return [list_kbs, get_mindmap, query_kb, query_keywords, find_kb_document, open_kb_document, search_file]
+    return [
+        list_kbs,
+        get_mindmap,
+        query_kb,
+        query_keywords,
+        find_kb_document,
+        open_kb_document,
+        search_file,
+        download_kb_file,
+    ]

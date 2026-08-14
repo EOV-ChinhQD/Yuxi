@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 
 import asyncio
+import json
 import os
 import re
 from typing import Any
@@ -21,6 +22,15 @@ from yuxi.storage.postgres.models_business import ModelProvider
 VALID_MODEL_TYPES = {"chat", "embedding", "rerank"}
 VALID_MODEL_SOURCES = {"manual", "remote"}
 VALID_PROVIDER_TYPES = {"openai", "anthropic", "gemini", "openrouter"}
+# ponytail: OpenAI-compatible extra_body whitelist for reasoning / thinking models
+OPENAI_COMPATIBLE_REQUEST_BODY_PROVIDER_TYPES = {"openai", "openrouter"}
+ALLOWED_EXTRA_BODY_FIELDS = {
+    "enable_thinking",
+    "reasoning",
+    "reasoning_effort",
+    "thinking",
+    "thinking_budget",
+}
 _PROVIDER_ID_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{1,99}$")
 
 
@@ -59,6 +69,30 @@ def _normalize_model_item(model: dict[str, Any]) -> dict[str, Any]:
     normalized["display_name"] = str(model.get("display_name") or model.get("name") or model_id)
     normalized["extra"] = _normalize_dict(model.get("extra"))
 
+    if "request_body_overrides" in model:
+        overrides = model.get("request_body_overrides")
+        if not isinstance(overrides, dict):
+            raise ValueError(f"request_body_overrides của model {model_id} phải là một JSON object")
+
+        invalid_keys = [key for key in overrides if not isinstance(key, str) or not key.strip()]
+        if invalid_keys:
+            raise ValueError(f"Tên trường trong request_body_overrides của model {model_id} phải là chuỗi không rỗng")
+
+        unsupported_fields = sorted(set(overrides) - ALLOWED_EXTRA_BODY_FIELDS)
+        if unsupported_fields:
+            allowed_fields = ", ".join(sorted(ALLOWED_EXTRA_BODY_FIELDS))
+            raise ValueError(
+                f"request_body_overrides của model {model_id} chứa trường extra_body không được hỗ trợ: "
+                f"{', '.join(unsupported_fields)}; các trường được phép: {allowed_fields}"
+            )
+
+        try:
+            json.dumps(overrides, ensure_ascii=False, allow_nan=False)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"request_body_overrides của model {model_id} chỉ được chứa các giá trị JSON hợp lệ") from exc
+
+        normalized["request_body_overrides"] = dict(overrides)
+
     if model_type == "embedding":
         dimension = model.get("dimension")
         if dimension not in (None, ""):
@@ -91,6 +125,22 @@ def _validate_models_capabilities(enabled_models: list[dict], capabilities: set[
             raise ValueError(
                 f"type={model['type']} của model {model['id']} không nằm trong khả năng của provider {sorted(capabilities)}"
             )
+
+
+def _validate_request_body_overrides_scope(
+    enabled_models: list[dict[str, Any]],
+    provider_type: str | None,
+) -> None:
+    """Xác thực request_body_overrides chỉ áp dụng cho model chat của nhà cung cấp tương thích OpenAI."""
+    for model in enabled_models or []:
+        overrides = model.get("request_body_overrides") or {}
+        if not overrides:
+            continue
+        model_id = model.get("id") or ""
+        if provider_type not in OPENAI_COMPATIBLE_REQUEST_BODY_PROVIDER_TYPES:
+            raise ValueError(f"request_body_overrides của model {model_id} chỉ hỗ trợ nhà cung cấp tương thích OpenAI")
+        if model.get("type") != "chat":
+            raise ValueError(f"request_body_overrides của model {model_id} chỉ hỗ trợ model loại chat")
 
 
 _FIELD_DEFAULTS: dict[str, Any] = {
@@ -166,6 +216,9 @@ def _normalize_payload(data: dict[str, Any], *, partial: bool = False) -> dict[s
         capabilities_set = set(payload.get("capabilities") or [])
         if capabilities_set:
             _validate_models_capabilities(payload.get("enabled_models"), capabilities_set)
+
+    if not partial:
+        _validate_request_body_overrides_scope(payload.get("enabled_models"), payload.get("provider_type"))
 
     return payload
 
@@ -296,6 +349,11 @@ async def update_provider_config(
         existing_caps = set(provider.capabilities or [])
         if existing_caps:
             _validate_models_capabilities(payload.get("enabled_models"), existing_caps)
+    if "enabled_models" in payload or "provider_type" in payload:
+        _validate_request_body_overrides_scope(
+            payload.get("enabled_models", provider.enabled_models or []),
+            payload.get("provider_type", provider.provider_type),
+        )
     payload["updated_by"] = username
     return await update_model_provider(db, provider, payload)
 

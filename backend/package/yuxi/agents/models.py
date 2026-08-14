@@ -157,6 +157,10 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
     # ponytail: Instantiate model outside of lock to avoid blocking other threads/coroutines
     api_key = info.api_key
     base_url = get_docker_safe_url(info.base_url)
+    if info.request_body_overrides:
+        extra_body = dict(kwargs.get("extra_body") or {})
+        extra_body.update(info.request_body_overrides)
+        kwargs = {**kwargs, "extra_body": extra_body}
 
     logger.info(f"Cache MISS. Loading model {fully_specified_name} with provider_type={info.provider_type}")
 
@@ -199,7 +203,7 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
 
 
 class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
-    """归一化流式 tool_call 续片中的空串 name/id，规避 v3 流式累积缺陷。"""
+    """Chuẩn hóa name/id rỗng trong tool_call streaming chunks để tránh lỗi tích lũy stream v3."""
 
     def _get_request_payload(self, input_, *, stop=None, **kwargs):
         """Override to bridge tool image blocks to user messages."""
@@ -218,7 +222,7 @@ class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
 
 
 def _bridge_tool_images_to_user_messages(payload: dict[str, Any]) -> dict[str, Any]:
-    """将工具调用返回的 image_url 块桥接到用户消息中，避免工具消息中包含图片导致的渲染问题。"""
+    """Cầu nối các khối image_url từ kết quả gọi công cụ sang tin nhắn người dùng để tránh lỗi hiển thị."""
     messages = payload.get("messages")
     if not isinstance(messages, list):
         return payload
@@ -258,8 +262,8 @@ def _bridge_tool_images_to_user_messages(payload: dict[str, Any]) -> dict[str, A
             content = _text_without_images(message.get("content"), image_blocks)
             if not content:
                 content = (
-                    f"read_file returned {len(image_blocks)} image(s). "
-                    "The image content is attached in the following user message for visual inspection."
+                    f"read_file trả về {len(image_blocks)} hình ảnh. "
+                    "Nội dung hình ảnh được đính kèm trong tin nhắn người dùng tiếp theo để xử lý thị giác."
                 )
             message = {**message, "content": content}
 
@@ -271,13 +275,11 @@ def _bridge_tool_images_to_user_messages(payload: dict[str, Any]) -> dict[str, A
 
 
 def _normalize_tool_call_chunks(message) -> None:
-    """把工具调用续片里空字符串的 name/id 归一化为 None。
+    """Chuẩn hóa name/id rỗng trong tool_call chunks thành None.
 
-    LangGraph v3 流式累积对 tool_call 字段是“后值覆盖”：部分 OpenAI 兼容提供商
-    （siliconflow、阿里云百炼等）在续片里把 name/id 下发为空字符串 ""，会覆盖首片
-    的真实值（siliconflow 丢 name、百炼丢 id），导致工具结果无法按 tool_call_id
-    关联、工具状态停留在“进行中”。OpenAI 官方在续片里发 None 不会触发覆盖，这里
-    把空串归一化为 None 对齐该行为。待上游修复 v3 协议后可移除。
+    Cơ chế tích lũy stream LangGraph v3 ghi đè giá trị sau lên giá trị trước: một số nhà cung cấp tương thích
+    OpenAI trả về chuỗi rỗng "" cho name/id ở các chunk tiếp theo, dẫn đến mất name/id gốc của chunk đầu.
+    Hàm này chuẩn hóa chuỗi rỗng thành None để giữ lại định danh tool_call_id chính xác.
     """
     for chunk in message.tool_call_chunks:
         if chunk.get("name") == "":

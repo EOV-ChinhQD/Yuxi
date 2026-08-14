@@ -404,6 +404,11 @@ class BaseAgent:
             return self._async_conn
 
         conn = await aiosqlite.connect(os.path.join(self.workdir, "aio_history.db"))
+        # ponytail: WAL + busy_timeout mitigate SQLITE_BUSY under concurrent API/worker access
+        for pragma in ("PRAGMA journal_mode=WAL", "PRAGMA busy_timeout=5000", "PRAGMA synchronous=NORMAL"):
+            cursor = await conn.execute(pragma)
+            await cursor.fetchall()
+
         # Patch: langgraph's AsyncSqliteSaver expects is_alive() method which aiosqlite may not have
         if not hasattr(conn, "is_alive"):
             conn.is_alive = lambda: True

@@ -805,11 +805,7 @@ class MilvusGraphService:
         if not nodes:
             return []
 
-        try:
-            import igraph as ig
-        except ImportError:
-            logger.error("Graph retrieval requires python-igraph. Please install igraph.")
-            return []
+        import networkx as nx
 
         node_ids = [node["id"] for node in nodes]
         index_by_id = {node_id: index for index, node_id in enumerate(node_ids)}
@@ -821,7 +817,10 @@ class MilvusGraphService:
         if not edge_indices:
             return []
 
-        graph = ig.Graph(n=len(nodes), edges=edge_indices, directed=False)
+        # ponytail: networkx (BSD) replaces igraph (GPL-2.0) for PPR
+        graph = nx.Graph()
+        graph.add_nodes_from(range(len(nodes)))
+        graph.add_edges_from(edge_indices)
         reset = [0.0] * len(nodes)
         chunk_node_indexes: list[tuple[int, str]] = []
         for index, node in enumerate(nodes):
@@ -837,7 +836,8 @@ class MilvusGraphService:
         if reset_total <= 0 or not chunk_node_indexes:
             return []
         reset = [value / reset_total for value in reset]
-        scores = graph.personalized_pagerank(damping=min(max(damping, 0.1), 0.99), reset=reset)
+        personalization = {index: value for index, value in enumerate(reset)}
+        scores = nx.pagerank(graph, alpha=min(max(damping, 0.1), 0.99), personalization=personalization)
         ranked = sorted(
             ((chunk_id, float(scores[index])) for index, chunk_id in chunk_node_indexes),
             key=lambda item: item[1],

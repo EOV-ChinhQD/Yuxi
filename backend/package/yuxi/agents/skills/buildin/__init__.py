@@ -45,6 +45,7 @@ BUILTIN_SKILLS: list[BuiltinSkillSpec] = [
             "open_kb_document",
             "get_mindmap",
             "search_file",
+            "download_kb_file",
         ),
     ),
     BuiltinSkillSpec(

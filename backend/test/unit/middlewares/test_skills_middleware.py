@@ -17,9 +17,12 @@ from yuxi.agents.toolkits.service import resolve_configured_runtime_tools
 _KB_TOOL_NAMES = {
     "list_kbs",
     "query_kb",
+    "query_keywords",
     "find_kb_document",
     "open_kb_document",
     "get_mindmap",
+    "search_file",
+    "download_kb_file",
 }
 
 
@@ -164,13 +167,7 @@ async def test_awrap_model_call_mounts_knowledge_base_skill_tools():
                     _readable_skills=["knowledge-base"],
                     _runtime_skill_dependency_map={
                         "knowledge-base": {
-                            "tools": [
-                                "list_kbs",
-                                "query_kb",
-                                "find_kb_document",
-                                "open_kb_document",
-                                "get_mindmap",
-                            ],
+                            "tools": sorted(_KB_TOOL_NAMES),
                             "mcps": [],
                             "skills": [],
                         }
@@ -196,13 +193,7 @@ async def test_awrap_model_call_mounts_knowledge_base_skill_tools():
     result = await SkillsMiddleware().awrap_model_call(FakeRequest(), handler)
 
     assert result == "ok"
-    assert captured["tools"] == {
-        "list_kbs",
-        "query_kb",
-        "find_kb_document",
-        "open_kb_document",
-        "get_mindmap",
-    }
+    assert captured["tools"] == _KB_TOOL_NAMES
 
 
 def test_resolve_skill_gated_tools_collects_readable_dependency_tools():
@@ -240,9 +231,9 @@ def _make_gated_request(activated):
         def __init__(self, tools):
             self.runtime = SimpleNamespace(
                 context=SimpleNamespace(
-                    _readable_skills=["knowledge-base"],
+                    _readable_skills=["custom-skill"],
                     _runtime_skill_dependency_map={
-                        "knowledge-base": {"tools": ["list_kbs", "query_kb"], "mcps": [], "skills": []}
+                        "custom-skill": {"tools": ["list_kbs", "query_kb"], "mcps": [], "skills": []}
                     },
                     mcps=[],
                 )
@@ -277,7 +268,7 @@ async def test_awrap_model_call_hides_gated_tools_until_activated():
 
 @pytest.mark.asyncio
 async def test_awrap_model_call_keeps_gated_tools_when_activated():
-    request = _make_gated_request(activated=["knowledge-base"])
+    request = _make_gated_request(activated=["custom-skill"])
     captured = {}
 
     async def handler(req):
