@@ -44,9 +44,10 @@ class SemanticRouter:
     vector DB không cần thiết và chống ảo giác.
     """
 
-    # Heuristics cho Chit-chat (Full match hoặc rất ngắn)
+    # Heuristics cho Chit-chat (Full match hoặc rất ngắn) - ponytail: cover common Vietnamese conversational tokens
     _CHIT_CHAT_PATTERN = re.compile(
-        r"^(chào|xin chào|chào bạn|hi|hello|cảm ơn|thank you|ok|okay)[\s!\.]*$", re.IGNORECASE
+        r"^(chào|xin chào|chào bạn|hi|hello|cảm ơn|cảm ơn bạn|thank you|thanks|ok|okay|oke|ok bạn|vâng|dạ|ừ|đồng ý|hiểu rồi|được rồi|rõ rồi|tạm biệt|bye)[\s!\.]*$",
+        re.IGNORECASE,
     )
 
     # Heuristics cho Exact Match (Số hiệu văn bản, hợp đồng, quyết định...)

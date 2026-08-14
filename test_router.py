@@ -15,6 +15,11 @@ async def test_router():
         "Xin chào",
         "Ok",
         "Cảm ơn",
+        "Vâng",
+        "Được rồi",
+        "Hiểu rồi",
+        "Rõ rồi",
+        "Cảm ơn bạn",
         
         # EXACT_MATCH
         "Cho tôi xem hợp đồng HD-1234",

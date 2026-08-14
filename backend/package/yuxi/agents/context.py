@@ -59,6 +59,7 @@ def _role_can_access(auth: str | None, role: str | None) -> bool:
 
 
 _WORKSPACE_PROMPT_CACHE: dict[str, dict] = {}
+_MAX_WORKSPACE_PROMPT_CACHE_ENTRIES = 500
 
 def _load_workspace_agents_prompt(thread_id: str, uid: str) -> str:
     prompt_file = sandbox_workspace_agents_prompt_file(thread_id, uid)
@@ -85,6 +86,13 @@ def _load_workspace_agents_prompt(thread_id: str, uid: str) -> str:
         return ""
 
     prompt = content[:WORKSPACE_AGENTS_PROMPT_MAX_BYTES].decode("utf-8", errors="replace").strip()
+    
+    # ponytail: Evict oldest entries if cache exceeds limit to prevent unbounded memory growth
+    if len(_WORKSPACE_PROMPT_CACHE) >= _MAX_WORKSPACE_PROMPT_CACHE_ENTRIES:
+        oldest_keys = list(_WORKSPACE_PROMPT_CACHE.keys())[:100]
+        for k in oldest_keys:
+            _WORKSPACE_PROMPT_CACHE.pop(k, None)
+
     if not prompt:
         _WORKSPACE_PROMPT_CACHE[cache_key] = {"mtime": mtime, "content": ""}
         return ""
@@ -178,6 +186,11 @@ class BaseContext:
     request_id: str | None = field(
         default=None,
         metadata={"name": "Request ID", "configurable": False, "hide": True},
+    )
+
+    test_mode: bool = field(
+        default=False,
+        metadata={"name": "Test Mode", "configurable": False, "hide": True},
     )
 
     system_prompt: str = field(
@@ -463,21 +476,6 @@ async def resolve_agent_resource_options(
                 and not os.environ.get("SILICONFLOW_API_KEY")
             )
         ]
-        # Filter TEST_RAG_PIPELINE databases to keep only the latest one
-        test_dbs = [db for db in databases if str(db.get("name") or "").startswith("TEST_RAG_PIPELINE_")]
-        if test_dbs:
-
-            def get_suffix(db):
-                try:
-                    return int(db.get("name").split("_")[-1])
-                except Exception:
-                    return -1
-
-            latest_test_db = max(test_dbs, key=get_suffix)
-            databases = [db for db in databases if not str(db.get("name") or "").startswith("TEST_RAG_PIPELINE_")] + [
-                latest_test_db
-            ]
-
         options["knowledges"] = [
             _resource_option(item.get("kb_id"), item.get("name"), item.get("description"))
             for item in databases

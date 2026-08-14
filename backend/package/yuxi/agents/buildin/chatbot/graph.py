@@ -212,9 +212,15 @@ async def _build_middlewares(context):
     subagent_middleware = await create_subagent_task_middleware(context)
     if subagent_middleware:
         middlewares.append(subagent_middleware)
+
+    # ponytail: Only load OllamaToolCallParserMiddleware for Ollama/local models or test_mode (TD-05)
+    model_str = str(getattr(context, "model", "") or "").lower()
+    is_test_mode = bool(getattr(context, "test_mode", False))
+    if is_test_mode or any(k in model_str for k in ("ollama", "qwen", "phi3", "local")):
+        middlewares.append(OllamaToolCallParserMiddleware())
+
     middlewares.extend(
         [
-            OllamaToolCallParserMiddleware(),
             summary_middleware,
             TodoListMiddleware(system_prompt=TODO_MID_PROMPT),
             PatchToolCallsMiddleware(),
@@ -246,11 +252,9 @@ class ChatbotAgent(BaseAgent):
 
         model_spec = resolve_chat_model_spec(context.model)
         resolved_tools = await resolve_configured_runtime_tools(context)
-        is_test = any(
-            str(kb.get("name") or "").startswith("TEST_RAG_PIPELINE_")
-            for kb in getattr(context, "_visible_knowledge_bases", [])
-        )
-        if is_test:
+
+        # ponytail: Check test_mode directly instead of hardcoding test DB names (TD-01)
+        if getattr(context, "test_mode", False):
             resolved_tools = [
                 t for t in resolved_tools if t.name not in ("ask_user_question", "install_skill", "list_kbs")
             ]

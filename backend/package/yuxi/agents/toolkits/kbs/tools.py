@@ -17,7 +17,6 @@ from yuxi.knowledge.schemas import (
     SearchOutputSchema,
 )
 from yuxi.utils import logger
-from yuxi.models import select_model
 
 # ========== Các hàm công cụ kho kiến thức chung ==========
 
@@ -104,18 +103,23 @@ async def get_mindmap(kb_name: str, runtime: ToolRuntime) -> str:
     if not kb_name:
         return "Vui lòng cung cấp tên kho kiến thức"
 
-    # Lấy tất cả các retriever
+    # Lấy tất cả các retriever - ponytail: support direct kb_id and case-insensitive kb_name (TD-10)
     knowledge_base = _get_knowledge_base()
     retrievers = knowledge_base.get_retrievers()
 
     # Tìm kho kiến thức tương ứng
     target_kb_id = None
     target_info = None
-    for kb_id, info in retrievers.items():
-        if info["name"] == kb_name:
-            target_kb_id = kb_id
-            target_info = info
-            break
+    if kb_name in retrievers:
+        target_kb_id = kb_name
+        target_info = retrievers[kb_name]
+    else:
+        target_name_lower = kb_name.strip().lower()
+        for kb_id, info in retrievers.items():
+            if str(info.get("name", "")).strip().lower() == target_name_lower:
+                target_kb_id = kb_id
+                target_info = info
+                break
 
     if not target_kb_id:
         return f"Kho kiến thức '{kb_name}' không tồn tại"
@@ -261,6 +265,7 @@ YÊU CẦU:
 
 CÂU HỎI MỚI:"""
     try:
+        from yuxi.models import select_model
         model = select_model(model_spec=model_spec)
         response = await asyncio.wait_for(model.call(prompt, stream=False), timeout=10.0)
         rewritten = response.content.strip()
@@ -306,15 +311,16 @@ async def query_kb(kb_id: str, query_text: str, file_name: str | None = None, ru
         from yuxi.knowledge.retrieval.multi_hop_retriever import detect_and_decompose, multi_hop_retrieve_labeled
         from yuxi.knowledge.retrieval.router import SemanticRouter, RouteType
 
-        # Lấy cấu hình LLM để thực hiện phân tách câu hỏi
-        llm_model_spec = target_info.get("metadata", {}).get("llm_model_spec") or "gpt-4o"
+        # Lấy cấu hình LLM để thực hiện phân tách câu hỏi - ponytail: resolve spec dynamically from context/target_info (TD-02)
+        ctx_model = getattr(getattr(runtime, "context", None), "model", None)
+        llm_model_spec = target_info.get("metadata", {}).get("llm_model_spec") or ctx_model or "gpt-4o-mini"
 
         current_query = query_text
         attempts = 0
         MAX_REWRITE_ATTEMPTS = 1
 
         while True:
-            route_type, route_details = await SemanticRouter.route(current_query, llm_model_spec="gpt-4o-mini")
+            route_type, route_details = await SemanticRouter.route(current_query, llm_model_spec=llm_model_spec)
             logger.info(f"[QueryKB] Router decided: {route_type.value} - {route_details} (Attempt {attempts})")
 
             result = {"results": []}

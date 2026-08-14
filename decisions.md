@@ -1,5 +1,39 @@
 # Nhật ký Quyết định (decisions.md)
 
+## Task: Xử lý Toàn diện Nợ Kỹ thuật & Tối ưu hóa Hệ thống Yuxi (2026-08-14)
+
+### 1. Tách biệt Mã Kiểm thử và Thêm cờ `test_mode` vào `BaseContext` (TD-01, TD-09)
+- **Đã làm**: Thêm trường `test_mode: bool = False` vào `BaseContext`. Xóa bỏ toàn bộ hardcoded filter `TEST_RAG_PIPELINE_` trong `context.py`, `chatbot/graph.py` và chuyển thành kiểm tra cờ `getattr(context, "test_mode", False)` trong `knowledge_base_backend.py`. Đồng thời cấu hình giới hạn kích thước tối đa 500 entries kèm cơ chế dọn dẹp tự động cho `_WORKSPACE_PROMPT_CACHE`.
+- **Tại sao**: Ngăn chặn rò rỉ mã kiểm thử vào runtime production; tránh trường hợp người dùng tạo KB tình cờ trùng tên bị filter sai và ngăn ngừa rủi ro memory leak từ cache không giới hạn.
+
+### 2. Tải có Điều kiện `OllamaToolCallParserMiddleware` (TD-05)
+- **Đã làm**: Chuyển middleware parse XML/regex tool-calls thành dạng nạp có điều kiện trong `chatbot/graph.py`, chỉ kích hoạt khi model spec chứa `ollama`, `qwen`, `phi3`, `local` hoặc khi `context.test_mode=True`.
+- **Tại sao**: Giảm overhead và loại bỏ nguy cơ false-positive regex parsing trên output của các mô hình có native tool calling chuẩn như OpenAI GPT-4o hoặc Google Gemini.
+
+### 3. Tối ưu hóa Vùng Găng Model Cache Lock (TD-07)
+- **Đã làm**: Tái cấu trúc hàm `load_chat_model` trong `agents/models.py`, khởi tạo instance BaseChatModel bên ngoài `_MODEL_CACHE_LOCK` và chỉ giữ lock trong thời gian ngắn để kiểm tra và ghi cache.
+- **Tại sao**: Tránh việc khởi tạo model (có thể block I/O hoặc tốn CPU) làm nghẽn toàn bộ các luồng/coroutines khác trong hệ thống.
+
+### 4. Động hóa Model Spec trong `query_kb` & Mở rộng Heuristic Regex tiếng Việt (TD-02, TD-08)
+- **Đã làm**:
+  1. Trong `tools.py` (`query_kb`), truyền động `llm_model_spec` từ `target_info.metadata` hoặc `runtime.context.model` vào `SemanticRouter.route` thay vì hardcode `"gpt-4o-mini"`.
+  2. Mở rộng `_CHIT_CHAT_PATTERN` trong `router.py` với các từ ngữ giao tiếp tiếng Việt thông dụng ("được rồi", "vâng", "dạ", "ừ", "đồng ý", "hiểu rồi", "cảm ơn bạn", "rõ rồi").
+- **Tại sao**: Giúp các câu chào hỏi/giao tiếp ngắn của người dùng được phân loại tức thì với latency = 0 và cost = 0, đồng thời đảm bảo router sử dụng đúng model cấu hình của hệ thống khi cần phân loại phức tạp.
+
+### 5. Tối ưu Prompt Builder và Timeout cho Memory Injection (TD-03, TD-04)
+- **Đã làm**: Thêm `asyncio.wait_for(..., timeout=3.0)` khi truy vấn `MemoryInjector`, dọn dẹp chuỗi nối cứng dư thừa `Bạn là một trợ lý hữu ích.`, và loại bỏ chuỗi nhắc tên test DB khỏi security policy.
+- **Tại sao**: Tránh tình trạng request bị treo do database memory query chậm và giữ cấu trúc prompt sạch sẽ, nhất quán.
+
+### 6. Chuẩn hóa API `get_mindmap` (TD-10)
+- **Đã làm**: Cập nhật `get_mindmap` trong `tools.py` để hỗ trợ tra cứu trực tiếp theo cả `kb_id` và `kb_name` (không phân biệt hoa thường).
+- **Tại sao**: Giúp LLM và các client gọi tool một cách linh hoạt, nhất quán với các tool khác trong hệ thống.
+
+### 7. Khắc phục Lỗi Circular Import & SQLAlchemy Table Conflict
+- **Đã làm**: Chuyển import `select_model` trong `tools.py` vào bên trong hàm `_rewrite_query` và thêm `__table_args__ = {"extend_existing": True}` vào `EmbeddingCacheModel` trong `models_knowledge.py`.
+- **Tại sao**: Giải quyết triệt để lỗi `ImportError` khi nạp router và lỗi xung đột khai báo lại metadata bảng của SQLAlchemy.
+
+---
+
 ## Task: Xác minh và Sửa lỗi quy trình RAG E2E (Ingestion to Chat)
 
 ### 1. Sửa đổi Vector Dimension của Gemini Embeddings

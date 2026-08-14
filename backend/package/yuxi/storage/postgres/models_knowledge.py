@@ -396,6 +396,7 @@ class EmbeddingCacheModel(Base):
     Caches embedding vectors in Postgres to prevent redundant GPU calls.
     """
     __tablename__ = "embedding_cache"
+    __table_args__ = {"extend_existing": True}
 
     hash_key: Mapped[str] = mapped_column(String(64), primary_key=True)
     embedding: Mapped[dict] = mapped_column(JSONB, nullable=False)

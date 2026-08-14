@@ -140,9 +140,9 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
 
     cache_key = (provider, model_id, endpoint, api_key_hash, loop, kwargs_hash)
 
+    now = time.time()
     with _MODEL_CACHE_LOCK:
-        now = time.time()
-        # Fix: Evict expired models on access to prevent memory leak
+        # Evict expired models on access
         expired_keys = [k for k, v in _MODEL_CACHE.items() if now - v.last_used > v.ttl]
         for k in expired_keys:
             del _MODEL_CACHE[k]
@@ -154,55 +154,48 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
             logger.debug(f"Cache HIT for LLM model: {fully_specified_name} (hits: {cached.hit_count})")
             return cached.llm
 
-    # Double checked lock for creation
+    # ponytail: Instantiate model outside of lock to avoid blocking other threads/coroutines
+    api_key = info.api_key
+    base_url = get_docker_safe_url(info.base_url)
+
+    logger.info(f"Cache MISS. Loading model {fully_specified_name} with provider_type={info.provider_type}")
+
+    try:
+        from yuxi.agents.backends.sandbox import sandbox_metrics
+        sandbox_metrics.record_event("cache_miss")
+    except Exception:
+        pass
+
+    if info.provider_type == "anthropic":
+        from langchain_anthropic import ChatAnthropic
+
+        llm = ChatAnthropic(
+            model=info.model_id,
+            api_key=SecretStr(api_key),
+            base_url=base_url,
+            **kwargs,
+        )
+    elif info.provider_type == "gemini":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        llm = ChatGoogleGenerativeAI(
+            model=info.model_id,
+            google_api_key=SecretStr(api_key),
+            max_retries=10,
+            **kwargs,
+        )
+    else:
+        llm = _ToolCallChunkFixChatOpenAI(
+            model=info.model_id,
+            api_key=SecretStr(api_key),
+            base_url=base_url,
+            stream_usage=True,
+            **kwargs,
+        )
+
     with _MODEL_CACHE_LOCK:
-        cached = _MODEL_CACHE.get(cache_key)
-        if cached and (time.time() - cached.last_used <= cached.ttl):
-            cached.last_used = time.time()
-            cached.hit_count += 1
-            return cached.llm
-
-        api_key = info.api_key
-        base_url = get_docker_safe_url(info.base_url)
-
-        logger.info(f"Cache MISS. Loading model {fully_specified_name} with provider_type={info.provider_type}")
-
-        try:
-            from yuxi.agents.backends.sandbox import sandbox_metrics
-
-            sandbox_metrics.record_event("cache_miss")
-        except Exception:
-            pass
-
-        if info.provider_type == "anthropic":
-            from langchain_anthropic import ChatAnthropic
-
-            llm = ChatAnthropic(
-                model=info.model_id,
-                api_key=SecretStr(api_key),
-                base_url=base_url,
-                **kwargs,
-            )
-        elif info.provider_type == "gemini":
-            from langchain_google_genai import ChatGoogleGenerativeAI
-
-            llm = ChatGoogleGenerativeAI(
-                model=info.model_id,
-                google_api_key=SecretStr(api_key),
-                max_retries=10,
-                **kwargs,
-            )
-        else:
-            llm = _ToolCallChunkFixChatOpenAI(
-                model=info.model_id,
-                api_key=SecretStr(api_key),
-                base_url=base_url,
-                stream_usage=True,
-                **kwargs,
-            )
-
         _MODEL_CACHE[cache_key] = CachedModel(llm)
-        return llm
+    return llm
 
 
 class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
