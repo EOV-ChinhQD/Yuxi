@@ -153,7 +153,9 @@ async def lifespan(app: FastAPI):
 
     """)
     logger.info("Yuxi backend startup complete")
+    app.state.startup_complete = True
     yield
+    app.state.startup_complete = False
     # Shutdown APScheduler
     if hasattr(app.state, "scheduler"):
         try:

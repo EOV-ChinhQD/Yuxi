@@ -83,6 +83,7 @@ class PostgresManager(metaclass=SingletonMeta):
                 conninfo=langgraph_db_url,
                 max_size=10,  # Depending on your Agent concurrency settings, 5-10 is usually enough
                 kwargs={"autocommit": True},  # LangGraph Checkpoint strongly depends on autocommit
+                check=AsyncConnectionPool.check_connection,  # Evict dead connections after PG restart
             )
 
             self._initialized = True

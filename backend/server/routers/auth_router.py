@@ -21,6 +21,12 @@ from server.utils.auth_middleware import (
 from yuxi.utils.auth_utils import AuthUtils
 from yuxi.services.user_identity_service import generate_unique_uid, validate_username, is_valid_phone_number
 from yuxi.services.operation_log_service import log_operation
+from yuxi.services.login_rate_limit_service import (
+    check_login_rate_limit,
+    clear_login_failures,
+    extract_client_ip,
+    record_login_failure,
+)
 from yuxi.services.auth_service import (
     CLI_AUTH_POLL_INTERVAL_SECONDS,
     CLI_AUTH_SESSION_TTL_SECONDS,
@@ -200,9 +206,23 @@ def _raise_cli_auth_error(exc: CLIAuthError) -> None:
 
 
 @auth.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+async def login_for_access_token(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
     # Find users - supports user_id and phone_number login
     login_identifier = form_data.username  # username field in OAuth2 form as login identifier
+    client_ip = extract_client_ip(request)
+
+    # Sliding-window IP+account and IP-global failure rate limit, layered on the account-level lock
+    allowed, retry_after = await check_login_rate_limit(client_ip, login_identifier)
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Quá nhiều lần thử đăng nhập, vui lòng thử lại sau",
+            headers={"Retry-After": str(retry_after)},
+        )
 
     # Try to find by user_id
     result = await db.execute(select(User).filter(User.uid == login_identifier))
@@ -215,6 +235,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
     # If the user does not exist, to prevent username enumeration attacks, a general error message is returned.
     if not user:
+        await record_login_failure(client_ip, login_identifier)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Tên đăng nhập hoặc mật khẩu không chính xác",
@@ -240,7 +261,8 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
     # Verify password
     if not AuthUtils.verify_password(user.password_hash, form_data.password):
-        # Wrong password, increase the number of failures
+        # Wrong password, increase the number of failures and record the IP-level failure
+        await record_login_failure(client_ip, login_identifier)
         user.increment_failed_login()
         await db.commit()
 
@@ -266,6 +288,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     user.reset_failed_login()
     user.last_login = utc_now_naive()
     await db.commit()
+    await clear_login_failures(client_ip, login_identifier)
 
     # Generate access token
     token_data = {"sub": str(user.id)}

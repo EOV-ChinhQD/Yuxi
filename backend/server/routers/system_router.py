@@ -3,7 +3,7 @@ from pathlib import Path
 
 import aiofiles
 import yaml
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from yuxi import config, get_version
@@ -23,6 +23,16 @@ system = APIRouter(prefix="/system", tags=["system"])
 async def health_check():
     """System health check interface (public interface)"""
     return {"status": "ok", "message": "Dịch vụ đang hoạt động bình thường", "version": get_version()}
+
+
+@system.get("/ready")
+async def readiness_check(request: Request):
+    """Verify the startup state and core dependencies required to serve traffic."""
+    from yuxi.services.readiness_service import get_readiness
+
+    result = await get_readiness(startup_complete=bool(getattr(request.app.state, "startup_complete", False)))
+    result["version"] = get_version()
+    return result
 
 
 from sqlalchemy import text
