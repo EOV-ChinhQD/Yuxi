@@ -79,7 +79,7 @@ async def test_dataset_cancellation_updates_build_status(monkeypatch):
 
     build_metadata = repo.dataset_updates[-1][1]["build_metadata"]
     assert build_metadata["status"] == "failed"
-    assert build_metadata["error_message"] == "任务已取消"
+    assert build_metadata["error_message"] == "Nhiệm vụ đã bị hủy"
 
 
 async def test_evaluation_timeout_updates_run_status():
@@ -113,5 +113,5 @@ async def test_evaluation_timeout_updates_run_status():
     run_id, update = repo.run_updates[-1]
     assert run_id == "run-1"
     assert update["status"] == "failed"
-    assert update["metrics"] == {"error": "任务执行超时"}
-    assert context.messages == ["Error: 任务执行超时"]
+    assert update["metrics"] == {"error": "Nhiệm vụ thực thi vượt thời gian cho phép"}
+    assert context.messages == ["Error: Nhiệm vụ thực thi vượt thời gian cho phép"]

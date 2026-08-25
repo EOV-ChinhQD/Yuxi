@@ -1383,10 +1383,12 @@ class MilvusKB(KnowledgeBase):
         if config is not None:
             collection = await self._get_or_create_milvus_collection(kb_id, config.embedding_model_spec)
             query_params = dict(config.query_options or {})
+            embedding_model_spec = config.embedding_model_spec
         else:
             # Đường dẫn tương thích cho các caller nội bộ không mang theo config
             collection = await self._get_milvus_collection(kb_id)
             query_params = self._get_query_params(kb_id)
+            embedding_model_spec = (self.databases_meta.get(kb_id) or {}).get("embedding_model_spec")
         if not collection:
             raise ValueError(f"Database {kb_id} not found")
 

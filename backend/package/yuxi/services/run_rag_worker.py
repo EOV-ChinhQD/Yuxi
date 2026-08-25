@@ -18,7 +18,7 @@ async def handle_extract_knowledge(payload: dict) -> None:
 
     logger.info(f"RAG Worker received EXTRACT_KNOWLEDGE job for chunk {chunk_id}")
 
-    from yuxi.knowledge import knowledge_base
+    from yuxi.knowledge.runtime import knowledge_base
     from yuxi.knowledge.graphs.extractors.event import LLMEventExtractor
     from yuxi.knowledge.graphs.entity_resolver import EntityResolver
     from yuxi.repositories.knowledge_graph_repository import KnowledgeGraphRepository

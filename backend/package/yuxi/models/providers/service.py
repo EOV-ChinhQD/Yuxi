@@ -71,24 +71,24 @@ def _normalize_model_item(model: dict[str, Any]) -> dict[str, Any]:
     if "request_body_overrides" in model:
         overrides = model.get("request_body_overrides")
         if not isinstance(overrides, dict):
-            raise ValueError(f"模型 {model_id} 的 request_body_overrides 必须是 JSON 对象")
+            raise ValueError(f"Mô hình {model_id} có request_body_overrides phải là đối tượng JSON")
 
         invalid_keys = [key for key in overrides if not isinstance(key, str) or not key.strip()]
         if invalid_keys:
-            raise ValueError(f"模型 {model_id} 的 request_body_overrides 字段名必须是非空字符串")
+            raise ValueError(f"Mô hình {model_id} có tên trường request_body_overrides phải là chuỗi không rỗng")
 
         unsupported_fields = sorted(set(overrides) - ALLOWED_EXTRA_BODY_FIELDS)
         if unsupported_fields:
             allowed_fields = ", ".join(sorted(ALLOWED_EXTRA_BODY_FIELDS))
             raise ValueError(
-                f"模型 {model_id} 的 request_body_overrides 包含不支持的 extra_body 字段: "
-                f"{', '.join(unsupported_fields)}；允许字段: {allowed_fields}"
+                f"Mô hình {model_id} có request_body_overrides chứa trường extra_body không được hỗ trợ: "
+                f"{', '.join(unsupported_fields)}; các trường cho phép: {allowed_fields}"
             )
 
         try:
             json.dumps(overrides, ensure_ascii=False, allow_nan=False)
         except (TypeError, ValueError) as exc:
-            raise ValueError(f"模型 {model_id} 的 request_body_overrides 只能包含合法 JSON 值") from exc
+            raise ValueError(f"Mô hình {model_id} có request_body_overrides chỉ được chứa giá trị JSON hợp lệ") from exc
 
         normalized["request_body_overrides"] = dict(overrides)
 
@@ -177,9 +177,9 @@ def _validate_request_body_overrides_scope(
             continue
         model_id = model.get("id") or ""
         if provider_type not in OPENAI_COMPATIBLE_REQUEST_BODY_PROVIDER_TYPES:
-            raise ValueError(f"模型 {model_id} 的 request_body_overrides 仅支持 OpenAI 兼容供应商")
+            raise ValueError(f"Mô hình {model_id} có request_body_overrides chỉ hỗ trợ nhà cung cấp tương thích OpenAI")
         if model.get("type") != "chat":
-            raise ValueError(f"模型 {model_id} 的 request_body_overrides 仅支持 chat 模型")
+            raise ValueError(f"Mô hình {model_id} có request_body_overrides chỉ hỗ trợ model loại chat")
 
 
 _FIELD_DEFAULTS: dict[str, Any] = {

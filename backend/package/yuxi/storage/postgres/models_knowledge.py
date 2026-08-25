@@ -413,17 +413,3 @@ class KnowledgeGraphEventEntity(Base):
     relation_type = Column(String(256))
     created_at = Column(DateTime(timezone=True), default=utc_now_naive)
 
-class EmbeddingCacheModel(Base):
-    """
-    Caches embedding vectors in Postgres to prevent redundant GPU calls.
-    """
-    __tablename__ = "embedding_cache"
-    __table_args__ = {"extend_existing": True}
-
-    hash_key: Mapped[str] = mapped_column(String(64), primary_key=True)
-    embedding: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), 
-        server_default=func.now(), 
-        nullable=False
-    )

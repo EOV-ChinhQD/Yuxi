@@ -343,7 +343,7 @@ async def test_normal_user_confirm_skill_draft_rejects_wider_share_scope(
         operator=operator,
     )
 
-    with pytest.raises(ValueError, match="does not have permission to use this skill"):
+    with pytest.raises(ValueError, match="không có quyền dùng phạm vi chia sẻ Skill"):
         await svc.confirm_skill_install_draft(
             None,
             draft_id=draft["draft_id"],

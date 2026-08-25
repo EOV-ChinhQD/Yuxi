@@ -11,7 +11,6 @@ import tomli_w
 from pydantic import BaseModel, Field, PrivateAttr
 
 from yuxi.config import cache as runtime_cache
-from yuxi.knowledge.parser.registry import PROCESSOR_TYPES
 from yuxi.utils.logging_config import logger
 
 READONLY_CONFIG_FIELDS = frozenset({"save_dir"})
@@ -27,6 +26,9 @@ def _normalize_ocr_policy(value: Any) -> str:
 
 
 def _get_available_ocr_engines() -> set[str]:
+    # Import lười để tránh vòng lặp: yuxi.config -> yuxi.knowledge.__init__ -> yuxi.config
+    from yuxi.knowledge.parser.registry import PROCESSOR_TYPES
+
     return {"disable", *PROCESSOR_TYPES}
 
 

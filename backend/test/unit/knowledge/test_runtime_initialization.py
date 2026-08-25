@@ -15,7 +15,8 @@ pytestmark = pytest.mark.unit
 
 
 def test_document_processor_factory_uses_shared_registry():
-    assert DocumentProcessorFactory.PROCESSOR_TYPES is PROCESSOR_TYPES
+    # Factory mở rộng registry với "docling" (parser cục bộ cho nhánh DISABLE), không thay thế registry
+    assert PROCESSOR_TYPES.items() <= DocumentProcessorFactory.PROCESSOR_TYPES.items()
 
 
 def test_knowledge_runtime_preserves_lite_mode(tmp_path):

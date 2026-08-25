@@ -141,7 +141,7 @@ async def test_search_conversations_by_message_content_filters_user_status_and_t
             Message(
                 conversation=active,
                 role="assistant",
-                content="Kế hoạch triển khai trên đất liền cần được giữ lại",
+                content="Kế hoạch triển khai đại lục cần được giữ lại",
                 message_type="text",
                 created_at=now,
             ),

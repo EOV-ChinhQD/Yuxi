@@ -143,7 +143,7 @@ async def _delete_document_storage_objects(kb_id: str, doc_id: str, file_path: s
 
 
 async def _require_manage_permission_if_kb_id(kb_id: str | None, current_user: User) -> None:
-    """当请求携带 kb_id 时，校验当前用户对该知识库的管理权限。"""
+    """Khi request có kb_id, kiểm tra quyền quản lý của người dùng hiện tại trên kho kiến thức đó."""
     if kb_id and getattr(current_user, "role", None):
         await _ensure_database_permission(kb_id, current_user, ResourcePermission.MANAGE)
 
@@ -151,10 +151,10 @@ async def _require_manage_permission_if_kb_id(kb_id: str | None, current_user: U
 async def _ensure_database_supports_documents(kb_id: str, operation: str) -> dict:
     db_info, supports_documents = await knowledge_base.get_database_document_support(kb_id)
     if not db_info:
-        raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Kho kiến thức {kb_id} không tồn tại")
     kb_type = db_info.kb_type.lower()
     if not supports_documents:
-        raise HTTPException(status_code=400, detail=f"{db_info.name or kb_type} 只支持检索，不支持{operation}")
+        raise HTTPException(status_code=400, detail=f"{db_info.name or kb_type} chỉ hỗ trợ truy xuất, không hỗ trợ {operation}")
     return db_info
 
 
@@ -315,7 +315,7 @@ async def get_mindmap_databases(current_user: User = Depends(get_admin_user)):
 
 @knowledge.get("/databases/{kb_id}/mindmap/files")
 async def get_database_mindmap_files(kb_id: str, current_user: User = Depends(require_knowledge_base_read)):
-    """获取指定知识库的所有文件列表。"""
+    """Lấy danh sách toàn bộ tệp của kho kiến thức chỉ định."""
     try:
         return await get_mindmap_database_files(kb_id)
     except HTTPException:
@@ -328,9 +328,9 @@ async def get_database_mindmap_files(kb_id: str, current_user: User = Depends(re
 @knowledge.post("/databases/{kb_id}/mindmap/generate")
 async def generate_mindmap(
     kb_id: str,
-    file_ids: list[str] | None = Body(default=None, description="选择的文件ID列表"),
-    user_prompt: str = Body(default="", description="用户自定义提示词"),
-    incremental: bool = Body(default=False, description="是否增量更新"),
+    file_ids: list[str] | None = Body(default=None, description="Danh sách ID tệp được chọn"),
+    user_prompt: str = Body(default="", description="Prompt tùy chỉnh của người dùng"),
+    incremental: bool = Body(default=False, description="Có cập nhật tăng dần hay không"),
     current_user: User = Depends(require_knowledge_base_manage),
 ):
     """Use AI to analyze knowledge base files and generate mind map structures. Supports incremental update mode."""
@@ -345,7 +345,7 @@ async def generate_mindmap(
 
 @knowledge.get("/databases/{kb_id}/mindmap")
 async def get_database_mindmap(kb_id: str, current_user: User = Depends(require_knowledge_base_read)):
-    """获取知识库关联的思维导图。"""
+    """Lấy sơ đồ tư duy liên kết với kho kiến thức."""
     try:
         return await get_database_mindmap_data(kb_id)
     except HTTPException:
@@ -357,7 +357,7 @@ async def get_database_mindmap(kb_id: str, current_user: User = Depends(require_
 
 @knowledge.get("/databases/{kb_id}/mindmap/diff")
 async def get_mindmap_diff_route(kb_id: str, current_user: User = Depends(require_knowledge_base_read)):
-    """检测思维导图与知识库文件的变更差异。"""
+    """Phát hiện chênh lệch giữa sơ đồ tư duy và các tệp kho kiến thức."""
     try:
         return await get_mindmap_diff(kb_id)
     except HTTPException:
@@ -370,7 +370,7 @@ async def get_mindmap_diff_route(kb_id: str, current_user: User = Depends(requir
 @knowledge.get("/databases/{kb_id}")
 async def get_database_info(
     kb_id: str,
-    include_files: bool = Query(False, description="是否包含全量文件列表，默认关闭以避免大知识库响应过大"),
+    include_files: bool = Query(False, description="Có bao gồm danh sách tệp đầy đủ hay không, mặc định tắt để tránh phản hồi quá lớn với kho kiến thức lớn"),
     current_user: User = Depends(require_knowledge_base_read),
 ):
     """Get knowledge base details"""
@@ -387,8 +387,8 @@ async def get_database_info(
 
 @knowledge.post("/databases/{kb_id}/stats/repair")
 async def repair_database_stats(kb_id: str, current_user: User = Depends(require_knowledge_base_manage)):
-    """修复知识库历史文件缺失的 Chunk/Token 统计。"""
-    await _ensure_database_supports_documents(kb_id, "统计修复")
+    """Sửa thống kê Chunk/Token thiếu của các tệp lịch sử trong kho kiến thức."""
+    await _ensure_database_supports_documents(kb_id, "Thống kê sửa chữa")
     try:
         return await knowledge_base.repair_missing_file_stats(kb_id)
     except ValueError as e:
@@ -423,7 +423,7 @@ async def update_database_info(
             operator_uid=current_user.uid,
             operator_department_id=current_user.department_id,
         )
-        return {"message": "更新成功", "database": serialize_knowledge_base(database)}
+        return {"message": "Cập nhật thành công", "database": serialize_knowledge_base(database)}
     except HTTPException:
         raise
     except Exception as e:
@@ -433,7 +433,7 @@ async def update_database_info(
 
 @knowledge.delete("/databases/{kb_id}")
 async def delete_database(kb_id: str, current_user: User = Depends(require_knowledge_base_manage)):
-    """删除知识库"""
+    """Xóa kho kiến thức"""
     logger.debug(f"Delete database {kb_id}")
     try:
         await knowledge_base.delete_database(kb_id)
@@ -501,18 +501,18 @@ async def index_graph_build(
             raise HTTPException(status_code=400, detail="Vui lòng xác nhận và khóa cấu hình trích xuất đồ thị trước")
 
         async def run_graph_index(context: TaskContext):
-            await context.set_message("任务初始化")
-            await context.set_progress(5.0, "准备构建图谱")
+            await context.set_message("Khởi tạo nhiệm vụ")
+            await context.set_progress(5.0, "Chuẩn bị xây dựng đồ thị")
             result = await service.build_pending_chunks(kb_id, context=context)
             await context.set_result(result)
             await context.set_progress(
                 100.0,
-                f"图谱构建执行完成，成功 {result['success']} 个，抽取失败 {result['extraction_failed']} 个",
+                f"Xây dựng đồ thị hoàn tất, thành công {result['success']}, trích xuất thất bại {result['extraction_failed']}",
             )
             return result
 
         task, created = await tasker.enqueue_unique_by_payload(
-            name=f"图谱构建 ({database.name})",
+            name=f"Xây dựng đồ thị ({database.name})",
             task_type=GRAPH_TASK_TYPE,
             payload={"kb_id": kb_id},
             coroutine=run_graph_index,
@@ -542,8 +542,8 @@ async def get_graph_build_failed_chunks(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"获取图谱抽取失败 Chunk 样例失败 {e}, {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"获取图谱抽取失败 Chunk 样例失败: {e}")
+        logger.error(f"Lấy mẫu Chunk trích xuất đồ thị thất bại {e}, {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Lấy mẫu Chunk trích xuất đồ thị thất bại: {e}")
 
 
 @knowledge.post("/databases/{kb_id}/graph-build/reset")
@@ -580,28 +580,28 @@ async def reconcile_graph_build(
     data = data or {}
     mode = data.get("mode") or "failed"
     if mode not in {"failed", "all_vectors"}:
-        raise HTTPException(status_code=400, detail="mode 必须是 failed 或 all_vectors")
+        raise HTTPException(status_code=400, detail="mode phải là failed hoặc all_vectors")
     try:
         if await _has_running_graph_build_task(kb_id):
-            raise HTTPException(status_code=409, detail="该知识库已有正在运行的图谱构建任务")
+            raise HTTPException(status_code=409, detail="Kho kiến thức này đã có nhiệm vụ xây dựng đồ thị đang chạy")
 
         database = await knowledge_base.get_database_info(kb_id)
         if not database:
-            raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在")
+            raise HTTPException(status_code=404, detail=f"Kho kiến thức {kb_id} không tồn tại")
 
         service = MilvusGraphService()
 
         async def run_graph_reconcile(context: TaskContext):
-            await context.set_progress(5.0, "准备修复图谱向量索引")
+            await context.set_progress(5.0, "Chuẩn bị sửa chỉ mục vector đồ thị")
             reconcile_result = await service.reconcile_vectors(kb_id, all_vectors=mode == "all_vectors")
             result = await service.build_pending_chunks(kb_id, context=context)
             result["reconcile"] = reconcile_result
             await context.set_result(result)
-            await context.set_progress(100.0, "图谱向量索引修复完成")
+            await context.set_progress(100.0, "Hoàn tất sửa chỉ mục vector đồ thị")
             return result
 
         task, created = await tasker.enqueue_unique_by_payload(
-            name=f"图谱向量索引修复 ({database.name})",
+            name=f"Sửa chỉ mục vector đồ thị ({database.name})",
             task_type=GRAPH_TASK_TYPE,
             payload={"kb_id": kb_id, "reconcile_mode": mode},
             coroutine=run_graph_reconcile,
@@ -609,9 +609,9 @@ async def reconcile_graph_build(
             statuses=ACTIVE_GRAPH_BUILD_STATUSES,
         )
         if not created:
-            raise HTTPException(status_code=409, detail="该知识库已有正在运行的图谱构建任务")
+            raise HTTPException(status_code=409, detail="Kho kiến thức này đã có nhiệm vụ xây dựng đồ thị đang chạy")
         return {
-            "message": "图谱向量索引修复任务已提交",
+            "message": "Đã gửi nhiệm vụ sửa chỉ mục vector đồ thị",
             "status": "queued",
             "task_id": task.id,
             "mode": mode,
@@ -621,15 +621,15 @@ async def reconcile_graph_build(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"提交图谱向量索引修复任务失败 {e}, {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"提交图谱向量索引修复任务失败: {e}")
+        logger.error(f"Gửi nhiệm vụ sửa chỉ mục vector đồ thị thất bại {e}, {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Gửi nhiệm vụ sửa chỉ mục vector đồ thị thất bại: {e}")
 
 
 @knowledge.get("/databases/{kb_id}/export")
 async def export_database(
     kb_id: str,
     format: str = Query("csv", enum=["csv", "xlsx", "md", "txt"]),
-    include_vectors: bool = Query(False, description="是否在导出中包含向量数据"),
+    include_vectors: bool = Query(False, description="Có bao gồm dữ liệu vector trong bản xuất hay không"),
     current_user: User = Depends(require_knowledge_base_read),
 ):
     """Export knowledge base data"""
@@ -661,12 +661,12 @@ async def export_database(
 @knowledge.get("/databases/{kb_id}/documents")
 async def list_documents(
     kb_id: str,
-    parent_id: str | None = Query(None, description="父文件夹 ID，空值表示根目录"),
-    path_prefix: str | None = Query(None, description="路径型目录前缀，用于懒加载 source_path 形成的虚拟目录"),
-    status: str = Query("all", description="文件状态筛选"),
-    page: int = Query(1, ge=1, description="页码"),
-    page_size: int = Query(100, ge=1, le=500, description="每页数量"),
-    recursive: bool = Query(False, description="是否跨目录筛选"),
+    parent_id: str | None = Query(None, description="ID thư mục cha, giá trị rỗng nghĩa là thư mục gốc"),
+    path_prefix: str | None = Query(None, description="Tiền tố thư mục dạng đường dẫn, dùng để tải lười thư mục ảo tạo từ source_path"),
+    status: str = Query("all", description="Bộ lọc trạng thái tệp"),
+    page: int = Query(1, ge=1, description="Số trang"),
+    page_size: int = Query(100, ge=1, le=500, description="Số lượng mỗi trang"),
+    recursive: bool = Query(False, description="Có lọc xuyên thư mục hay không"),
     current_user: User = Depends(require_knowledge_base_read),
 ):
     """Get the list of knowledge base files in pages."""
@@ -688,18 +688,18 @@ async def list_documents(
 @knowledge.get("/databases/{kb_id}/documents/search")
 async def search_documents(
     kb_id: str,
-    query: str = Query("", description="文件名关键词，仅匹配文件名不匹配内容"),
-    offset: int = Query(0, ge=0, description="偏移量，从 0 开始"),
-    limit: int = Query(100, ge=1, le=500, description="每页数量"),
+    query: str = Query("", description="Từ khóa tên tệp, chỉ khớp tên tệp không khớp nội dung"),
+    offset: int = Query(0, ge=0, description="Vị trí offset, bắt đầu từ 0"),
+    limit: int = Query(100, ge=1, le=500, description="Số lượng mỗi trang"),
     current_user: User = Depends(require_knowledge_base_read),
 ):
-    """按文件名搜索知识库文件（仅匹配文件名，不搜索文件内容）。"""
+    """Tìm kiếm tệp kho kiến thức theo tên (chỉ khớp tên tệp, không tìm trong nội dung)."""
     database = await knowledge_base.get_database_info(kb_id)
     if not database:
-        raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在或无权访问")
+        raise HTTPException(status_code=404, detail=f"Kho kiến thức {kb_id} không tồn tại hoặc không có quyền truy cập")
     if not knowledge_base.database_type_supports_documents(database.kb_type):
         kb_type = database.kb_type.lower()
-        raise HTTPException(status_code=400, detail=f"{database.name or kb_type} 只支持检索，不支持文档搜索")
+        raise HTTPException(status_code=400, detail=f"{database.name or kb_type} chỉ hỗ trợ truy xuất, không hỗ trợ tìm tài liệu")
     normalized_query = (query or "").strip()
     if not normalized_query:
         return {"files": [], "total": 0, "offset": 0, "limit": limit, "has_more": False}
@@ -715,7 +715,7 @@ async def search_documents(
 @knowledge.get("/databases/{kb_id}/documents/exists")
 async def document_file_exists(
     kb_id: str,
-    filename: str = Query(..., min_length=1, description="知识库文件展示名或相对路径"),
+    filename: str = Query(..., min_length=1, description="Tên hiển thị hoặc đường dẫn tương đối của tệp kho kiến thức"),
     current_user: User = Depends(require_knowledge_base_read),
 ):
     """Checks whether a file with the specified file name or relative path already exists in the knowledge base."""
@@ -896,7 +896,7 @@ async def add_documents(
     try:
         database = await knowledge_base.get_database_info(kb_id)
         task = await tasker.enqueue(
-            name=f"知识库文档处理 ({database.name})",
+            name=f"Xử lý tài liệu kho kiến thức ({database.name})",
             task_type="knowledge_ingest",
             payload={
                 "kb_id": kb_id,
@@ -1218,7 +1218,7 @@ async def _enqueue_parse_task(
     operator_id: str,
     db_info: KnowledgeBaseDetail,
 ) -> dict:
-    """提交管理端指定 file_ids 的解析任务。"""
+    """Gửi nhiệm vụ phân tích cho các file_ids chỉ định từ trang quản trị."""
 
     async def run_parse(context: TaskContext):
         try:
@@ -1234,7 +1234,7 @@ async def _enqueue_parse_task(
 
     try:
         task = await tasker.enqueue(
-            name=f"文档解析 ({db_info.name})",
+            name=f"Phân tích tài liệu ({db_info.name})",
             task_type="knowledge_parse",
             payload={"kb_id": kb_id, "file_ids": file_ids},
             coroutine=run_parse,
@@ -1245,7 +1245,7 @@ async def _enqueue_parse_task(
 
 
 async def _enqueue_parse_pending_task(kb_id: str, operator_id: str, db_info: KnowledgeBaseDetail) -> dict:
-    """提交管理端按状态全量待解析任务。"""
+    """Gửi nhiệm vụ phân tích toàn bộ tài liệu đang chờ theo trạng thái từ trang quản trị."""
     try:
         pending_count = db_info.pending_parse_count
         if pending_count <= 0:
@@ -1265,7 +1265,7 @@ async def _enqueue_parse_pending_task(kb_id: str, operator_id: str, db_info: Kno
                 raise
 
         task, created = await tasker.enqueue_unique_by_payload(
-            name=f"待解析文档解析 ({db_info.name})",
+            name=f"Phân tích tài liệu đang chờ ({db_info.name})",
             task_type="knowledge_parse",
             payload={
                 "kb_id": kb_id,
@@ -1295,7 +1295,7 @@ async def _enqueue_index_task(
     operator_id: str,
     db_info: KnowledgeBaseDetail,
 ) -> dict:
-    """提交管理端指定 file_ids 的入库任务。"""
+    """Gửi nhiệm vụ đưa vào kho cho các file_ids chỉ định từ trang quản trị."""
 
     async def run_index(context: TaskContext):
         try:
@@ -1312,7 +1312,7 @@ async def _enqueue_index_task(
 
     try:
         task = await tasker.enqueue(
-            name=f"文档入库 ({db_info.name})",
+            name=f"Đưa tài liệu vào kho ({db_info.name})",
             task_type="knowledge_index",
             payload={"kb_id": kb_id, "file_ids": file_ids, "params": params},
             coroutine=run_index,
@@ -1328,7 +1328,7 @@ async def _enqueue_index_pending_task(
     operator_id: str,
     db_info: KnowledgeBaseDetail,
 ) -> dict:
-    """提交管理端按状态全量待入库任务。"""
+    """Gửi nhiệm vụ đưa vào kho toàn bộ tài liệu đang chờ theo trạng thái."""
     try:
         pending_count = db_info.pending_index_count
         if pending_count <= 0:
@@ -1349,7 +1349,7 @@ async def _enqueue_index_pending_task(
                 raise
 
         task, created = await tasker.enqueue_unique_by_payload(
-            name=f"待入库文档入库 ({db_info.name})",
+            name=f"Đưa tài liệu đang chờ vào kho ({db_info.name})",
             task_type="knowledge_index",
             payload={
                 "kb_id": kb_id,
@@ -1379,18 +1379,18 @@ async def parse_documents(
     file_ids: list[str] = Body(...),
     current_user: User = Depends(require_knowledge_base_manage),
 ):
-    """手动触发文档解析"""
+    """Kích hoạt thủ công phân tích tài liệu"""
     file_ids = _validate_direct_document_action_file_ids(file_ids)
     logger.debug(f"Parse documents for kb_id {kb_id}: {file_ids}")
-    db_info = await _ensure_database_supports_documents(kb_id, "文档解析")
+    db_info = await _ensure_database_supports_documents(kb_id, "Phân tích tài liệu")
     return await _enqueue_parse_task(kb_id, file_ids, current_user.uid, db_info)
 
 
 @knowledge.post("/databases/{kb_id}/documents/parse-pending")
 async def parse_pending_documents(kb_id: str, current_user: User = Depends(require_knowledge_base_manage)):
-    """按状态手动触发全部待解析文档解析。"""
+    """Kích hoạt thủ công phân tích toàn bộ tài liệu đang chờ theo trạng thái."""
     logger.debug(f"Parse pending documents for kb_id {kb_id}")
-    db_info = await _ensure_database_supports_documents(kb_id, "文档解析")
+    db_info = await _ensure_database_supports_documents(kb_id, "Phân tích tài liệu")
     return await _enqueue_parse_pending_task(kb_id, current_user.uid, db_info)
 
 
@@ -1401,11 +1401,11 @@ async def index_documents(
     params: dict | None = Body(None),
     current_user: User = Depends(require_knowledge_base_manage),
 ):
-    """手动触发文档入库（Indexing），支持更新参数"""
+    """Kích hoạt thủ công đưa tài liệu vào kho (Indexing), hỗ trợ cập nhật tham số"""
     file_ids = _validate_direct_document_action_file_ids(file_ids)
     params = params or {}
     logger.debug(f"Index documents for kb_id {kb_id}: {file_ids} {params=}")
-    db_info = await _ensure_database_supports_documents(kb_id, "文档入库")
+    db_info = await _ensure_database_supports_documents(kb_id, "Đưa tài liệu vào kho")
     return await _enqueue_index_task(kb_id, file_ids, params, current_user.uid, db_info)
 
 
@@ -1415,16 +1415,16 @@ async def index_pending_documents(
     payload: PendingIndexDocumentsRequest | None = None,
     current_user: User = Depends(require_knowledge_base_manage),
 ):
-    """按状态手动触发全部待入库文档入库。"""
+    """Kích hoạt thủ công đưa vào kho toàn bộ tài liệu đang chờ theo trạng thái."""
     params = (payload.params if payload else None) or {}
     logger.debug(f"Index pending documents for kb_id {kb_id}: {params=}")
-    db_info = await _ensure_database_supports_documents(kb_id, "文档入库")
+    db_info = await _ensure_database_supports_documents(kb_id, "Đưa tài liệu vào kho")
     return await _enqueue_index_pending_task(kb_id, params, current_user.uid, db_info)
 
 
 @knowledge.get("/databases/{kb_id}/documents/{doc_id}")
 async def get_document_info(kb_id: str, doc_id: str, current_user: User = Depends(require_knowledge_base_read)):
-    """获取文档详细信息（包含基本信息和内容信息）"""
+    """Lấy thông tin chi tiết tài liệu (bao gồm thông tin cơ bản và nội dung)"""
     logger.debug(f"GET document {doc_id} info in {kb_id}")
     await _ensure_database_supports_documents(kb_id, "Document view")
 
@@ -1438,7 +1438,7 @@ async def get_document_info(kb_id: str, doc_id: str, current_user: User = Depend
 
 @knowledge.get("/databases/{kb_id}/documents/{doc_id}/basic")
 async def get_document_basic_info(kb_id: str, doc_id: str, current_user: User = Depends(require_knowledge_base_read)):
-    """获取文档基本信息（仅元数据）"""
+    """Lấy thông tin cơ bản của tài liệu (chỉ metadata)"""
     logger.debug(f"GET document {doc_id} basic info in {kb_id}")
     await _ensure_database_supports_documents(kb_id, "Document view")
 
@@ -1452,7 +1452,7 @@ async def get_document_basic_info(kb_id: str, doc_id: str, current_user: User = 
 
 @knowledge.get("/databases/{kb_id}/documents/{doc_id}/content")
 async def get_document_content(kb_id: str, doc_id: str, current_user: User = Depends(require_knowledge_base_read)):
-    """获取文档内容信息（chunks和lines）"""
+    """Lấy thông tin nội dung tài liệu (chunks và lines)"""
     logger.debug(f"GET document {doc_id} content in {kb_id}")
     await _ensure_database_supports_documents(kb_id, "Document view")
 
@@ -1525,7 +1525,7 @@ async def batch_delete_documents(
 
 @knowledge.delete("/databases/{kb_id}/documents/{doc_id}")
 async def delete_document(kb_id: str, doc_id: str, current_user: User = Depends(require_knowledge_base_manage)):
-    """删除文档或文件夹"""
+    """Xóa tài liệu hoặc thư mục"""
     logger.debug(f"DELETE document {doc_id} info in {kb_id}")
     await _ensure_database_supports_documents(kb_id, "Document deletion")
     try:
@@ -1554,7 +1554,7 @@ async def delete_document(kb_id: str, doc_id: str, current_user: User = Depends(
 
 @knowledge.get("/databases/{kb_id}/documents/{doc_id}/download")
 async def download_document(kb_id: str, doc_id: str, current_user: User = Depends(require_knowledge_base_read)):
-    """下载原始文件"""
+    """Tải tệp gốc"""
     logger.debug(f"Download document {doc_id} from {kb_id}")
     await _ensure_database_supports_documents(kb_id, "Document download")
     try:
@@ -1699,7 +1699,7 @@ async def update_knowledge_base_query_params(
 
 @knowledge.get("/databases/{kb_id}/query-params")
 async def get_knowledge_base_query_params(kb_id: str, current_user: User = Depends(require_knowledge_base_read)):
-    """获取知识库类型特定的查询参数"""
+    """Lấy tham số truy vấn riêng theo loại kho kiến thức"""
     try:
         params = await knowledge_base.get_kb_query_params_config(kb_id)
         return {"params": params, "message": "success"}
@@ -1733,7 +1733,7 @@ async def generate_sample_questions(
 
 @knowledge.get("/databases/{kb_id}/sample-questions")
 async def get_sample_questions(kb_id: str, current_user: User = Depends(require_knowledge_base_read)):
-    """获取知识库的测试问题。"""
+    """Lấy các câu hỏi mẫu của kho kiến thức."""
     try:
         return await get_database_sample_questions(kb_id)
     except HTTPException:
@@ -1799,7 +1799,7 @@ async def fetch_url(
     logger.debug(f"Fetching URL: {url} for kb_id: {kb_id}")
     try:
         await _require_manage_permission_if_kb_id(kb_id, current_user)
-        # 1. 下载内容 (包含白名单校验、大小限制、类型检查)
+        # 1. Tải nội dung (bao gồm kiểm tra allowlist, giới hạn kích thước, kiểm tra loại tệp)
         content_bytes, final_url = await fetch_url_content(url)
 
         # 2. Calculate Hash
@@ -1872,7 +1872,7 @@ async def import_workspace_files(
         raise HTTPException(status_code=400, detail="Vui lòng chọn ít nhất một tệp làm việc")
 
     await _require_manage_permission_if_kb_id(kb_id, current_user)
-    await _ensure_database_supports_documents(kb_id, "文档添加/解析/入库")
+    await _ensure_database_supports_documents(kb_id, "Thêm/Phân tích tài liệu")
 
     bucket_name = MinIOClient.KB_BUCKETS["documents"]
     results = []
@@ -1937,7 +1937,7 @@ async def upload_file(
 
     if kb_id:
         await _require_manage_permission_if_kb_id(kb_id, current_user)
-        await _ensure_database_supports_documents(kb_id, "文档上传")
+        await _ensure_database_supports_documents(kb_id, "Tải tài liệu lên")
 
     logger.debug(f"Received upload file with filename: {file.filename}")
 

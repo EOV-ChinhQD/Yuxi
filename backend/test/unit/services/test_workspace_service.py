@@ -696,7 +696,7 @@ async def test_write_operations_inside_thread_link_rejected(tmp_path: Path, monk
         await call
 
     assert exc_info.value.status_code == 403
-    assert "只读" in exc_info.value.detail
+    assert "chỉ được đọc" in exc_info.value.detail
     assert (tmp_path / "threads" / thread_id / "user-data" / "uploads" / "note.md").read_text(
         encoding="utf-8"
     ) == "# 历史上传"

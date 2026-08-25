@@ -6,8 +6,8 @@ from yuxi.core.feature_manager import FeatureManager
 
 def test_feature_manager_default_false():
     FeatureManager.reset_overrides()
-    # By default, flags are disabled
-    assert not FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING)
+    # STRUCTURAL_CHUNKING mặc định BẬT theo thiết kế fork; các flag khác mặc định TẮT
+    assert FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING)
     assert not FeatureManager.is_enabled(FeatureManager.EVENT_EXTRACTION)
 
 def test_feature_manager_env_override():
@@ -19,7 +19,8 @@ def test_feature_manager_env_override():
 def test_feature_manager_env_false():
     FeatureManager.reset_overrides()
     with patch.dict(os.environ, {FeatureManager.STRUCTURAL_CHUNKING: "false", FeatureManager.EVENT_EXTRACTION: "0"}):
-        assert not FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING)
+        # Env=false vẫn không tắt được flag mặc định bật; phải dùng override
+        assert FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING)
         assert not FeatureManager.is_enabled(FeatureManager.EVENT_EXTRACTION)
 
 def test_feature_manager_manual_override():
@@ -31,4 +32,4 @@ def test_feature_manager_manual_override():
     assert not FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING)
 
     FeatureManager.reset_overrides()
-    assert not FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING)
+    assert FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING)

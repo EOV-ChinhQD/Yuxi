@@ -15,7 +15,7 @@ pytestmark = pytest.mark.asyncio
 def _database_detail(**stats) -> KnowledgeBaseDetail:
     return KnowledgeBaseDetail(
         kb_id="kb_1",
-        name="测试知识库",
+        name="Kho kiến thức kiểm thử",
         description=None,
         kb_type="milvus",
         embedding_model_spec=None,
@@ -345,7 +345,7 @@ async def test_parse_pending_documents_enqueues_status_scoped_task(monkeypatch):
 
     assert result["status"] == "queued"
     assert result["task_id"] == "task_1"
-    assert captured["ensure"] == ("kb_1", "Document parsing")
+    assert captured["ensure"] == ("kb_1", "Phân tích tài liệu")
     assert captured["payload_match"] == {"kb_id": "kb_1", "scope": "pending", "action": "parse"}
     assert captured["statuses"] == knowledge_router.ACTIVE_DOCUMENT_ACTION_TASK_STATUSES
     assert captured["payload"]["statuses"] == knowledge_router.PENDING_PARSE_STATUSES
@@ -404,7 +404,7 @@ async def test_reconcile_graph_build_mutates_state_only_after_unique_task_is_cre
     )
 
     assert result == {
-        "message": "图谱向量索引修复任务已提交",
+        "message": "Đã gửi nhiệm vụ sửa chỉ mục vector đồ thị",
         "status": "queued",
         "task_id": "task_1",
         "mode": "all_vectors",
@@ -472,7 +472,7 @@ async def test_index_pending_documents_uses_pending_statuses_and_params(monkeypa
     )
 
     assert result["status"] == "queued"
-    assert captured["ensure"] == ("kb_1", "Document storage")
+    assert captured["ensure"] == ("kb_1", "Đưa tài liệu vào kho")
     assert captured["payload_match"] == {"kb_id": "kb_1", "scope": "pending", "action": "index"}
     assert captured["payload"]["statuses"] == knowledge_router.PENDING_INDEX_STATUSES
     assert captured["payload"]["params"] == params

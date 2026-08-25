@@ -16,7 +16,7 @@ async def test_import_workspace_files_uploads_workspace_file_to_minio(tmp_path, 
 
     async def fake_ensure_database_supports_documents(slug: str, operation: str) -> None:
         assert slug == "db_1"
-        assert "Documentation added" in operation
+        assert "Thêm/Phân tích tài liệu" in operation
 
     async def fake_file_existed_in_db(slug: str, content_hash: str) -> bool:
         assert slug == "db_1"

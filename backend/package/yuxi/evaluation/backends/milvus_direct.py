@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any
 from yuxi.evaluation.backends.base import RetrieverBackend
 from yuxi.evaluation.config.query_options import QueryOptions
-from yuxi.knowledge import knowledge_base
+from yuxi.knowledge.runtime import knowledge_base
 from yuxi.knowledge.implementations.milvus import MilvusKB
 
 

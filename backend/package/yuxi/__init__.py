@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 load_dotenv(".env", override=True)
 
 from concurrent.futures import ThreadPoolExecutor  # noqa: E402
+from importlib import import_module  # noqa: E402
 
 from yuxi.config import config as config  # noqa: E402
 

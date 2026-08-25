@@ -98,6 +98,9 @@ class KnowledgeBase(ABC):
 
         # Note: Metadata is not loaded in __init__. The loading is managed uniformly by KnowledgeBaseManager.
 
+    # Fallback at class level so that queries before load_metadata are still safe
+    databases_meta: dict[str, dict] = {}
+
     def load_metadata(
         self,
         global_databases_meta: dict[str, dict],
@@ -1135,7 +1138,7 @@ class KnowledgeBase(ABC):
     def get_default_query_params(self, kb_id: str) -> dict[str, Any]:
         """Trích xuất giá trị mặc định của tất cả tham số từ get_query_params_config, trả về {"options": {...}}."""
         defaults = {}
-        for opt in config.get("options", []):
+        for opt in self.get_query_params_config(kb_id).get("options", []):
             if "default" in opt:
                 defaults[opt["key"]] = opt["default"]
         return {"options": defaults}

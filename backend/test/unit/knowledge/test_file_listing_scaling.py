@@ -176,7 +176,7 @@ async def test_get_databases_does_not_initialize_knowledge_backend(monkeypatch):
     manager = KnowledgeBaseManager("/tmp/yuxi-test")
 
     def fail_if_initialized(_kb_type):
-        pytest.fail("知识库列表不应初始化 Milvus 等后端实例")
+        pytest.fail("Danh sách kho kiến thức không được khởi tạo backend như Milvus")
 
     monkeypatch.setattr(manager, "_get_or_create_kb_instance", fail_if_initialized)
 
@@ -184,7 +184,7 @@ async def test_get_databases_does_not_initialize_knowledge_backend(monkeypatch):
 
     database = result[0]
     assert database.kb_id == "kb_1"
-    assert database.name == "知识库"
+    assert database.name == "knowledge base"
     assert database.row_count == 3
     assert database.file_count == 2
     assert database.additional_params["chunk_preset_id"] == "general"

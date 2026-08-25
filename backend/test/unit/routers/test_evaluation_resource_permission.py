@@ -68,4 +68,4 @@ def test_evaluation_routes_require_admin_role():
     response = TestClient(app).get("/evaluation/databases/kb-1/datasets")
 
     assert response.status_code == 403
-    assert response.json()["detail"] == "需要管理员权限"
+    assert response.json()["detail"] == "Yêu cầu quyền admin"

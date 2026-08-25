@@ -50,6 +50,16 @@ from yuxi.utils.upload_utils import MAX_UPLOAD_SIZE_BYTES, write_upload_to_buffe
 EDITABLE_WORKSPACE_SUFFIXES = {".md", ".markdown", ".mdx", ".txt"}
 MAX_WORKSPACE_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_BYTES
 MAX_WORKSPACE_UPLOAD_FILES = 50
+WORKSPACE_CHATS_DIR_NAME = "chats"
+_CHAT_READONLY_MESSAGE = "Tệp hội thoại cũ chỉ được đọc, vui lòng chỉnh sửa trong hội thoại tương ứng"
+_CHAT_INTERMEDIATE_DIR_NAMES = frozenset(
+    {
+        LARGE_TOOL_RESULTS_DIR_NAME,
+        "large-tool-results",
+        "large_tool_history",
+        CONVERSATION_HISTORY_DIR_NAME,
+    }
+)
 
 
 async def list_workspace_tree(

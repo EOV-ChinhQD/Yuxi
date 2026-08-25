@@ -62,9 +62,9 @@ def test_normalize_payload_accepts_allowed_model_request_body_overrides():
 @pytest.mark.parametrize(
     ("value", "error"),
     [
-        (["enable_thinking"], "必须是 JSON 对象"),
-        ({"messages": []}, "包含不支持的 extra_body 字段"),
-        ({"thinking_budget": float("nan")}, "只能包含合法 JSON 值"),
+        (["enable_thinking"], "phải là đối tượng JSON"),
+        ({"messages": []}, "chứa trường extra_body không được hỗ trợ"),
+        ({"thinking_budget": float("nan")}, "chỉ được chứa giá trị JSON hợp lệ"),
     ],
 )
 def test_normalize_request_body_overrides_rejects_invalid_values(value, error):
@@ -87,8 +87,8 @@ def test_normalize_request_body_overrides_rejects_invalid_values(value, error):
 @pytest.mark.parametrize(
     ("provider_type", "model_type", "error"),
     [
-        ("anthropic", "chat", "仅支持 OpenAI 兼容供应商"),
-        ("openai", "rerank", "仅支持 chat 模型"),
+        ("anthropic", "chat", "chỉ hỗ trợ nhà cung cấp tương thích OpenAI"),
+        ("openai", "rerank", "chỉ hỗ trợ model loại chat"),
     ],
 )
 def test_request_body_overrides_require_openai_chat_model(provider_type, model_type, error):
@@ -126,7 +126,7 @@ async def test_update_provider_config_rejects_provider_type_change_with_existing
     monkeypatch.setattr("yuxi.models.providers.service.get_model_provider", fake_get_model_provider)
     monkeypatch.setattr("yuxi.models.providers.service.update_model_provider", fail_update_model_provider)
 
-    with pytest.raises(ValueError, match="仅支持 OpenAI 兼容供应商"):
+    with pytest.raises(ValueError, match="chỉ hỗ trợ nhà cung cấp tương thích OpenAI"):
         await update_provider_config(None, "openai-local", {"provider_type": "anthropic"}, "tester")
 
 

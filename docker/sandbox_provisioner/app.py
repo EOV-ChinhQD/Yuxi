@@ -515,8 +515,7 @@ class LocalContainerProvisionerBackend:
                     str(thread_outputs): {"bind": "/home/gem/user-data/outputs", "mode": "rw"},
                     str(thread_skills): {"bind": "/home/gem/skills", "mode": "ro"},
                 },
-                "ports": {f"{self._container_port}/tcp": None},
-                # PORT-CONFLICT: giữ hardening tài nguyên của nhánh ours kết hợp mạng riêng từng sandbox của upstream
+                # Mạng riêng từng sandbox; không publish port ra host (xác thực bởi test_docker_backend_uses_private_network_without_published_port)
                 "network": network_name,
                 "security_opt": ["seccomp=unconfined"],
                 "cap_drop": ["ALL"],

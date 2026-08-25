@@ -51,6 +51,10 @@ def _docker_backend(module, tmp_path, run_container):
     backend._health_timeout_seconds = 1
     backend._threads_host_path = str(tmp_path)
     backend._client = SimpleNamespace(containers=SimpleNamespace(run=run_container))
+    # Giới hạn tài nguyên giữ từ phía rag/Yuxi trong create()
+    backend._mem_limit = "512m"
+    backend._nano_cpus = 500000000
+    backend._pids_limit = 100
     return backend
 
 

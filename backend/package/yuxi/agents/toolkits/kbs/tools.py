@@ -28,7 +28,7 @@ from yuxi.utils import logger
 
 
 def _get_knowledge_base():
-    from yuxi import knowledge_base
+    from yuxi.knowledge.runtime import knowledge_base
 
     return knowledge_base
 
@@ -709,16 +709,18 @@ async def download_kb_file(
     if not normalized_file_id:
         return "Vui lòng cung cấp file_id"
 
-    knowledge_base = _get_knowledge_base()
-    retrievers = knowledge_base.get_retrievers()
     visible_kbs = await _resolve_visible_knowledge_bases_for_query(runtime)
-    target_info, target_kb_id, target_error = _find_query_target(
-        kb_id=normalized_kb_id,
-        retrievers=retrievers,
-        visible_kbs=visible_kbs,
-    )
-    if target_error:
-        return target_error
+    # Chỉ cần xác định kb_id đích từ danh sách KB hiển thị của phiên; retriever không dùng cho tải tệp
+    target_kb_id = None
+    normalized_input = normalized_kb_id.lower()
+    for kb in visible_kbs:
+        actual_id = str(kb.get("kb_id") or "").strip()
+        name = str(kb.get("name") or "").strip().lower()
+        if actual_id == normalized_kb_id or (name and name == normalized_input):
+            target_kb_id = actual_id
+            break
+    if not target_kb_id:
+        return f"Tài nguyên kho kiến thức '{normalized_kb_id}' không tồn tại hoặc chưa được bật trong phiên hội thoại hiện tại"
 
     try:
         data = await knowledge_base.get_file_download(target_kb_id, normalized_file_id, variant="original")

@@ -101,7 +101,8 @@ def test_model_cache_thread_safety(mock_chat_openai, mock_get_model_info):
     assert metrics["total_hits"] == 4
 
 
-def test_sandbox_execute_success():
+def test_sandbox_execute_success(monkeypatch):
+    monkeypatch.setenv("SANDBOX_PROVISIONER_TOKEN", "unit-test-token-0123456789abcdefXYZ")
     backend = ProvisionerSandboxBackend(thread_id="test-thread", uid="test-uid")
     mock_client = MagicMock()
     backend._get_client = MagicMock(return_value=mock_client)
@@ -120,7 +121,9 @@ def test_sandbox_execute_success():
     assert sandbox_metrics.crashes == 0
 
 
-def test_sandbox_execute_timeout():
+def test_sandbox_execute_timeout(monkeypatch):
+    # Provider mới yêu cầu token provisioner >=32 ký tự ngay lúc khởi tạo
+    monkeypatch.setenv("SANDBOX_PROVISIONER_TOKEN", "unit-test-token-0123456789abcdefXYZ")
     backend = ProvisionerSandboxBackend(thread_id="test-thread", uid="test-uid")
     mock_client = MagicMock()
     backend._get_client = MagicMock(return_value=mock_client)

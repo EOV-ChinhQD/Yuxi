@@ -213,6 +213,8 @@ async def test_create_task_middleware_loads_all_visible_subagents_when_empty(mon
         "subagent_status",
         "subagent_cancel",
         "subagent_await",
+        # Tool riêng của nhánh này: stream sự kiện chạy sub-agent về thread cha
+        "subagent_events",
     }
 
 

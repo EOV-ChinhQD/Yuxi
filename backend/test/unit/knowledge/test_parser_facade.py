@@ -16,7 +16,7 @@ from PIL import Image
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
-from yuxi.knowledge.parser import Parser
+from yuxi.knowledge.parser.unified import Parser
 from yuxi.knowledge.parser.factory import DocumentProcessorFactory
 from yuxi.knowledge.parser.mineru import MinerUParser
 from yuxi.knowledge.parser.mineru_official import MinerUOfficialParser

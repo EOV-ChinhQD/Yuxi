@@ -98,7 +98,7 @@ async def test_iter_generated_benchmark_items_uses_progress_base_and_total_progr
     ]
 
     assert len(items) == 2
-    generation_calls = [(p, m) for p, m in progress_calls if m and "已生成" in m]
+    generation_calls = [(p, m) for p, m in progress_calls if m and "Đã tạo" in m]
     assert generation_calls[-1][0] == int(99 * 5 / 5)
     assert "5/5" in generation_calls[-1][1]
 

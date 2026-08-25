@@ -172,7 +172,6 @@ class DocumentProcessorFactory:
         return list(cls.PROCESSOR_TYPES.keys())
 
     @classmethod
-    @classmethod
     def requires_external(cls, processor_type: str) -> bool:
         """Return whether the processor needs an external (cloud) service, without instantiating it."""
         if processor_type not in cls.PROCESSOR_TYPES:
