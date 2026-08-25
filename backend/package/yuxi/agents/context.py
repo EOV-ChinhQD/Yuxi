@@ -5,8 +5,10 @@ import uuid
 from dataclasses import MISSING, dataclass, field, fields
 from typing import Any, get_origin
 
-from yuxi.agents.backends.sandbox.paths import sandbox_workspace_agents_prompt_file
+from yuxi.agents.backends.sandbox.paths import sandbox_workspace_agent_context_file
+from yuxi.agents.tool_approval import DEFAULT_TOOL_APPROVAL_MODE
 from yuxi.utils.logging_config import logger
+from yuxi.utils.paths import WORKSPACE_AGENT_CONTEXT_FILES
 
 WORKSPACE_AGENTS_PROMPT_MAX_BYTES = 64 * 1024
 DEFAULT_SUMMARY_THRESHOLD_K = 100  # 100K tokens
@@ -61,46 +63,52 @@ def _role_can_access(auth: str | None, role: str | None) -> bool:
 _WORKSPACE_PROMPT_CACHE: dict[str, dict] = {}
 _MAX_WORKSPACE_PROMPT_CACHE_ENTRIES = 500
 
-def _load_workspace_agents_prompt(thread_id: str, uid: str) -> str:
-    prompt_file = sandbox_workspace_agents_prompt_file(thread_id, uid)
-    try:
-        mtime = prompt_file.stat().st_mtime
-    except Exception:
-        return ""
 
-    cache_key = str(prompt_file)
-    cached = _WORKSPACE_PROMPT_CACHE.get(cache_key)
-    if cached and cached["mtime"] == mtime:
-        return cached["content"]
+def _load_workspace_agent_context(thread_id: str, uid: str) -> str:
+    """Đọc các tệp ngữ cảnh agent trong không gian làm việc người dùng, có cache theo mtime để tránh đọc đĩa lặp lại."""
+    sections: list[str] = []
+    for filename in WORKSPACE_AGENT_CONTEXT_FILES:
+        context_file = sandbox_workspace_agent_context_file(thread_id, uid, filename)
+        try:
+            mtime = context_file.stat().st_mtime
+        except Exception:
+            continue
 
-    try:
-        with prompt_file.open("rb") as buffer:
-            content = buffer.read(WORKSPACE_AGENTS_PROMPT_MAX_BYTES + 1)
-    except FileNotFoundError:
-        return ""
-    except IsADirectoryError:
-        logger.warning("Read workspace AGENTS.md fail: path is directory")
-        return ""
-    except OSError as exc:
-        logger.warning(f"Read workspace AGENTS.md fail: {exc}")
-        return ""
+        # ponytail: cache theo mtime; dọn bớt entry cũ nhất khi vượt giới hạn để tránh phình bộ nhớ
+        cache_key = str(context_file)
+        cached = _WORKSPACE_PROMPT_CACHE.get(cache_key)
+        if cached and cached["mtime"] == mtime:
+            if cached["content"]:
+                sections.append(cached["content"])
+            continue
 
-    prompt = content[:WORKSPACE_AGENTS_PROMPT_MAX_BYTES].decode("utf-8", errors="replace").strip()
-    
-    # ponytail: Evict oldest entries if cache exceeds limit to prevent unbounded memory growth
-    if len(_WORKSPACE_PROMPT_CACHE) >= _MAX_WORKSPACE_PROMPT_CACHE_ENTRIES:
-        oldest_keys = list(_WORKSPACE_PROMPT_CACHE.keys())[:100]
-        for k in oldest_keys:
-            _WORKSPACE_PROMPT_CACHE.pop(k, None)
+        try:
+            with context_file.open("rb") as buffer:
+                content = buffer.read(WORKSPACE_AGENTS_PROMPT_MAX_BYTES + 1)
+        except FileNotFoundError:
+            continue
+        except IsADirectoryError:
+            logger.warning(f"Đọc {filename} trong không gian làm việc thất bại: đường dẫn là thư mục")
+            continue
+        except OSError as exc:
+            logger.warning(f"Đọc {filename} trong không gian làm việc thất bại: {exc}")
+            continue
 
-    if not prompt:
-        _WORKSPACE_PROMPT_CACHE[cache_key] = {"mtime": mtime, "content": ""}
-        return ""
-    if len(content) > WORKSPACE_AGENTS_PROMPT_MAX_BYTES:
-        prompt = f"{prompt}\n\n[AGENTS.md Content has been truncated]"
-    
-    _WORKSPACE_PROMPT_CACHE[cache_key] = {"mtime": mtime, "content": prompt}
-    return prompt
+        prompt = content[:WORKSPACE_AGENTS_PROMPT_MAX_BYTES].decode("utf-8", errors="replace").strip()
+        if not prompt:
+            _WORKSPACE_PROMPT_CACHE[cache_key] = {"mtime": mtime, "content": ""}
+            continue
+        if len(content) > WORKSPACE_AGENTS_PROMPT_MAX_BYTES:
+            prompt = f"{prompt}\n\n[Nội dung {filename} đã bị cắt bớt]"
+
+        section = f"Nội dung agents/{filename} trong không gian làm việc của người dùng:\n{prompt}"
+        sections.append(section)
+
+        if len(_WORKSPACE_PROMPT_CACHE) >= _MAX_WORKSPACE_PROMPT_CACHE_ENTRIES:
+            for k in list(_WORKSPACE_PROMPT_CACHE.keys())[:100]:
+                _WORKSPACE_PROMPT_CACHE.pop(k, None)
+        _WORKSPACE_PROMPT_CACHE[cache_key] = {"mtime": mtime, "content": section}
+    return "\n\n".join(sections)
 
 
 async def build_agent_input_context(
@@ -112,12 +120,11 @@ async def build_agent_input_context(
     request_id: str | None = None,
 ) -> dict:
     input_context = dict(agent_config or {})
-    agents_prompt = await asyncio.to_thread(_load_workspace_agents_prompt, thread_id, uid)
+    agent_context = await asyncio.to_thread(_load_workspace_agent_context, thread_id, uid)
 
-    if agents_prompt:
-        agents_section = f"Nội dung agents/AGENTS.md trong không gian làm việc của người dùng:\n{agents_prompt}"
+    if agent_context:
         base_prompt = str(input_context.get("system_prompt") or "").rstrip()
-        input_context["system_prompt"] = f"{base_prompt}\n\n{agents_section}" if base_prompt else agents_section
+        input_context["system_prompt"] = f"{base_prompt}\n\n{agent_context}" if base_prompt else agent_context
 
     input_context.update({"uid": uid, "thread_id": thread_id, "run_id": run_id, "request_id": request_id})
     return input_context
@@ -205,6 +212,20 @@ class BaseContext:
             "options": [],
             "description": "Model thúc đẩy Agent, để trống sẽ sử dụng model mặc định của hệ thống.",
             "kind": "llm",
+        },
+    )
+
+    tool_approval_mode: str = field(
+        default=DEFAULT_TOOL_APPROVAL_MODE,
+        metadata={
+            "name": "工具审批模式",
+            "description": "默认审批会在写文件、编辑文件或执行命令前询问；完全信任会自动执行这些工具。",
+            "options": [
+                {"key": "default", "name": "默认审批", "description": "敏感工具执行前请求确认"},
+                {"key": "always_trust", "name": "完全信任", "description": "敏感工具无需确认，自动执行"},
+            ],
+            "type": "string",
+            "auth": "admin",
         },
     )
 
@@ -462,33 +483,33 @@ async def resolve_agent_resource_options(
             if tool.get("slug")
         ]
     if "knowledges" in fields_to_load:
-        from yuxi.knowledge import knowledge_base
+        from yuxi.knowledge.runtime import knowledge_base
 
-        databases = (await knowledge_base.get_databases_by_user(user)).get("databases", [])
+        databases = await knowledge_base.get_databases_by_user(user)
+
+        # Lọc bỏ các knowledge base SiliconFlow khi chưa cấu hình SILICONFLOW_API_KEY
         import os
 
-        # Filter out SiliconFlow databases if SILICONFLOW_API_KEY is not set
         databases = [
-            db
-            for db in databases
+            item
+            for item in databases
             if not (
-                str(db.get("embedding_model_spec") or "").startswith("siliconflow")
+                str(getattr(item, "embedding_model_spec", None) or "").startswith("siliconflow")
                 and not os.environ.get("SILICONFLOW_API_KEY")
             )
         ]
         options["knowledges"] = [
-            _resource_option(item.get("kb_id"), item.get("name"), item.get("description"))
-            for item in databases
-            if isinstance(item, dict) and item.get("kb_id")
+            _resource_option(item.kb_id, item.name, item.description) for item in databases if item.kb_id
         ]
     if "mcps" in fields_to_load:
-        from yuxi.agents.mcp.service import get_all_mcp_servers
+        from yuxi.agents.mcp.service import get_all_mcp_servers, get_enabled_mcp_server_slugs
 
         servers = await get_all_mcp_servers(db)
+        enabled_slugs = set(await get_enabled_mcp_server_slugs(db=db))
         options["mcps"] = [
             _resource_option(server.slug, server.name, server.description)
             for server in servers
-            if server.enabled and server.slug
+            if server.slug in enabled_slugs
         ]
     if "skills" in fields_to_load:
         from yuxi.agents.skills.service import list_accessible_skills
@@ -572,6 +593,7 @@ async def prepare_agent_runtime_context(
             setattr(context, "_readable_skills", [])
             setattr(context, "_runtime_skill_metadata", {})
             setattr(context, "_runtime_skill_dependency_map", {})
+            setattr(context, "_runtime_skill_sources", {})
             return context
 
         raw_resources = {
@@ -596,5 +618,6 @@ async def prepare_agent_runtime_context(
         setattr(context, "_readable_skills", skill_scope["readable_skills"])
         setattr(context, "_runtime_skill_metadata", skill_scope["runtime_skill_metadata"])
         setattr(context, "_runtime_skill_dependency_map", skill_scope["runtime_skill_dependency_map"])
+        setattr(context, "_runtime_skill_sources", skill_scope.get("runtime_skill_sources", {}))
 
     return context

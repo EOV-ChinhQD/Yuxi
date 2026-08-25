@@ -46,12 +46,12 @@
               themeStore.isDark ? 'Chuyển sang chế độ ánh sáng' : 'Chuyển sang chế độ tối (Beta)'
             }}</span>
           </a-menu-item>
-          <a-menu-divider v-if="userStore.isAdmin" />
+          <a-menu-divider />
           <a-menu-item v-if="userStore.isSuperAdmin" key="debug" @click="showDebug = true">
             <template #icon><Terminal :size="16" /></template>
             <span class="menu-text">Bảng gỡ lỗi（môi trường phi sản xuất）</span>
           </a-menu-item>
-          <a-menu-item v-if="userStore.isAdmin" key="setting" @click="goToSetting">
+          <a-menu-item key="setting" @click="goToSetting">
             <template #icon><Settings :size="16" /></template>
             <span class="menu-text">Cài đặt hệ thống</span>
           </a-menu-item>
@@ -142,7 +142,7 @@ const toggleTheme = () => {
 // Đi tới trang cài đặt
 const goToSetting = () => {
   if (openSettingsModal) {
-    openSettingsModal('base')
+    openSettingsModal('account')
   }
 }
 

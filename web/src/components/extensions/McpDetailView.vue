@@ -20,7 +20,8 @@
           <button
             type="button"
             @click="handleTestServer"
-            :disabled="testLoading"
+            :disabled="testLoading || server?.requires_migration"
+            :title="server?.requires_migration ? 'Vui lòng chuyển đổi sang MCP từ xa trước' : ''"
             class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
           >
             <Zap :size="14" v-if="!testLoading" />
@@ -29,7 +30,8 @@
           <button
             type="button"
             @click="startEdit"
-            :disabled="isEditing || !server"
+            :disabled="isEditing || !server || server.is_builtin"
+            :title="server?.is_builtin ? 'Cấu hình kết nối của MCP tích hợp sẵn được quản lý bởi mã nguồn' : ''"
             class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
           >
             <Pencil :size="14" />
@@ -41,12 +43,12 @@
             :class="[
               'lucide-icon-btn',
               'extension-panel-action',
-              server?.enabled === false
+              server?.enabled === false && !server?.requires_migration
                 ? 'extension-panel-action-primary'
                 : 'extension-panel-action-danger'
             ]"
           >
-            <Plus v-if="server?.enabled === false" :size="14" />
+            <Plus v-if="server?.enabled === false && !server?.requires_migration" :size="14" />
             <Trash2 v-else :size="14" />
             <span>{{ actionLabel }}</span>
           </button>
@@ -57,6 +59,12 @@
     <div class="detail-content-wrapper">
       <a-spin :spinning="loading">
         <div v-if="server" class="detail-content-inner">
+          <a-alert
+            v-if="server.requires_migration"
+            type="warning"
+            show-icon
+            message="MCP stdio này đã bị tắt, vui lòng chỉnh sửa sang SSE hoặc Streamable HTTP, hoặc xóa trực tiếp."
+          />
           <a-tabs v-model:activeKey="detailTab" class="detail-tabs">
             <a-tab-pane key="general">
               <template #tab>
@@ -93,7 +101,6 @@
                               >streamable_http</a-select-option
                             >
                             <a-select-option value="sse">sse</a-select-option>
-                            <a-select-option value="stdio">stdio</a-select-option>
                           </a-select>
                         </a-form-item>
                         <a-form-item label="biểu tượng" class="form-item">
@@ -309,7 +316,7 @@
               </div>
             </a-tab-pane>
 
-            <a-tab-pane key="tools">
+            <a-tab-pane v-if="!server.requires_migration" key="tools">
               <template #tab>
                 <span class="tab-title"><Wrench :size="14" />Công cụ ({{ tools.length }})</span>
               </template>
@@ -428,7 +435,6 @@ import {
 } from 'lucide-vue-next'
 import { mcpApi } from '@/apis/mcp_api'
 import { formatFullDateTime } from '@/utils/time'
-import McpEnvEditor from '@/components/McpEnvEditor.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -454,9 +460,6 @@ const editForm = reactive({
   description: '',
   transport: 'streamable_http',
   url: '',
-  command: '',
-  args: [],
-  env: null,
   headersText: '',
   timeout: null,
   sse_read_timeout: null,
@@ -465,8 +468,9 @@ const editForm = reactive({
 })
 
 const actionLabel = computed(() => {
+  if (server.value?.requires_migration) return 'Xóa'
   if (server.value?.enabled === false) return 'thêm'
-  return server.value?.created_by === 'system' ? 'Xóa' : 'Xóa'
+  return server.value?.is_builtin ? 'Gỡ' : 'Xóa'
 })
 
 const filteredTools = computed(() => {
@@ -478,13 +482,6 @@ const filteredTools = computed(() => {
       (t.description && t.description.toLowerCase().includes(search))
   )
 })
-
-const isStdioTransport = computed(
-  () =>
-    String(editForm.transport || '')
-      .trim()
-      .toLowerCase() === 'stdio'
-)
 
 const goBack = () => {
   router.push({ path: '/extensions', query: { tab: 'mcp' } })
@@ -502,11 +499,8 @@ const resetEditForm = (data) => {
     slug: data?.slug || '',
     name: data?.name || '',
     description: data?.description || '',
-    transport: data?.transport || 'streamable_http',
+    transport: data?.requires_migration ? 'streamable_http' : data?.transport || 'streamable_http',
     url: data?.url || '',
-    command: data?.command || '',
-    args: data?.args || [],
-    env: data?.env || null,
     headersText: data?.headers ? JSON.stringify(data.headers, null, 2) : '',
     timeout: data?.timeout,
     sse_read_timeout: data?.sse_read_timeout,
@@ -543,9 +537,6 @@ const buildEditPayload = () => {
     description: editForm.description || null,
     transport: editForm.transport,
     url: editForm.url || null,
-    command: editForm.command || null,
-    args: editForm.args.length > 0 ? editForm.args : null,
-    env: editForm.env,
     headers,
     timeout: editForm.timeout || null,
     sse_read_timeout: editForm.sse_read_timeout || null,
@@ -601,7 +592,7 @@ const fetchServer = async () => {
     loading.value = true
     const result = await mcpApi.getMcpServer(slug.value)
     if (result.success) {
-      if (result.data?.enabled === false) {
+      if (result.data?.enabled === false && !result.data?.requires_migration) {
         server.value = null
         message.info('Vui lòng thêm trước MCP Kiểm tra chi tiết sau')
         router.replace({ path: '/extensions', query: { tab: 'mcp' } })
@@ -685,11 +676,15 @@ const handleTestServer = async () => {
 
 const handleDangerAction = async () => {
   if (!server.value) return
+  if (server.value.requires_migration) {
+    confirmDeleteServer(server.value)
+    return
+  }
   if (server.value.enabled === false) {
     await handleSetServerEnabled(server.value, true)
     return
   }
-  if (server.value.created_by === 'system') {
+  if (server.value.is_builtin) {
     await handleSetServerEnabled(server.value, false)
     return
   }

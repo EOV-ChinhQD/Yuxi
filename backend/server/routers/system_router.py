@@ -4,11 +4,13 @@ from pathlib import Path
 import aiofiles
 import yaml
 from fastapi import APIRouter, Body, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 from yuxi import config, get_version
 from yuxi.storage.postgres.models_business import User
 from yuxi.utils.logging_config import logger
 
-from server.utils.auth_middleware import get_admin_user, get_required_user
+from server.utils.auth_middleware import get_admin_user, get_db, get_required_user
 
 system = APIRouter(prefix="/system", tags=["system"])
 
@@ -81,6 +83,11 @@ async def discovery():
                 "api_key_auth": True,
                 "remote_config": True,
                 "kb_upload": True,
+                "kb_list": True,
+                "kb_files": True,
+                "kb_query": True,
+                "kb_open": True,
+                "kb_find": True,
             }
         },
         "endpoints": {
@@ -228,46 +235,70 @@ async def reload_info_config(current_user: User = Depends(get_admin_user)):
 
 
 # =============================================================================
-# === OCR service group ===
+# === Nhóm cấu hình chung và OCR ===
 # =============================================================================
 
 
-@system.get("/ocr/health")
-async def check_ocr_services_health(current_user: User = Depends(get_admin_user)):
-    """
-    examine the health status of all OCR services
-    Returns the availability information of each individualOCR service
-    """
-    from yuxi.knowledge.parser.factory import DocumentProcessorFactory
+class ConfigOptionValuePayload(BaseModel):
+    """Giá trị cấu hình chung mà quản trị viên có thể cập nhật."""
+
+    value: dict
+
+
+@system.get("/config/options")
+async def get_config_options(
+    current_user: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Trả về các biểu mẫu cấu hình chung và giá trị do hệ thống định nghĩa."""
+
+    from yuxi.config.options import list_options, serialize_option
+
+    return {"options": [serialize_option(record) for record in await list_options(db)]}
+
+
+@system.put("/config/options/{key}")
+async def put_config_option(
+    key: str,
+    payload: ConfigOptionValuePayload,
+    current_user: User = Depends(get_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lưu giá trị JSON của một mục cấu hình chung."""
+
+    from yuxi.config.options import serialize_option, update_option_value
 
     try:
-        # Use a unified health check interface
-        health_status = await DocumentProcessorFactory.check_all_health_async()
+        record = await update_option_value(db, key, payload.value, current_user.username)
+        if record is None:
+            raise HTTPException(status_code=404, detail=f"Mục cấu hình không tồn tại: {key}")
+        await db.commit()
+        await db.refresh(record)
+        return {"option": serialize_option(record)}
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-        # Format health check response
-        formatted_status = {}
-        for service_name, health_info in health_status.items():
-            formatted_status[service_name] = {
-                "status": health_info.get("status", "unknown"),
-                "message": health_info.get("message", ""),
-                "details": health_info.get("details", {}),
-            }
 
-        # Calculate overall health status
-        overall_status = (
-            "healthy" if any(svc["status"] == "healthy" for svc in formatted_status.values()) else "unhealthy"
-        )
+@system.get("/ocr/options")
+async def get_ocr_engine_options(
+    current_user: User = Depends(get_required_user),
+):
+    """Trả về tất cả phương thức OCR được mã hỗ trợ và lựa chọn mặc định."""
 
-        return {
-            "overall_status": overall_status,
-            "services": formatted_status,
-            "message": "Kiểm tra sức khỏe dịch vụ OCR hoàn tất",
-        }
+    from yuxi.services.ocr_service import get_ocr_options
 
-    except Exception as e:
-        logger.error(f"OCR health check failed: {str(e)}")
-        return {
-            "overall_status": "error",
-            "services": {},
-            "message": f"Kiểm tra sức khỏe OCR thất bại: {str(e)}",
-        }
+    return get_ocr_options()
+
+
+@system.get("/ocr/health")
+async def get_ocr_health(
+    current_user: User = Depends(get_required_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Kiểm tra sức khỏe toàn bộ phương thức OCR với cấu hình hiện hành dành cho người dùng đăng nhập."""
+
+    from yuxi.services.ocr_service import check_all_ocr_health
+
+    return {"health": await check_all_ocr_health(db)}

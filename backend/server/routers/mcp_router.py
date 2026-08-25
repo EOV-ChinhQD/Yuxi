@@ -3,20 +3,23 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from yuxi.agents.mcp.service import (
+    MCPServerNotFoundError,
     create_mcp_server,
-    get_mcp_tools_stats,
     delete_mcp_server,
     get_all_mcp_servers,
     get_all_mcp_tools,
     get_mcp_server,
+    get_mcp_tools_stats,
+    is_builtin_mcp_server,
+    requires_mcp_stdio_migration,
     set_server_enabled,
     toggle_tool_enabled,
     update_mcp_server,
 )
 from yuxi.storage.postgres.models_business import User
 from yuxi.utils import logger
+
 from server.utils.auth_middleware import get_admin_user, get_db, get_required_user
 
 mcp = APIRouter(prefix="/system/mcp-servers", tags=["mcp"])
@@ -32,11 +35,8 @@ class CreateMcpServerRequest(BaseModel):
 
     slug: str = Field(..., description="Mã định danh ổn định")
     name: str = Field(..., description="Tên hiển thị")
-    transport: str = Field(..., description="Loại truyền tải: sse/streamable_http/stdio")
-    url: str | None = Field(None, description="URL máy chủ (sse/streamable_http)")
-    command: str | None = Field(None, description="Lệnh (stdio)")
-    args: list | None = Field(None, description="Mảng tham số lệnh (stdio)")
-    env: dict | None = Field(None, description="Biến môi trường (stdio)")
+    transport: str = Field(..., description="Loại truyền tải: sse/streamable_http")
+    url: str | None = Field(None, description="URL máy chủ")
     description: str | None = Field(None, description="Mô tả")
     headers: dict | None = Field(None, description="HTTP Header")
     timeout: int | None = Field(None, description="Thời gian chờ HTTP (giây)")
@@ -51,9 +51,6 @@ class UpdateMcpServerRequest(BaseModel):
     name: str | None = Field(None, description="Tên hiển thị")
     transport: str | None = Field(None, description="Loại truyền tải")
     url: str | None = Field(None, description="URL máy chủ")
-    command: str | None = Field(None, description="Lệnh (stdio)")
-    args: list | None = Field(None, description="Mảng tham số lệnh (stdio)")
-    env: dict | None = Field(None, description="Biến môi trường (stdio)")
     description: str | None = Field(None, description="Mô tả")
     headers: dict | None = Field(None, description="HTTP Header")
     timeout: int | None = Field(None, description="Thời gian chờ HTTP (giây)")
@@ -79,6 +76,22 @@ async def get_server_or_404(db: AsyncSession, slug: str):
     return server
 
 
+def serialize_mcp_server(server) -> dict:
+    """序列化 MCP，并补充代码内置与迁移状态。"""
+    data = server.to_dict()
+    data["is_builtin"] = is_builtin_mcp_server(server)
+    data["requires_migration"] = requires_mcp_stdio_migration(server)
+    if data["requires_migration"]:
+        data["enabled"] = False
+    return data
+
+
+def ensure_mcp_server_runnable(server) -> None:
+    """拒绝连接尚未迁移的历史用户 stdio MCP。"""
+    if requires_mcp_stdio_migration(server):
+        raise HTTPException(status_code=400, detail="历史 stdio MCP 已被禁用，请先迁移为远程 MCP")
+
+
 # =============================================================================
 # === MCP Server CRUD ===
 # =============================================================================
@@ -93,7 +106,7 @@ async def get_mcp_servers(
     try:
         servers = await get_all_mcp_servers(db)
         if current_user.role in ["admin", "superadmin"]:
-            return {"success": True, "data": [s.to_dict() for s in servers]}
+            return {"success": True, "data": [serialize_mcp_server(s) for s in servers]}
 
         data = []
         for s in servers:
@@ -102,7 +115,7 @@ async def get_mcp_servers(
                     "name": getattr(s, "name", ""),
                     "description": getattr(s, "description", None),
                     "icon": getattr(s, "icon", None),
-                    "enabled": bool(getattr(s, "enabled", True)),
+                    "enabled": bool(getattr(s, "enabled", True)) and not requires_mcp_stdio_migration(s),
                     "tags": getattr(s, "tags", None) or [],
                 }
             )
@@ -118,17 +131,15 @@ async def create_mcp_server_route(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new MCP server"""
-    # Check transfer type
-    valid_transports = ("sse", "streamable_http", "stdio")
+    """Tạo máy chủ MCP mới"""
+    # Kiểm tra loại truyền tải
+    valid_transports = ("sse", "streamable_http")
     if request.transport not in valid_transports:
         raise HTTPException(status_code=400, detail=f"Loại truyền tải phải là một trong {', '.join(valid_transports)}")
 
-    # Validate required fields based on transfer type
-    if request.transport in ("sse", "streamable_http") and not request.url:
-        raise HTTPException(status_code=400, detail=f"Khi loại truyền tải là {request.transport}, url là bắt buộc")
-    if request.transport == "stdio" and not request.command:
-        raise HTTPException(status_code=400, detail="Khi loại truyền tải là stdio, command là bắt buộc")
+    # Kiểm tra trường bắt buộc theo loại truyền tải
+    if not request.url:
+        raise HTTPException(status_code=400, detail=f"Với loại truyền tải {request.transport}, url là bắt buộc")
 
     try:
         server = await create_mcp_server(
@@ -137,9 +148,6 @@ async def create_mcp_server_route(
             name=request.name,
             transport=request.transport,
             url=request.url,
-            command=request.command,
-            args=request.args,
-            env=request.env,
             description=request.description,
             headers=request.headers,
             timeout=request.timeout,
@@ -148,7 +156,7 @@ async def create_mcp_server_route(
             icon=request.icon,
             created_by=current_user.username,
         )
-        return {"success": True, "data": server.to_dict()}
+        return {"success": True, "data": serialize_mcp_server(server)}
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
@@ -165,7 +173,7 @@ async def get_mcp_server_route(
     """Get a single MCP server configuration"""
     try:
         server = await get_server_or_404(db, slug)
-        return {"success": True, "data": server.to_dict()}
+        return {"success": True, "data": serialize_mcp_server(server)}
     except HTTPException:
         raise
     except Exception as e:
@@ -180,18 +188,13 @@ async def update_mcp_server_route(
     current_user: User = Depends(get_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update MCP server configuration"""
-    # Check transfer type
-    valid_transports = ("sse", "streamable_http", "stdio")
+    """Cập nhật cấu hình máy chủ MCP"""
+    # Kiểm tra loại truyền tải
+    valid_transports = ("sse", "streamable_http")
     if request.transport is not None and request.transport not in valid_transports:
         raise HTTPException(status_code=400, detail=f"Loại truyền tải phải là một trong {', '.join(valid_transports)}")
 
     try:
-        fields_set = request.model_fields_set
-        update_kwargs = {}
-        if "env" in fields_set:
-            update_kwargs["env"] = request.env
-
         server = await update_mcp_server(
             db,
             slug=slug,
@@ -199,19 +202,22 @@ async def update_mcp_server_route(
             description=request.description,
             transport=request.transport,
             url=request.url,
-            command=request.command,
-            args=request.args,
             headers=request.headers,
             timeout=request.timeout,
             sse_read_timeout=request.sse_read_timeout,
             tags=request.tags,
             icon=request.icon,
             updated_by=current_user.username,
-            **update_kwargs,
         )
-        return {"success": True, "data": server.to_dict()}
+        return {"success": True, "data": serialize_mcp_server(server)}
+    except HTTPException:
+        raise
+    except MCPServerNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except PermissionError as pe:
+        raise HTTPException(status_code=403, detail=str(pe))
     except ValueError as ve:
-        raise HTTPException(status_code=404, detail=str(ve))
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(f"Failed to update MCP server: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -227,7 +233,7 @@ async def delete_mcp_server_route(
     try:
         # Check whether it is a built-in server in the system
         server = await get_mcp_server(db, slug)
-        if server and server.created_by == "system":
+        if server and is_builtin_mcp_server(server):
             raise HTTPException(status_code=403, detail="Không thể xóa máy chủ MCP mặc định của hệ thống")
 
         deleted = await delete_mcp_server(db, slug)
@@ -254,7 +260,8 @@ async def test_mcp_server(
 ):
     """Test MCP server connection"""
     try:
-        await get_server_or_404(db, slug)
+        server = await get_server_or_404(db, slug)
+        ensure_mcp_server_runnable(server)
 
         try:
             tools = await get_all_mcp_tools(slug)
@@ -285,11 +292,13 @@ async def update_mcp_server_status_route(
         return {
             "success": True,
             "enabled": is_enabled,
-            "data": server.to_dict(),
+            "data": serialize_mcp_server(server),
             "message": f"MCP '{slug}' đã {'thêm' if is_enabled else 'gỡ bỏ'}",
         }
+    except MCPServerNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
     except ValueError as ve:
-        raise HTTPException(status_code=404, detail=str(ve))
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(f"Failed to toggle MCP server: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -309,6 +318,7 @@ async def get_mcp_server_tools(
     """Get a list of tools for the MCP server"""
     try:
         server = await get_server_or_404(db, slug)
+        ensure_mcp_server_runnable(server)
         disabled_tools = server.disabled_tools or []
 
         try:
@@ -359,7 +369,8 @@ async def refresh_mcp_server_tools(
 ):
     """Refresh the tool list of the MCP server (clear cache and re-fetch)"""
     try:
-        await get_server_or_404(db, slug)
+        server = await get_server_or_404(db, slug)
+        ensure_mcp_server_runnable(server)
 
         try:
             # Get all tools (without filtering disabled_tools)

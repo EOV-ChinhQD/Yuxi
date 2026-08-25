@@ -23,87 +23,33 @@ class MinerUOfficialParser(BaseDocumentProcessor):
 
     requires_external = True
 
-    def __init__(self, api_key: str | None = None):
+    service_name = "mineru_official"
+    display_name = "MinerU Official API"
+    supported_extensions = [".pdf", ".doc", ".docx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg"]
+
+    def __init__(self, api_key: str | None = None, api_base: str | None = None):
+        """Khởi tạo parser bằng thông tin xác thực đã phân giải từ trung tâm cấu hình và endpoint chính thức."""
+
         self.api_key = api_key or os.getenv("MINERU_API_KEY")
         if not self.api_key:
             raise DocumentParserException(
                 "Biến môi trường MINERU_API_KEY chưa được thiết lập", "mineru_official", "missing_api_key"
             )
 
-        self.api_base = "https://mineru.net/api/v4"
+        self.api_base = (api_base or "https://mineru.net/api/v4").rstrip("/")
         self.headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}",
         }
 
-    def get_service_name(self) -> str:
-        return "mineru_official"
-
-    def get_supported_extensions(self) -> list[str]:
-        """MinerU File formats supported by official API"""
-        return [".pdf", ".doc", ".docx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg"]
-
     def check_health(self) -> dict[str, Any]:
-        """Check API availability and key validity"""
-        try:
-            # Use a simple test request to verify the API key
-            # Since there is no dedicated ping interface, we try to create a request for a test task
-            test_data = {"url": "https://cdn-mineru.openxlab.org.cn/demo/example.pdf", "is_ocr": True}
+        """Báo cáo trạng thái cấu hình API key, tránh health check tạo tác vụ phân tích thật."""
 
-            response = requests.post(f"{self.api_base}/extract/task", headers=self.headers, json=test_data, timeout=10)
-
-            # If 401 or a specific API error code is returned, there is a problem with the key
-            if response.status_code == 401:
-                return {
-                    "status": "unhealthy",
-                    "message": "API Key is invalid or expired",
-                    "details": {"error_code": "A0202"},
-                }
-            elif response.status_code == 403:
-                return {
-                    "status": "unhealthy",
-                    "message": "API Insufficient key permissions",
-                    "details": {"error_code": "A0211"},
-                }
-            elif response.status_code == 200:
-                # Parse the response to check if the task was successfully created
-                try:
-                    result = response.json()
-                    if result.get("code") == 0:
-                        return {
-                            "status": "healthy",
-                            "message": "MinerU Official API service available",
-                            "details": {"api_base": self.api_base},
-                        }
-                    else:
-                        return {
-                            "status": "unhealthy",
-                            "message": f"API return error: {result.get('msg', 'unknown error')}",
-                            "details": {"error_code": result.get("code")},
-                        }
-                except Exception:
-                    return {
-                        "status": "healthy",
-                        "message": "MinerU Official API service available",
-                        "details": {"api_base": self.api_base},
-                    }
-            else:
-                return {
-                    "status": "unhealthy",
-                    "message": f"API Service exception: HTTP {response.status_code}",
-                    "details": {"status_code": response.status_code},
-                }
-
-        except requests.exceptions.Timeout:
-            return {"status": "timeout", "message": "API Request timeout", "details": {"timeout": "10s"}}
-        except requests.exceptions.ConnectionError:
-            return {
-                "status": "unavailable",
-                "message": "Unable to connect to MinerU official API service",
-                "details": {"api_base": self.api_base},
-            }
-        except Exception as e:
-            return {"status": "error", "message": f"Health check failed: {str(e)}", "details": {"error": str(e)}}
+        return {
+            "status": "configured",
+            "message": "MinerU Official API key đã được cấu hình, sẽ được xác minh khi phân tích",
+            "details": {"api_base": self.api_base},
+        }
 
     def process_file(self, file_path: str, params: dict[str, Any] | None = None) -> str:
         """
@@ -131,13 +77,6 @@ class MinerUOfficialParser(BaseDocumentProcessor):
                 f"Unsupported file types: {file_ext}", self.get_service_name(), "unsupported_file_type"
             )
 
-        # Check API health status first
-        health = self.check_health()
-        if health["status"] != "healthy":
-            raise DocumentParserException(
-                f"MinerU Official API is not available: {health['message']}", self.get_service_name(), health["status"]
-            )
-
         # Processing parameters
         params = params or {}
 
@@ -152,7 +91,11 @@ class MinerUOfficialParser(BaseDocumentProcessor):
             logger.info(f"File uploaded successfully, batch_id: {batch_id}")
 
             # Step 2: Polling task results
-            result = self._poll_batch_result(batch_id)
+            result = self._poll_batch_result(
+                batch_id,
+                max_wait_time=int(params.get("max_wait_seconds", 600)),
+                poll_interval=float(params.get("poll_interval_seconds", 5)),
+            )
             logger.info(f"Task completed, status: {result['state']}")
 
             zip_url = result.get("full_zip_url")
@@ -270,8 +213,13 @@ class MinerUOfficialParser(BaseDocumentProcessor):
 
         return batch_id
 
-    def _poll_batch_result(self, batch_id: str, max_wait_time: int = 600) -> dict[str, Any]:
-        """Polling batch task results"""
+    def _poll_batch_result(
+        self,
+        batch_id: str,
+        max_wait_time: int = 600,
+        poll_interval: float = 5,
+    ) -> dict[str, Any]:
+        """Polling kết quả batch task"""
         start_time = time.time()
 
         while time.time() - start_time < max_wait_time:
@@ -297,7 +245,7 @@ class MinerUOfficialParser(BaseDocumentProcessor):
 
             extract_results = result["data"].get("extract_result", [])
             if not extract_results:
-                time.sleep(5)
+                time.sleep(poll_interval)
                 continue
 
             # Check the status of the first file
@@ -312,8 +260,8 @@ class MinerUOfficialParser(BaseDocumentProcessor):
                     f"Phân tích tài liệu thất bại: {err_msg}", self.get_service_name(), "parsing_failed"
                 )
 
-            # Keep waiting
-            time.sleep(5)
+            # Tiếp tục chờ đến lượt polling kế tiếp
+            time.sleep(poll_interval)
 
         raise DocumentParserException("Hết thời gian xử lý nhiệm vụ", self.get_service_name(), "timeout")
 

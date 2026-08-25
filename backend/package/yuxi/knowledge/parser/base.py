@@ -5,7 +5,7 @@ This individual module defines the unified oneofdocument processor interface, Fo
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, ClassVar
 
 
 class DocumentProcessorException(Exception):
@@ -46,6 +46,10 @@ class BaseDocumentProcessor(ABC):
 
     requires_external: bool = False
 
+    service_name: ClassVar[str] = ""
+    display_name: ClassVar[str] = ""
+    supported_extensions: ClassVar[list[str]] = []
+
     @abstractmethod
     def process_file(self, file_path: str, params: dict[str, Any] | None = None) -> str:
         """
@@ -78,10 +82,9 @@ class BaseDocumentProcessor(ABC):
         """
         pass
 
-    @abstractmethod
     def get_service_name(self) -> str:
-        """Return service name"""
-        pass
+        """Trả về định danh dịch vụ ổn định mà parser khai báo."""
+        return self.service_name
 
     def supports_file_type(self, file_extension: str) -> bool:
         """
@@ -95,7 +98,6 @@ class BaseDocumentProcessor(ABC):
         """
         return file_extension.lower() in self.get_supported_extensions()
 
-    @abstractmethod
     def get_supported_extensions(self) -> list[str]:
-        """Returns a list of supported file extensions"""
-        pass
+        """Trả về danh sách phần mở rộng tệp được hỗ trợ."""
+        return list(self.supported_extensions)

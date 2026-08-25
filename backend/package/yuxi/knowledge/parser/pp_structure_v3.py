@@ -19,17 +19,14 @@ from yuxi.utils import logger
 class PPStructureV3Parser(BaseDocumentProcessor):
     """PP-Structure-V3 Document parser - Use PP-Structure-V3 Perform layout analysis"""
 
+    service_name = "pp_structure_v3_ocr"
+    display_name = "PP-Structure-V3"
+    supported_extensions = [".pdf", ".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"]
+
     def __init__(self, server_url: str | None = None):
         self.server_url = server_url or os.getenv("PADDLEX_URI") or "http://localhost:8080"
         self.base_url = self.server_url.rstrip("/")
         self.endpoint = f"{self.base_url}/layout-parsing"
-
-    def get_service_name(self) -> str:
-        return "pp_structure_v3_ocr"
-
-    def get_supported_extensions(self) -> list[str]:
-        """PP-Structure-V3 Supports PDF and multiple image formats"""
-        return [".pdf", ".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"]
 
     def _encode_file_to_base64(self, file_path: str) -> str:
         """Encode file to Base64"""
@@ -82,12 +79,19 @@ class PPStructureV3Parser(BaseDocumentProcessor):
             if value is not None:
                 payload[key] = value
 
-        # Add additional kwargs parameters
+        timeout_seconds = kwargs.pop("timeout_seconds", 300)
+
+        # Thêm các tham số kwargs khác
         for key, value in kwargs.items():
             if value is not None:
                 payload[key] = value
 
-        response = requests.post(self.endpoint, json=payload, headers={"Content-Type": "application/json"}, timeout=300)
+        response = requests.post(
+            self.endpoint,
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=timeout_seconds,
+        )
 
         if response.status_code == 200:
             return response.json()
@@ -239,6 +243,7 @@ class PPStructureV3Parser(BaseDocumentProcessor):
                 use_table_recognition=params.get("use_table_recognition", True),
                 use_formula_recognition=params.get("use_formula_recognition", True),
                 use_seal_recognition=params.get("use_seal_recognition", False),
+                timeout_seconds=params.get("timeout_seconds", 300),
             )
 
             # Check if API call is successful

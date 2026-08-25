@@ -1,6 +1,7 @@
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
 from fastapi import HTTPException, UploadFile
@@ -12,12 +13,14 @@ from yuxi.agents.backends.sandbox import (
 )
 from yuxi.agents.buildin import agent_manager
 from yuxi.config import config as app_config
-from yuxi.knowledge.parser import DocumentProcessorFactory, Parser
+from yuxi.knowledge.parser.factory import DocumentProcessorFactory
 from yuxi.repositories.agent_repository import AgentRepository
+from yuxi.repositories.agent_run_repository import AgentRunRepository
 from yuxi.repositories.conversation_repository import INVOCATION_CONVERSATION_SOURCES, ConversationRepository
 from yuxi.services.mention_search_service import invalidate_mention_cache
+from yuxi.services.ocr_service import parse_document
 from yuxi.storage.minio import StorageError, get_minio_client
-from yuxi.storage.postgres.models_business import User
+from yuxi.storage.postgres.models_business import AGENT_RUN_TERMINAL_STATUSES, AgentRun, User
 from yuxi.utils.datetime_utils import format_utc_datetime, utc_isoformat
 from yuxi.utils.logging_config import logger
 from yuxi.utils.paths import VIRTUAL_PATH_UPLOADS
@@ -49,6 +52,34 @@ def _ensure_workdir() -> Path:
     workdir = Path(app_config.save_dir) / "uploads" / "chat_attachments"
     workdir.mkdir(parents=True, exist_ok=True)
     return workdir
+
+
+def _thread_status(run_id: str | None, run_status: str | None, last_viewed_run_id: str | None) -> str:
+    """将线程最新顶层 run 与查看记录映射为侧边栏三态。
+
+    loading: 顶层 run 进行中；ready: run 已终态且未查看；done: 无 run 或已查看。
+    """
+    if run_id is None:
+        return "done"
+    if run_status not in AGENT_RUN_TERMINAL_STATUSES:
+        return "loading"
+    if run_id == last_viewed_run_id:
+        return "done"
+    return "ready"
+
+
+def _serialize_thread(conversation: Any, *, thread_status: str) -> dict:
+    return {
+        "id": conversation.thread_id,
+        "uid": conversation.uid,
+        "agent_id": conversation.agent_id,
+        "title": conversation.title,
+        "is_pinned": bool(conversation.is_pinned),
+        "created_at": conversation.created_at.isoformat(),
+        "updated_at": conversation.updated_at.isoformat(),
+        "metadata": conversation.extra_metadata or {},
+        "thread_status": thread_status,
+    }
 
 
 async def _write_upload_to_disk(upload: UploadFile, dest: Path) -> int:
@@ -86,7 +117,7 @@ async def _convert_upload_to_markdown(upload: UploadFile) -> ConversionResult:
 
     try:
         file_size = await _write_upload_to_disk(upload, temp_path)
-        markdown = await Parser.aparse(str(temp_path))
+        markdown = await parse_document(str(temp_path))
         markdown, truncated = _truncate_markdown(markdown)
         return ConversionResult(
             file_id=uuid.uuid4().hex,
@@ -202,15 +233,21 @@ def _require_tmp_object_section(
 
 
 def _normalize_parse_method(file_name: str, parse_method: str | None) -> str:
+    """按文件类型确定临时附件解析方式。"""
+
     suffix = Path(file_name).suffix.lower()
     if suffix not in TMP_ATTACHMENT_PARSE_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Hiện chỉ hỗ trợ phân tích PDF và hình ảnh")
 
-    method = parse_method or ("rapid_ocr" if suffix in TMP_ATTACHMENT_IMAGE_EXTENSIONS else "disable")
     if suffix in TMP_ATTACHMENT_IMAGE_EXTENSIONS:
-        allowed_methods = TMP_ATTACHMENT_OCR_METHODS
+        default_engine = app_config.default_ocr_engine
+        # 图片没有可直接提取的文本层，系统默认 disable 时仍需回退到本地 OCR。
+        method = parse_method or ("rapid_ocr" if default_engine == "disable" else default_engine)
     else:
-        allowed_methods = TMP_ATTACHMENT_PARSE_METHODS
+        method = parse_method or "disable"
+    allowed_methods = (
+        TMP_ATTACHMENT_OCR_METHODS if suffix in TMP_ATTACHMENT_IMAGE_EXTENSIONS else TMP_ATTACHMENT_PARSE_METHODS
+    )
 
     if method not in allowed_methods:
         allowed = ", ".join(allowed_methods)
@@ -430,15 +467,7 @@ async def create_thread_view(
         metadata=thread_metadata,
     )
 
-    return {
-        "id": conversation.thread_id,
-        "uid": conversation.uid,
-        "agent_id": conversation.agent_id,
-        "title": conversation.title,
-        "created_at": conversation.created_at.isoformat(),
-        "updated_at": conversation.updated_at.isoformat(),
-        "metadata": conversation.extra_metadata or {},
-    }
+    return _serialize_thread(conversation, thread_status="done")
 
 
 async def list_threads_view(
@@ -459,17 +488,18 @@ async def list_threads_view(
         exclude_sources=INVOCATION_CONVERSATION_SOURCES,
     )
 
+    run_repo = AgentRunRepository(db)
+    thread_ids = [conv.thread_id for conv in conversations]
+    run_map = await run_repo.get_latest_top_level_runs_for_threads(str(current_uid), thread_ids)
+
     return [
-        {
-            "id": conv.thread_id,
-            "uid": conv.uid,
-            "agent_id": conv.agent_id,
-            "title": conv.title,
-            "is_pinned": bool(conv.is_pinned),
-            "created_at": conv.created_at.isoformat(),
-            "updated_at": conv.updated_at.isoformat(),
-            "metadata": conv.extra_metadata or {},
-        }
+        _serialize_thread(
+            conv,
+            thread_status=_thread_status(
+                *run_map.get(conv.thread_id, (None, None)),
+                conv.last_viewed_run_id,
+            ),
+        )
         for conv in conversations
     ]
 
@@ -548,24 +578,53 @@ async def update_thread_view(
     thread_id: str,
     title: str | None = None,
     is_pinned: bool | None = None,
+    tool_approval_mode: str | None = None,
     db: AsyncSession,
     current_uid: str,
 ) -> dict:
     conv_repo = ConversationRepository(db)
     await require_user_conversation(conv_repo, thread_id, str(current_uid))
-    updated_conv = await conv_repo.update_conversation(thread_id, title=title, is_pinned=is_pinned)
+    metadata = {"tool_approval_mode": tool_approval_mode} if tool_approval_mode is not None else None
+    updated_conv = await conv_repo.update_conversation(
+        thread_id,
+        title=title,
+        is_pinned=is_pinned,
+        metadata=metadata,
+    )
     if not updated_conv:
         raise HTTPException(status_code=500, detail="Cập nhật thất bại")
-    return {
-        "id": updated_conv.thread_id,
-        "uid": updated_conv.uid,
-        "agent_id": updated_conv.agent_id,
-        "title": updated_conv.title,
-        "is_pinned": bool(updated_conv.is_pinned),
-        "created_at": updated_conv.created_at.isoformat(),
-        "updated_at": updated_conv.updated_at.isoformat(),
-        "metadata": updated_conv.extra_metadata or {},
-    }
+
+    run_repo = AgentRunRepository(db)
+    run_map = await run_repo.get_latest_top_level_runs_for_threads(str(current_uid), [updated_conv.thread_id])
+    run_id, run_status = run_map.get(updated_conv.thread_id, (None, None))
+
+    return _serialize_thread(
+        updated_conv,
+        thread_status=_thread_status(run_id, run_status, updated_conv.last_viewed_run_id),
+    )
+
+
+async def mark_thread_viewed_view(
+    *,
+    thread_id: str,
+    db: AsyncSession,
+    current_uid: str,
+) -> dict:
+    """Ghi nhận người dùng đã xem run cấp cao nhất mới nhất của thread, chuyển trạng thái chưa đọc thành đã đọc."""
+    conv_repo = ConversationRepository(db)
+    conversation = await require_user_conversation(conv_repo, thread_id, str(current_uid))
+
+    run_repo = AgentRunRepository(db)
+    run_map = await run_repo.get_latest_top_level_runs_for_threads(str(current_uid), [thread_id])
+    run_id, run_status = run_map.get(thread_id, (None, None))
+
+    if run_id and run_status in AGENT_RUN_TERMINAL_STATUSES:
+        conversation = await conv_repo.mark_thread_viewed(thread_id, run_id)
+
+    return _serialize_thread(
+        conversation,
+        thread_status=_thread_status(run_id, run_status, conversation.last_viewed_run_id),
+    )
 
 
 async def upload_tmp_attachment_view(*, file: UploadFile, current_uid: str) -> dict:
@@ -638,7 +697,7 @@ async def parse_tmp_attachment_view(
     method = _normalize_parse_method(safe_name, parse_method)
 
     try:
-        markdown = await Parser.aparse(_minio_source(bucket_name, object_name), params={"ocr_engine": method})
+        markdown = await parse_document(_minio_source(bucket_name, object_name), params={"ocr_engine": method})
         markdown, truncated = _truncate_markdown(markdown)
         parsed_object_name = _make_tmp_parsed_object(str(current_uid), tmp_file_id, safe_name)
         upload_result = await minio_client.aupload_file(
@@ -917,6 +976,29 @@ async def get_thread_history_view(
         raise HTTPException(status_code=404, detail="Thread trò chuyện không tồn tại")
 
     messages = await conv_repo.get_messages_by_thread_id(thread_id)
+    messages = [
+        message
+        for message in messages
+        if not (message.role == "user" and message.delivery_status in {"queued", "cancelled", "rejected"})
+    ]
+
+    run_ids_in_messages = {msg.run_id for msg in messages if msg.run_id}
+    run_created_at: dict[str, Any] = {}
+    if run_ids_in_messages:
+        run_result = await db.execute(
+            select(AgentRun.id, AgentRun.created_at)
+            .where(AgentRun.id.in_(run_ids_in_messages))
+            .order_by(AgentRun.created_at.asc(), AgentRun.id.asc())
+        )
+        run_created_at = {run_id: created_at for run_id, created_at in run_result.all()}
+    messages.sort(
+        key=lambda message: (
+            run_created_at.get(message.run_id) or message.created_at,
+            0 if message.role == "user" else 1,
+            message.created_at,
+            message.id,
+        )
+    )
     message_request_ids = set()
     for msg in messages:
         request_id = (msg.extra_metadata or {}).get("request_id")

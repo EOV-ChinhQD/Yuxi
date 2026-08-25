@@ -6,7 +6,7 @@ Provides departmentof addition, deletion, modification and query interface, only
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import delete as sqlalchemy_delete, select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,7 +34,7 @@ class DepartmentCreate(BaseModel):
     description: str | None = None
     # Required administrator information
     admin_uid: str
-    admin_password: str
+    admin_password: str = Field(min_length=8)
     admin_phone: str | None = None
 
 

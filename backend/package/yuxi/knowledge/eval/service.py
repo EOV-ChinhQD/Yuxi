@@ -1,15 +1,17 @@
+import asyncio
 import json
+import os
 import re
 import uuid
 from typing import Any
 
-from yuxi.knowledge import knowledge_base
 from yuxi.knowledge.eval.benchmark_generation import (
     dump_benchmark_item,
     iter_generated_benchmark_items,
     normalize_generation_concurrency_count,
 )
 from yuxi.knowledge.eval.evaluator import aggregate_metrics, evaluate_question
+from yuxi.knowledge.runtime import knowledge_base as kb_manager
 from yuxi.models import select_model
 from yuxi.repositories.evaluation_repository import EvaluationRepository
 from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
@@ -18,6 +20,8 @@ from yuxi.repositories.task_repository import TaskRepository
 from yuxi.services.task_service import TaskContext, tasker
 from yuxi.utils import logger
 from yuxi.utils.datetime_utils import format_utc_datetime, utc_now_naive
+
+DATASET_PERSIST_BATCH_SIZE = max(1, int(os.getenv("YUXI_DATASET_PERSIST_BATCH_SIZE") or 1))
 
 
 def build_evaluation_run_name(started_at=None, hash_value: str | None = None) -> str:
@@ -113,14 +117,14 @@ class EvaluationService:
             row.build_metadata = metadata
 
     def _build_dataset_items(
-        self, dataset_id: str, kb_id: str, questions: list[dict[str, Any]]
+        self, dataset_id: str, kb_id: str, questions: list[dict[str, Any]], start_index: int = 0
     ) -> list[dict[str, Any]]:
         return [
             {
                 "item_id": f"dataset_item_{uuid.uuid4().hex[:12]}",
                 "dataset_id": dataset_id,
                 "kb_id": kb_id,
-                "item_index": index,
+                "item_index": start_index + index,
                 "query_text": item["query"],
                 "gold_chunk_ids": item.get("gold_chunk_ids") or [],
                 "gold_answer": item.get("gold_answer"),
@@ -220,7 +224,7 @@ class EvaluationService:
             row = await self.eval_repo.get_dataset(dataset_id)
             if row is None or row.kb_id != kb_id:
                 raise ValueError("Dataset not found")
-            if (row.build_metadata or {}).get("status", "completed") != "completed":
+            if (row.build_metadata or {}).get("status", "completed") not in {"completed", "failed"}:
                 raise ValueError("Dataset is not ready")
 
             total_items = await self.eval_repo.count_dataset_items(dataset_id)
@@ -267,6 +271,68 @@ class EvaluationService:
         except Exception as e:
             logger.error(f"Failed to delete evaluation dataset: {e}")
             raise
+
+    async def resume_dataset_generation(self, kb_id: str, dataset_id: str, created_by: str) -> dict[str, Any]:
+        row = await self.eval_repo.get_dataset(dataset_id)
+        if row is None or row.kb_id != kb_id:
+            raise ValueError("Dataset not found")
+        metadata = dict(row.build_metadata or {})
+        if metadata.get("source") != "generated":
+            raise ValueError("只能恢复自动生成的数据集")
+        params = metadata.get("params") or {}
+        if not params:
+            raise ValueError("数据集缺少生成参数")
+
+        existing_count = await self.eval_repo.count_dataset_items(dataset_id)
+        total_count = int(params.get("count", 0))
+        if existing_count >= total_count:
+            await self.eval_repo.update_dataset(dataset_id, {"item_count": existing_count})
+            await self._update_dataset_build_metadata(
+                dataset_id,
+                metadata,
+                status="completed",
+                progress=100,
+                message="完成",
+            )
+            return {"dataset_id": dataset_id, "message": "数据集已完成生成"}
+
+        payload = {
+            "dataset_id": dataset_id,
+            "kb_id": kb_id,
+            "created_by": created_by,
+            "name": row.name,
+            "description": row.description,
+            "count": total_count,
+            "neighbors_count": int(params.get("neighbors_count", 1)),
+            "concurrency_count": int(params.get("concurrency_count", 10)),
+            "llm_model_spec": params.get("llm_model_spec"),
+            "generation_mode": params.get("generation_mode", "vector"),
+            "graph_expand_top_k": int(params.get("graph_expand_top_k", 1)),
+        }
+        task, created = await tasker.enqueue_unique_by_payload(
+            name="继续生成评估数据集",
+            task_type="dataset_generation",
+            payload=payload,
+            coroutine=self._generate_dataset_task,
+            payload_match={"dataset_id": dataset_id},
+            statuses={"pending", "running"},
+        )
+        if not created:
+            return {
+                "dataset_id": dataset_id,
+                "task_id": task.id,
+                "message": "已有进行中的生成任务",
+            }
+        metadata["status"] = "pending"
+        metadata["task_id"] = task.id
+        metadata["progress"] = int(99 * existing_count / max(total_count, 1))
+        metadata["message"] = "恢复生成中"
+        await self._update_dataset_build_metadata(dataset_id, metadata)
+        return {
+            "dataset_id": dataset_id,
+            "task_id": task.id,
+            "message": "评估数据集生成任务已恢复",
+        }
 
     async def generate_dataset(
         self,
@@ -359,19 +425,44 @@ class EvaluationService:
 
         dataset_id = payload.get("dataset_id")
         kb_id = payload.get("kb_id")
-        count = int(payload.get("count", 10))
+        total_count = int(payload.get("count", 10))
         neighbors_count = int(payload.get("neighbors_count", 1))
         concurrency_count = normalize_generation_concurrency_count(payload.get("concurrency_count"))
         llm_model_spec = payload.get("llm_model_spec")
         generation_mode = payload.get("generation_mode") or "vector"
         graph_expand_top_k = min(max(1, int(payload.get("graph_expand_top_k", 1))), 3)
+
+        existing_count = await self.eval_repo.count_dataset_items(dataset_id)
+        if existing_count >= total_count:
+            completed_metadata = {
+                "source": "generated",
+                "status": "completed",
+                "progress": 100,
+                "task_id": context.task_id,
+                "params": {
+                    "count": total_count,
+                    "neighbors_count": neighbors_count,
+                    "concurrency_count": concurrency_count,
+                    "llm_model_spec": llm_model_spec,
+                    "generation_mode": generation_mode,
+                    "graph_expand_top_k": graph_expand_top_k,
+                },
+            }
+            await self._update_dataset_build_metadata(dataset_id, completed_metadata)
+            await self.eval_repo.update_dataset(dataset_id, {"item_count": existing_count})
+            await context.set_progress(100, "完成")
+            return
+
+        remaining_count = total_count - existing_count
+        start_index = existing_count
+
         build_metadata = {
             "source": "generated",
             "status": "running",
-            "progress": 0,
+            "progress": int(99 * existing_count / total_count),
             "task_id": context.task_id,
             "params": {
-                "count": count,
+                "count": total_count,
                 "neighbors_count": neighbors_count,
                 "concurrency_count": concurrency_count,
                 "llm_model_spec": llm_model_spec,
@@ -390,42 +481,59 @@ class EvaluationService:
                 message=message or build_metadata.get("message", ""),
             )
 
+        batch_size = DATASET_PERSIST_BATCH_SIZE
+        buffer: list[dict[str, Any]] = []
+
+        async def flush_items() -> None:
+            if not buffer:
+                return
+            nonlocal start_index
+            await self.eval_repo.add_dataset_items(self._build_dataset_items(dataset_id, kb_id, buffer, start_index))
+            start_index += len(buffer)
+            buffer.clear()
+            await self.eval_repo.update_dataset(dataset_id, {"item_count": start_index})
+
+        async def flush_items_best_effort() -> None:
+            try:
+                await flush_items()
+            except Exception:
+                logger.exception(f"保存残余题目失败: {dataset_id}")
+
         try:
-            kb_instance = await knowledge_base.aget_kb(kb_id)
-            if not kb_instance:
-                await report_progress(100, "Knowledge base does not exist")
-                raise ValueError("Knowledge Base not found")
-            if kb_instance.kb_type != "milvus":
-                await report_progress(
-                    100, "Only supports commonrag/Milvus Type knowledge base generates evaluation data set"
-                )
+            kb_config = await kb_manager.get_kb_config(kb_id)
+            if kb_config.kb_type != "milvus":
+                await report_progress(100, "Chỉ hỗ trợ kho kiến thức loại commonrag/Milvus để tạo bộ dữ liệu đánh giá")
+
                 raise ValueError("Unsupported KB type for dataset generation")
 
-            questions = []
             try:
                 async for item in iter_generated_benchmark_items(
-                    kb_instance=kb_instance,
                     kb_id=kb_id,
-                    count=count,
+                    count=remaining_count,
                     neighbors_count=neighbors_count,
                     llm_model_spec=llm_model_spec,
                     concurrency_count=concurrency_count,
                     generation_mode=generation_mode,
                     graph_expand_top_k=graph_expand_top_k,
+                    progress_base=existing_count,
+                    total_progress=total_count,
                     progress_cb=report_progress,
                     cancel_cb=context.raise_if_cancelled,
                 ):
-                    questions.append(item)
+                    buffer.append(item)
+                    if len(buffer) >= batch_size:
+                        await flush_items_best_effort()
             except ValueError as e:
                 if str(e) == "No chunks found in knowledge base":
                     await report_progress(100, "The knowledge base is empty or not parsed into chunks")
                 raise
 
-            if not questions:
-                raise ValueError("Chưa tạo câu hỏi đánh giá hợp lệ")
+            await flush_items()
 
-            await self.eval_repo.add_dataset_items(self._build_dataset_items(dataset_id, kb_id, questions))
-            await self.eval_repo.update_dataset(dataset_id, {"item_count": len(questions)})
+            if start_index < total_count:
+                raise ValueError(f"Chỉ tạo được {start_index}/{total_count} câu hỏi đánh giá hợp lệ")
+
+
             await self._update_dataset_build_metadata(
                 dataset_id,
                 build_metadata,
@@ -434,14 +542,28 @@ class EvaluationService:
                 message="Hoàn thành",
             )
             await context.set_progress(100, "Hoàn thành")
-        except Exception as e:
+        except (Exception, asyncio.CancelledError) as e:
+            if isinstance(e, asyncio.CancelledError):
+                current_task = asyncio.current_task()
+                if current_task is not None and current_task.cancelling():
+                    current_task.uncancel()
+            error = str(e)
+            if isinstance(e, asyncio.CancelledError):
+                if context.is_cancel_requested():
+                    error = "Nhiệm vụ đã bị hủy"
+                elif context.cancellation_reason == "timeout":
+                    error = "Nhiệm vụ thực thi vượt thời gian cho phép"
+                else:
+                    error = "Dịch vụ dừng, nhiệm vụ bị gián đoạn"
+            await flush_items_best_effort()
+
             await self._update_dataset_build_metadata(
                 dataset_id,
                 build_metadata,
                 status="failed",
                 progress=100,
-                error_message=str(e),
-                message=str(e),
+                error_message=error,
+                message=error,
             )
             raise
 
@@ -468,12 +590,9 @@ class EvaluationService:
                 query_params = (kb_row.query_params if kb_row else None) or {}
                 retrieval_config = query_params.get("options", {}) if isinstance(query_params, dict) else {}
                 if not retrieval_config:
-                    kb_instance = await knowledge_base.aget_kb(kb_id)
-                    if kb_instance:
-                        retrieval_config = kb_instance._get_default_query_params(kb_id).get("options", {})
-                logger.info(
-                    f"from knowledge base {kb_id} Load retrieval configuration: {list(retrieval_config.keys())}"
-                )
+                    retrieval_config = (await kb_manager.get_kb_config(kb_id)).query_options
+                logger.info(f"Đã tải cấu hình truy xuất từ kho kiến thức {kb_id}: {list(retrieval_config.keys())}")
+
             except Exception as e:
                 logger.error(f"Failed to obtain knowledge base retrieval configuration: {e}")
 
@@ -533,10 +652,6 @@ class EvaluationService:
             if not dataset_items:
                 raise ValueError("Dataset has no items")
 
-            kb_instance = await knowledge_base.aget_kb(kb_id)
-            if not kb_instance:
-                raise ValueError(f"Knowledge Base {kb_id} not found")
-
             judge_llm = None
             if dataset_row.has_gold_answers:
                 judge_model_spec = retrieval_config.get("judge_llm") or retrieval_config.get("answer_llm")
@@ -577,7 +692,6 @@ class EvaluationService:
                     "gold_answer": item.gold_answer,
                 }
                 question_result = await evaluate_question(
-                    kb_instance=kb_instance,
                     kb_id=kb_id,
                     question_data=question_data,
                     retrieval_config=retrieval_config,
@@ -616,17 +730,30 @@ class EvaluationService:
                 final_score=overall_score,
             )
             await context.set_progress(100, "Hoàn thành")
-        except Exception as e:
-            logger.error(f"Task failed: {e}")
+        except (Exception, asyncio.CancelledError) as e:
+            if isinstance(e, asyncio.CancelledError):
+                current_task = asyncio.current_task()
+                if current_task is not None and current_task.cancelling():
+                    current_task.uncancel()
+            error = str(e)
+            if isinstance(e, asyncio.CancelledError):
+                if context.is_cancel_requested():
+                    error = "Nhiệm vụ đã bị hủy"
+                elif context.cancellation_reason == "timeout":
+                    error = "Nhiệm vụ thực thi vượt thời gian cho phép"
+                else:
+                    error = "Dịch vụ dừng, nhiệm vụ bị gián đoạn"
+            logger.error(f"Nhiệm vụ thất bại: {error}")
+
             try:
                 if "payload" in locals():
                     await self.eval_repo.update_run(
                         payload["run_id"],
-                        {"status": "failed", "metrics": {"error": str(e)}, "completed_at": utc_now_naive()},
+                        {"status": "failed", "metrics": {"error": error}, "completed_at": utc_now_naive()},
                     )
             except Exception as exc:
                 logger.error(f"Error updating run record: {exc}")
-            await context.set_message(f"Error: {str(e)}")
+            await context.set_message(f"Error: {error}")
             raise
 
     async def list_runs(self, kb_id: str) -> list[dict[str, Any]]:

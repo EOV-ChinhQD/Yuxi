@@ -17,6 +17,7 @@ Use this skill when users require answers to questions based on content related 
 - `find_kb_document`: Use keywords or regular expressions to locate paragraphs in known documents.
 - `get_mindmap`: View the knowledge base mind map structure.
 - `search_file`: Search files in the knowledge base based on file name keywords, support specified knowledge bases or cross-knowledge bases, and return file lists and paging information.
+- `download_kb_file`: Tải tệp nhị phân gốc của kho kiến thức (pdf/docx/xlsx v.v.) theo `kb_id` và `file_id` về thư mục `outputs` trong sandbox, trả về `virtual_path` nhìn thấy được bên trong sandbox. Dùng khi cần đọc cấu trúc tệp gốc bằng mã (ví dụ dùng `openpyxl` đọc ô xlsx, `pdfplumber` phân tích lại bố cục pdf); `query_kb`/`open_kb_document` chỉ trả về các đoạn văn bản, không đáp ứng được các tình huống cần đối tượng tệp.
 
 ## Operation process
 

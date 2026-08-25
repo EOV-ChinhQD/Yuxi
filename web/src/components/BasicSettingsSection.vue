@@ -1,9 +1,9 @@
 <template>
   <div class="basic-settings-section">
     <template v-if="userStore.isAdmin">
-      <div class="section-title">Cấu hình mục mặc định</div>
-      <div class="settings-panel">
-        <template v-if="userStore.isSuperAdmin">
+      <template v-if="userStore.isSuperAdmin">
+        <div class="section-title">Cấu hình mục mặc định</div>
+        <div class="settings-panel">
           <div class="setting-row two-cols">
             <div class="col-item">
               <div class="setting-label">
@@ -50,30 +50,8 @@
               </div>
             </div>
           </div>
-          <div class="setting-row two-cols">
-            <div class="col-item">
-              <div class="setting-label">
-                {{ items?.default_ocr_engine?.des || 'mặc định OCR Công cụ phân tích' }}
-              </div>
-              <div class="setting-content">
-                <a-select
-                  :value="configStore.config?.default_ocr_engine || 'rapid_ocr'"
-                  @change="handleChange('default_ocr_engine', $event)"
-                  class="full-width"
-                >
-                  <a-select-option
-                    v-for="option in ocrEngineOptions"
-                    :key="option.value"
-                    :value="option.value"
-                  >
-                    {{ option.label }}
-                  </a-select-option>
-                </a-select>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
+        </div>
+      </template>
 
       <template v-if="userStore.isSuperAdmin">
         <div class="section-title">Cấu hình kiểm duyệt nội dung</div>
@@ -108,6 +86,8 @@
           </div>
         </div>
       </template>
+
+      <SkillSettingsSection :class="{ 'first-section': !userStore.isSuperAdmin }" />
     </template>
 
     <!-- Phần liên kết dịch vụ -->
@@ -190,20 +170,11 @@ import { Globe } from 'lucide-vue-next'
 import ModelSelectorComponent from '@/components/ModelSelectorComponent.vue'
 import EmbeddingModelSelector from '@/components/EmbeddingModelSelector.vue'
 import RerankModelSelector from '@/components/RerankModelSelector.vue'
+import SkillSettingsSection from '@/components/SkillSettingsSection.vue'
 
 const configStore = useConfigStore()
 const userStore = useUserStore()
 const items = computed(() => configStore.config?._config_items || {})
-const ocrEngineOptions = [
-  { value: 'disable', label: 'Không bật' },
-  { value: 'rapid_ocr', label: 'RapidOCR (ONNX)' },
-  { value: 'mineru_ocr', label: 'MinerU OCR' },
-  { value: 'mineru_official', label: 'MinerU Official API' },
-  { value: 'pp_structure_v3_ocr', label: 'PP-Structure-V3' },
-  { value: 'deepseek_ocr', label: 'DeepSeek OCR' },
-  { value: 'paddleocr_vl_1_6', label: 'PaddleOCR-VL-1.6' },
-  { value: 'paddleocr_pp_ocrv6', label: 'PP-OCRv6' }
-]
 
 const handleChange = (key, e) => {
   configStore.setConfigValue(key, e)

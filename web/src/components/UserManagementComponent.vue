@@ -74,98 +74,82 @@
             />
           </div>
           <div v-else class="user-cards-grid">
-            <div v-for="user in paginatedUsers" :key="user.id" class="user-card">
-              <div class="card-header">
-                <div class="user-info-main">
-                  <div class="user-avatar">
-                    <FallbackAvatar
-                      :src="user.avatar"
-                      :default-src="getUserDefaultAvatarSrc(user)"
-                      :name="user.username"
-                      :seed="user.uid || user.username"
-                      kind="user"
-                      :size="40"
-                      shape="circle"
-                      :alt="user.username"
-                      class="avatar-img"
-                    />
-                  </div>
-                  <div class="user-info-content">
-                    <div class="name-tag-row">
-                      <h4 class="username">{{ user.username }}</h4>
-                      <div
-                        v-if="
-                          user.role === 'admin' ||
-                          user.role === 'superadmin' ||
-                          user.department_name
-                        "
-                        class="role-dept-badge"
-                      >
-                        <span class="role-icon-wrapper" :class="getRoleClass(user.role)">
-                          <UserLock v-if="user.role === 'superadmin'" :size="14" />
-                          <UserStar v-else-if="user.role === 'admin'" :size="14" />
-                          <User v-else :size="14" />
-                        </span>
-                        <span v-if="user.department_name" class="dept-text">
-                          {{ user.department_name }}
-                        </span>
-                      </div>
-                    </div>
-                    <div class="user-id-row">ID: {{ user.uid || '-' }}</div>
-                  </div>
-                </div>
+            <InfoCard
+              v-for="user in paginatedUsers"
+              :key="user.id"
+              :title="user.username"
+              :subtitle="`ID: ${user.uid || '-'}`"
+              class="user-card"
+            >
+              <template #icon>
+                <FallbackAvatar
+                  :src="user.avatar"
+                  :default-src="getUserDefaultAvatarSrc(user)"
+                  :name="user.username"
+                  :seed="user.uid || user.username"
+                  kind="user"
+                  :size="40"
+                  shape="circle"
+                  :alt="user.username"
+                  class="avatar-img"
+                />
+              </template>
 
-                <a-dropdown :trigger="['click']" placement="bottomRight">
-                  <template #overlay>
-                    <a-menu>
-                      <a-menu-item key="edit" @click.stop="showEditUserModal(user)">
-                        <span class="user-card-menu-item">
-                          <SquarePen :size="14" />
-                          Chỉnh sửa người dùng
-                        </span>
-                      </a-menu-item>
-                      <a-menu-item
-                        key="delete"
-                        :disabled="isUserDeleteDisabled(user)"
-                        @click.stop="confirmDeleteUser(user)"
-                      >
-                        <span
-                          class="user-card-menu-item"
-                          :class="{ danger: !isUserDeleteDisabled(user) }"
-                        >
-                          <Trash2 :size="14" />
-                          Xóa người dùng
-                        </span>
-                      </a-menu-item>
-                    </a-menu>
-                  </template>
-                  <a-button
-                    type="text"
-                    size="small"
-                    class="card-menu-trigger lucide-icon-btn"
-                    aria-label="Hành động của người dùng"
-                    @click.stop
+              <template #status>
+                <div
+                  v-if="user.role === 'admin' || user.role === 'superadmin' || user.department_name"
+                  class="role-dept-badge"
+                >
+                  <span class="role-icon-wrapper" :class="getRoleClass(user.role)">
+                    <UserLock v-if="user.role === 'superadmin'" :size="14" />
+                    <UserStar v-else-if="user.role === 'admin'" :size="14" />
+                    <User v-else :size="14" />
+                  </span>
+                  <span v-if="user.department_name" class="dept-text">
+                    {{ user.department_name }}
+                  </span>
+                </div>
+              </template>
+
+              <template #card-more-action-corner>
+                <a-menu>
+                  <a-menu-item key="edit" @click.stop="showEditUserModal(user)">
+                    <span class="lucide-menu-item">
+                      <SquarePen :size="14" />
+                      <span>Chỉnh sửa người dùng</span>
+                    </span>
+                  </a-menu-item>
+                  <a-menu-item
+                    key="delete"
+                    :disabled="isUserDeleteDisabled(user)"
+                    :danger="!isUserDeleteDisabled(user)"
+                    @click.stop="confirmDeleteUser(user)"
                   >
-                    <MoreVertical :size="16" />
-                  </a-button>
-                </a-dropdown>
-              </div>
+                    <span class="lucide-menu-item">
+                      <Trash2 :size="14" />
+                      <span>Xóa người dùng</span>
+                    </span>
+                  </a-menu-item>
+                </a-menu>
+              </template>
 
-              <div class="card-content">
-                <div class="info-item">
-                  <span class="info-label">Số điện thoại di động:</span>
-                  <span class="info-value phone-text">{{ user.phone_number || '-' }}</span>
+              <template #info>
+                <div class="card-content">
+                  <div class="info-item">
+                    <span class="info-label">Số điện thoại di động:</span>
+                    <span class="info-value phone-text">{{ user.phone_number || '-' }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">thời gian sáng tạo:</span>
+                    <span class="info-value time-text">{{ formatTime(user.created_at) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-label">lần đăng nhập cuối cùng:</span>
+                    <span class="info-value time-text">{{ formatTime(user.last_login) }}</span>
+                  </div>
                 </div>
-                <div class="info-item">
-                  <span class="info-label">thời gian sáng tạo:</span>
-                  <span class="info-value time-text">{{ formatTime(user.created_at) }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">lần đăng nhập cuối cùng:</span>
-                  <span class="info-value time-text">{{ formatTime(user.last_login) }}</span>
-                </div>
-              </div>
-            </div>
+              </template>
+            </InfoCard>
           </div>
           <div v-if="filteredUsers.length > userManagement.pageSize" class="pagination-section">
             <a-pagination
@@ -236,7 +220,8 @@
           <a-form-item label="Mật khẩu" required class="form-item">
             <a-input-password
               v-model:value="userManagement.form.password"
-              placeholder="Vui lòng nhập mật khẩu"
+              :placeholder="`Vui lòng nhập mật khẩu（tối thiểu ${MIN_PASSWORD_LENGTH} ký tự）`"
+              :minlength="MIN_PASSWORD_LENGTH"
             />
           </a-form-item>
 
@@ -248,15 +233,7 @@
           </a-form-item>
         </template>
 
-        <a-form-item
-          v-if="userManagement.editMode && userManagement.form.role === 'superadmin'"
-          label="vai trò"
-          class="form-item"
-        >
-          <a-input value="siêu quản trị viên" disabled />
-          <div class="help-text">Tài khoản quản trị viên cấp cao không thể sửa đổi vai trò</div>
-        </a-form-item>
-        <a-form-item v-else label="vai trò" class="form-item">
+        <a-form-item v-if="!userManagement.editMode" label="vai trò" class="form-item">
           <a-select v-model:value="userManagement.form.role">
             <a-select-option value="user">Người dùng thông thường</a-select-option>
             <a-select-option value="admin" v-if="userStore.isSuperAdmin"
@@ -298,12 +275,13 @@ import {
   UserLock,
   UserStar,
   RefreshCw,
-  Search,
-  MoreVertical
+  Search
 } from 'lucide-vue-next'
 import { formatDateTime } from '@/utils/time'
+import { isPasswordLongEnough, MIN_PASSWORD_LENGTH } from '@/utils/passwordValidation'
 import { generatePixelAvatar } from '@/utils/pixelAvatar'
 import FallbackAvatar from '@/components/common/FallbackAvatar.vue'
+import InfoCard from '@/components/shared/InfoCard.vue'
 
 const userStore = useUserStore()
 
@@ -554,7 +532,6 @@ const showEditUserModal = (user) => {
     phoneNumber: user.phone_number || '',
     password: '',
     confirmPassword: '',
-    role: user.role,
     departmentId: user.department_id || null,
     usernameError: '',
     phoneError: ''
@@ -593,6 +570,11 @@ const handleUserFormSubmit = async () => {
         return
       }
 
+      if (!isPasswordLongEnough(userManagement.form.password)) {
+        message.error(`Mật khẩu phải có ít nhất ${MIN_PASSWORD_LENGTH} ký tự`)
+        return
+      }
+
       if (userManagement.form.password !== userManagement.form.confirmPassword) {
         message.error('Mật khẩu nhập hai lần không nhất quán')
         return
@@ -605,8 +587,7 @@ const handleUserFormSubmit = async () => {
     if (userManagement.editMode) {
       // Tạo đối tượng dữ liệu cập nhật
       const updateData = {
-        username: userManagement.form.username.trim(),
-        role: userManagement.form.role
+        username: userManagement.form.username.trim()
       }
 
       // Thêm trường số điện thoại di động
@@ -840,129 +821,54 @@ onMounted(async () => {
         // padding: 16px;
 
         .user-card {
-          background: var(--gray-0);
-          border: 1px solid var(--gray-150);
-          border-radius: 8px;
-          padding: 12px;
+          cursor: default;
 
-          transition: all 0.2s ease;
-          box-shadow: 0 1px 3px var(--shadow-1);
-
-          &:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            border-color: var(--gray-200);
+          :deep(.info-card-icon) {
+            border-radius: 50%;
           }
 
-          .card-header {
+          :deep(.info-card-body) {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
+            flex-direction: column;
             gap: 8px;
-            margin-bottom: 10px;
+          }
 
-            .user-info-main {
+          .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
+          .role-dept-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px 2px 4px;
+            background: var(--gray-50);
+            border-radius: 4px;
+
+            .role-icon-wrapper {
               display: flex;
-              flex: 1;
-              min-width: 0;
-              gap: 12px;
               align-items: center;
+              justify-content: center;
+              width: 16px;
+              height: 16px;
 
-              .user-avatar {
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                background: var(--gray-50);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
-                flex-shrink: 0;
-
-                .avatar-img {
-                  width: 100%;
-                  height: 100%;
-                  object-fit: cover;
-                }
+              &.role-superadmin {
+                color: var(--color-error-700);
               }
-
-              .user-info-content {
-                flex: 1;
-                min-width: 0;
-
-                .name-tag-row {
-                  display: flex;
-                  align-items: center;
-                  justify-content: space-between;
-                  gap: 8px;
-                  margin-bottom: 2px;
-                  flex-wrap: wrap;
-
-                  .username {
-                    margin: 0;
-                    font-size: 15px;
-                    font-weight: 600;
-                    color: var(--gray-900);
-                    line-height: 1.2;
-                    flex-shrink: 0;
-                  }
-
-                  .role-dept-badge {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 4px;
-                    padding: 2px 8px 2px 4px;
-                    background: var(--gray-50);
-                    border-radius: 4px;
-
-                    .role-icon-wrapper {
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      width: 16px;
-                      height: 16px;
-
-                      &.role-superadmin {
-                        color: var(--color-error-700);
-                      }
-                      &.role-admin {
-                        color: var(--color-info-700);
-                      }
-                      &.role-user {
-                        color: var(--color-success-700);
-                      }
-                    }
-
-                    .dept-text {
-                      font-size: 12px;
-                      color: var(--gray-700);
-                      font-weight: 500;
-                    }
-                  }
-                }
-
-                .user-id-row {
-                  font-size: 12px;
-                  color: var(--gray-500);
-                  font-family: 'Monaco', 'Consolas', monospace;
-                  line-height: 1.2;
-                }
+              &.role-admin {
+                color: var(--color-info-700);
+              }
+              &.role-user {
+                color: var(--color-success-700);
               }
             }
 
-            .card-menu-trigger {
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              width: 28px;
-              height: 28px;
-              flex-shrink: 0;
-              color: var(--gray-600);
-
-              &:hover,
-              &:focus {
-                color: var(--gray-700);
-                background: var(--gray-50);
-              }
+            .dept-text {
+              font-size: 12px;
+              color: var(--gray-700);
+              font-weight: 500;
             }
           }
 
@@ -1022,16 +928,6 @@ onMounted(async () => {
     font-size: 13px;
     color: var(--gray-900);
     font-family: 'Monaco', 'Consolas', monospace;
-  }
-}
-
-.user-card-menu-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
-  &.danger {
-    color: var(--color-error-700);
   }
 }
 

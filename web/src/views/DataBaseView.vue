@@ -163,7 +163,12 @@
             ref="shareConfigFormRef"
             v-model="shareConfig"
             :auto-select-user-dept="true"
-          />
+            :require-read-scope="true"
+          >
+            <template #manage-description>
+              知识库<strong>仅管理员</strong>可以管理知识库；普通用户无法管理。
+            </template>
+          </ShareConfigForm>
         </div>
       </div>
       <template #footer>
@@ -222,7 +227,29 @@
         <template #icon>
           <component :is="getKbTypeIcon(database.kb_type || 'milvus')" :size="20" />
         </template>
-        <template #status />
+        <template #card-more-action-corner>
+          <a-menu @click="({ key }) => handleDatabaseAction(key, database)">
+            <a-menu-item key="copy">
+              <span class="lucide-menu-item">
+                <Copy :size="15" />
+                <span>复制 ID</span>
+              </span>
+            </a-menu-item>
+            <a-menu-item v-if="database.can_manage" key="edit">
+              <span class="lucide-menu-item">
+                <Pencil :size="15" />
+                <span>编辑知识库</span>
+              </span>
+            </a-menu-item>
+            <a-menu-divider />
+            <a-menu-item v-if="database.can_manage" key="delete" danger>
+              <span class="lucide-menu-item">
+                <Trash2 :size="15" />
+                <span>删除知识库</span>
+              </span>
+            </a-menu-item>
+          </a-menu>
+        </template>
       </InfoCard>
     </ExtensionCardGrid>
   </div>
@@ -235,9 +262,9 @@ import { storeToRefs } from 'pinia'
 import { useConfigStore } from '@/stores/config'
 import { useDatabaseStore } from '@/stores/database'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
-import { Plus } from 'lucide-vue-next'
-import { message } from 'ant-design-vue'
-import { typeApi } from '@/apis/knowledge_api'
+import { Copy, Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { message, Modal } from 'ant-design-vue'
+import { databaseApi, typeApi } from '@/apis/knowledge_api'
 import PageHeader from '@/components/shared/PageHeader.vue'
 import PageShoulder from '@/components/shared/PageShoulder.vue'
 import ResourceEmptyState from '@/components/shared/ResourceEmptyState.vue'
@@ -249,6 +276,7 @@ import dayjs, { parseToShanghai } from '@/utils/time'
 import AiTextarea from '@/components/AiTextarea.vue'
 import { useChunkPresetOptions } from '@/composables/useChunkPresetOptions'
 import { getKbTypeLabel, getKbTypeIcon, getKbTypeColor, kbUtils } from '@/utils/kb_utils'
+import { getShareConfigLabel } from '@/utils/shareConfig'
 import { DEFAULT_CHUNK_PRESET_ID } from '@/utils/chunkUtils'
 
 const route = useRoute()
@@ -299,9 +327,9 @@ const state = reactive({
 })
 
 const createDefaultShareConfig = () => ({
-  access_level: 'global',
-  department_ids: [],
-  user_uids: []
+  version: 2,
+  read_scope: { access_level: 'global', department_ids: [], user_uids: [] },
+  manage_scope: null
 })
 
 const shareConfig = ref(createDefaultShareConfig())
@@ -431,12 +459,7 @@ const buildRequestData = () => {
       newDatabase.chunk_preset_id || DEFAULT_CHUNK_PRESET_ID
   }
 
-  requestData.share_config = {
-    access_level: shareConfig.value.access_level,
-    department_ids:
-      shareConfig.value.access_level === 'department' ? shareConfig.value.department_ids || [] : [],
-    user_uids: shareConfig.value.access_level === 'user' ? shareConfig.value.user_uids || [] : []
-  }
+  requestData.share_config = shareConfig.value
 
   // Thêm cấu hình cụ thể dựa trên loại
   if (['milvus'].includes(newDatabase.kb_type)) {
@@ -503,12 +526,16 @@ const cardTags = (database) => {
     {
       name: getKbTypeLabel(database.kb_type || 'milvus'),
       color: getKbTypeColor(database.kb_type || 'milvus')
+    },
+    {
+      name: getShareConfigLabel(database.share_config),
+      color: 'gray'
     }
   ]
   if (database.embedding_model_spec) {
     tags.push({
       name: database.embedding_model_spec.split('/').slice(-1)[0],
-      color: 'blue'
+      color: 'gray'
     })
   }
   return tags
@@ -516,6 +543,57 @@ const cardTags = (database) => {
 
 const navigateToDatabase = (database) => {
   router.push({ path: `/extensions/knowledgebase/${database.kb_id}` })
+}
+
+const copyDatabaseId = async (database) => {
+  try {
+    await navigator.clipboard.writeText(database.kb_id)
+  } catch {
+    const textArea = document.createElement('textarea')
+    textArea.value = database.kb_id
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+  }
+  message.success('知识库 ID 已复制')
+}
+
+const deleteDatabase = (database) => {
+  Modal.confirm({
+    title: '删除知识库',
+    content: `确定要删除知识库“${database.name}”吗？此操作不可撤销。`,
+    okText: '删除',
+    okType: 'danger',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        await databaseApi.deleteDatabase(database.kb_id)
+        message.success('知识库已删除')
+        await databaseStore.loadDatabases()
+      } catch (error) {
+        message.error(error.message || '删除失败')
+        throw error
+      }
+    }
+  })
+}
+
+const handleDatabaseAction = (key, database) => {
+  if (key === 'copy') {
+    copyDatabaseId(database)
+    return
+  }
+  if (key === 'edit') {
+    router.push({
+      path: `/extensions/knowledgebase/${database.kb_id}`,
+      query: { action: 'edit' }
+    })
+    return
+  }
+  if (key === 'delete') {
+    deleteDatabase(database)
+  }
 }
 
 watch(

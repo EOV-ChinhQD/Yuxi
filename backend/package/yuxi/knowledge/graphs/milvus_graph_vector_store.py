@@ -51,6 +51,34 @@ class MilvusGraphVectorStore:
         except Exception as exc:
             logger.warning(f"Milvus graph database operation failed, using default: {exc}")
 
+    async def upsert_graph_records(
+        self,
+        *,
+        kb_id: str,
+        embedding_model_spec: str,
+        record_type: str,
+        records: list[dict[str, Any]],
+    ) -> None:
+        if not records:
+            return
+        embedding_info = model_cache.get_model_info(embedding_model_spec)
+        if not embedding_info or embedding_info.model_type != "embedding":
+            raise ValueError(f"Unsupported embedding model: {embedding_model_spec}")
+
+        if record_type == "entity":
+            collection = await asyncio.to_thread(self._get_or_create_entity_collection, kb_id, embedding_info)
+        elif record_type == "triple":
+            collection = await asyncio.to_thread(self._get_or_create_triple_collection, kb_id, embedding_info)
+        else:
+            raise ValueError(f"Unsupported graph vector record type: {record_type}")
+
+        embed = self._get_embedding_function(embedding_model_spec)
+        embeddings = await embed([record["content"] for record in records])
+        if record_type == "entity":
+            await asyncio.to_thread(self._upsert_entities, collection, records, embeddings)
+        else:
+            await asyncio.to_thread(self._upsert_triples, collection, records, embeddings)
+
     async def insert_missing_graph_records(
         self,
         *,
@@ -60,6 +88,7 @@ class MilvusGraphVectorStore:
         triples: list[dict[str, Any]],
         events: list[dict[str, Any]] | None = None,
     ) -> None:
+        """Chỉ chèn bản ghi đồ thị còn thiếu (tính năng event-graph của nhánh ours)."""
         if not entities and not triples and not events:
             return
 
@@ -206,9 +235,6 @@ class MilvusGraphVectorStore:
             except Exception as exc:
                 logger.error(f"Failed to drop Milvus graph collection {collection_name}: {exc}")
 
-    async def _empty_embeddings(self) -> list:
-        return []
-
     def _get_embedding_function(self, embedding_model_spec: str):
         model = select_embedding_model(embedding_model_spec)
         batch_size = int(getattr(model, "batch_size", 40) or 40)
@@ -352,6 +378,26 @@ class MilvusGraphVectorStore:
         )
         return collection
 
+    def _upsert_entities(self, collection: Collection, records: list[dict[str, Any]], embeddings: list) -> None:
+        collection.upsert(
+            [
+                [record["id"] for record in records],
+                [record["content"] for record in records],
+                embeddings,
+            ]
+        )
+
+    def _upsert_triples(self, collection: Collection, records: list[dict[str, Any]], embeddings: list) -> None:
+        collection.upsert(
+            [
+                [record["id"] for record in records],
+                [record["content"] for record in records],
+                [record["source_id"] for record in records],
+                [record["target_id"] for record in records],
+                embeddings,
+            ]
+        )
+
     def _query_existing_ids(self, collection: Collection, ids: list[str]) -> set[str]:
         if not ids:
             return set()
@@ -363,6 +409,10 @@ class MilvusGraphVectorStore:
             rows = collection.query(expr=f"id in [{quoted_ids}]", output_fields=["id"])
             existing_ids.update(row["id"] for row in rows)
         return existing_ids
+
+    @staticmethod
+    async def _empty_embeddings() -> list:
+        return []
 
     def _insert_entities(self, collection: Collection, entities: list[dict[str, Any]], embeddings: list) -> None:
         collection.insert(

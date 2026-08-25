@@ -68,9 +68,7 @@ def _subagent_route_for_namespace(
 
 
 async def _collect_subagent_routes(run, parent_thread_id: str, routes: dict[tuple[str, ...], dict[str, str]]) -> None:
-    subagents = getattr(run, "yuxi_subagents", None)
-    if subagents is None:
-        subagents = getattr(run, "subagents", None)
+    subagents = getattr(run, "subagents", None)
     if subagents is None:
         return
 
@@ -408,6 +406,7 @@ class BaseAgent:
         for pragma in ("PRAGMA journal_mode=WAL", "PRAGMA busy_timeout=5000", "PRAGMA synchronous=NORMAL"):
             cursor = await conn.execute(pragma)
             await cursor.fetchall()
+
 
         # Patch: langgraph's AsyncSqliteSaver expects is_alive() method which aiosqlite may not have
         if not hasattr(conn, "is_alive"):

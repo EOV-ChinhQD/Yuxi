@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from server.utils.auth_middleware import get_admin_user
-from yuxi import knowledge_base
+from server.utils.knowledge_permissions import require_knowledge_base_read
+from server.utils.knowledge_response import serialize_knowledge_base
 from yuxi.knowledge.graphs.milvus_graph_service import MilvusGraphService
+from yuxi.knowledge.runtime import knowledge_base
 from yuxi.storage.postgres.models_business import User
 from yuxi.utils.logging_config import logger
 
@@ -14,7 +16,7 @@ async def _get_graph_service(kb_id: str) -> MilvusGraphService:
     if not db_info:
         raise HTTPException(status_code=404, detail="Knowledge base not found")
 
-    kb_type = (db_info.get("kb_type") or "").lower()
+    kb_type = db_info.kb_type.lower()
     if kb_type != "milvus":
         raise HTTPException(status_code=404, detail="Graph API only supports Milvus knowledge bases")
 
@@ -25,20 +27,21 @@ async def _get_graph_service(kb_id: str) -> MilvusGraphService:
 async def get_graphs(current_user: User = Depends(get_admin_user)):
     """Get a list of Milvus knowledge bases that support graph capabilities"""
     try:
-        databases = (await knowledge_base.get_databases_by_uid(current_user.uid)).get("databases", [])
+        databases = await knowledge_base.get_databases_by_uid(current_user.uid)
         graphs = []
         for db in databases:
-            if (db.get("kb_type") or "").lower() != "milvus":
+            if db.kb_type.lower() != "milvus":
                 continue
+            serialized = serialize_knowledge_base(db)
             graphs.append(
                 {
-                    "id": db.get("kb_id"),
-                    "name": db.get("name"),
+                    "id": db.kb_id,
+                    "name": db.name,
                     "type": "milvus",
-                    "description": db.get("description"),
-                    "status": db.get("status", "active"),
-                    "created_at": db.get("created_at"),
-                    "metadata": db,
+                    "description": db.description,
+                    "status": "已连接",
+                    "created_at": serialized["created_at"],
+                    "metadata": serialized,
                 }
             )
         return {"success": True, "data": graphs}
@@ -54,7 +57,8 @@ async def get_subgraph(
     max_depth: int = Query(2, description="Độ sâu tối đa", ge=1, le=5),
     max_nodes: int = Query(100, description="Số lượng nút tối đa", ge=1, le=1000),
     exclude_chunk: bool = Query(False, description="Có loại trừ nút Chunk hay không"),
-    current_user: User = Depends(get_admin_user),
+    current_user: User = Depends(require_knowledge_base_read),
+
 ):
     """Query Milvus knowledge base graph subgraph"""
     try:
@@ -77,9 +81,10 @@ async def get_subgraph(
 @graph.get("/labels")
 async def get_graph_labels(
     kb_id: str = Query(..., description="ID kho kiến thức Milvus"),
-    current_user: User = Depends(get_admin_user),
+    current_user: User = Depends(require_knowledge_base_read),
 ):
     """Get all tags of Milvus knowledge base graph"""
+
     try:
         service = await _get_graph_service(kb_id)
         labels = await service.get_labels()
@@ -94,9 +99,10 @@ async def get_graph_labels(
 @graph.get("/stats")
 async def get_graph_stats(
     kb_id: str = Query(..., description="ID kho kiến thức Milvus"),
-    current_user: User = Depends(get_admin_user),
+    current_user: User = Depends(require_knowledge_base_read),
 ):
     """Get Milvus knowledge base graph statistics"""
+
     try:
         service = await _get_graph_service(kb_id)
         stats_data = await service.get_stats()

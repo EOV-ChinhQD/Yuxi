@@ -31,7 +31,12 @@
             </a-button>
           </a-upload>
           <a-tooltip title="Làm mới Skills" placement="bottom">
-            <a-button class="lucide-icon-btn" :disabled="loading" @click="fetchSkills">
+            <a-button
+              class="lucide-icon-btn"
+              aria-label="Làm mới Skills"
+              :disabled="loading"
+              @click="fetchSkills({ refreshPersonal: true })"
+            >
               <RefreshCw :size="14" />
             </a-button>
           </a-tooltip>
@@ -60,7 +65,7 @@
     >
       <div class="skill-empty-card">
         <div class="skill-empty-icon">
-          <BookMarked :size="22" />
+          <WandSparkles :size="22" />
         </div>
         <div class="skill-empty-title">
           {{ searchQuery ? 'Không tìm thấy Skill' : 'Chưa có Skill nào' }}
@@ -78,69 +83,63 @@
     <template v-else>
       <template v-for="group in visibleSkillGroups" :key="group.key">
         <div class="extension-section-header">{{ group.title }}</div>
-        <ExtensionCardGrid :min-width="360">
+        <ExtensionCardGrid :min-width="280">
           <div
             v-for="skill in group.skills"
-            :key="`${group.key}:${skill.slug}`"
+            :key="`${group.key}:${skill.slug || skill.id}`"
             class="card-wrapper"
             :class="{
-              selected: !skill.isRecommendation && selectedCardSlugs.includes(skill.slug),
-              'batch-mode': isBatchDeleteMode && !skill.isRecommendation
+              selected: !skill.isSuite && selectedCardSlugs.includes(skill.slug),
+              'batch-mode': isBatchDeleteMode && !skill.isSuite
             }"
           >
-            <a-checkbox
-              v-if="
-                !skill.isRecommendation &&
-                isBatchDeleteMode &&
-                canManageSkill(skill) &&
-                skill.sourceType !== 'builtin'
-              "
-              :checked="selectedCardSlugs.includes(skill.slug)"
-              @change="handleToggleCardSelect(skill.slug)"
-              class="card-select-checkbox"
+            <SkillSuiteCard
+              v-if="skill.isSuite"
+              :suite="skill"
+              :installed-slugs="[...installedPersonalSkillKeys]"
+              @open="openRecommendedSuite"
             />
-            <InfoCard
-              variant="mini"
-              :title="formatExtensionCardTitle(skill.name)"
-              :description="skill.description || 'Không có mô tả'"
-              :default-icon="BookMarkedIcon"
-              @click="handleCardClick(skill)"
-              :class="{ 'card-clickable-select': isBatchDeleteMode && !skill.isRecommendation }"
-            >
-              <template #action>
-                <button
-                  v-if="skill.isRecommendation"
-                  type="button"
-                  class="skill-enabled-action"
-                  :class="{ loading: isRecommendedSkillInstalling(skill.source) }"
-                  :disabled="isRecommendedSkillInstallDisabled(skill.source)"
-                  aria-label="Cài đặt Skill đề xuất"
-                  @click.stop="handleRecommendedSkillInstall(skill)"
-                >
-                  <LoaderCircle
-                    v-if="isRecommendedSkillInstalling(skill.source)"
-                    :size="15"
-                    class="action-icon action-icon-spin"
-                  />
-                  <Plus v-else :size="15" class="action-icon" />
-                </button>
-                <button
-                  v-else
-                  type="button"
-                  class="skill-enabled-action"
-                  :class="{ enabled: skill.enabled !== false }"
-                  :disabled="!canManageSkill(skill) || isSkillToggling(skill.slug)"
-                  :aria-label="skill.enabled === false ? 'Bật Skill' : 'Tắt Skill'"
-                  @click.stop="handleToggleSkillEnabled(skill)"
-                >
-                  <Plus v-if="skill.enabled === false" :size="15" class="action-icon" />
-                  <template v-else>
-                    <Check :size="15" class="action-icon action-icon-check" />
-                    <Minus :size="15" class="action-icon action-icon-minus" />
-                  </template>
-                </button>
-              </template>
-            </InfoCard>
+            <template v-else>
+              <a-checkbox
+                v-if="
+                  isBatchDeleteMode &&
+                  canManageSkill(skill) &&
+                  skill.sourceType !== 'builtin' &&
+                  skill.sourceScope !== 'personal'
+                "
+                :checked="selectedCardSlugs.includes(skill.slug)"
+                @change="handleToggleCardSelect(skill.slug)"
+                class="card-select-checkbox"
+              />
+              <InfoCard
+                variant="default"
+                :title="formatExtensionCardTitle(skill.name)"
+                :subtitle="skill.slug"
+                :description="skill.description || 'Không có mô tả'"
+                :tags="skillCardTags(skill)"
+                :default-icon="getSkillIcon(skill.slug)"
+                @click="handleCardClick(skill)"
+                :class="{ 'card-clickable-select': isBatchDeleteMode }"
+              >
+                <template #actions>
+                  <button
+                    v-if="skill.sourceScope !== 'personal'"
+                    type="button"
+                    class="skill-enabled-action"
+                    :class="{ enabled: skill.enabled !== false }"
+                    :disabled="!canManageSkill(skill) || isSkillToggling(skill.slug)"
+                    :aria-label="skill.enabled === false ? 'Bật Skill' : 'Tắt Skill'"
+                    @click.stop="handleToggleSkillEnabled(skill)"
+                  >
+                    <Plus v-if="skill.enabled === false" :size="15" class="action-icon" />
+                    <template v-else>
+                      <Check :size="15" class="action-icon action-icon-check" />
+                      <Minus :size="15" class="action-icon action-icon-minus" />
+                    </template>
+                  </button>
+                </template>
+              </InfoCard>
+            </template>
           </div>
         </ExtensionCardGrid>
       </template>
@@ -159,7 +158,7 @@
         <div class="skill-preview-header">
           <div class="skill-preview-title-area">
             <div class="skill-preview-icon">
-              <BookMarked :size="18" />
+              <component :is="getSkillIcon(previewSkill.slug)" :size="18" />
             </div>
             <div class="skill-preview-title-text">
               <div class="skill-preview-title">
@@ -180,6 +179,7 @@
           </div>
           <div class="skill-preview-actions">
             <a-switch
+              v-if="previewSkill.sourceScope !== 'personal'"
               :checked="previewSkill.enabled !== false"
               :disabled="!canManageSkill(previewSkill) || isSkillToggling(previewSkill.slug)"
               :loading="isSkillToggling(previewSkill.slug)"
@@ -214,7 +214,12 @@
           </div>
           <div class="skill-preview-footer-right">
             <a-button @click="closeSkillPreview">Đóng</a-button>
-            <a-button type="primary" class="lucide-icon-btn" @click="goToPreviewSkillManagement">
+            <a-button
+              v-if="previewSkill.sourceScope !== 'personal'"
+              type="primary"
+              class="lucide-icon-btn"
+              @click="goToPreviewSkillManagement"
+            >
               <span>Quản lý</span>
             </a-button>
           </div>
@@ -222,22 +227,15 @@
       </div>
     </a-modal>
 
-    <a-modal
-      v-model:open="remoteInstallModalVisible"
-      title="Cài đặt từ xa Skill"
-      :footer="null"
-      width="760px"
-      :closable="!installingRemoteSkill"
-      :mask-closable="!installingRemoteSkill"
-      :keyboard="!installingRemoteSkill"
+    <SkillInstallFlowModal
+      :open="installFlowOpen"
+      :flow="installFlow"
+      @close="closeInstallFlow"
+      @completed="handleInstallFlowCompleted"
     >
-      <div class="remote-install-panel modal-mode">
-        <div class="install-setup-stage">
-          <a-tabs
-            v-model:activeKey="activeTab"
-            :disabled="installingRemoteSkill"
-            class="install-tabs"
-          >
+      <template #selection>
+        <div class="remote-install-panel">
+          <a-tabs v-model:activeKey="activeTab" class="install-tabs">
             <!-- Tab 1: Kéo từ kho lưu trữ (Repo) -->
             <a-tab-pane key="repo" tab="Kéo từ kho lưu trữ (Repo)">
               <div class="tab-content-wrapper">
@@ -247,7 +245,6 @@
                       <a-input
                         v-model:value="remoteInstallForm.source"
                         placeholder="Nguồn kho lưu trữ, vd: anthropics/skills hoặc GitHub URL"
-                        :disabled="installingRemoteSkill"
                       >
                         <template #suffix>
                           <a-dropdown
@@ -303,7 +300,6 @@
                     <a-button
                       type="primary"
                       :loading="listingRemoteSkills"
-                      :disabled="installingRemoteSkill"
                       @click="handleListRemoteSkills"
                     >
                       Kéo kỹ năng
@@ -355,44 +351,33 @@
                         />
                       </div>
                       <div class="skills-list-viewport">
-                        <a-list
-                          size="small"
-                          :pagination="{ pageSize: 5, size: 'small', showSizeChanger: false }"
-                          :data-source="filteredRepoSkills"
-                          class="remote-skills-list-container"
+                      <div class="remote-skills-list-container">
+                        <div
+                          v-for="item in filteredRepoSkills"
+                          :key="item.name"
+                          class="remote-skill-row"
+                          :class="{ selected: selectedRepoSkills.includes(item.name) }"
+                          role="checkbox"
+                          tabindex="0"
+                          :aria-checked="selectedRepoSkills.includes(item.name)"
+                          @click="toggleRepoSkillFromRow(item.name)"
+                          @keydown.enter.prevent="toggleRepoSkillFromRow(item.name)"
+                          @keydown.space.prevent="toggleRepoSkillFromRow(item.name)"
                         >
-                          <template #renderItem="{ item }">
-                            <a-list-item>
-                              <div class="skill-list-item-content">
-                                <div class="skill-name-col">
-                                  <a-checkbox
-                                    :checked="selectedRepoSkills.includes(item.name)"
-                                    @change="
-                                      (e) => handleToggleRepoSkill(item.name, e.target.checked)
-                                    "
-                                    :disabled="installingRemoteSkill"
-                                  >
-                                    <span class="skill-item-name">{{ item.name }}</span>
-                                  </a-checkbox>
-                                </div>
-                                <div class="skill-desc-col">
-                                  <a-tooltip
-                                    :title="item.description || 'Không có mô tả'"
-                                    placement="topLeft"
-                                  >
-                                    <span class="skill-item-desc">{{
-                                      item.description || 'Không có mô tả'
-                                    }}</span>
-                                  </a-tooltip>
-                                </div>
-                              </div>
-                            </a-list-item>
-                          </template>
-                        </a-list>
+                          <a-checkbox
+                            class="remote-row-checkbox"
+                            :checked="selectedRepoSkills.includes(item.name)"
+                            :tabindex="-1"
+                            aria-hidden="true"
+                          />
+                          <div class="remote-skill-row-content">
+                            <span class="skill-item-name">{{ item.name }}</span>
+                            <span class="skill-item-desc">{{
+                              item.description || 'Không có mô tả'
+                            }}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div class="remote-skill-summary">
-                        Đã chọn {{ selectedRepoSkills.length }} / Đã tìm thấy
-                        {{ remoteSkillOptions.length }} skills.
                       </div>
                     </template>
                   </div>
@@ -409,14 +394,12 @@
                       <a-input
                         v-model:value="searchKeyword"
                         placeholder="Nhập từ khóa như web, python để tìm kiếm"
-                        :disabled="installingRemoteSkill"
                         @pressEnter="handleSearchRemoteSkills"
                       />
                     </div>
                     <a-button
                       type="primary"
                       :loading="searchingRemoteSkills"
-                      :disabled="installingRemoteSkill"
                       @click="handleSearchRemoteSkills"
                     >
                       Tìm kiếm kỹ năng
@@ -435,11 +418,7 @@
                           <div class="single-remote-skill-name">
                             {{ singleSearchedSkill.name }}
                           </div>
-                          <a-tag
-                            v-if="singleSearchedSkill.installs"
-                            color="blue"
-                            class="skill-item-installs"
-                          >
+                          <a-tag v-if="singleSearchedSkill.installs" class="skill-item-installs">
                             {{ singleSearchedSkill.installs }}
                           </a-tag>
                         </div>
@@ -463,50 +442,34 @@
                         </div>
                       </div>
                       <div class="skills-list-viewport">
-                        <a-list
-                          size="small"
-                          :pagination="{ pageSize: 5, size: 'small', showSizeChanger: false }"
-                          :data-source="searchedSkills"
-                          class="remote-skills-list-container"
+                      <div class="remote-skills-list-container">
+                        <div
+                          v-for="item in searchedSkills"
+                          :key="`${item.source}:${item.name}`"
+                          class="remote-skill-row"
+                          :class="{ selected: isSearchSkillSelected(item) }"
+                          role="checkbox"
+                          tabindex="0"
+                          :aria-checked="isSearchSkillSelected(item)"
+                          @click="toggleSearchSkillFromRow(item)"
+                          @keydown.enter.prevent="toggleSearchSkillFromRow(item)"
+                          @keydown.space.prevent="toggleSearchSkillFromRow(item)"
                         >
-                          <template #renderItem="{ item }">
-                            <a-list-item>
-                              <div class="search-skill-item-row">
-                                <div class="skill-name-col">
-                                  <a-checkbox
-                                    :checked="
-                                      selectedSearchSkills.some(
-                                        (s) => s.name === item.name && s.source === item.source
-                                      )
-                                    "
-                                    @change="(e) => handleToggleSearchSkill(item, e.target.checked)"
-                                    :disabled="installingRemoteSkill"
-                                  >
-                                    <span class="skill-item-name">{{ item.name }}</span>
-                                  </a-checkbox>
-                                </div>
-                                <div class="skill-repo-col">
-                                  <a-tooltip :title="item.source" placement="topLeft">
-                                    <span class="skill-item-repo">{{ item.source }}</span>
-                                  </a-tooltip>
-                                </div>
-                                <div class="skill-install-col">
-                                  <a-tag
-                                    v-if="item.installs"
-                                    color="blue"
-                                    class="skill-item-installs"
-                                  >
-                                    {{ item.installs }}
-                                  </a-tag>
-                                </div>
-                              </div>
-                            </a-list-item>
-                          </template>
-                        </a-list>
+                          <a-checkbox
+                            class="remote-row-checkbox"
+                            :checked="isSearchSkillSelected(item)"
+                            :tabindex="-1"
+                            aria-hidden="true"
+                          />
+                          <div class="remote-skill-row-content">
+                            <span class="skill-item-name">{{ item.name }}</span>
+                            <span class="skill-item-desc">{{ item.source }}</span>
+                          </div>
+                          <span v-if="item.installs" class="skill-install-count">
+                            {{ item.installs }}
+                          </span>
+                        </div>
                       </div>
-                      <div class="remote-skill-summary">
-                        Đã chọn {{ selectedSearchSkills.length }} / Tìm thấy tổng cộng
-                        {{ searchedSkills.length }} skills.
                       </div>
                     </template>
                   </div>
@@ -514,80 +477,27 @@
               </div>
             </a-tab-pane>
           </a-tabs>
-
-          <!-- Khu vực thao tác dưới -->
-          <div class="modal-footer-actions">
-            <a-button :disabled="installingRemoteSkill" @click="handleCancelInstall">
-              Hủy
-            </a-button>
-            <a-button
-              type="primary"
-              :loading="installingRemoteSkill"
-              :disabled="
-                activeTab === 'repo'
-                  ? selectedRepoSkills.length === 0
-                  : selectedSearchSkills.length === 0
-              "
-              @click="startInstallRemoteSkills"
-            >
-              Phân tích và xác nhận (Đã chọn
-              {{ activeTab === 'repo' ? selectedRepoSkills.length : selectedSearchSkills.length }}
-              )
-            </a-button>
-          </div>
         </div>
-      </div>
-    </a-modal>
+      </template>
 
-    <a-modal
-      v-model:open="draftConfirmVisible"
-      title="Xác nhận thêm Skill"
-      width="720px"
-      :confirm-loading="draftConfirmLoading"
-      :closable="!draftConfirmLoading"
-      :mask-closable="!draftConfirmLoading"
-      :keyboard="!draftConfirmLoading"
-      ok-text="Xác nhận thêm"
-      cancel-text="Hủy"
-      @ok="confirmSkillDraft"
-      @cancel="cancelSkillDraft"
-    >
-      <div v-if="pendingDraft" class="skill-draft-confirm-panel">
-        <div class="draft-source-row">
-          <span class="draft-source-label">Nguồn</span>
-          <span>{{ pendingDraft.source || sourceTypeLabel(pendingDraft.source_type) }}</span>
-        </div>
-        <div class="draft-items-list">
-          <div
-            v-for="item in pendingDraft.items"
-            :key="`${item.source || pendingDraft.source || 'local'}:${item.slug || item.name}`"
-            class="draft-item"
-            :class="{ failed: item.success === false }"
+      <template #selection-footer>
+        <span class="modal-footer-summary">{{ remoteSelectionSummary }}</span>
+        <div class="modal-footer-buttons">
+          <a-button @click="closeInstallFlow">Hủy</a-button>
+          <a-button
+            type="primary"
+            :disabled="
+              activeTab === 'repo'
+                ? selectedRepoSkills.length === 0
+                : selectedSearchSkills.length === 0
+            "
+            @click="startInstallRemoteSkills"
           >
-            <div class="draft-item-main">
-              <div class="draft-item-title">{{ item.name || item.slug }}</div>
-              <div class="draft-item-desc">
-                {{ item.description || item.error || 'Không có mô tả' }}
-              </div>
-              <div v-if="item.warnings?.length" class="draft-item-warning">
-                {{ item.warnings.join('；') }}
-              </div>
-            </div>
-            <a-tag v-if="item.success === false" color="red">Phân tích thất bại</a-tag>
-            <a-tag v-else color="blue">{{
-              sourceTypeLabel(item.source_type || pendingDraft.source_type)
-            }}</a-tag>
-          </div>
+            Phân tích và xác nhận
+          </a-button>
         </div>
-        <div class="draft-share-title">Phạm vi áp dụng</div>
-        <ShareConfigForm
-          ref="shareConfigFormRef"
-          v-model="draftShareConfig"
-          :auto-select-user-dept="true"
-          :allowed-access-levels="pendingDraft.allowed_access_levels || ['user']"
-        />
-      </div>
-    </a-modal>
+      </template>
+    </SkillInstallFlowModal>
   </div>
 </template>
 
@@ -599,59 +509,58 @@ import {
   RefreshCw,
   Upload,
   Computer,
-  BookMarked,
+  WandSparkles,
   History,
   Trash2,
   Check,
   Plus,
-  Minus,
-  LoaderCircle
+  Minus
 } from 'lucide-vue-next'
 import { skillApi } from '@/apis/skill_api'
 import ExtensionCardGrid from './ExtensionCardGrid.vue'
+import SkillInstallFlowModal from './SkillInstallFlowModal.vue'
+import SkillSuiteCard from './SkillSuiteCard.vue'
 import InfoCard from '@/components/shared/InfoCard.vue'
 import PageShoulder from '@/components/shared/PageShoulder.vue'
-import ShareConfigForm from '@/components/ShareConfigForm.vue'
 import MarkdownPreview from '@/components/common/MarkdownPreview.vue'
 import { formatExtensionCardTitle } from '@/utils/extensionDisplayName'
+import { getShareConfigLabel } from '@/utils/shareConfig'
+import { getSkillIcon } from '@/utils/skill_icon_utils'
 
-const BookMarkedIcon = BookMarked
-const RECOMMENDED_SKILLS = [
+const RECOMMENDED_SUITES = [
   {
-    slug: 'skill-creator',
-    name: 'skill-creator',
+    id: 'anthropic-documents',
+    name: 'Bộ kỹ năng xử lý tài liệu Anthropic',
+    provider: 'Anthropic',
     description:
-      'Tạo, duy trì và cải thiện Agent Skill, phù hợp để viết SKILL.md, thiết kế quy trình, v.v.',
-    source: 'https://modelscope.cn/skills/@anthropics/skill-creator',
-    aliases: ['skill-creator', 'Skill Creator']
-  },
-  {
-    slug: 'frontend-design',
-    name: 'frontend-design',
-    description: 'Cung cấp gợi ý thiết kế giao diện UI/UX.',
-    source: 'https://modelscope.cn/skills/@anthropics/frontend-design',
-    aliases: ['frontend-design', 'Frontend Design']
-  },
-  {
-    slug: 'docx',
-    name: 'docx',
-    description: 'Đọc, chỉnh sửa và tạo tài liệu Word DOCX.',
-    source: 'https://modelscope.cn/skills/@anthropics/docx',
-    aliases: ['docx', 'DOCX']
-  },
-  {
-    slug: 'xlsx',
-    name: 'xlsx',
-    description: 'Đọc, phân tích và tạo bảng tính Excel XLSX.',
-    source: 'https://modelscope.cn/skills/@anthropics/xlsx',
-    aliases: ['xlsx', 'XLSX']
-  },
-  {
-    slug: 'pdf',
-    name: 'pdf',
-    description: 'Đọc, trích xuất và phân tích nội dung tài liệu PDF.',
-    source: 'https://modelscope.cn/skills/@anthropics/pdf',
-    aliases: ['pdf', 'PDF']
+      'Các Skill xử lý tài liệu chính thức của Anthropic, bao gồm đọc, tạo và chỉnh sửa PDF, Word, bảng tính và bài thuyết trình.',
+    source: 'anthropics/skills',
+    skills: [
+      {
+        slug: 'pdf',
+        name: 'PDF',
+        description:
+          'Trích xuất văn bản và bảng biểu, hỗ trợ gộp/tách, xoay và watermark, biểu mẫu, mã hóa/giải mã, trích xuất ảnh và OCR.'
+      },
+      {
+        slug: 'docx',
+        name: 'Docs',
+        description:
+          'Tạo và chỉnh sửa tài liệu Word, xử lý mục lục, số trang, hình ảnh, tìm kiếm và thay thế, theo dõi sửa đổi và chú thích.'
+      },
+      {
+        slug: 'xlsx',
+        name: 'XLSX',
+        description:
+          'Tạo và chỉnh sửa bảng tính, hỗ trợ công thức, định dạng, biểu đồ, làm sạch dữ liệu, tái cấu trúc bảng và chuyển đổi định dạng.'
+      },
+      {
+        slug: 'pptx',
+        name: 'PPTX',
+        description:
+          'Tạo và chỉnh sửa bài thuyết trình, hỗ trợ trích xuất văn bản, bố cục mẫu, ghi chú và chú thích cũng như gộp/tách.'
+      }
+    ]
   }
 ]
 
@@ -660,7 +569,6 @@ const router = useRouter()
 const loading = ref(false)
 const importing = ref(false)
 const listingRemoteSkills = ref(false)
-const installingRemoteSkill = ref(false)
 const searchQuery = ref('')
 
 const isBatchDeleteMode = ref(false)
@@ -675,9 +583,9 @@ const skillPreviewLoading = ref(false)
 const skillPreviewError = ref('')
 const deletingPreviewSkill = ref(false)
 let previewRequestSeq = 0
-const installingRecommendedSources = ref([])
+const installFlowOpen = ref(false)
+const installFlow = ref(null)
 
-const remoteInstallModalVisible = ref(false)
 const activeTab = ref('repo') // 'repo' hoặc 'search'
 
 const remoteInstallForm = reactive({
@@ -696,32 +604,45 @@ const searchedSkills = ref([])
 const selectedSearchSkills = ref([])
 const hasSingleSearchedSkill = computed(() => searchedSkills.value.length === 1)
 const singleSearchedSkill = computed(() => searchedSkills.value[0] || null)
+const remoteSelectionSummary = computed(() => {
+  if (activeTab.value === 'repo') {
+    if (!remoteSkillOptions.value.length) return 'Vui lòng kéo Skill từ kho lưu trữ trước'
+    return `Đã chọn ${selectedRepoSkills.value.length} / Phát hiện tổng cộng ${remoteSkillOptions.value.length} Skill`
+  }
+
+  if (!searchedSkills.value.length) return 'Vui lòng nhập từ khóa để tìm Skill'
+  return `Đã chọn ${selectedSearchSkills.value.length} / Tìm thấy ${searchedSkills.value.length} Skill`
+})
 
 const repoHistory = ref([])
-const allowedSkillAccessLevels = ref(['user'])
-const draftConfirmVisible = ref(false)
-const draftConfirmLoading = ref(false)
-const pendingDraft = ref(null)
-const draftShareConfig = ref({ access_level: 'user', department_ids: [], user_uids: [] })
-const shareConfigFormRef = ref(null)
 
 const matchesSearch = (skill) => {
   if (!searchQuery.value) return true
   const q = searchQuery.value.toLowerCase()
-  const text = [skill.name, skill.slug, skill.description].filter(Boolean).join(' ').toLowerCase()
+  const text = [
+    skill.name,
+    skill.slug,
+    skill.description,
+    ...(skill.skills || []).flatMap((item) => [item.name, item.slug, item.description])
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
   return text.includes(q)
 }
 
 const installedSkillCards = computed(() =>
   (skills.value || []).map((skill) => ({
     ...skill,
-    sourceType: skill.source_type || 'upload'
+    sourceType: skill.source_type || 'upload',
+    sourceScope: skill.source_scope
   }))
 )
 
-const installedSkillKeys = computed(() => {
+const installedPersonalSkillKeys = computed(() => {
   const keys = new Set()
   installedSkillCards.value.forEach((skill) => {
+    if (skill.sourceScope !== 'personal') return
     const identifiers = [skill.slug, skill.name]
     identifiers.forEach((value) => {
       if (value) keys.add(String(value).toLowerCase())
@@ -730,14 +651,8 @@ const installedSkillKeys = computed(() => {
   return keys
 })
 
-const recommendedSkillCards = computed(() =>
-  RECOMMENDED_SKILLS.filter(
-    (skill) => !skill.aliases.some((alias) => installedSkillKeys.value.has(alias.toLowerCase()))
-  ).map((skill) => ({
-    ...skill,
-    sourceType: 'recommended',
-    isRecommendation: true
-  }))
+const recommendedSuiteCards = computed(() =>
+  RECOMMENDED_SUITES.map((suite) => ({ ...suite, isSuite: true }))
 )
 
 const filteredInstalledSkills = computed(() => installedSkillCards.value.filter(matchesSearch))
@@ -745,7 +660,14 @@ const skillGroups = computed(() => [
   {
     key: 'recommended',
     title: 'Đề xuất',
-    skills: isBatchDeleteMode.value ? [] : recommendedSkillCards.value.filter(matchesSearch)
+    skills: isBatchDeleteMode.value ? [] : recommendedSuiteCards.value.filter(matchesSearch)
+  },
+  {
+    key: 'personal',
+    title: 'Skill cá nhân',
+    skills: isBatchDeleteMode.value
+      ? []
+      : filteredInstalledSkills.value.filter((skill) => skill.sourceScope === 'personal')
   },
   {
     key: 'builtin',
@@ -754,14 +676,17 @@ const skillGroups = computed(() => [
   },
   {
     key: 'uploaded',
-    title: 'Đã tải lên',
-    skills: filteredInstalledSkills.value.filter((skill) => skill.sourceType !== 'builtin')
+    title: 'Dùng chung',
+    skills: filteredInstalledSkills.value.filter(
+      (skill) => skill.sourceType !== 'builtin' && skill.sourceScope !== 'personal'
+    )
   }
 ])
 const visibleSkillGroups = computed(() => skillGroups.value.filter((group) => group.skills.length))
 const filteredDeletableSkills = computed(() =>
   filteredInstalledSkills.value.filter(
-    (skill) => canManageSkill(skill) && skill.sourceType !== 'builtin'
+    (skill) =>
+      canManageSkill(skill) && skill.sourceType !== 'builtin' && skill.sourceScope !== 'personal'
   )
 )
 const canDeletePreviewSkill = computed(
@@ -829,6 +754,15 @@ const handleToggleRepoSkill = (name, checked) => {
   }
 }
 
+const toggleRepoSkillFromRow = (name) => {
+  handleToggleRepoSkill(name, !selectedRepoSkills.value.includes(name))
+}
+
+const isSearchSkillSelected = (item) =>
+  selectedSearchSkills.value.some(
+    (skill) => skill.name === item.name && skill.source === item.source
+  )
+
 const handleToggleSearchSkill = (item, checked) => {
   if (checked) {
     const isExist = selectedSearchSkills.value.some(
@@ -844,21 +778,37 @@ const handleToggleSearchSkill = (item, checked) => {
   }
 }
 
+const toggleSearchSkillFromRow = (item) => {
+  handleToggleSearchSkill(item, !isSearchSkillSelected(item))
+}
+
 const sourceTypeLabel = (sourceType) => {
+  if (sourceType === 'personal') return 'Skill cá nhân'
   if (sourceType === 'builtin') return 'Tích hợp sẵn'
   if (sourceType === 'remote') return 'Từ xa'
   return 'Tải lên'
 }
 
+/** Trả về nhãn ngắn gọn của phạm vi chia sẻ Skill. */
+const getSkillShareLabel = (skill) => getShareConfigLabel(skill?.share_config)
+
+const skillCardTags = (skill) => {
+  if (skill.sourceScope === 'personal') {
+    return [
+      { name: 'Skill cá nhân', color: 'gray' },
+      ...(skill.overrides_shared ? [{ name: 'Đang ghi đè phiên bản dùng chung', color: 'orange' }] : [])
+    ]
+  }
+  return [
+    { name: getSkillShareLabel(skill), color: 'gray' },
+    ...(skill.shadowed_by_personal ? [{ name: 'Đã bị phiên bản cá nhân ghi đè', color: 'orange' }] : [])
+  ]
+}
+
 const canManageSkill = (skill) => skill?.can_manage !== false
 const isSkillToggling = (slug) => togglingSkillSlugs.value.includes(slug)
-const isRecommendedSkillInstalling = (source) => installingRecommendedSources.value.includes(source)
-const isRecommendedSkillInstallDisabled = (source) =>
-  installingRecommendedSources.value.length > 0 ||
-  draftConfirmVisible.value ||
-  isRecommendedSkillInstalling(source)
-
 const navigateToDetail = (skill) => {
+  if (skill?.sourceScope === 'personal') return
   router.push({ path: `/extensions/skill/${encodeURIComponent(skill.slug)}` })
 }
 
@@ -875,7 +825,10 @@ const openSkillPreview = async (skill) => {
   skillPreviewLoading.value = true
   skillPreviewVisible.value = true
   try {
-    const result = await skillApi.getSkillFile(skill.slug, 'SKILL.md')
+    const result =
+      skill.sourceScope === 'personal'
+        ? await skillApi.getPersonalSkillFile(skill.slug, 'SKILL.md')
+        : await skillApi.getSkillFile(skill.slug, 'SKILL.md')
     if (requestSeq !== previewRequestSeq || previewSkill.value?.slug !== skill.slug) return
     skillPreviewMarkdown.value = result?.data?.content || ''
   } catch (error) {
@@ -894,10 +847,6 @@ const goToPreviewSkillManagement = () => {
 }
 
 const handleCardClick = (skill) => {
-  if (skill?.isRecommendation) {
-    if (!isBatchDeleteMode.value) handleRecommendedSkillInstall(skill)
-    return
-  }
   if (isBatchDeleteMode.value) {
     handleToggleCardSelect(skill.slug)
   } else {
@@ -906,7 +855,9 @@ const handleCardClick = (skill) => {
 }
 
 const handleToggleCardSelect = (slug) => {
-  const target = installedSkillCards.value.find((skill) => skill.slug === slug)
+  const target = installedSkillCards.value.find(
+    (skill) => skill.slug === slug && skill.sourceScope !== 'personal'
+  )
   if (!canManageSkill(target) || target?.sourceType === 'builtin') return
   const idx = selectedCardSlugs.value.indexOf(slug)
   if (idx > -1) {
@@ -923,7 +874,9 @@ const handleToggleSkillEnabled = async (skill) => {
   try {
     const result = await skillApi.updateSkillEnabled(skill.slug, enabled)
     const updatedSkill = result?.data
-    const index = skills.value.findIndex((item) => item.slug === skill.slug)
+    const index = skills.value.findIndex(
+      (item) => item.slug === skill.slug && item.source_scope !== 'personal'
+    )
     if (updatedSkill && index > -1) {
       skills.value[index] = updatedSkill
     } else {
@@ -956,14 +909,20 @@ const confirmDeletePreviewSkill = () => {
   Modal.confirm({
     title: `Gỡ cài đặt ${target.name || target.slug}`,
     content:
-      'Sau khi gỡ cài đặt sẽ xóa bản ghi cơ sở dữ liệu và tệp cục bộ, thao tác không thể khôi phục.',
+      target.sourceScope === 'personal'
+        ? 'Sau khi gỡ cài đặt sẽ xóa Skill khỏi không gian làm việc cá nhân; nếu có phiên bản dùng chung cùng tên, Agent sẽ quay lại dùng phiên bản dùng chung.'
+        : 'Sau khi gỡ cài đặt sẽ xóa bản ghi cơ sở dữ liệu và tệp cục bộ, thao tác không thể khôi phục.',
     okText: 'Gỡ cài đặt',
     okType: 'danger',
     cancelText: 'Hủy',
     async onOk() {
       deletingPreviewSkill.value = true
       try {
-        await skillApi.deleteSkill(target.slug)
+        if (target.sourceScope === 'personal') {
+          await skillApi.deletePersonalSkill(target.slug)
+        } else {
+          await skillApi.deleteSkill(target.slug)
+        }
         message.success('Skill đã được gỡ cài đặt')
         closeSkillPreview()
         previewSkill.value = null
@@ -978,9 +937,7 @@ const confirmDeletePreviewSkill = () => {
 }
 
 const handleBatchSelectAll = () => {
-  selectedCardSlugs.value = filteredInstalledSkills.value
-    .filter((skill) => canManageSkill(skill) && skill.sourceType !== 'builtin')
-    .map((skill) => skill.slug)
+  selectedCardSlugs.value = filteredDeletableSkills.value.map((skill) => skill.slug)
 }
 
 const handleBatchSelectNone = () => {
@@ -989,13 +946,9 @@ const handleBatchSelectNone = () => {
 
 const handleBatchSelectInvert = () => {
   const currentSet = new Set(selectedCardSlugs.value)
-  const nextSelected = []
-  filteredInstalledSkills.value.forEach((skill) => {
-    if (canManageSkill(skill) && skill.sourceType !== 'builtin' && !currentSet.has(skill.slug)) {
-      nextSelected.push(skill.slug)
-    }
-  })
-  selectedCardSlugs.value = nextSelected
+  selectedCardSlugs.value = filteredDeletableSkills.value
+    .filter((skill) => !currentSet.has(skill.slug))
+    .map((skill) => skill.slug)
 }
 
 const exitBatchDeleteMode = () => {
@@ -1005,8 +958,14 @@ const exitBatchDeleteMode = () => {
 
 const handleBatchDelete = () => {
   const deletableSlugs = selectedCardSlugs.value.filter((slug) => {
-    const target = installedSkillCards.value.find((skill) => skill.slug === slug)
-    return canManageSkill(target) && target?.sourceType !== 'builtin'
+    const target = installedSkillCards.value.find(
+      (skill) => skill.slug === slug && skill.sourceScope !== 'personal'
+    )
+    return (
+      canManageSkill(target) &&
+      target?.sourceType !== 'builtin' &&
+      target?.sourceScope !== 'personal'
+    )
   })
   if (deletableSlugs.length === 0) return
 
@@ -1043,12 +1002,11 @@ const handleBatchDelete = () => {
   })
 }
 
-const fetchSkills = async () => {
+const fetchSkills = async ({ refreshPersonal = false } = {}) => {
   loading.value = true
   try {
-    const skillResult = await skillApi.listSkills()
+    const skillResult = await skillApi.listSkillCards({ refreshPersonal })
     skills.value = skillResult?.data || []
-    allowedSkillAccessLevels.value = skillResult?.allowed_access_levels || ['user']
   } catch {
     message.error('Tải thất bại')
   } finally {
@@ -1065,102 +1023,51 @@ const beforeSkillUpload = (file) => {
   return true
 }
 
-const cloneShareConfig = (config) => ({
-  access_level: config?.access_level || 'user',
-  department_ids: [...(config?.department_ids || [])],
-  user_uids: [...(config?.user_uids || [])]
-})
-
-const resetDraftConfirmation = () => {
-  draftConfirmVisible.value = false
-  draftConfirmLoading.value = false
-  pendingDraft.value = null
-  draftShareConfig.value = { access_level: 'user', department_ids: [], user_uids: [] }
+const openInstallFlow = (flow) => {
+  installFlow.value = flow
+  installFlowOpen.value = true
 }
 
-const normalizePendingDraft = (draftPayload) => {
-  const drafts = Array.isArray(draftPayload) ? draftPayload : [draftPayload]
-  const validDrafts = drafts.filter((item) => item?.draft_id)
-  const first = validDrafts[0] || {}
-  return {
-    ...first,
-    draft_ids: validDrafts.map((item) => item.draft_id),
-    source: validDrafts.length === 1 ? first.source : `${validDrafts.length}  nguồn`,
-    items: validDrafts.flatMap((draft) =>
-      (draft.items || []).map((item) => ({
-        ...item,
-        source: draft.source,
-        source_type: draft.source_type
-      }))
-    ),
-    default_share_config: first.default_share_config || cloneShareConfig(null),
-    allowed_access_levels: first.allowed_access_levels || allowedSkillAccessLevels.value
-  }
+const resetRemoteSelection = () => {
+  selectedRepoSkills.value = []
+  selectedSearchSkills.value = []
+  remoteSkillOptions.value = []
+  searchedSkills.value = []
+  repoFilterKeyword.value = ''
+  searchKeyword.value = ''
 }
 
-const openDraftConfirmation = async (draftPayload) => {
-  const draft = normalizePendingDraft(draftPayload)
-  if (!draft.draft_ids.length || !draft.items.some((item) => item.success !== false)) {
-    await Promise.allSettled(
-      draft.draft_ids.map((draftId) => skillApi.discardSkillInstallDraft(draftId))
-    )
-    message.error('Không có Skill để thêm')
-    return false
-  }
-  pendingDraft.value = draft
-  draftShareConfig.value = cloneShareConfig(draft.default_share_config)
-  draftConfirmVisible.value = true
-  return true
+const closeInstallFlow = () => {
+  const wasRemoteFlow = installFlow.value?.kind === 'remote'
+  installFlowOpen.value = false
+  installFlow.value = null
+  if (wasRemoteFlow) resetRemoteSelection()
 }
 
-const cancelSkillDraft = async () => {
-  if (draftConfirmLoading.value) return
-  const draftIds = pendingDraft.value?.draft_ids || []
-  resetDraftConfirmation()
-  await Promise.allSettled(draftIds.map((draftId) => skillApi.discardSkillInstallDraft(draftId)))
+const openRecommendedSuite = (suite) => {
+  openInstallFlow({
+    kind: 'suite',
+    suite,
+    installedSlugs: [...installedPersonalSkillKeys.value]
+  })
 }
 
-const confirmSkillDraft = async () => {
-  const validation = shareConfigFormRef.value?.validate?.()
-  if (validation && !validation.valid) {
-    message.warning(validation.message || 'Vui lòng hoàn thiện phạm vi áp dụng của Skill')
-    return
-  }
-
-  const draftIds = pendingDraft.value?.draft_ids || []
-  if (!draftIds.length) return
-
-  draftConfirmLoading.value = true
-  try {
-    const results = []
-    for (const draftId of draftIds) {
-      const res = await skillApi.confirmSkillInstallDraft(draftId, draftShareConfig.value)
-      results.push(...(res?.data || []))
-    }
-    const successCount = results.filter((item) => item.success).length
-    const failedCount = results.length - successCount
-    if (failedCount === 0) {
-      message.success(`Đã thêm ${successCount}  Skill`)
-    } else {
-      message.warning(`Hoàn tất thêm: Thành công ${successCount}, Thất bại ${failedCount}`)
-    }
-    remoteInstallModalVisible.value = false
-    resetDraftConfirmation()
-    await fetchSkills()
-  } catch (error) {
-    message.error(error?.response?.data?.detail || error.message || 'Xác nhận thêm Skill thất bại')
-  } finally {
-    draftConfirmLoading.value = false
-  }
+const handleInstallFlowCompleted = async ({ success, failed }) => {
+  if (failed === 0) message.success(`Đã thêm ${success} Skill`)
+  else message.warning(`Cài đặt hoàn tất: Thành công ${success}, Thất bại ${failed}`)
+  await fetchSkills()
 }
 
 const handleImportUpload = async ({ file, onSuccess, onError }) => {
   importing.value = true
   try {
     const result = await skillApi.prepareSkillUpload(file)
-    if (await openDraftConfirmation(result?.data)) {
-      message.success('Phân tích hoàn tất, vui lòng xác nhận phạm vi áp dụng của Skill')
-    }
+    openInstallFlow({
+      kind: 'draft',
+      title: `Cài đặt ${file.name}`,
+      description: 'Kiểm tra phụ thuộc và phạm vi hiệu lực của Skill, sau đó hoàn tất cài đặt.',
+      drafts: [result?.data]
+    })
     onSuccess?.(result)
   } catch (e) {
     message.error(e?.response?.data?.detail || e.message || 'Phân tích Skill thất bại')
@@ -1171,19 +1078,12 @@ const handleImportUpload = async ({ file, onSuccess, onError }) => {
 }
 
 const handleOpenRemoteInstall = () => {
-  if (!remoteInstallModalVisible.value) {
-    selectedRepoSkills.value = []
-    selectedSearchSkills.value = []
-    remoteSkillOptions.value = []
-    searchedSkills.value = []
-    repoFilterKeyword.value = ''
-    searchKeyword.value = ''
-  }
-  remoteInstallModalVisible.value = true
-}
-
-const handleCancelInstall = () => {
-  remoteInstallModalVisible.value = false
+  resetRemoteSelection()
+  openInstallFlow({
+    kind: 'remote',
+    title: 'Cài đặt Skill từ xa',
+    description: 'Kéo theo kho lưu trữ hoặc tìm kiếm toàn cục, chọn Skill cần cài đặt.'
+  })
 }
 
 const rememberRemoteSource = (source) => {
@@ -1224,56 +1124,6 @@ const handleListRemoteSkills = async () => {
     message.error(error?.response?.data?.detail || error.message || 'Lấy Skills từ xa thất bại')
   } finally {
     listingRemoteSkills.value = false
-  }
-}
-
-const handleRecommendedSkillInstall = async (skill) => {
-  if (!skill?.source || isRecommendedSkillInstallDisabled(skill.source)) {
-    return
-  }
-
-  installingRecommendedSources.value.push(skill.source)
-  activeTab.value = 'repo'
-  remoteInstallForm.source = skill.source
-  remoteSkillOptions.value = []
-  selectedRepoSkills.value = []
-  repoFilterKeyword.value = ''
-
-  try {
-    const listResult = await skillApi.listRemoteSkills(skill.source)
-    const options = listResult?.data || []
-    remoteSkillOptions.value = options
-    const aliasSet = new Set(
-      (skill.aliases || [skill.slug, skill.name]).map((item) => item.toLowerCase())
-    )
-    const matchedSkill =
-      options.length === 1
-        ? options[0]
-        : options.find((item) => aliasSet.has(String(item.name || '').toLowerCase()))
-
-    if (!matchedSkill?.name) {
-      remoteInstallModalVisible.value = true
-      message.warning('Đã kéo nguồn đề xuất, vui lòng chọn Skill để cài đặt')
-      return
-    }
-
-    selectedRepoSkills.value = [matchedSkill.name]
-    rememberRemoteSource(skill.source)
-    const prepareResult = await skillApi.prepareRemoteSkills({
-      source: skill.source,
-      skills: [matchedSkill.name]
-    })
-    if (await openDraftConfirmation(prepareResult?.data)) {
-      message.success('Phân tích hoàn tất, vui lòng xác nhận phạm vi áp dụng của Skill')
-    }
-  } catch (error) {
-    message.error(
-      error?.response?.data?.detail || error.message || 'Phân tích Skill đề xuất thất bại'
-    )
-  } finally {
-    installingRecommendedSources.value = installingRecommendedSources.value.filter(
-      (source) => source !== skill.source
-    )
   }
 }
 
@@ -1334,52 +1184,42 @@ const handleSearchRemoteSkills = async () => {
   }
 }
 
-const startInstallRemoteSkills = async () => {
-  installingRemoteSkill.value = true
-
-  try {
-    const drafts = []
-    if (activeTab.value === 'repo') {
-      const source = remoteInstallForm.source.trim()
-      const skillsToInstall = [...selectedRepoSkills.value]
-      const result = await skillApi.prepareRemoteSkills({ source, skills: skillsToInstall })
-      drafts.push(result?.data)
-    } else {
-      const groups = {}
-      selectedSearchSkills.value.forEach((item) => {
-        if (!groups[item.source]) groups[item.source] = []
-        groups[item.source].push(item.name)
+const startInstallRemoteSkills = () => {
+  const requests = []
+  if (activeTab.value === 'repo') {
+    requests.push({
+      source: remoteInstallForm.source.trim(),
+      skills: [...selectedRepoSkills.value],
+      skillDetails: remoteSkillOptions.value
+        .filter((item) => selectedRepoSkills.value.includes(item.name))
+        .map((item) => ({ ...item, slug: item.name }))
+    })
+  } else {
+    const groups = new Map()
+    selectedSearchSkills.value.forEach((item) => {
+      if (!groups.has(item.source)) groups.set(item.source, [])
+      groups.get(item.source).push(item)
+    })
+    groups.forEach((items, source) => {
+      requests.push({
+        source,
+        skills: items.map((item) => item.name),
+        skillDetails: items.map((item) => ({ ...item, slug: item.name }))
       })
-
-      for (const [source, sourceSkills] of Object.entries(groups)) {
-        const result = await skillApi.prepareRemoteSkills({ source, skills: sourceSkills })
-        drafts.push(result?.data)
-      }
-    }
-
-    if (await openDraftConfirmation(drafts)) {
-      remoteInstallModalVisible.value = false
-      message.success('Phân tích hoàn tất, vui lòng xác nhận phạm vi áp dụng của Skill')
-    }
-  } catch (error) {
-    message.error(
-      error?.response?.data?.detail || error.message || 'Phân tích Skill từ xa thất bại'
-    )
-  } finally {
-    installingRemoteSkill.value = false
+    })
   }
+
+  openInstallFlow({
+    kind: 'remote',
+    title: 'Cài đặt Skill từ xa',
+    description: `${requests.length} nguồn · ${requests.reduce((total, item) => total + item.skills.length, 0)} Skill`,
+    requests
+  })
 }
 
 watch(activeTab, () => {
   selectedRepoSkills.value = []
   selectedSearchSkills.value = []
-})
-
-watch(remoteInstallModalVisible, (visible) => {
-  if (!visible && !installingRemoteSkill.value) {
-    selectedRepoSkills.value = []
-    selectedSearchSkills.value = []
-  }
 })
 
 onMounted(() => {
@@ -1428,8 +1268,8 @@ defineExpose({
   height: 44px;
   margin-bottom: 12px;
   border-radius: 14px;
-  background: var(--main-10);
-  color: var(--main-color);
+  background: var(--gray-50);
+  color: var(--gray-600);
 }
 
 .skill-empty-title {
@@ -1469,7 +1309,7 @@ defineExpose({
       border-color: var(--gray-200);
 
       &:hover {
-        border-color: var(--main-100);
+        border-color: var(--gray-300);
       }
     }
 
@@ -1487,8 +1327,8 @@ defineExpose({
 
   &.selected {
     :deep(.info-card) {
-      border-color: var(--main-color, #1890ff) !important;
-      background: linear-gradient(45deg, var(--gray-0) 0%, var(--main-30) 100%) !important;
+      border-color: var(--gray-500) !important;
+      background: var(--gray-25) !important;
     }
   }
 
@@ -1509,7 +1349,7 @@ defineExpose({
   border: 1px solid var(--gray-150);
   border-radius: 8px;
   background: var(--gray-0);
-  color: var(--main-color);
+  color: var(--gray-600);
   font-size: 18px;
   font-weight: 600;
   line-height: 1;
@@ -1522,8 +1362,8 @@ defineExpose({
   &:hover,
   &:focus {
     outline: none;
-    border-color: var(--main-200);
-    background: var(--main-50);
+    border-color: var(--gray-300);
+    background: var(--gray-50);
   }
 
   &:disabled {
@@ -1564,20 +1404,6 @@ defineExpose({
   flex-shrink: 0;
 }
 
-.action-icon-spin {
-  animation: skill-action-spin 1s linear infinite;
-}
-
-@keyframes skill-action-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .skill-preview-panel {
   display: flex;
   flex-direction: column;
@@ -1607,8 +1433,8 @@ defineExpose({
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: var(--main-50);
-  color: var(--main-color);
+  background: var(--gray-50);
+  color: var(--gray-600);
 }
 
 .skill-preview-title-text {
@@ -1692,70 +1518,11 @@ defineExpose({
   gap: 8px;
 }
 
-.skill-draft-confirm-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-
-  .draft-source-row {
-    display: flex;
-    gap: 8px;
-    color: var(--gray-700);
-    font-size: 13px;
-  }
-
-  .draft-source-label,
-  .draft-share-title {
-    color: var(--gray-500);
-    font-weight: 600;
-  }
-
-  .draft-items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 260px;
-    overflow: auto;
-  }
-
-  .draft-item {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px;
-    border: 1px solid var(--gray-150);
-    border-radius: 10px;
-    background: var(--gray-0);
-
-    &.failed {
-      border-color: var(--error-200, #ffccc7);
-      background: var(--error-50, #fff2f0);
-    }
-  }
-
-  .draft-item-main {
-    min-width: 0;
-  }
-
-  .draft-item-title {
-    font-weight: 600;
-    color: var(--gray-900);
-  }
-
-  .draft-item-desc,
-  .draft-item-warning {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--gray-500);
-  }
-
-  .draft-item-warning {
-    color: var(--warning-600, #d48806);
-  }
-}
-
 .remote-install-panel {
+  :deep(.install-tabs > .ant-tabs-nav .ant-tabs-nav-wrap) {
+    justify-content: center;
+  }
+
   .repo-input-row {
     display: flex;
     gap: 8px;
@@ -1796,14 +1563,14 @@ defineExpose({
     outline: none;
 
     &:hover {
-      color: var(--main-color);
+      color: var(--gray-700);
     }
 
     &.has-history {
       color: var(--gray-500);
 
       &:hover {
-        color: var(--main-color);
+        color: var(--gray-700);
       }
     }
   }
@@ -1815,7 +1582,7 @@ defineExpose({
     line-height: 1.4;
 
     a {
-      color: var(--main-color);
+      color: var(--gray-700);
       text-decoration: underline;
     }
   }
@@ -1828,17 +1595,16 @@ defineExpose({
     margin-top: 12px;
     border: 1px solid var(--gray-150);
     border-radius: 8px;
-    background: var(--gray-25);
-    padding: 12px;
+    overflow: hidden;
+    background: var(--gray-0);
   }
 
   .list-operations-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
     border-bottom: 1px solid var(--gray-150);
-    padding-bottom: 6px;
+    padding: 8px 10px;
 
     .op-buttons {
       display: flex;
@@ -1848,27 +1614,56 @@ defineExpose({
         padding: 0 4px;
         height: auto;
         font-size: 12px;
+        color: var(--gray-600);
+
+        &:hover {
+          color: var(--gray-900);
+        }
       }
     }
   }
 
   .skills-list-viewport {
-    max-height: 280px;
+    max-height: min(42vh, 420px);
     overflow-y: auto;
-    border: 1px solid var(--gray-150);
-    border-radius: 6px;
+    overscroll-behavior: contain;
     background: var(--gray-0);
-    padding: 0 8px;
   }
 
   .remote-skills-list-container {
-    :deep(.ant-list-item) {
-      padding: 6px 4px;
-      border-bottom: 1px solid var(--gray-100);
-      &:last-child {
-        border-bottom: none;
-      }
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--gray-100);
+  }
+
+  .remote-skill-row {
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    padding: 6px 10px;
+    gap: 8px;
+    background: var(--gray-0);
+    cursor: pointer;
+    transition: background-color 0.18s ease;
+
+    &:hover,
+    &.selected {
+      background: var(--gray-25);
     }
+
+    &:focus-visible {
+      outline: 2px solid var(--gray-400);
+      outline-offset: -2px;
+    }
+
+    &[aria-disabled='true'] {
+      cursor: not-allowed;
+    }
+  }
+
+  .remote-row-checkbox {
+    pointer-events: none;
   }
 
   .single-remote-skill-card {
@@ -1910,30 +1705,11 @@ defineExpose({
     text-overflow: ellipsis;
   }
 
-  .skill-list-item-content {
+  .remote-skill-row-content {
     display: flex;
-    align-items: center;
-    width: 100%;
-    gap: 16px;
-
-    .skill-name-col {
-      width: 280px;
-      flex-shrink: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-
-      :deep(.ant-checkbox-wrapper) {
-        display: flex;
-        align-items: center;
-        width: 100%;
-      }
-    }
-
-    .skill-desc-col {
-      flex: 1;
-      min-width: 0;
-    }
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
 
     .skill-item-name {
       font-weight: 600;
@@ -1947,65 +1723,39 @@ defineExpose({
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      cursor: help;
     }
   }
 
-  .search-skill-item-row {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    gap: 16px;
+  .skill-install-count {
+    flex-shrink: 0;
+    color: var(--gray-500);
+    font-size: 11px;
+  }
+}
 
-    .skill-name-col {
-      width: 280px;
-      flex-shrink: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-
-      :deep(.ant-checkbox-wrapper) {
-        display: flex;
-        align-items: center;
-        width: 100%;
-      }
+@media (max-width: 600px) {
+  .remote-install-panel {
+    .skills-list-viewport {
+      max-height: 40vh;
+      overflow-y: auto;
     }
 
-    .skill-repo-col {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .skill-install-col {
-      width: 90px;
-      flex-shrink: 0;
-      text-align: right;
-    }
-
-    .skill-item-name {
-      font-weight: 600;
-      color: var(--gray-900);
-    }
-
-    .skill-item-repo {
-      display: block;
-      font-size: 12px;
-      color: var(--gray-400);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: help;
+    .remote-skills-list-container {
+      grid-template-columns: 1fr;
     }
   }
+}
 
-  .modal-footer-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 16px;
-    border-top: 1px solid var(--gray-150);
-    padding-top: 12px;
-  }
+.modal-footer-summary {
+  color: var(--gray-500);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.modal-footer-buttons {
+  display: flex;
+  margin-left: auto;
+  gap: 8px;
 }
 </style>
 

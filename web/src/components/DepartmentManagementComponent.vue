@@ -100,7 +100,7 @@
       width="520px"
       class="department-modal"
     >
-      <a-form layout="vertical" class="department-form">
+      <a-form layout="vertical" class="department-form" autocomplete="off">
         <a-form-item label="Tên khoa" required class="form-item">
           <a-input
             v-model:value="departmentManagement.form.name"
@@ -134,6 +134,8 @@
               placeholder="Vui lòng nhập quản trị viênUID（3-20chữ cái/con số/gạch chân）"
               size="large"
               :maxlength="20"
+              name="new-department-admin-uid"
+              autocomplete="off"
               @blur="checkAdminUid"
             />
             <div v-if="departmentManagement.form.uidError" class="error-text">
@@ -145,9 +147,12 @@
           <a-form-item label="Mật khẩu" required class="form-item">
             <a-input-password
               v-model:value="departmentManagement.form.adminPassword"
-              placeholder="Vui lòng nhập mật khẩu quản trị viên"
+              :placeholder="`Vui lòng nhập mật khẩu quản trị viên（tối thiểu ${MIN_PASSWORD_LENGTH} ký tự）`"
               size="large"
+              :minlength="MIN_PASSWORD_LENGTH"
               :maxlength="50"
+              name="new-department-admin-password"
+              autocomplete="new-password"
             />
           </a-form-item>
 
@@ -157,6 +162,8 @@
               placeholder="Vui lòng nhập lại mật khẩu"
               size="large"
               :maxlength="50"
+              name="new-department-admin-password-confirmation"
+              autocomplete="new-password"
             />
           </a-form-item>
 
@@ -166,6 +173,8 @@
               placeholder="Vui lòng nhập số điện thoại di động（Có sẵn để đăng nhập）"
               size="large"
               :maxlength="11"
+              name="new-department-admin-phone"
+              autocomplete="off"
             />
             <div v-if="departmentManagement.form.phoneError" class="error-text">
               {{ departmentManagement.form.phoneError }}
@@ -182,6 +191,7 @@ import { reactive, onMounted, watch } from 'vue'
 import { notification, message, Modal } from 'ant-design-vue'
 import { departmentApi, apiSuperAdminGet } from '@/apis'
 import { Plus, RefreshCw, SquarePen, Trash2 } from 'lucide-vue-next'
+import { isPasswordLongEnough, MIN_PASSWORD_LENGTH } from '@/utils/passwordValidation'
 
 // định nghĩa cột trong bảng
 const columns = [
@@ -390,6 +400,11 @@ const handleDepartmentFormSubmit = async () => {
     // Xác minh mật khẩu
     if (!departmentManagement.form.adminPassword) {
       notification.error({ message: 'Vui lòng nhập mật khẩu quản trị viên' })
+      return
+    }
+
+    if (!isPasswordLongEnough(departmentManagement.form.adminPassword)) {
+      notification.error({ message: `Mật khẩu phải có ít nhất ${MIN_PASSWORD_LENGTH} ký tự` })
       return
     }
 

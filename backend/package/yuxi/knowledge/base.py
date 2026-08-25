@@ -2,12 +2,11 @@ import asyncio
 import mimetypes
 import os
 import re
-import secrets
-import string
 from abc import ABC, abstractmethod
 from typing import Any
 
 from yuxi.knowledge.chunking.ragflow_like.presets import ensure_chunk_defaults_in_additional_params
+from yuxi.knowledge.read_models import KnowledgeBaseConfig
 from yuxi.knowledge.schemas import (
     FindOutputSchema,
     FindWindowSchema,
@@ -26,7 +25,7 @@ from yuxi.services.file_preview import (
     render_preview_too_large_payload,
 )
 from yuxi.utils import logger
-from yuxi.utils.datetime_utils import coerce_any_to_utc_datetime, utc_isoformat
+from yuxi.utils.datetime_utils import utc_isoformat
 
 
 class FileStatus:
@@ -57,6 +56,12 @@ class KnowledgeBaseException(Exception):
 
 class KBNotFoundError(KnowledgeBaseException):
     """There is no error in the knowledge base"""
+
+    pass
+
+
+class KBNameConflictError(KnowledgeBaseException):
+    """知识库名称冲突错误。"""
 
     pass
 
@@ -149,9 +154,7 @@ class KnowledgeBase(ABC):
         if not dt_value:
             return None
         return utc_isoformat(dt_value)
-
     def _file_record_to_meta(self, record: Any) -> dict:
-        kb_additional_params = self.databases_meta.get(record.kb_id, {}).get("metadata") or {}
         return {
             "file_id": record.file_id,
             "kb_id": record.kb_id,
@@ -166,12 +169,7 @@ class KnowledgeBase(ABC):
             "chunk_count": int(getattr(record, "chunk_count", 0) or 0),
             "token_count": int(getattr(record, "token_count", 0) or 0),
             "content_type": record.content_type,
-            "processing_params": sanitize_processing_params(
-                resolve_processing_params(
-                    kb_additional_params=kb_additional_params,
-                    file_processing_params=record.processing_params,
-                )
-            ),
+            "processing_params": sanitize_processing_params(record.processing_params),
             "is_folder": record.is_folder,
             "error": record.error_message,
             "created_by": record.created_by,
@@ -218,7 +216,7 @@ class KnowledgeBase(ABC):
         return self._file_record_to_meta(record)
 
     def _normalize_metadata_state(self) -> None:
-        """Ensure in-memory metadata uses normalized timestamp formats."""
+        """Đảm bảo metadata trong bộ nhớ dùng định dạng timestamp chuẩn hóa."""
         for meta in self.databases_meta.values():
             if "created_at" in meta:
                 normalized = self._normalize_timestamp(meta.get("created_at"))
@@ -255,13 +253,13 @@ class KnowledgeBase(ABC):
         return params
 
     @abstractmethod
-    async def _create_kb_instance(self, kb_id: str, config: dict) -> Any:
+    async def _create_kb_instance(self, kb_id: str, embedding_model_spec: str | None) -> Any:
         """
         Create Underlying knowledge base instance
 
         Args:
             kb_id: Database ID
-            config: Configuration information
+            embedding_model_spec: Embedding model spec
 
         Returns:
             Underlying knowledge base instance
@@ -279,7 +277,13 @@ class KnowledgeBase(ABC):
         pass
 
     async def add_file_record(
-        self, kb_id: str, item: str, params: dict | None = None, operator_id: str | None = None
+        self,
+        kb_id: str,
+        item: str,
+        params: dict | None = None,
+        operator_id: str | None = None,
+        *,
+        additional_params: dict[str, Any],
     ) -> dict:
         """
         Add a file record to metadata (Status: UPLOADED)
@@ -301,9 +305,8 @@ class KnowledgeBase(ABC):
         # Prepare metadata
         metadata = await prepare_item_metadata(item, content_type, kb_id, params=params)
         file_id = metadata["file_id"]
-        kb_additional_params = self.databases_meta.get(kb_id, {}).get("metadata") or {}
         metadata["processing_params"] = resolve_processing_params(
-            kb_additional_params=kb_additional_params,
+            kb_additional_params=additional_params,
             file_processing_params=metadata.get("processing_params"),
         )
 
@@ -330,11 +333,17 @@ class KnowledgeBase(ABC):
             metadata["created_by"] = operator_id
 
         await self._persist_file_meta(file_id, metadata)
-        await self.refresh_database_stats(kb_id)
 
         return metadata
 
-    async def parse_file(self, kb_id: str, file_id: str, operator_id: str | None = None) -> dict:
+    async def parse_file(
+        self,
+        kb_id: str,
+        file_id: str,
+        operator_id: str | None = None,
+        *,
+        additional_params: dict[str, Any],
+    ) -> dict:
         """
         Parse file to Markdown and save to MinIO (Status: PARSING -> PARSED/ERROR_PARSING)
 
@@ -384,15 +393,18 @@ class KnowledgeBase(ABC):
             raise ValueError(message)
 
         try:
-            from yuxi.knowledge.parser.unified import Parser
+            from yuxi.services.ocr_service import parse_document
 
             # Prepare params
-            params = file_meta.get("processing_params", {}) or {}
-            params["image_bucket"] = "knowledgebases"
+            params = resolve_processing_params(
+                kb_additional_params=additional_params,
+                file_processing_params=file_meta.get("processing_params"),
+            )
+            params["image_bucket"] = "public"
             params["image_prefix"] = f"{kb_id}/kb-images"
             params["file_id"] = file_id
 
-            markdown_content = await Parser.aparse(
+            markdown_content = await parse_document(
                 source=file_path,
                 params=params,
             )
@@ -418,8 +430,12 @@ class KnowledgeBase(ABC):
 
             return file_meta
 
-        except Exception as e:
-            error_msg = str(e)
+        except (Exception, asyncio.CancelledError) as e:
+            if isinstance(e, asyncio.CancelledError):
+                current_task = asyncio.current_task()
+                if current_task is not None and current_task.cancelling():
+                    current_task.uncancel()
+            error_msg = "File parsing was cancelled" if isinstance(e, asyncio.CancelledError) else str(e)
             logger.error(f"Failed to parse file {file_id}: {error_msg}")
 
             file_meta["status"] = FileStatus.ERROR_PARSING
@@ -434,7 +450,15 @@ class KnowledgeBase(ABC):
 
             raise
 
-    async def update_file_params(self, kb_id: str, file_id: str, params: dict, operator_id: str | None = None) -> None:
+    async def update_file_params(
+        self,
+        kb_id: str,
+        file_id: str,
+        params: dict,
+        operator_id: str | None = None,
+        *,
+        additional_params: dict[str, Any],
+    ) -> None:
         """Update file processing params"""
         # Skip if no params to update
         if not params:
@@ -442,12 +466,10 @@ class KnowledgeBase(ABC):
 
         file_meta = await self._load_file_meta(kb_id, file_id)
         current_params = file_meta.get("processing_params", {}) or {}
-        kb_additional_params = self.databases_meta.get(kb_id, {}).get("metadata") or {}
-
         logger.debug(f"[update_file_params] file_id={file_id}, current_params={current_params}, new_params={params}")
 
         current_params = resolve_processing_params(
-            kb_additional_params=kb_additional_params,
+            kb_additional_params=additional_params,
             file_processing_params=current_params,
             request_params=params,
         )
@@ -587,8 +609,6 @@ class KnowledgeBase(ABC):
         recursive: bool = False,
         files_only: bool = False,
     ) -> dict:
-        if kb_id not in self.databases_meta:
-            raise ValueError(f"Database {kb_id} not found")
         if parent_id:
             parent_meta = await self._get_file_meta(kb_id, parent_id)
             if not parent_meta.get("is_folder"):
@@ -907,7 +927,15 @@ class KnowledgeBase(ABC):
         )
 
     @abstractmethod
-    async def index_file(self, kb_id: str, file_id: str, operator_id: str | None = None) -> dict:
+    async def index_file(
+        self,
+        kb_id: str,
+        file_id: str,
+        operator_id: str | None = None,
+        *,
+        embedding_model_spec: str | None,
+        additional_params: dict[str, Any],
+    ) -> dict:
         """
         Index parsed file (Status: INDEXING -> INDEXED/ERROR_INDEXING)
 
@@ -921,64 +949,9 @@ class KnowledgeBase(ABC):
         """
         pass
 
-    async def create_database(
-        self,
-        database_name: str,
-        description: str,
-        embedding_model_spec: str | None = None,
-        llm_model_spec: str | None = None,
-        record_fields: dict[str, Any] | None = None,
-        **kwargs,
-    ) -> dict:
+    async def cleanup_database_resources(self, kb_id: str) -> dict:
         """
-        create database
-
-        Args:
-            database_name: database name
-            description: databasedescribe
-            embedding_model_spec: Embedding Model spec
-            llm_model_spec: LLM Model spec
-            record_fields: Controlled business fields passed in by the upper layer when persisting knowledge base records for the first time
-            **kwargs: Other configuration parameters
-
-        Returns:
-            Database information dictionary
-        """
-        kwargs = self.normalize_additional_params(kwargs)
-        kwargs["stats"] = {"file_count": 0, "chunk_count": 0, "token_count": 0}
-
-        alphabet = string.ascii_lowercase + string.digits
-        while True:
-            kb_id = "kb_" + "".join(secrets.choice(alphabet) for _ in range(10))
-            if kb_id not in self.databases_meta:
-                break
-
-        self.databases_meta[kb_id] = {
-            "name": database_name,
-            "description": description,
-            "kb_type": self.kb_type,
-            "embedding_model_spec": embedding_model_spec,
-            "llm_model_spec": llm_model_spec,
-            "metadata": kwargs,
-            "created_at": utc_isoformat(),
-            "query_params": self._get_default_query_params(kb_id),
-        }
-        await self._persist_kb(kb_id, record_fields=record_fields)
-
-        # Create working directory
-        working_dir = os.path.join(self.work_dir, kb_id)
-        os.makedirs(working_dir, exist_ok=True)
-
-        # Return database information
-        db_dict = self.databases_meta[kb_id].copy()
-        db_dict["kb_id"] = kb_id
-        db_dict["files"] = {}
-
-        return db_dict
-
-    async def delete_database(self, kb_id: str) -> dict:
-        """
-        Delete database
+        Dọn dẹp tệp và tài nguyên lưu trữ liên quan đến kho kiến thức.
 
         Args:
             kb_id: Database ID
@@ -986,53 +959,48 @@ class KnowledgeBase(ABC):
         Returns:
             Operation result
         """
-        if kb_id in self.databases_meta:
-            from yuxi.knowledge.utils.kb_utils import is_minio_url, parse_minio_url
-            from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
-            from yuxi.repositories.knowledge_file_repository import KnowledgeFileRepository
-            from yuxi.storage.minio import get_minio_client
+        from yuxi.knowledge.utils.kb_utils import is_minio_url, parse_minio_url
+        from yuxi.repositories.knowledge_file_repository import KnowledgeFileRepository
+        from yuxi.storage.minio import get_minio_client
 
-            minio_client = get_minio_client()
-            file_repo = KnowledgeFileRepository()
+        minio_client = get_minio_client()
+        file_repo = KnowledgeFileRepository()
 
-            # 1. Delete MinIO files recorded in file metadata
-            after_file_id = None
-            while True:
-                records = await file_repo.list_by_kb_id_after(kb_id, after_file_id=after_file_id, limit=500)
-                if not records:
-                    break
-                after_file_id = records[-1].file_id
-                for record in records:
-                    file_id = record.file_id
-                    file_path = record.minio_url or record.path
-                    if file_path and is_minio_url(file_path):
-                        try:
-                            bucket_name, object_name = parse_minio_url(file_path)
-                            await minio_client.adelete_file(bucket_name, object_name)
-                        except Exception as e:
-                            logger.warning(f"Failed to delete MinIO file {file_path}: {e}")
+        # 1. Xóa các tệp MinIO được ghi trong metadata tệp
+        after_file_id = None
+        while True:
+            records = await file_repo.list_by_kb_id_after(kb_id, after_file_id=after_file_id, limit=500)
+            if not records:
+                break
+            after_file_id = records[-1].file_id
+            for record in records:
+                file_id = record.file_id
+                file_path = record.minio_url or record.path
+                if file_path and is_minio_url(file_path):
+                    try:
+                        bucket_name, object_name = parse_minio_url(file_path)
+                        await minio_client.adelete_file(bucket_name, object_name)
+                    except Exception as e:
+                        logger.warning(f"Failed to delete MinIO file {file_path}: {e}")
 
-                    # Delete the parsed markdown file
-                    parsed_object = f"{kb_id}/parsed/{file_id}.md"
-                    await minio_client.adelete_file(minio_client.KB_BUCKETS["parsed"], parsed_object)
+                # Xóa tệp markdown đã phân tích
+                parsed_object = f"{kb_id}/parsed/{file_id}.md"
+                await minio_client.adelete_file(minio_client.KB_BUCKETS["parsed"], parsed_object)
 
-            # 2. Delete files under the kb_id in all knowledge base buckets in parallel
-            prefix = f"{kb_id}/"
-            cleanup_buckets = {
-                minio_client.KB_BUCKETS["parsed"],
-                minio_client.KB_BUCKETS["documents"],
-                minio_client.KB_BUCKETS["images"],
-            }
-            cleanup_tasks = [
-                minio_client.adelete_objects_by_prefix(bucket_name, prefix) for bucket_name in cleanup_buckets
-            ]
-            await asyncio.gather(*cleanup_tasks)
+        # 2. Xóa song song các tệp dưới kb_id trong tất cả bucket của kho kiến thức
+        prefix = f"{kb_id}/"
+        cleanup_buckets = {
+            minio_client.KB_BUCKETS["parsed"],
+            minio_client.KB_BUCKETS["documents"],
+            minio_client.KB_BUCKETS["images"],
+        }
+        cleanup_tasks = [minio_client.adelete_objects_by_prefix(bucket_name, prefix) for bucket_name in cleanup_buckets]
+        await asyncio.gather(*cleanup_tasks)
 
-            # 3. Delete database records
-            del self.databases_meta[kb_id]
-            await file_repo.delete_by_kb_id(kb_id)
-            kb_repo = KnowledgeBaseRepository()
-            await kb_repo.delete(kb_id)
+        # PORT-CONFLICT: nhánh ours tự xóa bản ghi KB trong cleanup; upstream để Manager xóa bản ghi chính,
+        # ở đây chỉ đồng bộ xóa cache metadata trong bộ nhớ của nhánh ours.
+        self.databases_meta.pop(kb_id, None)
+        await file_repo.delete_by_kb_id(kb_id)
 
         # Delete working directory
         working_dir = os.path.join(self.work_dir, kb_id)
@@ -1045,6 +1013,14 @@ class KnowledgeBase(ABC):
                 logger.error(f"Error deleting working directory {working_dir}: {e}")
 
         return {"message": "Delete successfully"}
+
+    async def detect_data_inconsistencies(
+        self,
+        known_kb_ids: set[str],
+        managed_kb_ids: set[str],
+    ) -> dict[str, list[dict]]:
+        """检测当前知识库类型管理的外部资源不一致。"""
+        return {"missing_collections": [], "missing_files": []}
 
     async def create_folder(self, kb_id: str, folder_name: str, parent_id: str | None = None) -> dict:
         """Create a folder in the database."""
@@ -1072,7 +1048,15 @@ class KnowledgeBase(ABC):
         return folder_meta
 
     @abstractmethod
-    async def update_content(self, kb_id: str, file_ids: list[str], params: dict | None = None) -> list[dict]:
+    async def update_content(
+        self,
+        kb_id: str,
+        file_ids: list[str],
+        params: dict | None = None,
+        *,
+        embedding_model_spec: str | None,
+        additional_params: dict[str, Any],
+    ) -> list[dict]:
         """
         Update content - Re-parse the file based on file_ids and update the vector library
 
@@ -1087,7 +1071,14 @@ class KnowledgeBase(ABC):
         pass
 
     @abstractmethod
-    async def aquery(self, query_text: str, kb_id: str, **kwargs) -> list[dict]:
+    async def aquery(
+        self,
+        query_text: str,
+        kb_id: str,
+        *,
+        config: KnowledgeBaseConfig,
+        **kwargs,
+    ) -> list[dict]:
         """
         Asynchronous query knowledge base
 
@@ -1135,74 +1126,21 @@ class KnowledgeBase(ABC):
         pass
 
     def _get_query_params(self, kb_id: str) -> dict:
-        """Load query parameters from instance metadata"""
+        """Tải tham số truy vấn từ metadata của instance (API của nhánh ours)."""
         if kb_id in self.databases_meta:
             query_params_meta = self.databases_meta[kb_id].get("query_params") or {}
             return query_params_meta.get("options", {})
         return {}
 
-    def _get_default_query_params(self, kb_id: str) -> dict[str, Any]:
-        """Extract the default values ​​​​of all parameters from get_query_params_config and return {"options": {...}}"""
-        config = self.get_query_params_config(kb_id)
+    def get_default_query_params(self, kb_id: str) -> dict[str, Any]:
+        """Trích xuất giá trị mặc định của tất cả tham số từ get_query_params_config, trả về {"options": {...}}."""
         defaults = {}
         for opt in config.get("options", []):
             if "default" in opt:
                 defaults[opt["key"]] = opt["default"]
         return {"options": defaults}
 
-    def _build_database_stats(self, kb_id: str) -> dict[str, int]:
-        del kb_id
-        return self._normalize_database_stats(None)
-
-    @staticmethod
-    def _normalize_database_stats(stats: dict | None) -> dict[str, int]:
-        normalized = {
-            "file_count": 0,
-            "folder_count": 0,
-            "row_count": 0,
-            "total_size": 0,
-            "chunk_count": 0,
-            "token_count": 0,
-            "pending_parse_count": 0,
-            "pending_index_count": 0,
-            "processing_count": 0,
-        }
-        if not isinstance(stats, dict):
-            return normalized
-
-        for key in normalized:
-            try:
-                normalized[key] = max(int(stats.get(key) or 0), 0)
-            except (TypeError, ValueError):
-                normalized[key] = 0
-        return normalized
-
-    def _get_database_stats(self, kb_id: str) -> dict[str, int]:
-        metadata = self.databases_meta.get(kb_id, {}).get("metadata") or {}
-        stats = metadata.get("stats") if isinstance(metadata, dict) else None
-        if isinstance(stats, dict):
-            return self._normalize_database_stats(stats)
-        return self._build_database_stats(kb_id)
-
-    def _set_database_stats(self, kb_id: str, stats: dict[str, int]) -> None:
-        if kb_id not in self.databases_meta:
-            raise ValueError(f"Database {kb_id} not found")
-
-        metadata = self.databases_meta[kb_id].setdefault("metadata", {})
-        metadata["stats"] = self._normalize_database_stats(stats)
-
-    async def refresh_database_stats(self, kb_id: str) -> dict[str, int]:
-        from yuxi.repositories.knowledge_file_repository import KnowledgeFileRepository
-
-        stats = await KnowledgeFileRepository().get_kb_file_stats(kb_id)
-        self._set_database_stats(kb_id, stats)
-        await self._persist_kb(kb_id)
-        return stats
-
     async def repair_missing_file_stats(self, kb_id: str) -> dict:
-        if kb_id not in self.databases_meta:
-            raise ValueError(f"Database {kb_id} not found")
-
         from yuxi.knowledge.chunking.ragflow_like.nlp import count_tokens
         from yuxi.repositories.knowledge_chunk_repository import KnowledgeChunkRepository
         from yuxi.repositories.knowledge_file_repository import KnowledgeFileRepository
@@ -1275,7 +1213,7 @@ class KnowledgeBase(ABC):
                     updated_files += 1
                     await file_repo.update_fields(file_id=file_id, kb_id=kb_id, data=update_data)
 
-        stats = await self.refresh_database_stats(kb_id)
+        stats = await file_repo.get_kb_file_stats(kb_id)
         return {
             "status": "success",
             "stats": stats,
@@ -1288,62 +1226,6 @@ class KnowledgeBase(ABC):
             "updated_token_files": updated_token_files,
             "updated_size_files": updated_size_files,
         }
-
-    def get_database_info(self, kb_id: str, include_files: bool = True) -> dict | None:
-        """
-        Get database details
-
-        Args:
-            kb_id: Database ID
-            include_files: is noBag containing document information, default is True
-
-        Returns:
-            Database information or None
-        """
-        if kb_id not in self.databases_meta:
-            return None
-
-        meta = self.databases_meta[kb_id].copy()
-        meta["kb_id"] = kb_id
-
-        meta["stats"] = self._get_database_stats(kb_id)
-        meta["row_count"] = meta["stats"].get("row_count") or meta["stats"].get("file_count") or 0
-
-        if include_files:
-            meta["files"] = {}
-            meta["files_truncated"] = True
-
-        meta["status"] = "Connected"
-        return meta
-
-    def get_databases(self, include_files: bool = False) -> dict:
-        """
-        Get all database information
-
-        Args:
-            include_files: is noBag containing document information, defaultFalse to reduce response size
-
-        Returns:
-            Database list
-        """
-        # Make sure metadata is loaded (lazy loading mechanism)
-        self._ensure_metadata_loaded()
-
-        databases = []
-        for kb_id, meta in self.databases_meta.items():
-            db_dict = meta.copy()
-            db_dict["kb_id"] = kb_id
-            db_dict["stats"] = self._get_database_stats(kb_id)
-            db_dict["row_count"] = db_dict["stats"].get("row_count") or db_dict["stats"].get("file_count") or 0
-
-            if include_files:
-                db_dict["files"] = {}
-                db_dict["files_truncated"] = True
-
-            db_dict["status"] = "Connected"
-            databases.append(db_dict)
-
-        return {"databases": databases}
 
     async def delete_folder(self, kb_id: str, folder_id: str) -> None:
         """
@@ -1459,61 +1341,6 @@ class KnowledgeBase(ABC):
         """
         pass
 
-    def update_database(
-        self,
-        kb_id: str,
-        name: str,
-        description: str,
-        llm_model_spec: str | None = None,
-        update_llm_model_spec: bool = False,
-    ) -> dict:
-        """
-        Update database
-
-        Args:
-            kb_id: Database ID
-            name: new name
-            description: new describe
-            llm_model_spec: LLM Model spec (optional)
-
-        Returns:
-            Updated database information
-        """
-        if kb_id not in self.databases_meta:
-            raise ValueError(f"Cơ sở dữ liệu {kb_id} không tồn tại")
-
-        self.databases_meta[kb_id]["name"] = name
-        self.databases_meta[kb_id]["description"] = description
-        if update_llm_model_spec:
-            self.databases_meta[kb_id]["llm_model_spec"] = llm_model_spec
-
-        return self.get_database_info(kb_id)
-
-    def get_retrievers(self) -> dict[str, dict]:
-        """
-        Get all retrievers
-
-        Returns:
-            retriever dictionary
-        """
-        retrievers = {}
-        for kb_id, meta in self.databases_meta.items():
-
-            def make_retriever(kb_id):
-                async def retriever(query_text, **kwargs):
-                    results = await self.aquery(query_text, kb_id, agent_call=True, **kwargs)
-                    return self.build_search_output(kb_id, results)
-
-                return retriever
-
-            retrievers[kb_id] = {
-                "name": meta["name"],
-                "description": meta["description"],
-                "retriever": make_retriever(kb_id),
-                "metadata": meta,
-            }
-        return retrievers
-
     async def _load_metadata(self) -> None:
         from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
 
@@ -1534,15 +1361,14 @@ class KnowledgeBase(ABC):
             for kb in databases
         }
 
-        # The amount of file metadata may reach hundreds of thousands, and only KB-level configurations are loaded during the startup phase.
-        # Single file operations query PostgreSQL on demand and pass them via local variables within the process.
+        # Metadata tệp có thể lên tới hàng trăm nghìn bản ghi nên giai đoạn khởi động chỉ tải cấu hình cấp KB;
+        # thao tác trên tệp đơn sẽ truy vấn PostgreSQL khi cần và truyền qua biến cục bộ trong tiến trình.
 
         self.benchmarks_meta = {}
         self._normalize_metadata_state()
         self._metadata_loaded = True
 
         logger.info(f"Loaded {self.kb_type} metadata from database for {len(self.databases_meta)} databases")
-
     async def _fill_missing_file_sizes_for_records(self, records: list[Any]) -> dict[str, int]:
         """Complete size information from MinIO for missing size files in explicit repair tasks."""
         from yuxi.knowledge.utils.kb_utils import is_minio_url, parse_minio_url
@@ -1585,28 +1411,6 @@ class KnowledgeBase(ABC):
             logger.info(f"Filled {len(updates)}/{len(candidates)} missing file sizes from MinIO for {self.kb_type}")
         return updates
 
-    async def _save_metadata(self) -> None:
-        from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
-
-        kb_repo = KnowledgeBaseRepository()
-
-        self._normalize_metadata_state()
-
-        for kb_id, meta in self.databases_meta.items():
-            existing = await kb_repo.get_by_kb_id(kb_id)
-            payload = {
-                "kb_id": kb_id,
-                "name": meta.get("name") or kb_id,
-                "description": meta.get("description"),
-                "kb_type": meta.get("kb_type") or self.kb_type,
-                "embedding_model_spec": meta.get("embedding_model_spec"),
-                "llm_model_spec": meta.get("llm_model_spec"),
-                "query_params": meta.get("query_params"),
-                "additional_params": meta.get("metadata") or {},
-            }
-            if existing is None:
-                await kb_repo.create(payload)
-
     async def _persist_file_meta(self, file_id: str, meta: dict) -> None:
         """Persist one file metadata record without storing it on the KB instance."""
         from yuxi.repositories.knowledge_file_repository import KnowledgeFileRepository
@@ -1615,44 +1419,3 @@ class KnowledgeBase(ABC):
         if not data.get("kb_id"):
             return
         await KnowledgeFileRepository().upsert(file_id=file_id, data=data)
-
-    async def _persist_kb(self, kb_id: str, record_fields: dict[str, Any] | None = None) -> None:
-        """Only save a single knowledge base to the database to avoid full traversal"""
-        from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
-
-        kb_repo = KnowledgeBaseRepository()
-
-        if kb_id not in self.databases_meta:
-            return
-
-        meta = self.databases_meta[kb_id]
-        existing = await kb_repo.get_by_kb_id(kb_id)
-        payload = {
-            "kb_id": kb_id,
-            "name": meta.get("name") or kb_id,
-            "description": meta.get("description"),
-            "kb_type": meta.get("kb_type") or self.kb_type,
-            "embedding_model_spec": meta.get("embedding_model_spec"),
-            "llm_model_spec": meta.get("llm_model_spec"),
-            "query_params": meta.get("query_params"),
-            "additional_params": meta.get("metadata") or {},
-        }
-        if record_fields:
-            allowed_fields = {"share_config", "created_by"}
-            payload.update({key: value for key, value in record_fields.items() if key in allowed_fields})
-
-        if existing is None:
-            await kb_repo.create(payload)
-        else:
-            update_data = {
-                "name": payload["name"],
-                "description": payload["description"],
-                "kb_type": payload["kb_type"],
-                "embedding_model_spec": payload["embedding_model_spec"],
-                "llm_model_spec": payload["llm_model_spec"],
-                "query_params": payload["query_params"],
-                "additional_params": payload["additional_params"],
-            }
-            if record_fields:
-                update_data.update({key: payload[key] for key in allowed_fields if key in payload})
-            await kb_repo.update(kb_id, update_data)

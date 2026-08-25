@@ -1,17 +1,25 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import re
+import shlex
 import shutil
 import tempfile
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from yuxi.agents.backends.sandbox import ProvisionerSandboxBackend
+from yuxi.agents.backends.sandbox.download import download_sandbox_directory
+from yuxi.agents.backends.sandbox.paths import sandbox_user_data_dir, sandbox_workspace_dir
+from yuxi.agents.backends.sandbox.provider import get_sandbox_provider
 from yuxi.agents.skills.service import import_skill_dir, is_valid_skill_slug
+from yuxi.config.options import remote_skill_source_policy
+from yuxi.utils.logging_config import logger
 
 if TYPE_CHECKING:
     from yuxi.storage.postgres.models_business import Skill
@@ -19,6 +27,10 @@ if TYPE_CHECKING:
 ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
 CONTROL_SEQUENCE_RE = re.compile(r"\x1B\][^\x07]*(?:\x07|\x1B\\)|\x1B[\(\)][A-Za-z0-9]")
 CLI_TIMEOUT_SECONDS = 300
+GITHUB_REPO_PATTERN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/(?!\.{1,2}$)[A-Za-z0-9_.-]+$")
+GITHUB_HOST = "github.com"
+INVALID_SOURCE_MESSAGE = "source chỉ hỗ trợ địa chỉ HTTPS nằm trong danh sách trắng nguồn Skill từ xa"
+REMOTE_SKILL_SANDBOX_ROOT = "/home/gem/user-data/outputs"
 
 
 @dataclass(slots=True)
@@ -31,13 +43,115 @@ class RemoteSkillsBatchPreparation:
             await asyncio.to_thread(shutil.rmtree, self.temp_home, ignore_errors=True)
 
 
-def _normalize_source(source: str) -> str:
+@dataclass(slots=True)
+class _RemoteSkillSandbox:
+    """在一次性 Sandbox 中执行不可信的远程 Skill CLI。"""
+
+    thread_id: str
+    home: str
+    backend: ProvisionerSandboxBackend
+
+    @classmethod
+    def create(cls) -> _RemoteSkillSandbox:
+        thread_id = f"remote-skill-{uuid.uuid4().hex}"
+        home = f"{REMOTE_SKILL_SANDBOX_ROOT}/.{thread_id}"
+        return cls(
+            thread_id=thread_id,
+            home=home,
+            # 远程仓库不可信，不能接触全局或用户级 Sandbox 凭据。
+            backend=ProvisionerSandboxBackend(thread_id=thread_id, uid=thread_id, inherit_env=False),
+        )
+
+    async def run(self, args: list[str]) -> str:
+        """执行 Skills CLI，并返回原始命令输出。"""
+        workspace = f"{self.home}/workspace"
+        command = " && ".join(
+            [
+                f"mkdir -p {shlex.quote(workspace)}",
+                f"cd {shlex.quote(workspace)}",
+                f"HOME={shlex.quote(self.home)} {shlex.join(args)}",
+            ]
+        )
+        result = await asyncio.to_thread(self.backend.execute, command, timeout=CLI_TIMEOUT_SECONDS)
+        output = str(result.output or "")
+        if result.exit_code != 0:
+            cleaned_lines = _clean_cli_output(output)
+            error_msg = "\n".join(line for line in cleaned_lines if line)[:500]
+            raise ValueError(error_msg or "skills CLI 执行失败")
+        return output
+
+    async def download_skill(self, name: str, target_dir: Path) -> None:
+        """将 Sandbox 内的一个 Skill 下载到宿主临时目录。"""
+        remote_dir = f"{self.home}/.agents/skills/{name}"
+        await asyncio.to_thread(
+            download_sandbox_directory,
+            self.backend,
+            remote_dir,
+            target_dir,
+            empty_message="skills CLI 未生成预期的技能目录",
+        )
+
+    async def cleanup(self) -> None:
+        """删除一次性 Sandbox 及其线程目录。"""
+        try:
+            await asyncio.to_thread(
+                get_sandbox_provider().release,
+                self.thread_id,
+                uid=self.thread_id,
+                clear_cache_on_delete_failure=True,
+            )
+        except Exception as exc:
+            logger.error(f"销毁远程 Skill Sandbox 失败: {exc}")
+            raise
+        finally:
+            thread_dir = sandbox_user_data_dir(self.thread_id).parent
+            workspace_dir = sandbox_workspace_dir(self.thread_id, self.thread_id).parent
+            await asyncio.to_thread(shutil.rmtree, thread_dir, ignore_errors=True)
+            await asyncio.to_thread(shutil.rmtree, workspace_dir, ignore_errors=True)
+
+
+def _normalize_source(source: str, allowed_hosts: list[str]) -> str:
     value = str(source or "").strip()
     if not value:
         raise ValueError("source không được để trống")
     if any(ch in value for ch in ("\n", "\r", "\x00")):
         raise ValueError("source chứa ký tự không hợp lệ")
-    return value
+
+    allowed_hosts = {host.strip().lower().rstrip(".") for host in allowed_hosts}
+    if GITHUB_REPO_PATTERN.fullmatch(value):
+        if GITHUB_HOST not in allowed_hosts:
+            raise ValueError(INVALID_SOURCE_MESSAGE)
+        return f"https://{GITHUB_HOST}/{value}"
+
+    parsed = urlparse(value)
+    try:
+        hostname = (parsed.hostname or "").rstrip(".").lower()
+        port = parsed.port
+    except ValueError:
+        raise ValueError(INVALID_SOURCE_MESSAGE) from None
+
+    if (
+        parsed.scheme.lower() != "https"
+        or not hostname
+        or parsed.username
+        or parsed.password
+        or port not in (None, 443)
+        or parsed.query
+        or parsed.fragment
+        or hostname not in allowed_hosts
+    ):
+        raise ValueError(INVALID_SOURCE_MESSAGE)
+
+    path = parsed.path.rstrip("/") or "/"
+    if hostname == GITHUB_HOST:
+        repo_path = path.strip("/")
+        if repo_path.endswith(".git"):
+            repo_path = repo_path[:-4]
+        if not GITHUB_REPO_PATTERN.fullmatch(repo_path):
+            raise ValueError(INVALID_SOURCE_MESSAGE)
+        return f"https://{GITHUB_HOST}/{repo_path}"
+
+    return parsed._replace(scheme="https", netloc=hostname, path=path).geturl().rstrip("/")
 
 
 def _normalize_skill_name(skill: str) -> str:
@@ -103,57 +217,15 @@ def _parse_available_skills(output: str) -> list[dict[str, str]]:
     return items
 
 
-async def _run_skills_cli(
-    args: list[str],
-    *,
-    env: dict[str, str],
-    cwd: str,
-) -> str:
-    process = await asyncio.create_subprocess_exec(
-        *args,
-        cwd=cwd,
-        env=env,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=CLI_TIMEOUT_SECONDS)
-    except TimeoutError:
-        process.kill()
-        await process.communicate()
-        raise ValueError("skills CLI thực thi quá thời gian") from None
-
-    output = (stdout or b"").decode("utf-8", errors="replace")
-    error_output = (stderr or b"").decode("utf-8", errors="replace")
-    combined = "\n".join(part for part in [output.strip(), error_output.strip()] if part)
-    if process.returncode != 0:
-        cleaned_lines = _clean_cli_output(combined)
-        error_msg = "\n".join(line for line in cleaned_lines if line)[:500]
-        raise ValueError(error_msg or "skills CLI thực thi thất bại")
-    return combined
-
-
-def _create_isolated_workdir() -> tuple[str, dict[str, str], str]:
-    temp_home = tempfile.mkdtemp(prefix=".remote-skills-")
-    env = os.environ.copy()
-    env["HOME"] = temp_home
-    workdir = str(Path(temp_home) / "workspace")
-    Path(workdir).mkdir(parents=True, exist_ok=True)
-    return temp_home, env, workdir
-
-
 async def list_remote_skills(source: str) -> list[dict[str, str]]:
-    normalized_source = _normalize_source(source)
+    policy = await remote_skill_source_policy.get()
+    normalized_source = _normalize_source(source, policy["allowed_hosts"])
 
-    temp_home, env, workdir = _create_isolated_workdir()
+    sandbox = _RemoteSkillSandbox.create()
     try:
-        output = await _run_skills_cli(
-            ["npx", "-y", "skills", "add", normalized_source, "--list"],
-            env=env,
-            cwd=workdir,
-        )
+        output = await sandbox.run(["npx", "-y", "skills", "add", normalized_source, "--list"])
     finally:
-        await asyncio.to_thread(shutil.rmtree, temp_home, ignore_errors=True)
+        await sandbox.cleanup()
 
     skills = _parse_available_skills(output)
     if not skills:
@@ -168,51 +240,20 @@ async def install_remote_skill(
     skill: str,
     created_by: str | None,
 ) -> Skill:
-    normalized_source = _normalize_source(source)
     normalized_skill = _normalize_skill_name(skill)
-
-    temp_home, env, workdir = _create_isolated_workdir()
+    preparation = await prepare_remote_skills_batch(source=source, skills=[normalized_skill])
     try:
-        available_skills = _parse_available_skills(
-            await _run_skills_cli(
-                ["npx", "-y", "skills", "add", normalized_source, "--list"],
-                env=env,
-                cwd=workdir,
-            )
-        )
-        available_names = {item["name"] for item in available_skills}
-        if normalized_skill not in available_names:
-            raise ValueError(f"Skill không tồn tại trong kho lưu trữ từ xa: {normalized_skill}")
-
-        await _run_skills_cli(
-            [
-                "npx",
-                "-y",
-                "skills",
-                "add",
-                normalized_source,
-                "--skill",
-                normalized_skill,
-                "-g",
-                "-y",
-                "--copy",
-            ],
-            env=env,
-            cwd=workdir,
-        )
-
-        skills_dir = Path(temp_home).resolve() / ".agents" / "skills"
-        installed_dir = _find_skill_dir(skills_dir, normalized_skill)
-        if installed_dir is None:
-            raise ValueError("skills CLI không tạo ra thư mục skill như mong đợi")
+        result = preparation.results[0]
+        if not result.get("success"):
+            raise ValueError(result.get("error") or f"Skill không tồn tại trong kho lưu trữ từ xa: {normalized_skill}")
 
         return await import_skill_dir(
             db,
-            source_dir=installed_dir,
+            source_dir=result["source_dir"],
             created_by=created_by,
         )
     finally:
-        await asyncio.to_thread(shutil.rmtree, temp_home, ignore_errors=True)
+        await preparation.cleanup()
 
 
 async def install_remote_skills_batch(
@@ -264,7 +305,8 @@ async def prepare_remote_skills_batch(
     skills: list[str],
 ) -> RemoteSkillsBatchPreparation:
     """Pull skill directories in batches from the remote warehouse, but do not write to the database."""
-    normalized_source = _normalize_source(source)
+    policy = await remote_skill_source_policy.get()
+    normalized_source = _normalize_source(source, policy["allowed_hosts"])
     if not skills:
         raise ValueError("Danh sách skill không được để trống")
 
@@ -282,58 +324,60 @@ async def prepare_remote_skills_batch(
     if not normalized_skills:
         return RemoteSkillsBatchPreparation(temp_home=None, results=results)
 
-    temp_home, env, workdir = _create_isolated_workdir()
+    sandbox = _RemoteSkillSandbox.create()
+    temp_home: str | None = None
+    keep_temp_home = False
     try:
-        skill_args: list[str] = []
-        for name in normalized_skills:
-            skill_args.extend(["--skill", name])
-
-        cli_failed = False
         try:
-            await _run_skills_cli(
-                [
-                    "npx",
-                    "-y",
-                    "skills",
-                    "add",
-                    normalized_source,
-                    *skill_args,
-                    "-g",
-                    "-y",
-                    "--copy",
-                ],
-                env=env,
-                cwd=workdir,
-            )
-        except ValueError:
-            # The CLI will exit with a non-zero code for unmatched skills, but the installed directory remains
-            cli_failed = True
+            temp_home = tempfile.mkdtemp(prefix=".remote-skills-")
+            skill_args: list[str] = []
+            for name in normalized_skills:
+                skill_args.extend(["--skill", name])
 
-        skills_dir = Path(temp_home).resolve() / ".agents" / "skills"
-        for original_index, name in zip(valid_indices, normalized_skills):
-            installed_dir = _find_skill_dir(skills_dir, name)
-            if installed_dir is None:
-                error_msg = (
-                    "CLI Installation failed" if cli_failed else "skills CLI Expected skills catalog not generated"
+            cli_failed = False
+            try:
+                await sandbox.run(
+                    [
+                        "npx",
+                        "-y",
+                        "skills",
+                        "add",
+                        normalized_source,
+                        *skill_args,
+                        "-g",
+                        "-y",
+                        "--copy",
+                    ]
                 )
-                results[original_index] = {"slug": name, "success": False, "error": error_msg}
-            else:
+            except ValueError:
+                # Với skill không khớp, CLI sẽ thoát với mã khác 0 nhưng thư mục đã cài vẫn còn
+                cli_failed = True
+
+            downloaded_dirs: dict[str, Path | None] = {}
+            for original_index, name in zip(valid_indices, normalized_skills):
+                installed_dir = Path(temp_home) / name
+                if name not in downloaded_dirs:
+                    try:
+                        await sandbox.download_skill(name, installed_dir)
+                        downloaded_dirs[name] = installed_dir
+                    except ValueError:
+                        downloaded_dirs[name] = None
+                installed_dir = downloaded_dirs[name]
+                if installed_dir is None:
+                    error_msg = "Cài đặt qua CLI thất bại" if cli_failed else "skills CLI không tạo ra thư mục skill như mong đợi"
+                    results[original_index] = {"slug": name, "success": False, "error": error_msg}
+                    continue
                 results[original_index] = {"slug": name, "success": True, "source_dir": installed_dir}
 
-        return RemoteSkillsBatchPreparation(temp_home=temp_home, results=results)
-    except Exception:
-        await asyncio.to_thread(shutil.rmtree, temp_home, ignore_errors=True)
-        raise
+            preparation = RemoteSkillsBatchPreparation(temp_home=temp_home, results=results)
+        finally:
+            await sandbox.cleanup()
 
-
-def _find_skill_dir(skills_dir: Path, name: str) -> Path | None:
-    """Find the skill subdirectory by name in the skills installation directory."""
-    if not skills_dir.is_dir():
-        return None
-    for candidate in skills_dir.iterdir():
-        if candidate.name == name and candidate.is_dir():
-            return candidate
-    return None
+        keep_temp_home = True
+        return preparation
+    finally:
+        if temp_home and not keep_temp_home:
+            await asyncio.to_thread(shutil.rmtree, temp_home, ignore_errors=True)
 
 
 def _parse_search_skills(output: str) -> list[dict[str, str]]:
@@ -369,14 +413,10 @@ async def search_remote_skills(query: str) -> list[dict[str, str]]:
     if any(ch in query_val for ch in ("\n", "\r", "\x00")):
         raise ValueError("Từ khóa tìm kiếm chứa ký tự không hợp lệ")
 
-    temp_home, env, workdir = _create_isolated_workdir()
+    sandbox = _RemoteSkillSandbox.create()
     try:
-        output = await _run_skills_cli(
-            ["npx", "-y", "skills", "find", query_val],
-            env=env,
-            cwd=workdir,
-        )
+        output = await sandbox.run(["npx", "-y", "skills", "find", query_val])
     finally:
-        await asyncio.to_thread(shutil.rmtree, temp_home, ignore_errors=True)
+        await sandbox.cleanup()
 
     return _parse_search_skills(output)

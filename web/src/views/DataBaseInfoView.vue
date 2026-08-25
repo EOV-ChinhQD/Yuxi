@@ -16,6 +16,12 @@
       @success="onFileUploadSuccess"
     />
 
+    <FileSearchModal
+      v-model:open="fileSearchModalVisible"
+      :kb-id="kbId"
+      @select="onFileSearchSelect"
+    />
+
     <div v-if="detailLoading" class="database-detail-loading">
       <a-spin tip="Tải thông tin cơ sở kiến thức..." />
     </div>
@@ -46,6 +52,7 @@
               <span>Sao chép ID</span>
             </button>
             <button
+              v-if="canManageDatabase"
               type="button"
               class="lucide-icon-btn extension-panel-action extension-panel-action-primary"
               @click="showEditModal"
@@ -82,6 +89,7 @@
               <div class="file-info-title">
                 <div class="file-info-title-row">
                   <button
+                    v-if="canManageDatabase"
                     type="button"
                     class="lucide-icon-btn extension-panel-action extension-panel-action-primary"
                     @click="showAddFilesModal()"
@@ -90,6 +98,7 @@
                     <span>Tải lên</span>
                   </button>
                   <button
+                    v-if="canManageDatabase"
                     type="button"
                     class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
                     @click="showCreateFolderModal"
@@ -97,11 +106,19 @@
                     <FolderPlus :size="14" />
                     <span>Tạo thư mục mới</span>
                   </button>
+                  <button
+                    type="button"
+                    class="lucide-icon-btn extension-panel-action extension-panel-action-secondary"
+                    @click="fileSearchModalVisible = true"
+                  >
+                    <Search :size="14" />
+                    <span>Tìm kiếm tệp</span>
+                  </button>
                 </div>
               </div>
               <div class="file-panel-status">
                 <button
-                  v-if="pendingParseCount > 0"
+                  v-if="canManageDatabase && pendingParseCount > 0"
                   type="button"
                   class="file-stat-card file-stat-action file-stat-summary"
                   :disabled="store.state.chunkLoading"
@@ -114,7 +131,7 @@
                   </div>
                 </button>
                 <button
-                  v-if="pendingIndexCount > 0"
+                  v-if="canManageDatabase && pendingIndexCount > 0"
                   type="button"
                   class="file-stat-card file-stat-action file-stat-summary"
                   :disabled="store.state.chunkLoading"
@@ -141,6 +158,7 @@
                   </div>
                 </div>
                 <button
+                  v-if="canManageDatabase"
                   type="button"
                   class="file-stat-card file-stat-summary file-stat-repair"
                   :disabled="statsRepairing"
@@ -157,6 +175,7 @@
                   </div>
                 </button>
                 <button
+                  v-if="canManageDatabase"
                   type="button"
                   class="file-stat-card file-stat-summary file-stat-repair"
                   :disabled="statsRepairing"
@@ -174,53 +193,32 @@
                 </button>
               </div>
             </div>
-            <FileTable ref="fileTableRef" />
+            <FileTable ref="fileTableRef" :readonly="!canManageDatabase" />
           </div>
 
           <div v-show="activeTab === 'query'" class="tab-panel query-config-panel">
-            <div class="query-config-layout">
-              <div class="query-test-pane">
-                <QuerySection ref="querySectionRef" :visible="true" @toggle-visible="() => {}" />
-              </div>
-              <aside class="query-config-pane" aria-label="Cấu hình truy xuất">
-                <div class="search-config-wrapper">
-                  <div class="search-config-header">
-                    <div>
-                      <h3>Cấu hình truy xuất</h3>
-                      <p>Điều chỉnh các tham số truy xuất của cơ sở tri thức hiện tại。</p>
-                    </div>
-                    <button
-                      type="button"
-                      class="lucide-icon-btn extension-panel-action extension-panel-action-primary"
-                      :disabled="searchConfigSaving"
-                      @click="handleInlineSearchConfigSave"
-                    >
-                      <Save :size="14" />
-                      <span>Lưu</span>
-                    </button>
-                  </div>
-                  <div class="search-config-body">
-                    <SearchConfigPanel
-                      ref="searchConfigPanelRef"
-                      :kb-id="kbId"
-                      @save="handleSearchConfigSave"
-                    />
-                  </div>
-                </div>
-              </aside>
-            </div>
+            <!-- PORT-CONFLICT: bên ta từng nhúng panel cấu hình truy xuất ngay tab query;
+                 upstream đã chuyển cấu hình truy xuất vào modal chỉnh sửa (tab "Truy xuất"),
+                 nên giữ phiên bản mới của upstream -->
+            <QuerySection ref="querySectionRef" :visible="true" @toggle-visible="() => {}" />
           </div>
 
           <div v-if="isMilvus && activeTab === 'graph'" class="tab-panel">
             <KnowledgeGraphSection
               :visible="true"
               :active="activeTab === 'graph'"
+              :readonly="!canManageDatabase"
               @toggle-visible="() => {}"
             />
           </div>
 
           <div v-if="isMilvus && activeTab === 'mindmap'" class="tab-panel">
-            <MindMapSection v-if="kbId" :kb-id="kbId" ref="mindmapSectionRef" />
+            <MindMapSection
+              v-if="kbId"
+              :kb-id="kbId"
+              :readonly="!canManageDatabase"
+              ref="mindmapSectionRef"
+            />
           </div>
 
           <div v-if="isMilvus && activeTab === 'evaluation'" class="tab-panel">
@@ -249,135 +247,150 @@
     <a-modal
       v-model:open="editModalVisible"
       title="Chỉnh sửa thông tin cơ sở tri thức"
-      width="700px"
+      width="720px"
+      :mask-closable="false"
+      wrap-class-name="database-edit-modal"
     >
       <template #footer>
-        <a-button danger @click="deleteDatabase" style="margin-right: auto; margin-left: 0">
-          <template #icon>
-            <Trash2 :size="16" style="vertical-align: -3px; margin-right: 4px" />
-          </template>
-          Xóa cơ sở tri thức
+        <a-button key="close" @click="editModalVisible = false">Đóng</a-button>
+        <a-button key="submit" type="primary" :loading="editSaving" @click="handleEditSubmit">
+          Lưu
         </a-button>
-        <a-button key="back" @click="editModalVisible = false">Hủy</a-button>
-        <a-button key="submit" type="primary" @click="handleEditSubmit">Xác nhận</a-button>
       </template>
       <a-form :model="editForm" :rules="rules" ref="editFormRef" layout="vertical">
-        <a-form-item label="Tên kho kiến thức" name="name" required>
-          <a-input v-model:value="editForm.name" placeholder="Vui lòng nhập tên cơ sở kiến thức" />
-        </a-form-item>
-        <a-form-item label="Mô tả kho tri thức" name="description">
-          <AiTextarea
-            v-model="editForm.description"
-            :name="editForm.name"
-            :files="fileList"
-            placeholder="Vui lòng nhập mô tả cơ sở kiến thức"
-            action-placement="header"
-            :rows="4"
-          />
-        </a-form-item>
+        <a-tabs v-model:active-key="editModalTab" class="database-edit-tabs">
+          <a-tab-pane key="basic" tab="Thông tin chung">
+            <div class="database-edit-tab-content">
+              <a-form-item label="Tên kho kiến thức" name="name" required>
+                <a-input v-model:value="editForm.name" placeholder="Vui lòng nhập tên cơ sở kiến thức" />
+              </a-form-item>
+              <a-form-item label="Mô tả kho tri thức" name="description">
+                <AiTextarea
+                  v-model="editForm.description"
+                  :name="editForm.name"
+                  :files="fileList"
+                  placeholder="Vui lòng nhập mô tả cơ sở kiến thức"
+                  action-placement="header"
+                  :rows="4"
+                />
+              </a-form-item>
 
-        <a-form-item
-          v-if="!isConnector"
-          label="Tự động tạo ra câu hỏi"
-          name="auto_generate_questions"
-        >
-          <a-switch
-            v-model:checked="editForm.auto_generate_questions"
-            checked-children="Kích hoạt"
-            un-checked-children="Đóng"
-          />
-          <span style="margin-left: 8px; font-size: 12px; color: var(--gray-500)">
-            Tự động tạo ra câu hỏi thử nghiệm sau khi tải lên tệp tin
-          </span>
-        </a-form-item>
+              <!-- Tính năng riêng của bản fork: tự động tạo câu hỏi sau khi tải tệp -->
+              <a-form-item
+                v-if="!isConnector"
+                label="Tự động tạo ra câu hỏi"
+                name="auto_generate_questions"
+              >
+                <a-switch
+                  v-model:checked="editForm.auto_generate_questions"
+                  checked-children="Kích hoạt"
+                  un-checked-children="Đóng"
+                />
+                <span style="margin-left: 8px; font-size: 12px; color: var(--gray-500)">
+                  Tự động tạo ra câu hỏi thử nghiệm sau khi tải lên tệp tin
+                </span>
+              </a-form-item>
 
-        <a-form-item v-if="!isConnector" name="chunk_preset_id">
-          <template #label>
-            <span class="chunk-preset-label">
-              Chiến lược phân chia
-              <a-tooltip :title="editPresetDescription">
-                <QuestionCircleOutlined class="chunk-preset-help-icon" />
-              </a-tooltip>
-            </span>
-          </template>
-          <a-select
-            v-model:value="editForm.chunk_preset_id"
-            :options="chunkPresetOptions"
-            :loading="chunkPresetLoading"
-          />
-        </a-form-item>
+              <a-form-item v-if="!isConnector" name="chunk_preset_id">
+                <template #label>
+                  <span class="chunk-preset-label">
+                    Chiến lược phân chia
+                    <a-tooltip :title="editPresetDescription">
+                      <QuestionCircleOutlined class="chunk-preset-help-icon" />
+                    </a-tooltip>
+                  </span>
+                </template>
+                <a-select
+                  v-model:value="editForm.chunk_preset_id"
+                  :options="chunkPresetOptions"
+                  :loading="chunkPresetLoading"
+                />
+              </a-form-item>
+              <template v-if="isDifyKb">
+                <a-form-item label="Dify API URL" name="dify_api_url">
+                  <a-input
+                    v-model:value="editForm.dify_api_url"
+                    placeholder="Ví dụ: https://api.dify.ai/v1"
+                  />
+                </a-form-item>
+                <a-form-item label="Dify Token" name="dify_token">
+                  <a-input-password
+                    v-model:value="editForm.dify_token"
+                    placeholder="Vui lòng nhập Dify API Token"
+                  />
+                </a-form-item>
+                <a-form-item label="Dataset ID" name="dify_dataset_id">
+                  <a-input
+                    v-model:value="editForm.dify_dataset_id"
+                    placeholder="Vui lòng nhập Dify dataset_id"
+                  />
+                </a-form-item>
+              </template>
 
-        <template v-if="isDifyKb">
-          <a-form-item label="Dify API URL" name="dify_api_url">
-            <a-input
-              v-model:value="editForm.dify_api_url"
-              placeholder="Ví dụ: https://api.dify.ai/v1"
-            />
-          </a-form-item>
-          <a-form-item label="Dify Token" name="dify_token">
-            <a-input-password
-              v-model:value="editForm.dify_token"
-              placeholder="Vui lòng nhập Dify API Token"
-            />
-          </a-form-item>
-          <a-form-item label="Dataset ID" name="dify_dataset_id">
-            <a-input
-              v-model:value="editForm.dify_dataset_id"
-              placeholder="Vui lòng nhập Dify dataset_id"
-            />
-          </a-form-item>
-        </template>
+              <template v-if="isNotionKb">
+                <a-form-item label="Notion Token" name="notion_token">
+                  <a-input-password
+                    v-model:value="editForm.notion_token"
+                    placeholder="Nếu để trống, giữ nguyên hiện trạng Token hoặc sử dụng biến môi trường"
+                  />
+                </a-form-item>
+                <a-form-item label="Data Source ID" name="notion_data_source_id">
+                  <a-input
+                    v-model:value="editForm.notion_data_source_id"
+                    placeholder="Vui lòng nhập Notion data_source_id"
+                  />
+                </a-form-item>
+                <a-form-item label="Notion API Version" name="notion_version">
+                  <a-input v-model:value="editForm.notion_version" placeholder="2026-03-11" />
+                </a-form-item>
+              </template>
+            </div>
+          </a-tab-pane>
 
-        <template v-if="isNotionKb">
-          <a-form-item label="Notion Token" name="notion_token">
-            <a-input-password
-              v-model:value="editForm.notion_token"
-              placeholder="Nếu để trống, giữ nguyên hiện trạng Token hoặc sử dụng biến môi trường"
-            />
-          </a-form-item>
-          <a-form-item label="Data Source ID" name="notion_data_source_id">
-            <a-input
-              v-model:value="editForm.notion_data_source_id"
-              placeholder="Vui lòng nhập Notion data_source_id"
-            />
-          </a-form-item>
-          <a-form-item label="Notion API Version" name="notion_version">
-            <a-input v-model:value="editForm.notion_version" placeholder="2026-03-11" />
-          </a-form-item>
-        </template>
+          <a-tab-pane key="permission" tab="Cấu hình quyền">
+            <div class="database-edit-tab-content">
+              <a-form-item v-if="canEditShareConfig" name="share_config">
+                <a-form-item-rest>
+                  <ShareConfigForm
+                    ref="shareConfigFormRef"
+                    v-model="editShareConfig"
+                    :auto-select-user-dept="true"
+                    :require-read-scope="true"
+                  >
+                    <template #manage-description>
+                      Chỉ<strong>quản trị viên</strong> mới có thể quản lý kho tri thức; người dùng
+                      thường không thể quản lý.
+                    </template>
+                  </ShareConfigForm>
+                </a-form-item-rest>
+              </a-form-item>
+              <div v-else-if="database.share_config" class="share-config-readonly">
+                <a-tag :color="shareConfigDisplay.color">{{ shareConfigDisplay.label }}</a-tag>
+                <span class="access-names">{{ shareConfigDisplay.detail }}</span>
+              </div>
+            </div>
+          </a-tab-pane>
 
-        <a-form-item v-if="canEditShareConfig" label="Cài đặt chia sẻ" name="share_config">
-          <a-form-item-rest>
-            <ShareConfigForm
-              ref="shareConfigFormRef"
-              :model-value="database.share_config"
-              :auto-select-user-dept="true"
-            />
-          </a-form-item-rest>
-        </a-form-item>
-        <a-form-item
-          v-else-if="database.share_config"
-          label="Cài đặt chia sẻ"
-          name="share_config_readonly"
-        >
-          <div class="share-config-readonly">
-            <a-tag :color="shareConfigDisplay.color">
-              {{ shareConfigDisplay.label }}
-            </a-tag>
-            <span class="access-names">{{ shareConfigDisplay.detail }}</span>
-          </div>
-        </a-form-item>
+          <a-tab-pane key="retrieval" tab="Cấu hình truy xuất" force-render>
+            <div class="database-edit-tab-content retrieval-config-content">
+              <p class="database-edit-tab-description">
+                Điều chỉnh các tham số được sử dụng khi kiểm tra truy xuất và khi Agent sử dụng kho
+                tri thức hiện tại.
+              </p>
+              <SearchConfigPanel v-if="editModalVisible" ref="searchConfigPanelRef" :kb-id="kbId" />
+            </div>
+          </a-tab-pane>
+        </a-tabs>
       </a-form>
     </a-modal>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDatabaseStore } from '@/stores/database'
 import { useTaskerStore } from '@/stores/tasker'
-import { useUserStore } from '@/stores/user'
 import {
   ArrowLeft,
   BarChart3,
@@ -392,15 +405,14 @@ import {
   Map as MapIcon,
   Network,
   Pencil,
-  Save,
-  Search,
-  Trash2
+  Search
 } from 'lucide-vue-next'
 import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import FileTable from '@/components/FileTable.vue'
 import FileDetailModal from '@/components/FileDetailModal.vue'
 import FileUploadModal from '@/components/FileUploadModal.vue'
+import FileSearchModal from '@/components/modals/FileSearchModal.vue'
 import KnowledgeGraphSection from '@/components/KnowledgeGraphSection.vue'
 import QuerySection from '@/components/QuerySection.vue'
 import MindMapSection from '@/components/MindMapSection.vue'
@@ -421,7 +433,6 @@ const route = useRoute()
 const router = useRouter()
 const store = useDatabaseStore()
 const taskerStore = useTaskerStore()
-const userStore = useUserStore()
 const {
   chunkPresetSelectOptions: chunkPresetOptions,
   chunkPresetLoading,
@@ -431,6 +442,7 @@ const {
 
 const kbId = computed(() => store.kbId)
 const database = computed(() => store.database)
+const canManageDatabase = computed(() => database.value?.can_manage === true)
 const isCurrentDatabaseLoaded = computed(() => database.value?.kb_id === kbId.value)
 const kbType = computed(() =>
   isCurrentDatabaseLoaded.value ? database.value.kb_type?.toLowerCase() || 'milvus' : ''
@@ -470,7 +482,11 @@ const tabs = computed(() => {
   return [{ key: 'query', label: 'Kiểm tra tìm kiếm', icon: Search }]
 })
 
-const visibleTabs = computed(() => tabs.value)
+const visibleTabs = computed(() =>
+  canManageDatabase.value
+    ? tabs.value
+    : tabs.value.filter((tab) => ['filetable', 'query', 'graph', 'mindmap'].includes(tab.key))
+)
 const activeTab = ref('filetable')
 
 watch(
@@ -581,24 +597,16 @@ const confirmBatchIndex = () => {
 
 const mindmapSectionRef = ref(null)
 const querySectionRef = ref(null)
-const searchConfigSaving = ref(false)
 const searchConfigPanelRef = ref(null)
 
-const handleSearchConfigSave = () => {
-  store.getDatabaseInfo()
-}
+const addFilesModalVisible = ref(false)
+const fileSearchModalVisible = ref(false)
 
-const handleInlineSearchConfigSave = async () => {
-  if (!searchConfigPanelRef.value) return
-  searchConfigSaving.value = true
-  try {
-    await searchConfigPanelRef.value.save()
-  } finally {
-    searchConfigSaving.value = false
+const onFileSearchSelect = (file) => {
+  if (file?.file_id) {
+    store.openFileDetail(file.file_id)
   }
 }
-
-const addFilesModalVisible = ref(false)
 const currentFolderId = ref(null)
 const isFolderUploadMode = ref(false)
 const addFilesMode = ref('file')
@@ -680,7 +688,7 @@ watch(
     }
 
     if (newFileCount !== oldFileCount) {
-      if (newFileCount > 0) {
+      if (newFileCount > 0 && canManageDatabase.value) {
         setTimeout(async () => {
           if (querySectionRef.value) {
             if (database.value.additional_params?.auto_generate_questions) {
@@ -736,11 +744,19 @@ const copyDatabaseId = async () => {
 const departments = ref([])
 const users = ref([])
 const editModalVisible = ref(false)
+const editModalTab = ref('basic')
+const editSaving = ref(false)
 const editFormRef = ref(null)
 const shareConfigFormRef = ref(null)
+const editShareConfig = ref({
+  version: 2,
+  read_scope: { access_level: 'global', department_ids: [], user_uids: [] },
+  manage_scope: null
+})
 const editForm = reactive({
   name: '',
   description: '',
+  // Tính năng riêng của bản fork
   auto_generate_questions: false,
   chunk_preset_id: DEFAULT_CHUNK_PRESET_ID,
   dify_api_url: '',
@@ -760,34 +776,34 @@ const fileList = computed(() => {
   return (store.documentFiles || []).map((f) => f.filename).filter(Boolean)
 })
 
-const canEditShareConfig = computed(() => userStore.isSuperAdmin || userStore.isAdmin)
+const canEditShareConfig = computed(() => canManageDatabase.value)
 
 const shareConfigDisplay = computed(() => {
-  const shareConfig = database.value?.share_config || { access_level: 'global' }
-  if (shareConfig.access_level === 'department') {
-    const departmentIds = shareConfig.department_ids || []
-    const names = departmentIds.map((id) => getDepartmentName(id)).join(', ') || 'Không có'
+  const shareConfig = database.value?.share_config || {}
+  const readScope = shareConfig.version === 2 ? shareConfig.read_scope : shareConfig
+  const manageScope = shareConfig.manage_scope
+  const describeScope = (scope) => {
+    if (!scope) return 'Không có'
+    if (scope.access_level === 'global') return 'Toàn cục'
+    if (scope.access_level === 'department') {
+      const names =
+        (scope.department_ids || []).map((id) => getDepartmentName(id)).join(', ') || 'Không có'
+      return `${scope.department_ids?.length || 0} bộ phận: ${names}`
+    }
+    const names = (scope.user_uids || []).map((uid) => getUserName(uid)).join(', ') || 'Không có'
+    return `${scope.user_uids?.length || 0} người dùng: ${names}`
+  }
+  if (manageScope) {
     return {
       color: 'blue',
-      label: 'Chia sẻ bộ phận',
-      detail: `${departmentIds.length} có thể truy cập: ${names}`
+      label: 'Chia sẻ phân cấp',
+      detail: `Đọc: ${describeScope(readScope)}; Quản lý: ${describeScope(manageScope)}`
     }
   }
-
-  if (shareConfig.access_level === 'user') {
-    const userUids = shareConfig.user_uids || []
-    const names = userUids.map((uid) => getUserName(uid)).join(', ') || 'Không có'
-    return {
-      color: 'purple',
-      label: 'Người được chỉ định',
-      detail: `${userUids.length} người dùng có thể truy cập: ${names}`
-    }
-  }
-
   return {
     color: 'green',
-    label: 'Chia sẻ toàn cục',
-    detail: 'Tất cả người dùng có thể truy cập'
+    label: readScope?.access_level === 'global' ? 'Chỉ đọc toàn cục' : 'Chỉ đọc chia sẻ',
+    detail: `Đọc: ${describeScope(readScope)}`
   }
 })
 
@@ -819,10 +835,11 @@ const loadUsers = async () => {
 }
 
 const showEditModal = () => {
+  editModalTab.value = 'basic'
   editForm.name = database.value.name || ''
   editForm.description = database.value.description || ''
   editForm.auto_generate_questions =
-    database.value.additional_params?.auto_generate_questions || false
+    database.value.additional_params?.auto_generate_questions ?? false
   editForm.chunk_preset_id =
     database.value.additional_params?.chunk_preset_id || DEFAULT_CHUNK_PRESET_ID
   editForm.dify_api_url = database.value.additional_params?.dify_api_url || ''
@@ -831,87 +848,111 @@ const showEditModal = () => {
   editForm.notion_token = ''
   editForm.notion_data_source_id = database.value.additional_params?.notion_data_source_id || ''
   editForm.notion_version = database.value.additional_params?.notion_version || '2026-03-11'
+  editShareConfig.value = database.value.share_config || {
+    version: 2,
+    read_scope: { access_level: 'global', department_ids: [], user_uids: [] },
+    manage_scope: null
+  }
   editModalVisible.value = true
 }
 
-const handleEditSubmit = () => {
-  editFormRef.value
-    .validate()
-    .then(async () => {
-      if (shareConfigFormRef.value) {
-        const validation = shareConfigFormRef.value.validate()
-        if (!validation.valid) {
-          message.warning(validation.message)
-          return
-        }
+watch(
+  () => [route.query.action, detailLoading.value, isCurrentDatabaseLoaded.value],
+  ([action, loading, loaded]) => {
+    if (action !== 'edit' || loading || !loaded) return
+    showEditModal()
+    router.replace({ path: route.path, query: { ...route.query, action: undefined } })
+  },
+  { immediate: true }
+)
+
+const handleEditSubmit = async () => {
+  editSaving.value = true
+  try {
+    await editFormRef.value.validate()
+
+    if (shareConfigFormRef.value) {
+      const validation = shareConfigFormRef.value.validate()
+      if (!validation.valid) {
+        editModalTab.value = 'permission'
+        message.warning(validation.message)
+        return
       }
+    }
 
-      const formConfig = shareConfigFormRef.value?.config || { access_level: 'global' }
-      const updateData = {
-        name: editForm.name,
-        description: editForm.description,
-        additional_params: {},
-        share_config: {
-          access_level: formConfig.access_level,
-          department_ids:
-            formConfig.access_level === 'department' ? formConfig.department_ids || [] : [],
-          user_uids: formConfig.access_level === 'user' ? formConfig.user_uids || [] : []
-        }
+    const updateData = {
+      name: editForm.name,
+      description: editForm.description,
+      additional_params: {},
+      share_config: editShareConfig.value
+    }
+
+    if (isDifyKb.value) {
+      if (
+        !editForm.dify_api_url?.trim() ||
+        !editForm.dify_token?.trim() ||
+        !editForm.dify_dataset_id?.trim()
+      ) {
+        editModalTab.value = 'basic'
+        message.error('Vui lòng điền đầy đủ Dify API URL, Token và Dataset ID')
+        return
       }
-
-      if (isDifyKb.value) {
-        if (
-          !editForm.dify_api_url?.trim() ||
-          !editForm.dify_token?.trim() ||
-          !editForm.dify_dataset_id?.trim()
-        ) {
-          message.error('Vui lòng điền đầy đủ Dify API URL, Token và Dataset ID')
-          return
-        }
-        if (!editForm.dify_api_url.trim().endsWith('/v1')) {
-          message.error('Dify API URL phải kết thúc bằng /v1')
-          return
-        }
-        updateData.additional_params = {
-          dify_api_url: editForm.dify_api_url.trim(),
-          dify_token: editForm.dify_token.trim(),
-          dify_dataset_id: editForm.dify_dataset_id.trim()
-        }
-      } else if (isNotionKb.value) {
-        if (!editForm.notion_data_source_id?.trim()) {
-          message.error('Vui lòng điền Notion Data Source ID')
-          return
-        }
-        updateData.additional_params = {
-          notion_data_source_id: editForm.notion_data_source_id.trim(),
-          notion_version: editForm.notion_version?.trim() || '2026-03-11'
-        }
-        if (editForm.notion_token?.trim()) {
-          updateData.additional_params.notion_token = editForm.notion_token.trim()
-        }
-      } else {
-        updateData.additional_params = {
-          auto_generate_questions: editForm.auto_generate_questions,
-          chunk_preset_id: editForm.chunk_preset_id || DEFAULT_CHUNK_PRESET_ID
-        }
+      if (!editForm.dify_api_url.trim().endsWith('/v1')) {
+        editModalTab.value = 'basic'
+        message.error('Dify API URL phải kết thúc bằng /v1')
+        return
       }
+      updateData.additional_params = {
+        dify_api_url: editForm.dify_api_url.trim(),
+        dify_token: editForm.dify_token.trim(),
+        dify_dataset_id: editForm.dify_dataset_id.trim()
+      }
+    } else if (isNotionKb.value) {
+      if (!editForm.notion_data_source_id?.trim()) {
+        editModalTab.value = 'basic'
+        message.error('Vui lòng điền Notion Data Source ID')
+        return
+      }
+      updateData.additional_params = {
+        notion_data_source_id: editForm.notion_data_source_id.trim(),
+        notion_version: editForm.notion_version?.trim() || '2026-03-11'
+      }
+      if (editForm.notion_token?.trim()) {
+        updateData.additional_params.notion_token = editForm.notion_token.trim()
+      }
+    } else {
+      updateData.additional_params = {
+        // Tính năng riêng của bản fork: tự động tạo câu hỏi
+        auto_generate_questions: editForm.auto_generate_questions,
+        chunk_preset_id: editForm.chunk_preset_id || DEFAULT_CHUNK_PRESET_ID
+      }
+    }
 
-      await store.updateDatabaseInfo(updateData)
-      editModalVisible.value = false
-    })
-    .catch((err) => {
-      console.error('Xác thực form thất bại:', err)
-    })
-}
+    if (searchConfigPanelRef.value?.hasChanges?.()) {
+      const searchConfigSaved = await searchConfigPanelRef.value.save({ notify: false })
+      if (searchConfigSaved === false) {
+        editModalTab.value = 'retrieval'
+        return
+      }
+    }
 
-const deleteDatabase = () => {
-  store.deleteDatabase()
+    await store.updateDatabaseInfo(updateData)
+  } catch (err) {
+    editModalTab.value = 'basic'
+    console.error('Xác thực form thất bại:', err)
+  } finally {
+    editSaving.value = false
+  }
 }
 
 onMounted(() => {
   loadChunkPresetOptions()
   loadDepartments()
   loadUsers()
+})
+
+onUnmounted(() => {
+  store.stopAutoRefresh()
 })
 </script>
 
@@ -1044,48 +1085,11 @@ onMounted(() => {
 
 .query-config-panel {
   overflow: hidden;
-}
 
-.query-config-layout {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  gap: 12px;
-}
-
-.query-test-pane {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-}
-
-.query-test-pane :deep(.query-section) {
-  flex: 1;
-  min-width: 0;
-}
-
-.query-config-pane {
-  width: 360px;
-  flex: 0 0 360px;
-  min-height: 0;
-  display: flex;
-}
-
-.query-config-pane .search-config-wrapper {
-  width: 100%;
-}
-
-.query-config-pane :deep(.ant-row) {
-  margin-right: 0 !important;
-  margin-left: 0 !important;
-}
-
-.query-config-pane :deep(.ant-col) {
-  max-width: 100%;
-  flex: 0 0 100%;
-  padding-right: 0 !important;
-  padding-left: 0 !important;
+  :deep(.query-section) {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .file-panel-toolbar {
@@ -1249,45 +1253,39 @@ onMounted(() => {
   }
 }
 
-.search-config-wrapper {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--gray-200);
-  border-radius: 8px;
-  background: var(--gray-0);
-  overflow: hidden;
+.database-edit-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 20px;
 }
 
-.search-config-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--gray-150);
-  flex-shrink: 0;
-
-  h3 {
-    margin: 0 0 4px;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--gray-900);
-  }
-
-  p {
-    margin: 0;
-    font-size: 13px;
-    color: var(--gray-500);
-  }
+.database-edit-tab-content {
+  min-height: 360px;
 }
 
-.search-config-body {
-  flex: 1;
-  min-height: 0;
+.database-edit-tab-description {
+  margin: 0 0 16px;
+  color: var(--gray-500);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.retrieval-config-content {
+  padding: 0 2px;
+}
+
+:global(.database-edit-modal .ant-modal-body) {
+  max-height: min(680px, 70vh);
   overflow-y: auto;
-  padding: 16px;
+}
+
+:global(.database-edit-modal .ant-modal-footer) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+:global(.database-edit-modal .ant-modal-footer .ant-btn + .ant-btn) {
+  margin-inline-start: 0;
 }
 
 .share-config-readonly {
@@ -1313,19 +1311,14 @@ onMounted(() => {
   font-size: 14px;
 }
 
+.form-item-help-text {
+  margin-left: 8px;
+  color: var(--gray-500);
+  font-size: 12px;
+}
+
 @media (max-width: 1024px) {
-  .query-config-layout {
-    flex-direction: column;
-    overflow-y: auto;
-  }
-
-  .query-test-pane {
-    min-height: 360px;
-  }
-
-  .query-config-pane {
-    width: 100%;
-    flex: 0 0 auto;
+  .database-edit-tab-content {
     min-height: 320px;
   }
 }
@@ -1347,14 +1340,9 @@ onMounted(() => {
     min-width: 104px;
   }
 
-  .query-config-layout {
-    flex-direction: column;
-  }
-
-  .query-config-pane {
-    width: 100%;
-    flex: 0 0 auto;
-    min-height: 320px;
+  .retrieval-config-content :deep(.ant-col) {
+    max-width: 100%;
+    flex: 0 0 100%;
   }
 
   .file-panel-toolbar {

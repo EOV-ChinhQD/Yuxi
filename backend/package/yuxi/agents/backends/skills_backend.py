@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 from deepagents.backends import FilesystemBackend
 from deepagents.backends.protocol import (
@@ -24,8 +24,8 @@ class SelectedSkillsReadonlyBackend(FilesystemBackend):
     Backend chỉ đọc kỹ năng đã chọn, chỉ phơi bày thư mục kỹ năng đã chọn。
     """
 
-    def __init__(self, *, selected_slugs: list[str] | None):
-        super().__init__(root_dir=get_skills_root_dir(), virtual_mode=True)
+    def __init__(self, *, selected_slugs: list[str] | None, root_dir: Path | None = None):
+        super().__init__(root_dir=root_dir or get_skills_root_dir(), virtual_mode=True)
         self._selected_slugs = {
             str(slug).strip()
             for slug in (selected_slugs or [])

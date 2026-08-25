@@ -1,38 +1,136 @@
 <template>
-  <div class="attachment-options">
-    <div class="option-item" :class="{ disabled: disabled }" @click="handleAttachmentClick">
-      <a-tooltip title="Hỗ trợ mọi định dạng file ≤ 5 MB" placement="right">
-        <div class="option-content">
-          <FileText :size="14" class="option-icon" />
-          <span class="option-text">Thêm tệp đính kèm</span>
-        </div>
-      </a-tooltip>
-    </div>
+  <div
+    class="config-dropdown-panel attachment-options-panel"
+    role="menu"
+    :aria-label="activeResourceType ? `Chọn ${activeResourceLabel}` : 'Thêm nội dung'"
+    @click.stop
+  >
+    <template v-if="!activeResourceType">
+      <template v-if="fileUploadEnabled">
+        <button
+          type="button"
+          role="menuitem"
+          class="config-dropdown-item"
+          :class="{ disabled }"
+          :disabled="disabled"
+          title="Hỗ trợ mọi định dạng file ≤ 5 MB"
+          @click="handleAttachmentClick"
+        >
+          <FileText :size="15" class="config-dropdown-item-icon" />
+          <span class="config-dropdown-item-label">Thêm tệp đính kèm</span>
+        </button>
 
-    <div class="option-item" @click="handleImageUpload">
-      <a-tooltip title="Hỗ trợ jpg/jpeg/png/gif, ≤ 5 MB" placement="right">
-        <div class="option-content">
-          <Image :size="14" class="option-icon" />
-          <span class="option-text">Tải ảnh lên</span>
-        </div>
-      </a-tooltip>
-    </div>
+        <button
+          type="button"
+          role="menuitem"
+          class="config-dropdown-item"
+          :class="{ disabled }"
+          :disabled="disabled"
+          title="Hỗ trợ jpg/jpeg/png/gif, ≤ 5 MB"
+          @click="handleImageUpload"
+        >
+          <Image :size="15" class="config-dropdown-item-icon" />
+          <span class="config-dropdown-item-label">Tải ảnh lên</span>
+        </button>
+      </template>
+
+      <div v-if="fileUploadEnabled && hasMentionResources" class="config-dropdown-divider"></div>
+
+      <button
+        v-for="group in visibleResourceGroups"
+        :key="group.key"
+        type="button"
+        role="menuitem"
+        class="config-dropdown-item"
+        :disabled="disabled"
+        :class="{ disabled }"
+        @click="activeResourceType = group.key"
+      >
+        <component :is="group.icon" :size="15" class="config-dropdown-item-icon" />
+        <span class="config-dropdown-item-label">{{ group.label }}</span>
+        <ChevronRight :size="14" class="attachment-options-chevron" />
+      </button>
+    </template>
+
+    <template v-else>
+      <button
+        type="button"
+        class="attachment-options-back"
+        aria-label="Quay lại menu thêm nội dung"
+        @click="activeResourceType = ''"
+      >
+        <ArrowLeft :size="15" />
+        <span>{{ activeResourceLabel }}</span>
+      </button>
+
+      <div class="config-dropdown-divider"></div>
+
+      <div class="attachment-resource-list">
+        <button
+          v-for="item in activeResourceItems"
+          :key="`${item.type}-${item.value}`"
+          type="button"
+          role="menuitem"
+          class="config-dropdown-item attachment-resource-item"
+          :title="item.description || item.label"
+          @click="selectMention(item)"
+        >
+          <component
+            :is="getMentionIconComponent(item.type, item.value)"
+            :size="15"
+            class="config-dropdown-item-icon"
+          />
+          <span class="attachment-resource-content">
+            <span class="config-dropdown-item-label">{{ item.label }}</span>
+            <span class="attachment-resource-description">
+              {{ item.description || 'Chưa có mô tả' }}
+            </span>
+          </span>
+        </button>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { FileText, Image } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { ArrowLeft, ChevronRight, Database, FileText, Image, WandSparkles } from 'lucide-vue-next'
 import { message } from 'ant-design-vue'
 import { uploadMultimodalImage } from '@/utils/multimodal_image_upload'
+import { getMentionIconComponent } from '@/utils/mention_icon_utils'
+import { buildMentionResourceItems } from '@/utils/mention_resource_items'
+
+const RESOURCE_GROUPS = [
+  { key: 'knowledgeBases', label: 'Cơ sở tri thức', icon: Database },
+  { key: 'skills', label: 'Kỹ năng', icon: WandSparkles }
+]
 
 const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  fileUploadEnabled: {
+    type: Boolean,
+    default: false
+  },
+  mention: {
+    type: Object,
+    default: () => null
   }
 })
 
-const emit = defineEmits(['upload', 'upload-image', 'upload-image-success'])
+const emit = defineEmits(['upload', 'upload-image', 'upload-image-success', 'select-mention'])
+const activeResourceType = ref('')
+const resourceItems = computed(() => buildMentionResourceItems(props.mention || {}))
+const visibleResourceGroups = computed(() =>
+  RESOURCE_GROUPS.filter((group) => resourceItems.value[group.key].length)
+)
+const hasMentionResources = computed(() => visibleResourceGroups.value.length > 0)
+const activeResourceItems = computed(() => resourceItems.value[activeResourceType.value] || [])
+const activeResourceLabel = computed(
+  () => RESOURCE_GROUPS.find((group) => group.key === activeResourceType.value)?.label ?? ''
+)
 
 const handleAttachmentClick = () => {
   if (props.disabled) return
@@ -64,6 +162,13 @@ const handleImageUpload = () => {
   emit('upload-image')
 }
 
+// Xử lý lựa chọn tài nguyên mention
+const selectMention = (item) => {
+  if (props.disabled) return
+  emit('select-mention', item)
+  activeResourceType.value = ''
+}
+
 // Xử lý logic tải lên hình ảnh
 const processImageUpload = async (file) => {
   try {
@@ -86,49 +191,65 @@ const processImageUpload = async (file) => {
 </script>
 
 <style lang="less" scoped>
-.attachment-options {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 120px;
+.attachment-options-panel {
+  width: 240px;
 }
 
-.option-item {
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &.disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-
-    .option-content {
-      color: var(--gray-400);
-    }
-  }
+.attachment-options-chevron {
+  flex-shrink: 0;
+  color: var(--gray-400);
 }
 
-.option-content {
+.attachment-options-back {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  color: var(--gray-700);
-  font-size: 12px;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
   border-radius: 6px;
-  transition: all 0.15s ease;
+  color: var(--gray-800);
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  transition: background-color 0.15s ease;
 
-  .option-item:hover & {
-    color: var(--main-color);
-    background-color: var(--gray-50);
+  &:hover,
+  &:focus-visible {
+    background: var(--gray-50);
   }
 }
 
-.option-icon {
-  flex-shrink: 0;
-  color: inherit;
+.attachment-resource-list {
+  max-height: min(320px, calc(100vh - 180px));
+  overflow-y: auto;
 }
 
-.option-text {
-  font-weight: 500;
+.attachment-options-panel .attachment-resource-item {
+  gap: 10px;
+}
+
+.attachment-resource-content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.attachment-resource-description {
+  overflow: hidden;
+  color: var(--gray-500);
+  font-size: 12px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:deep(.config-dropdown-item:focus-visible) {
+  outline: 2px solid var(--main-300);
+  outline-offset: -2px;
 }
 </style>

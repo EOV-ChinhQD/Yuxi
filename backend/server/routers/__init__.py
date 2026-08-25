@@ -2,7 +2,9 @@ import os
 
 from fastapi import APIRouter
 
-from server.routers.agent_invocation_router import agent_invocation_router
+from server.routers.agent_invocation_call_router import agent_invocation_call_router
+from server.routers.agent_invocation_channel_router import agent_invocation_channel_router
+from server.routers.agent_invocation_eval_router import agent_invocation_eval_router
 from server.routers.agent_router import agent_router
 from server.routers.auth_dept_router import department
 from server.routers.auth_router import auth
@@ -28,7 +30,9 @@ router = APIRouter()
 router.include_router(system)  # /api/system/* Trạng thái hệ thống và cấu hình toàn cầu
 router.include_router(auth)  # /api/auth/* Đăng nhập, thông tin người dùng và ủy quyền đăng nhập trình duyệt CLI
 router.include_router(agent_router)  # /api/agent/* Quản lý agent và trạng thái chạy
-router.include_router(agent_invocation_router)  # /api/agent-invocation/* Gọi và đánh giá agent bên ngoài
+router.include_router(agent_invocation_call_router)  # /api/agent-invocation/agent-call/* Gọi agent kiểu OpenAI
+router.include_router(agent_invocation_channel_router)  # /api/agent-invocation/channel/* Kênh tin nhắn văn bản
+router.include_router(agent_invocation_eval_router)  # /api/agent-invocation/eval/* Chạy đánh giá agent
 router.include_router(chat)  # /api/chat/* Thread đối thoại, lịch sử tin nhắn và tệp đính kèm
 
 # Management and workbench interface: background tasks, authority domains, and tool system configuration.
@@ -47,11 +51,13 @@ router.include_router(mention_router)  # /api/mention/* Mention file search inte
 router.include_router(audit_router)  # /api/audit/* Audit Log Compliance
 
 if not _LITE_MODE:
+    from server.routers.external_kb_router import external_kb
     from server.routers.graph_router import graph
     from server.routers.knowledge_eval_router import evaluation
     from server.routers.knowledge_router import knowledge
 
-    # The knowledge base and graph capabilities are heavily dependent, so this set of interfaces is skipped in LITE mode.
-    router.include_router(knowledge)  # /api/knowledge/* Knowledge base management and retrieval
-    router.include_router(evaluation)  # /api/evaluation/* Knowledge base evaluation
-    router.include_router(graph)  # /api/graph/* Graph query and management
+    # Nhóm giao diện kiến thức và đồ thị phụ thuộc nặng, được bỏ qua trong chế độ LITE.
+    router.include_router(external_kb)  # /api/knowledge/databases/external* CLI và Agent bên ngoài gọi KB
+    router.include_router(knowledge)  # /api/knowledge/* Quản lý và truy xuất cơ sở kiến thức
+    router.include_router(evaluation)  # /api/evaluation/* Đánh giá cơ sở kiến thức
+    router.include_router(graph)  # /api/graph/* Truy vấn và quản lý đồ thị

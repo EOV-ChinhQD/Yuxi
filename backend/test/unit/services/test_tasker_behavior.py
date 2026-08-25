@@ -1,14 +1,12 @@
-"""Tasker behavior unit test: payload exposure, progress festival flow, final state retention and restart recovery.
+"""Kiểm thử đơn vị hành vi Tasker: thực thi, tắt, giữ trạng thái cuối và khôi phục sau khởi động lại.
 
-Use memory fake repo, do not rely on real database and Docker.
+Dùng repo fake trong bộ nhớ, không phụ thuộc database và Docker thật.
 """
 
 import asyncio
 
-import pytest
-
 from yuxi.services import task_service
-from yuxi.services.task_service import Tasker
+from yuxi.services.task_service import Task, Tasker
 
 
 class FakeRecord:
@@ -20,7 +18,7 @@ class FakeRecord:
 
 
 class FakeRepo:
-    """record upsert/delete The memory warehouse double to call."""
+    """Repo thay thế trong bộ nhớ ghi nhận các lời gọi upsert/delete."""
 
     def __init__(self, preset: list[FakeRecord] | None = None):
         self.preset = preset or []
@@ -40,8 +38,12 @@ class FakeRepo:
         return self.preset
 
 
-async def _make_tasker(repo: FakeRepo, worker_count: int = 1) -> Tasker:
-    tasker = Tasker(worker_count=worker_count)
+async def _make_tasker(
+    repo: FakeRepo,
+    worker_count: int = 1,
+    default_timeout_seconds: float = 60,
+) -> Tasker:
+    tasker = Tasker(worker_count=worker_count, default_timeout_seconds=default_timeout_seconds)
     tasker._repo = repo
     await tasker.start()
     return tasker
@@ -75,6 +77,35 @@ async def test_task_context_exposes_payload():
     await tasker.shutdown()
 
 
+async def test_find_task_by_payload_returns_latest_matching_task():
+    tasker = Tasker()
+    tasker._tasks = {
+        "old": Task(
+            id="old",
+            name="old",
+            type="knowledge_graph_index",
+            status="failed",
+            created_at="2026-07-18T10:00:00Z",
+            payload={"kb_id": "kb_test"},
+        ),
+        "new": Task(
+            id="new",
+            name="new",
+            type="knowledge_graph_index",
+            status="success",
+            created_at="2026-07-18T11:00:00Z",
+            payload={"kb_id": "kb_test"},
+        ),
+    }
+
+    task = await tasker.find_task_by_payload(
+        task_type="knowledge_graph_index",
+        payload_match={"kb_id": "kb_test"},
+    )
+
+    assert task is tasker._tasks["new"]
+
+
 async def test_progress_updates_are_throttled():
     repo = FakeRepo()
     tasker = await _make_tasker(repo)
@@ -87,9 +118,9 @@ async def test_progress_updates_are_throttled():
     task = await tasker.enqueue(name="x", task_type="demo", coroutine=coro)
     final = await _wait_status(tasker, task.id, {"success"})
 
-    # After 101 progress advances, the number of dropouts after throttling should be much less than 101 (including enqueue/running/success, only single-digit additional writes)
+    # 101 次进度推进经节流后落库次数应远小于 101（含 enqueue/running/success 也仅个位数额外写入）
     assert repo.upsert_calls < 60
-    # The progress in memory is still full 100
+    # 内存中进度仍为完整的 100
     assert final["progress"] == 100
     await tasker.shutdown()
 
@@ -105,8 +136,199 @@ async def test_explicit_none_result_is_persisted():
     task = await tasker.enqueue(name="x", task_type="demo", coroutine=coro)
     final = await _wait_status(tasker, task.id, {"success"})
 
-    # The coroutine eventually returns None and should overwrite the intermediate results (sentinel distinguishes between "untransmitted" and "explicit None")
+    # 协程最终返回 None 应覆盖中途结果（sentinel 区分「未传」与「显式 None」）
     assert final["result"] is None
+    await tasker.shutdown()
+
+
+async def test_shutdown_cancels_running_task_without_starting_queued_task():
+    repo = FakeRepo()
+    tasker = await _make_tasker(repo)
+    running = asyncio.Event()
+    queued_started = asyncio.Event()
+
+    async def blocking_coro(ctx):
+        running.set()
+        await asyncio.Event().wait()
+
+    async def queued_coro(ctx):
+        queued_started.set()
+
+    active = await tasker.enqueue(name="active", task_type="demo", coroutine=blocking_coro)
+    queued = await tasker.enqueue(name="queued", task_type="demo", coroutine=queued_coro)
+    await running.wait()
+    await _wait_status(tasker, active.id, {"running"})
+
+    await asyncio.wait_for(tasker.shutdown(), timeout=1.0)
+
+    assert (await tasker.get_task(active.id))["status"] == "cancelled"
+    assert (await tasker.get_task(queued.id))["status"] == "pending"
+    assert not queued_started.is_set()
+    assert tasker._workers == []
+    assert tasker._started is False
+
+
+async def test_shutdown_exits_when_cancel_status_persistence_fails():
+    class FailingCancelledRepo(FakeRepo):
+        async def upsert(self, task_id: str, data: dict) -> None:
+            await super().upsert(task_id, data)
+            if data.get("status") == "cancelled":
+                raise RuntimeError("cancel status persistence failed")
+
+    tasker = await _make_tasker(FailingCancelledRepo())
+    running = asyncio.Event()
+
+    async def blocking_coro(ctx):
+        running.set()
+        await asyncio.Event().wait()
+
+    task = await tasker.enqueue(name="active", task_type="demo", coroutine=blocking_coro)
+    await running.wait()
+    await _wait_status(tasker, task.id, {"running"})
+
+    await asyncio.wait_for(tasker.shutdown(), timeout=1.0)
+
+    assert (await tasker.get_task(task.id))["status"] == "cancelled"
+    assert tasker._workers == []
+    assert tasker._started is False
+
+
+async def test_shutdown_exits_when_terminal_pruning_fails(monkeypatch):
+    tasker = await _make_tasker(FakeRepo())
+    running = asyncio.Event()
+
+    async def blocking_coro(ctx):
+        running.set()
+        await asyncio.Event().wait()
+
+    async def failing_prune():
+        raise RuntimeError("terminal pruning failed")
+
+    task = await tasker.enqueue(name="active", task_type="demo", coroutine=blocking_coro)
+    await running.wait()
+    await _wait_status(tasker, task.id, {"running"})
+    monkeypatch.setattr(tasker, "_prune_terminal_tasks", failing_prune)
+
+    await asyncio.wait_for(tasker.shutdown(), timeout=1.0)
+
+    assert (await tasker.get_task(task.id))["status"] == "cancelled"
+    assert tasker._workers == []
+    assert tasker._started is False
+
+
+async def test_cooperative_task_cancellation_keeps_worker_available():
+    repo = FakeRepo()
+    tasker = await _make_tasker(repo)
+    running = asyncio.Event()
+    check_cancellation = asyncio.Event()
+
+    async def cancellable_coro(ctx):
+        running.set()
+        await check_cancellation.wait()
+        await ctx.raise_if_cancelled()
+
+    cancelled = await tasker.enqueue(name="cancelled", task_type="demo", coroutine=cancellable_coro)
+    await running.wait()
+    assert await tasker.cancel_task(cancelled.id)
+    check_cancellation.set()
+    await _wait_status(tasker, cancelled.id, {"cancelled"})
+
+    async def completed_coro(ctx):
+        return "done"
+
+    completed = await tasker.enqueue(name="completed", task_type="demo", coroutine=completed_coro)
+    assert (await _wait_status(tasker, completed.id, {"success"}))["status"] == "success"
+    await tasker.shutdown()
+
+
+async def test_timeout_fails_task_and_releases_worker():
+    repo = FakeRepo()
+    tasker = await _make_tasker(repo, default_timeout_seconds=0.05)
+    cancellation_reason: list[str | None] = []
+
+    async def slow_coro(ctx):
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            await asyncio.sleep(0)
+            cancellation_reason.append(ctx.cancellation_reason)
+            raise
+
+    async def quick_coro(ctx):
+        return "done"
+
+    slow_task = await tasker.enqueue(name="slow", task_type="demo", coroutine=slow_coro)
+    quick_task = await tasker.enqueue(name="quick", task_type="demo", coroutine=quick_coro)
+
+    timed_out = await _wait_status(tasker, slow_task.id, {"failed"})
+    completed = await _wait_status(tasker, quick_task.id, {"success"})
+
+    assert timed_out["message"] == "Nhiệm vụ thực thi vượt thời gian cho phép"
+    assert "0.05-second execution timeout" in timed_out["error"]
+    assert cancellation_reason == ["timeout"]
+    assert completed["result"] == "done"
+    await tasker.shutdown()
+
+
+async def test_enqueue_timeout_overrides_shorter_default():
+    repo = FakeRepo()
+    tasker = await _make_tasker(repo, default_timeout_seconds=0.01)
+
+    async def coro(ctx):
+        await asyncio.sleep(0.03)
+        return "done"
+
+    task = await tasker.enqueue(
+        name="x",
+        task_type="demo",
+        coroutine=coro,
+        timeout_seconds=0.2,
+    )
+    final = await _wait_status(tasker, task.id, {"success", "failed"})
+
+    assert final["status"] == "success"
+    assert final["result"] == "done"
+    await tasker.shutdown()
+
+
+async def test_task_coroutine_accepts_future_awaitable():
+    repo = FakeRepo()
+    tasker = await _make_tasker(repo)
+    loop = asyncio.get_running_loop()
+
+    def future_coro(ctx):
+        future = loop.create_future()
+        future.set_result("done")
+        return future
+
+    task = await tasker.enqueue(name="x", task_type="demo", coroutine=future_coro)
+    final = await _wait_status(tasker, task.id, {"success"})
+
+    assert final["result"] == "done"
+    await tasker.shutdown()
+
+
+async def test_worker_cancellation_exposes_shutdown_reason():
+    repo = FakeRepo()
+    tasker = await _make_tasker(repo)
+    started = asyncio.Event()
+    cancellation_reason: list[str | None] = []
+
+    async def coro(ctx):
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancellation_reason.append(ctx.cancellation_reason)
+            raise
+
+    task = await tasker.enqueue(name="x", task_type="demo", coroutine=coro)
+    await asyncio.wait_for(started.wait(), timeout=1)
+    tasker._workers[0].cancel()
+    final = await _wait_status(tasker, task.id, {"cancelled"})
+
+    assert final["status"] == "cancelled"
+    assert cancellation_reason == ["shutdown"]
     await tasker.shutdown()
 
 
@@ -132,22 +354,26 @@ async def test_load_state_marks_interrupted_and_prunes(monkeypatch):
     monkeypatch.setattr(task_service, "MAX_TERMINAL_TASKS", 2)
     repo = FakeRepo(
         preset=[
-            FakeRecord({"id": "a", "name": "a", "type": "demo", "status": "running",
-                        "created_at": "2026-01-01T00:00:05"}),
-            FakeRecord({"id": "b", "name": "b", "type": "demo", "status": "success",
-                        "created_at": "2026-01-01T00:00:04"}),
-            FakeRecord({"id": "c", "name": "c", "type": "demo", "status": "success",
-                        "created_at": "2026-01-01T00:00:03"}),
-            FakeRecord({"id": "d", "name": "d", "type": "demo", "status": "success",
-                        "created_at": "2026-01-01T00:00:02"}),
+            FakeRecord(
+                {"id": "a", "name": "a", "type": "demo", "status": "running", "created_at": "2026-01-01T00:00:05"}
+            ),
+            FakeRecord(
+                {"id": "b", "name": "b", "type": "demo", "status": "success", "created_at": "2026-01-01T00:00:04"}
+            ),
+            FakeRecord(
+                {"id": "c", "name": "c", "type": "demo", "status": "success", "created_at": "2026-01-01T00:00:03"}
+            ),
+            FakeRecord(
+                {"id": "d", "name": "d", "type": "demo", "status": "success", "created_at": "2026-01-01T00:00:02"}
+            ),
         ]
     )
     tasker = await _make_tasker(repo)
 
-    # Interrupted running tasks are marked as failed
+    # 中断的 running 任务被标记为 failed
     interrupted = await tasker.get_task("a")
     assert interrupted["status"] == "failed"
-    # Only the most recent MAX_TERMINAL_TASKS final tasks are retained, and the oldest ones are cleared.
+    # 仅保留最近 MAX_TERMINAL_TASKS 条终态任务，最旧的被清理
     listing = await tasker.list_tasks(limit=100)
     assert listing["summary"]["total"] == 2
     assert "c" in repo.deleted and "d" in repo.deleted

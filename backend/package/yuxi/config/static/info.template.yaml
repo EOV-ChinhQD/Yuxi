@@ -4,9 +4,10 @@
 # tổ chức thông tin
 organization:
   name: "Phân tích tiếng Giang Nam"           # Tên tổ chức đầy đủ
-  logo: "/favicon.svg"       # Logođường dẫn tập tin（mặc vào web/public dưới thư mục）
-  avatar: "/avatar.jpg"      # Đường dẫn tập tin hình đại diện（mặc vào web/public dưới thư mục）
-  login_bg: "/login-bg.jpg"  # Đường dẫn ảnh nền đăng nhập（mặc vào web/public dưới thư mục）
+  logo: "/favicon.svg"       # Đường dẫn tệp logo (đặt trong thư mục web/public)
+  avatar: "/avatar.jpg"      # Đường dẫn tệp hình đại diện (đặt trong thư mục web/public)
+  login_bg: "/login-bg.jpg"  # Đường dẫn ảnh nền đăng nhập (đặt trong thư mục web/public)
+
 
 # Thông tin dự án
 branding:
@@ -23,5 +24,6 @@ branding:
 # Thông tin chân trang
 footer:
   copyright: "© Phân tích tiếng Giang Nam 2026 v{{YUXI_VERSION}}"
+
   user_agreement_url: "/protocols/user-agreement.template.html"
   privacy_policy_url: "/protocols/privacy-policy.template.html"

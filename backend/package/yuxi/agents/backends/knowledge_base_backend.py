@@ -4,18 +4,28 @@ from typing import Any
 
 
 async def resolve_visible_knowledge_bases_for_context(context) -> list[dict[str, Any]]:
-    from yuxi import knowledge_base
+    from yuxi.knowledge.runtime import knowledge_base
 
     uid = getattr(context, "uid", None)
     if not uid:
         setattr(context, "_visible_knowledge_bases", [])
         return []
 
-    result = await knowledge_base.get_databases_by_uid(str(uid))
-    databases = result.get("databases") or []
+    summaries = await knowledge_base.get_databases_by_uid(str(uid))
+    databases = [
+        {
+            "kb_id": summary.kb_id,
+            "name": summary.name,
+            "description": summary.description,
+            "kb_type": summary.kb_type,
+            "embedding_model_spec": summary.embedding_model_spec,
+        }
+        for summary in summaries
+    ]
+
+    # Lọc bỏ các knowledge base SiliconFlow khi chưa cấu hình SILICONFLOW_API_KEY
     import os
 
-    # Filter out SiliconFlow databases if SILICONFLOW_API_KEY is not set
     databases = [
         db
         for db in databases
@@ -24,10 +34,12 @@ async def resolve_visible_knowledge_bases_for_context(context) -> list[dict[str,
             and not os.environ.get("SILICONFLOW_API_KEY")
         )
     ]
-    # ponytail: Filter test databases only when explicitly running in test_mode
+
+    # ponytail: chỉ lọc knowledge base test khi đang chạy ở chế độ test_mode
     if getattr(context, "test_mode", False):
         test_dbs = [db for db in databases if str(db.get("name") or "").startswith("TEST_RAG_PIPELINE_")]
         if test_dbs:
+
             def get_suffix(db):
                 try:
                     return int(db.get("name").split("_")[-1])

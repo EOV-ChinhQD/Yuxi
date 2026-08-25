@@ -9,8 +9,8 @@ import tempfile
 import time
 from pathlib import Path
 
-import fitz
 import numpy as np
+import pypdfium2 as pdfium
 from PIL import Image
 from rapidocr import EngineType, LangDet, LangRec, ModelType, OCRVersion, RapidOCR
 
@@ -21,15 +21,13 @@ from yuxi.utils import logger
 class RapidOCRParser(BaseDocumentProcessor):
     """RapidOCR parser - Text recognition using ONNX model"""
 
+    service_name = "rapid_ocr"
+    display_name = "RapidOCR (ONNX)"
+    supported_extensions = [".pdf", ".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"]
+
     def __init__(self, det_box_thresh: float = 0.3):
         self.ocr = None
         self.det_box_thresh = det_box_thresh
-
-    def get_service_name(self) -> str:
-        return "rapid_ocr"
-
-    def get_supported_extensions(self) -> list[str]:
-        return [".pdf", ".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif"]
 
     def _get_model_params(self) -> dict[str, object]:
         return {
@@ -46,17 +44,17 @@ class RapidOCRParser(BaseDocumentProcessor):
         }
 
     def check_health(self) -> dict:
-        """Check if RapidOCR model is available"""
-        try:
-            test_ocr = RapidOCR(params=self._get_model_params())
-            del test_ocr
-            return {
-                "status": "healthy",
-                "message": "RapidOCR PP-OCRv5 Model available",
-                "details": {"ocr_version": "PP-OCRv5", "engine": "onnxruntime"},
-            }
-        except Exception as e:
-            return {"status": "error", "message": f"Model loading failed: {str(e)}", "details": {"error": str(e)}}
+        """Báo cáo trạng thái component local, tránh tải lại model khi health check."""
+
+        return {
+            "status": "healthy",
+            "message": "RapidOCR PP-OCRv5 component khả dụng",
+            "details": {
+                "ocr_version": "PP-OCRv5",
+                "engine": "onnxruntime",
+                "det_box_thresh": self.det_box_thresh,
+            },
+        }
 
     def _load_model(self):
         """Lazy loading of OCR models"""
@@ -154,10 +152,9 @@ class RapidOCRParser(BaseDocumentProcessor):
         Process PDF files and extract text (streaming,Avoid memory usage)
 
         Args:
-            pdf_path: PDF document path
-            params: Processing parameters
-                - zoom_x: Horizontal scaling (Default 2)
-                - zoom_y: vertical zoom (Default 2)
+            pdf_path: Đường dẫn tệp PDF
+            params: Tham số xử lý
+                - zoom_x: Hệ số scale khi render (mặc định 2)
 
         Returns:
             str: Extracted text
@@ -167,12 +164,11 @@ class RapidOCRParser(BaseDocumentProcessor):
 
         params = params or {}
         zoom_x = params.get("zoom_x", 2)
-        zoom_y = params.get("zoom_y", 2)
 
         try:
             all_text = []
-            pdf_doc = fitz.open(pdf_path)
-            total_pages = pdf_doc.page_count
+            pdf_doc = pdfium.PdfDocument(pdf_path)
+            total_pages = len(pdf_doc)
 
             logger.info(f"Start working with PDFs: {os.path.basename(pdf_path)} ({total_pages} Page)")
 
@@ -180,10 +176,8 @@ class RapidOCRParser(BaseDocumentProcessor):
             for page_num in range(total_pages):
                 page = pdf_doc[page_num]
 
-                # Convert to image
-                mat = fitz.Matrix(zoom_x, zoom_y)
-                pix = page.get_pixmap(matrix=mat, alpha=False)
-                img_pil = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                # pypdfium2 chỉ hỗ trợ scale thống nhất (zoom_x/zoom_y cũ đều mặc định 2)
+                img_pil = page.render(scale=zoom_x).to_pil()
 
                 # Process immediately, do not save to list
                 text = self.process_image(img_pil)

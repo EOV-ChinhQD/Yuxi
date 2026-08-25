@@ -58,99 +58,28 @@
               }}</span>
             </div>
 
-            <a-popover
+            <div
               v-if="item.parseSupported && item.status !== 'uploading' && item.status !== 'error'"
-              v-model:open="item.parsePanelOpen"
-              placement="bottomRight"
-              trigger="click"
-              overlayClassName="attachment-parse-popover"
-              @openChange="(open) => handleParsePanelOpenChange(item.localId, open)"
+              class="attachment-parse-controls"
             >
-              <template #content>
-                <div class="parse-panel">
-                  <button
-                    v-for="method in getAvailableParseMethods(item)"
-                    :key="method"
-                    type="button"
-                    class="parse-method-option"
-                    :class="{ selected: item.selectedParseMethod === method }"
-                    :disabled="item.status === 'parsing' || confirming"
-                    @click="handleParseMethodChange(item.localId, method)"
-                  >
-                    <span class="parse-method-option-header">
-                      <span class="parse-method-name">{{ methodLabels[method] || method }}</span>
-                      <span
-                        class="parse-method-status"
-                        :class="`status-${getMethodStatus(method)}`"
-                      >
-                        {{ getMethodStatusLabel(method) }}
-                      </span>
-                    </span>
-                    <span class="parse-method-desc">{{ getMethodDescription(method) }}</span>
-                  </button>
-
-                  <div v-if="getUnavailableParseMethods(item).length" class="unavailable-methods">
-                    <button
-                      type="button"
-                      class="unavailable-toggle"
-                      @click="toggleUnavailableParseMethods(item.localId)"
-                    >
-                      <span
-                        >tùy chọn không khả dụng（{{
-                          getUnavailableParseMethods(item).length
-                        }}）</span
-                      >
-                      <ChevronUp v-if="item.unavailableMethodsExpanded" :size="14" />
-                      <ChevronDown v-else :size="14" />
-                    </button>
-
-                    <div v-if="item.unavailableMethodsExpanded" class="unavailable-method-list">
-                      <button
-                        v-for="method in getUnavailableParseMethods(item)"
-                        :key="method"
-                        type="button"
-                        class="parse-method-option disabled"
-                        disabled
-                      >
-                        <span class="parse-method-option-header">
-                          <span class="parse-method-name">{{
-                            methodLabels[method] || method
-                          }}</span>
-                          <span
-                            class="parse-method-status"
-                            :class="`status-${getMethodStatus(method)}`"
-                          >
-                            {{ getMethodStatusLabel(method) }}
-                          </span>
-                        </span>
-                        <span class="parse-method-desc">{{ getMethodDescription(method) }}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <a-button
-                    type="primary"
-                    size="small"
-                    block
-                    class="parse-start-btn"
-                    :loading="item.status === 'parsing'"
-                    :disabled="isParseDisabled(item)"
-                    @click="handleStartParse(item.localId)"
-                  >
-                    Bắt đầu phân tích
-                  </a-button>
-                </div>
-              </template>
-
+              <OCRSelector
+                :model-value="item.selectedParseMethod"
+                :allowed-engines="item.parseMethods"
+                :disabled="item.status === 'parsing' || confirming"
+                placeholder="Chọn OCR"
+                @update:model-value="handleParseMethodChange(item.localId, $event)"
+              />
               <a-button
+                type="primary"
                 size="small"
                 class="parse-trigger-btn"
                 :loading="item.status === 'parsing'"
-                :disabled="confirming"
+                :disabled="isParseDisabled(item)"
+                @click="handleStartParse(item.localId)"
               >
-                Có thể phân tích
+                Phân tích
               </a-button>
-            </a-popover>
+            </div>
           </div>
         </div>
       </div>
@@ -161,11 +90,11 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
-import { ChevronDown, ChevronUp, X } from 'lucide-vue-next'
+import { X } from 'lucide-vue-next'
 import { threadApi } from '@/apis'
-import { ocrApi } from '@/apis/system_api'
 import { useConfigStore } from '@/stores/config'
 import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
+import OCRSelector from '@/components/OCRSelector.vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -177,51 +106,12 @@ const props = defineProps({
 
 const emit = defineEmits(['update:open', 'added'])
 
-const configStore = useConfigStore()
 const DEFAULT_OCR_ENGINE = 'rapid_ocr'
+const configStore = useConfigStore()
 const fileItems = ref([])
 const confirming = ref(false)
 let localIdSeed = 0
 let consumedInitialFilesKey = 0
-
-const methodLabels = {
-  disable: 'PDF Trích xuất văn bản',
-  rapid_ocr: 'RapidOCR',
-  mineru_ocr: 'MinerU OCR',
-  mineru_official: 'MinerU Official',
-  pp_structure_v3_ocr: 'PP-Structure V3',
-  deepseek_ocr: 'DeepSeek OCR',
-  paddleocr_vl_1_6: 'PaddleOCR-VL-1.6',
-  paddleocr_pp_ocrv6: 'PP-OCRv6'
-}
-
-const ocrMethodKeys = [
-  'rapid_ocr',
-  'mineru_ocr',
-  'mineru_official',
-  'pp_structure_v3_ocr',
-  'deepseek_ocr',
-  'paddleocr_vl_1_6',
-  'paddleocr_pp_ocrv6'
-]
-
-const defaultOcrHealthStatus = () =>
-  Object.fromEntries(ocrMethodKeys.map((method) => [method, { status: 'unknown', message: '' }]))
-
-const ocrHealthStatus = ref(defaultOcrHealthStatus())
-const ocrHealthChecking = ref(false)
-
-const methodStatusLabels = {
-  local: 'Không cần OCR',
-  healthy: 'Có sẵn',
-  configured: 'Đã cấu hình',
-  unavailable: 'Không khả dụng',
-  unhealthy: 'lỗi',
-  timeout: 'Hết thời gian',
-  error: 'lỗi',
-  checking: 'Đang kiểm tra',
-  unknown: 'Trạng thái không xác định'
-}
 
 const busy = computed(() =>
   fileItems.value.some((item) => ['uploading', 'parsing'].includes(item.status))
@@ -252,13 +142,17 @@ const getDefaultParseMethod = (parseMethods) => {
   const configuredEngine = String(
     configStore.config?.default_ocr_engine || DEFAULT_OCR_ENGINE
   ).trim()
-  if (parseMethods.includes(configuredEngine)) {
+  if (configuredEngine === 'disable' && parseMethods.includes('disable')) {
     return configuredEngine
   }
-  if (parseMethods.includes(DEFAULT_OCR_ENGINE)) {
+  const selectableMethods = parseMethods.filter((method) => method !== 'disable')
+  if (selectableMethods.includes(configuredEngine)) {
+    return configuredEngine
+  }
+  if (selectableMethods.includes(DEFAULT_OCR_ENGINE)) {
     return DEFAULT_OCR_ENGINE
   }
-  return parseMethods[0]
+  return selectableMethods[0] || null
 }
 
 const normalizeTmpUpload = (response) => ({
@@ -275,39 +169,10 @@ const normalizeTmpUpload = (response) => ({
   parseMethodTouched: false
 })
 
-watch(
-  () => configStore.config?.default_ocr_engine,
-  () => {
-    fileItems.value = fileItems.value.map((item) => {
-      if (!item.parseSupported || item.parseMethodTouched || item.status === 'parsed') {
-        return item
-      }
-      return { ...item, selectedParseMethod: getDefaultParseMethod(item.parseMethods || []) }
-    })
-  }
-)
-
 const updateItem = (localId, patch) => {
   fileItems.value = fileItems.value.map((item) =>
     item.localId === localId ? { ...item, ...patch } : item
   )
-}
-
-const checkOcrHealth = async () => {
-  if (ocrHealthChecking.value) return
-
-  ocrHealthChecking.value = true
-  try {
-    const healthData = await ocrApi.getHealth()
-    ocrHealthStatus.value = {
-      ...defaultOcrHealthStatus(),
-      ...(healthData?.services || {})
-    }
-  } catch (error) {
-    console.error('OCRKiểm tra sức khỏe thất bại:', error)
-  } finally {
-    ocrHealthChecking.value = false
-  }
 }
 
 const uploadFile = async (file) => {
@@ -328,9 +193,6 @@ const uploadFile = async (file) => {
     const response = await threadApi.uploadTmpAttachment(file)
     const normalized = normalizeTmpUpload(response)
     updateItem(localId, { ...normalized, status: 'uploaded' })
-    if (normalized.parseSupported) {
-      void checkOcrHealth()
-    }
   } catch (error) {
     updateItem(localId, {
       status: 'error',
@@ -364,50 +226,8 @@ watch(
   { flush: 'post' }
 )
 
-const getMethodStatus = (method) => {
-  if (method === 'disable') return 'local'
-  const current = ocrHealthStatus.value?.[method]
-  if (ocrHealthChecking.value && (!current || current.status === 'unknown')) return 'checking'
-  return current?.status || 'unknown'
-}
-
-const getMethodStatusLabel = (method) =>
-  methodStatusLabels[getMethodStatus(method)] || 'Trạng thái không xác định'
-
-const getMethodDescription = (method) => {
-  if (method === 'disable') return 'Sử dụng lớp văn bản có sẵn của tệp, không gọi dịch vụ OCR'
-
-  const messageText = ocrHealthStatus.value?.[method]?.message
-  if (messageText) return messageText
-
-  const status = getMethodStatus(method)
-  const fallbackMap = {
-    healthy: 'Dịch vụ hoạt động bình thường',
-    configured: 'Token Được cấu hình, sẽ được xác thực khi phân tích',
-    unavailable: 'Dịch vụ không khả dụng',
-    unhealthy: 'Ngoại lệ dịch vụ',
-    timeout: 'Kiểm tra dịch vụ hết thời gian',
-    error: 'Ngoại lệ dịch vụ',
-    checking: 'Đang kiểm tra trạng thái dịch vụ',
-    unknown: 'Trạng thái dịch vụ không xác định'
-  }
-  return fallbackMap[status] || 'Trạng thái dịch vụ không xác định'
-}
-
-const isUnavailableParseMethod = (method) =>
-  ['unavailable', 'error'].includes(getMethodStatus(method))
-
-const getAvailableParseMethods = (item) =>
-  (item.parseMethods || []).filter((method) => !isUnavailableParseMethod(method))
-
-const getUnavailableParseMethods = (item) =>
-  (item.parseMethods || []).filter((method) => isUnavailableParseMethod(method))
-
 const isParseDisabled = (item) =>
-  item.status === 'parsing' ||
-  !item.selectedParseMethod ||
-  confirming.value ||
-  isUnavailableParseMethod(item.selectedParseMethod)
+  item.status === 'parsing' || !item.selectedParseMethod || confirming.value
 
 const clearParsedState = {
   parsedObjectName: null,
@@ -430,7 +250,6 @@ const handleParseMethodChange = (localId, selectedParseMethod) => {
 const handleStartParse = (localId) => {
   const item = fileItems.value.find((entry) => entry.localId === localId)
   if (!item || isParseDisabled(item)) return
-  updateItem(localId, { parsePanelOpen: false })
   void handleParse(item)
 }
 
@@ -468,18 +287,6 @@ const handleParse = async (item) => {
 
 const removeItem = (localId) => {
   fileItems.value = fileItems.value.filter((item) => item.localId !== localId)
-}
-
-const toggleUnavailableParseMethods = (localId) => {
-  const item = fileItems.value.find((entry) => entry.localId === localId)
-  updateItem(localId, { unavailableMethodsExpanded: !item?.unavailableMethodsExpanded })
-}
-
-const handleParsePanelOpenChange = (localId, open) => {
-  updateItem(localId, { parsePanelOpen: open })
-  if (open) {
-    void checkOcrHealth()
-  }
 }
 
 const handleConfirm = async () => {
@@ -629,6 +436,7 @@ const formatFileSize = (size) => {
 
 .attachment-status-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -661,117 +469,20 @@ const formatFileSize = (size) => {
 
 .parse-trigger-btn {
   flex: none;
+  font-size: 12px;
+}
+
+.attachment-parse-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: min(260px, 100%);
   margin-left: auto;
-  font-size: 12px;
-}
 
-.parse-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 260px;
-}
-
-.parse-method-option {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--gray-100);
-  border-radius: 8px;
-  background: var(--gray-0);
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-
-.parse-method-option:hover:not(:disabled) {
-  border-color: var(--main-color);
-  background: color-mix(in srgb, var(--main-color) 6%, var(--gray-0));
-}
-
-.parse-method-option.selected {
-  border-color: var(--main-color);
-  background: color-mix(in srgb, var(--main-color) 8%, var(--gray-0));
-}
-
-.parse-method-option.disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.unavailable-methods,
-.unavailable-method-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.unavailable-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 4px 2px;
-  border: none;
-  background: transparent;
-  color: var(--gray-500);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.unavailable-toggle:hover {
-  color: var(--gray-800);
-}
-
-.parse-method-option-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.parse-method-name {
-  color: var(--gray-900);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.parse-method-status {
-  flex: none;
-  font-size: 12px;
-}
-
-.parse-method-status.status-local,
-.parse-method-status.status-healthy,
-.parse-method-status.status-configured {
-  color: var(--color-success-700);
-}
-
-.parse-method-status.status-unavailable,
-.parse-method-status.status-error {
-  color: var(--color-error-700);
-}
-
-.parse-method-status.status-unhealthy,
-.parse-method-status.status-timeout,
-.parse-method-status.status-unknown,
-.parse-method-status.status-checking {
-  color: var(--color-warning-700);
-}
-
-.parse-method-desc {
-  color: var(--gray-500);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.parse-start-btn {
-  margin-top: 2px;
-}
-
-:global(.attachment-parse-popover .ant-popover-inner-content) {
-  padding: 10px;
+  :deep(.ocr-selector-trigger) {
+    min-height: 24px;
+    padding: 1px 8px;
+    font-size: 12px;
+  }
 }
 </style>

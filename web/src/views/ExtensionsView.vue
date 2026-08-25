@@ -50,9 +50,9 @@ const toolsRef = ref(null)
 
 const adminExtensionTabs = [
   { key: 'knowledge', label: 'cơ sở tri thức' },
+  { key: 'skills', label: 'Skills' },
   { key: 'tools', label: 'Công cụ' },
-  { key: 'mcp', label: 'MCP' },
-  { key: 'skills', label: 'Skills' }
+  { key: 'mcp', label: 'MCP' }
 ]
 const userExtensionTabs = [{ key: 'skills', label: 'Skills' }]
 const extensionTabs = computed(() => (userStore.isAdmin ? adminExtensionTabs : userExtensionTabs))

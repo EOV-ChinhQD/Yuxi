@@ -22,7 +22,7 @@ from yuxi.storage.postgres.models_business import ModelProvider
 VALID_MODEL_TYPES = {"chat", "embedding", "rerank"}
 VALID_MODEL_SOURCES = {"manual", "remote"}
 VALID_PROVIDER_TYPES = {"openai", "anthropic", "gemini", "openrouter"}
-# ponytail: OpenAI-compatible extra_body whitelist for reasoning / thinking models
+# Ghi chú nhánh ours: whitelist extra_body tương thích OpenAI cho các mô hình reasoning/thinking
 OPENAI_COMPATIBLE_REQUEST_BODY_PROVIDER_TYPES = {"openai", "openrouter"}
 ALLOWED_EXTRA_BODY_FIELDS = {
     "enable_thinking",
@@ -68,6 +68,29 @@ def _normalize_model_item(model: dict[str, Any]) -> dict[str, Any]:
     normalized["source"] = source
     normalized["display_name"] = str(model.get("display_name") or model.get("name") or model_id)
     normalized["extra"] = _normalize_dict(model.get("extra"))
+    if "request_body_overrides" in model:
+        overrides = model.get("request_body_overrides")
+        if not isinstance(overrides, dict):
+            raise ValueError(f"模型 {model_id} 的 request_body_overrides 必须是 JSON 对象")
+
+        invalid_keys = [key for key in overrides if not isinstance(key, str) or not key.strip()]
+        if invalid_keys:
+            raise ValueError(f"模型 {model_id} 的 request_body_overrides 字段名必须是非空字符串")
+
+        unsupported_fields = sorted(set(overrides) - ALLOWED_EXTRA_BODY_FIELDS)
+        if unsupported_fields:
+            allowed_fields = ", ".join(sorted(ALLOWED_EXTRA_BODY_FIELDS))
+            raise ValueError(
+                f"模型 {model_id} 的 request_body_overrides 包含不支持的 extra_body 字段: "
+                f"{', '.join(unsupported_fields)}；允许字段: {allowed_fields}"
+            )
+
+        try:
+            json.dumps(overrides, ensure_ascii=False, allow_nan=False)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"模型 {model_id} 的 request_body_overrides 只能包含合法 JSON 值") from exc
+
+        normalized["request_body_overrides"] = dict(overrides)
 
     if "request_body_overrides" in model:
         overrides = model.get("request_body_overrides")
@@ -141,6 +164,22 @@ def _validate_request_body_overrides_scope(
             raise ValueError(f"request_body_overrides của model {model_id} chỉ hỗ trợ nhà cung cấp tương thích OpenAI")
         if model.get("type") != "chat":
             raise ValueError(f"request_body_overrides của model {model_id} chỉ hỗ trợ model loại chat")
+
+
+def _validate_request_body_overrides_scope(
+    enabled_models: list[dict[str, Any]],
+    provider_type: str | None,
+) -> None:
+    """校验请求体覆盖仅用于 OpenAI 兼容供应商的 chat 模型。"""
+    for model in enabled_models or []:
+        overrides = model.get("request_body_overrides") or {}
+        if not overrides:
+            continue
+        model_id = model.get("id") or ""
+        if provider_type not in OPENAI_COMPATIBLE_REQUEST_BODY_PROVIDER_TYPES:
+            raise ValueError(f"模型 {model_id} 的 request_body_overrides 仅支持 OpenAI 兼容供应商")
+        if model.get("type") != "chat":
+            raise ValueError(f"模型 {model_id} 的 request_body_overrides 仅支持 chat 模型")
 
 
 _FIELD_DEFAULTS: dict[str, Any] = {

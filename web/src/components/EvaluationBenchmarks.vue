@@ -51,8 +51,8 @@
           v-for="benchmark in benchmarks"
           :key="benchmark.dataset_id"
           class="benchmark-item"
-          :class="{ 'benchmark-item-disabled': !isDatasetCompleted(benchmark) }"
-          @click="isDatasetCompleted(benchmark) && previewDataset(benchmark)"
+          :class="{ 'benchmark-item-disabled': !isDatasetViewable(benchmark) }"
+          @click="isDatasetViewable(benchmark) && previewDataset(benchmark)"
         >
           <!-- Nội dung chính -->
           <div class="benchmark-main">
@@ -70,6 +70,16 @@
                   </button>
                   <template #overlay>
                     <a-menu>
+                      <a-menu-item
+                        v-if="getDatasetBuildStatus(benchmark) === 'failed'"
+                        key="resume"
+                        @click="resumeDataset(benchmark)"
+                      >
+                        <span class="benchmark-menu-item">
+                          <RotateCcw :size="14" />
+                          <span>Tiếp tục tạo</span>
+                        </span>
+                      </a-menu-item>
                       <a-menu-item
                         key="download"
                         :disabled="
@@ -291,6 +301,7 @@ import {
   Download,
   MoreVertical,
   RefreshCw,
+  RotateCcw,
   Trash2,
   Upload,
   X
@@ -450,6 +461,9 @@ const getDatasetBuildStatus = (benchmark) => getBuildMetadata(benchmark).status 
 
 const isDatasetCompleted = (benchmark) => getDatasetBuildStatus(benchmark) === 'completed'
 
+const isDatasetViewable = (benchmark) =>
+  ['completed', 'failed'].includes(getDatasetBuildStatus(benchmark))
+
 const isDatasetBuilding = (benchmark) =>
   ['pending', 'running'].includes(getDatasetBuildStatus(benchmark))
 
@@ -607,10 +621,8 @@ const loadPreviewQuestions = async () => {
 
 // Xem trước điểm chuẩn
 const previewDataset = async (benchmark) => {
-  if (!isDatasetCompleted(benchmark)) {
-    message.warning(
-      'Việc xem trước chỉ có thể được thực hiện sau khi đường cơ sở đánh giá được tạo.'
-    )
+  if (!isDatasetViewable(benchmark)) {
+    message.warning('Chỉ có thể xem trước sau khi điểm chuẩn đánh giá được tạo')
     return
   }
 
@@ -704,7 +716,22 @@ const downloadDataset = async (benchmark) => {
   }
 }
 
-// Xóa đường cơ sở
+// Tiếp tục tạo điểm chuẩn
+const resumeDataset = async (benchmark) => {
+  try {
+    const response = await evaluationApi.resumeDatasetGeneration(props.kbId, benchmark.dataset_id)
+    if (response.message === 'success') {
+      message.success(response.data?.message || 'Đã tiếp tục tạo')
+      loadBenchmarks()
+      taskerStore.loadTasks()
+    }
+  } catch (error) {
+    console.error('Tiếp tục tạo điểm chuẩn thất bại:', error)
+    message.error(error?.response?.data?.detail || 'Tiếp tục tạo điểm chuẩn thất bại')
+  }
+}
+
+// Xóa điểm chuẩn
 const deleteDataset = (benchmark) => {
   if (shouldShowBuildProgress(benchmark)) {
     message.warning('Điểm chuẩn đánh giá đang được tạo，Chưa thể xóa được')

@@ -4,28 +4,27 @@ Document Processor Factory
 Provides a unified oneofdocument processor creation and management interface
 """
 
-import asyncio
+import hashlib
 from importlib import import_module
 from typing import Any
 
 from yuxi.knowledge.parser.base import BaseDocumentProcessor
+from yuxi.knowledge.parser.registry import PROCESSOR_TYPES as _REGISTRY_PROCESSOR_TYPES
 from yuxi.utils import logger
 
 # Processor instance cache
 _PROCESSOR_CACHE: dict[str, BaseDocumentProcessor] = {}
 
-# Ánh xạ loại bộ xử lý: processor_type -> (module_path, class_name)
+# Ánh xạ loại bộ xử lý của factory: toàn bộ engine OCR trong registry cộng thêm "docling".
+# "docling" là parser cục bộ cho PDF có lớp văn bản (nhánh DISABLE của density analyzer),
+# không đăng ký vào registry nên không xuất hiện trong danh mục engine OCR người dùng chọn.
 PROCESSOR_TYPES = {
+    **_REGISTRY_PROCESSOR_TYPES,
     "docling": ("yuxi.knowledge.parser.processors.docling", "DoclingProcessor"),
-    "rapid_ocr": ("yuxi.knowledge.parser.rapid_ocr", "RapidOCRParser"),
-    "mineru_ocr": ("yuxi.knowledge.parser.mineru", "MinerUParser"),
-    "mineru_official": ("yuxi.knowledge.parser.mineru_official", "MinerUOfficialParser"),
-    "pp_structure_v3_ocr": ("yuxi.knowledge.parser.pp_structure_v3", "PPStructureV3Parser"),
-    "deepseek_ocr": ("yuxi.knowledge.parser.deepseek_ocr", "DeepSeekOCRParser"),
-    "paddleocr_vl_1_6": ("yuxi.knowledge.parser.paddleocr_api", "PaddleOCRVLParser"),
-    "paddleocr_pp_ocrv6": ("yuxi.knowledge.parser.paddleocr_api", "PaddleOCRPPOCRv6Parser"),
 }
 
+# Các parser bị đánh dấu deprecated vì thiếu khả năng phát hiện layout ổn định cho RAG.
+DEPRECATED_PARSERS = {"rapid_ocr", "mineru_ocr", "pp_structure_v3_ocr"}
 
 class DocumentProcessorFactory:
     """Document Processor Factory"""
@@ -34,11 +33,15 @@ class DocumentProcessorFactory:
 
     @classmethod
     def _build_cache_key(cls, processor_type: str, kwargs: dict[str, Any]) -> str:
+        """生成不暴露初始化参数内容的稳定缓存键。"""
+
         if not kwargs:
             return processor_type
 
         kwargs_repr = "|".join(f"{key}={kwargs[key]!r}" for key in sorted(kwargs))
-        return f"{processor_type}|{kwargs_repr}"
+        # 初始化参数可能包含数据库密钥；摘要既区分实例配置，也避免密钥出现在缓存键和调试输出中。
+        digest = hashlib.sha256(kwargs_repr.encode()).hexdigest()[:16]
+        return f"{processor_type}|{digest}"
 
     @classmethod
     def _load_processor_class(cls, processor_type: str) -> type[BaseDocumentProcessor]:
@@ -77,7 +80,9 @@ class DocumentProcessorFactory:
         # Use caching to avoid duplicate creation
         cache_key = cls._build_cache_key(processor_type, kwargs)
         if cache_key not in _PROCESSOR_CACHE:
-            DEPRECATED_PARSERS = {"rapid_ocr", "mineru_ocr", "pp_structure_v3_ocr"}
+            # Loại bỏ instance cũ cùng engine trước khi tạo, tránh cache phình to khi kwargs đổi.
+            cls.clear_cache(processor_type)
+
             if processor_type in DEPRECATED_PARSERS:
                 import warnings
 
@@ -92,7 +97,13 @@ class DocumentProcessorFactory:
         return _PROCESSOR_CACHE[cache_key]
 
     @classmethod
-    def process_file(cls, processor_type: str, file_path: str, params: dict | None = None) -> str:
+    def process_file(
+        cls,
+        processor_type: str,
+        file_path: str,
+        params: dict | None = None,
+        processor_kwargs: dict[str, Any] | None = None,
+    ) -> str:
         """
         Process the file using the specified processor (Convenience method)
 
@@ -107,11 +118,11 @@ class DocumentProcessorFactory:
         Raises:
             DocumentProcessorException: Processing failed
         """
-        processor = cls.get_processor(processor_type)
+        processor = cls.get_processor(processor_type, **(processor_kwargs or {}))
         return processor.process_file(file_path, params)
 
     @classmethod
-    def check_health(cls, processor_type: str) -> dict[str, Any]:
+    def check_health(cls, processor_type: str, **kwargs) -> dict[str, Any]:
         """
         examine the health status of the specified processor
 
@@ -122,7 +133,7 @@ class DocumentProcessorFactory:
             dict: health status information
         """
         try:
-            processor = cls.get_processor(processor_type)
+            processor = cls.get_processor(processor_type, **kwargs)
             return processor.check_health()
         except Exception as e:
             return {
@@ -140,7 +151,6 @@ class DocumentProcessorFactory:
             dict: The health status of each processor
         """
         health_status = {}
-        DEPRECATED_PARSERS = {"rapid_ocr", "mineru_ocr", "pp_structure_v3_ocr"}
         for processor_type in cls.PROCESSOR_TYPES:
             if processor_type in DEPRECATED_PARSERS:
                 continue
@@ -152,7 +162,6 @@ class DocumentProcessorFactory:
         async def run_check(processor_type: str) -> tuple[str, dict[str, Any]]:
             return processor_type, await asyncio.to_thread(cls.check_health, processor_type)
 
-        DEPRECATED_PARSERS = {"rapid_ocr", "mineru_ocr", "pp_structure_v3_ocr"}
         active_processors = [pt for pt in cls.PROCESSOR_TYPES if pt not in DEPRECATED_PARSERS]
         results = await asyncio.gather(*(run_check(processor_type) for processor_type in active_processors))
         return {processor_type: health for processor_type, health in results}
@@ -163,6 +172,7 @@ class DocumentProcessorFactory:
         return list(cls.PROCESSOR_TYPES.keys())
 
     @classmethod
+    @classmethod
     def requires_external(cls, processor_type: str) -> bool:
         """Return whether the processor needs an external (cloud) service, without instantiating it."""
         if processor_type not in cls.PROCESSOR_TYPES:
@@ -171,7 +181,16 @@ class DocumentProcessorFactory:
         return bool(getattr(processor_class, "requires_external", False))
 
     @classmethod
-    def clear_cache(cls):
-        """Clear processor cache"""
-        _PROCESSOR_CACHE.clear()
-        logger.debug("Document processor cache cleared")
+    def clear_cache(cls, processor_type: str | None = None):
+        """Xóa toàn bộ cache bộ xử lý, hoặc chỉ loại bỏ instance của một engine."""
+
+        if processor_type is None:
+            _PROCESSOR_CACHE.clear()
+            logger.debug("Document processor cache cleared")
+            return
+        matching_keys = [
+            key for key in _PROCESSOR_CACHE if key == processor_type or key.startswith(f"{processor_type}|")
+        ]
+        for cache_key in matching_keys:
+            del _PROCESSOR_CACHE[cache_key]
+        logger.debug(f"Document processor cache cleared: {processor_type}")

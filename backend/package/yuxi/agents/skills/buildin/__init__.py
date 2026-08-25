@@ -26,11 +26,21 @@ BUILTIN_SKILLS: list[BuiltinSkillSpec] = [
         tool_dependencies=("present_artifacts",),
     ),
     BuiltinSkillSpec(
+        slug="html-preview",
+        source_dir=_SKILLS_ROOT / "html-preview",
+        description=(
+            "使用 Markdown `html:preview` 围栏输出轻量静态 HTML/CSS 可视化，"
+            "适合数值对比、流程、时间线、层级关系和关键指标。"
+        ),
+        version="2026.07.23",
+    ),
+    BuiltinSkillSpec(
         slug="deep-research",
         source_dir=_SKILLS_ROOT / "deep-research",
         description="Phương pháp luận điều phối nghiên cứu chuyên sâu: làm rõ phạm vi, phân rã kế hoạch, lập lịch song song khảo sát của các sub-agent, đối kháng kiểm chứng, tổng hợp thành báo cáo có cấu trúc kèm trích dẫn.",
-        version="2026.06.05",
-        tool_dependencies=("tavily_search",),
+        version="2026.07.29",
+        tool_dependencies=("web_search",),
+        skill_dependencies=("html-preview",),
     ),
     BuiltinSkillSpec(
         slug="knowledge-base",

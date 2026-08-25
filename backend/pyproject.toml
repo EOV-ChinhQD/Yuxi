@@ -3,6 +3,10 @@ name = "yuxi-workspace"
 version = "0.7.1.beta1"
 description = "A large language model based intelligent knowledge base and knowledge graph agent development platform, integrating RAG and knowledge graph technologies, built on LangGraph v1 + Vue.js + FastAPI + LightRAG architecture"
 readme = "README.md"
+license = { text = "MIT" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+]
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "fastapi>=0.121",

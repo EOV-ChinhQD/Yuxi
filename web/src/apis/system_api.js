@@ -56,6 +56,13 @@ export const configApi = {
   }
 }
 
+export const configOptionsApi = {
+  getOptions: async () => apiAdminGet('/api/system/config/options'),
+
+  updateOption: async (key, value) =>
+    apiAdminPut(`/api/system/config/options/${encodeURIComponent(key)}`, { value })
+}
+
 // =============================================================================
 // === Nhóm quản lý thông tin ===
 // =============================================================================
@@ -74,10 +81,16 @@ export const brandApi = {
 
 export const ocrApi = {
   /**
+   * Nhận các tùy chọn OCR khả dụng
+   * @returns {Promise} - Danh sách tùy chọn OCR
+   */
+  getOptions: async () => apiGet('/api/system/ocr/options'),
+
+  /**
    * NhậnOCRTình trạng sức khỏe dịch vụ
    * @returns {Promise} - OCRtình trạng sức khỏe
    */
-  getHealth: async () => apiAdminGet('/api/system/ocr/health')
+  getHealth: async () => apiGet('/api/system/ocr/health')
 }
 
 // =============================================================================

@@ -8,6 +8,12 @@ import { useRouter } from 'vue-router'
 import { parseToShanghai } from '@/utils/time'
 import { canSelectFile, isProcessingFile } from '@/utils/knowledge_file_policy'
 
+// 自动轮询参数：链式调度（等上一轮请求全部返回后再排下一轮），处理中文件长时间无进展时按 2 倍退避并最终自动停止；
+// 基础间隔与后端文件统计缓存节奏（10s）对齐，避免高频请求重复全表聚合
+const AUTO_REFRESH_POLL_INTERVAL_MS = 10000
+const AUTO_REFRESH_MAX_INTERVAL_MS = 30000
+const AUTO_REFRESH_STALE_POLLS_LIMIT = 6
+
 export const useDatabaseStore = defineStore('database', () => {
   const router = useRouter()
   const taskerStore = useTaskerStore()
@@ -51,9 +57,15 @@ export const useDatabaseStore = defineStore('database', () => {
     rightPanelVisible: true
   })
 
-  let refreshInterval = null
   let autoRefreshSource = null // Tracks whether auto-refresh was user-triggered or automatic
   let autoRefreshManualOverride = false // Indicates user explicitly disabled auto-refresh
+  // 自动轮询状态：refreshTimer 保存链式调度的定时器；refreshGeneration 用于废弃过期轮询轮次
+  let refreshTimer = null
+  let refreshGeneration = 0
+  let refreshStablePolls = 0
+  let refreshIntervalMs = AUTO_REFRESH_POLL_INTERVAL_MS
+  let refreshLastProcessingCount = null
+  let fileBrowserContextId = 0
 
   function setCurrentFileMap(items = []) {
     database.value = {
@@ -63,6 +75,7 @@ export const useDatabaseStore = defineStore('database', () => {
   }
 
   function resetFileBrowser() {
+    fileBrowserContextId += 1
     documentFiles.value = []
     folderBreadcrumbs.value = [{ file_id: null, filename: 'Tất cả các tập tin', path_prefix: '' }]
     selectedRowKeys.value = []
@@ -343,10 +356,32 @@ export const useDatabaseStore = defineStore('database', () => {
 
     const nextStatus = options.status ?? fileBrowser.status
     const nextRecursive = options.recursive ?? nextStatus !== 'all'
-    const nextParentId = nextRecursive ? null : (options.parentId ?? fileBrowser.parentId)
+    const nextParentId = nextRecursive
+      ? null
+      : options.parentId === null
+        ? null
+        : (options.parentId ?? fileBrowser.parentId)
     const nextPathPrefix = nextRecursive ? '' : (options.pathPrefix ?? fileBrowser.pathPrefix)
     const nextPage = Number(options.page ?? fileBrowser.page) || 1
     const nextPageSize = Number(options.pageSize ?? fileBrowser.pageSize) || 100
+    const contextChanged =
+      fileBrowser.parentId !== nextParentId ||
+      fileBrowser.page !== nextPage ||
+      fileBrowser.pageSize !== nextPageSize ||
+      fileBrowser.pathPrefix !== nextPathPrefix ||
+      fileBrowser.status !== nextStatus ||
+      fileBrowser.recursive !== nextRecursive
+    if (contextChanged) fileBrowserContextId += 1
+    const contextId = fileBrowserContextId
+
+    Object.assign(fileBrowser, {
+      parentId: nextParentId,
+      page: nextPage,
+      pageSize: nextPageSize,
+      pathPrefix: nextPathPrefix,
+      status: nextStatus,
+      recursive: nextRecursive
+    })
 
     if (!options.isBackground) {
       fileBrowser.loading = true
@@ -367,6 +402,8 @@ export const useDatabaseStore = defineStore('database', () => {
       }
 
       const data = await documentApi.listDocuments(kbIdValue, params)
+      if (contextId !== fileBrowserContextId) return
+
       const items = data?.items || []
       documentFiles.value = items
       setCurrentFileMap(items)
@@ -395,7 +432,7 @@ export const useDatabaseStore = defineStore('database', () => {
         message.error(error.message || 'Không thể tải danh sách tập tin')
       }
     } finally {
-      if (!options.isBackground) {
+      if (!options.isBackground && contextId === fileBrowserContextId) {
         fileBrowser.loading = false
       }
     }
@@ -666,19 +703,64 @@ export const useDatabaseStore = defineStore('database', () => {
     }
   }
 
-  function startAutoRefresh() {
-    if (state.autoRefresh && !refreshInterval) {
-      refreshInterval = setInterval(() => {
-        getDatabaseInfo(undefined, true, true) // Skip loading query params during auto-refresh
-        loadDocumentFiles({ isBackground: true })
-      }, 1000)
+  // 链式调度：等上一轮请求全部返回后再排下一轮，避免慢接口下请求堆积重叠
+  function scheduleAutoRefresh() {
+    refreshTimer = setTimeout(runAutoRefreshTick, refreshIntervalMs)
+  }
+
+  async function runAutoRefreshTick() {
+    const generation = refreshGeneration
+    refreshTimer = null
+    if (!state.autoRefresh) return
+
+    await Promise.all([
+      getDatabaseInfo(undefined, true, true), // Skip loading query params during auto-refresh
+      loadDocumentFiles({ isBackground: true })
+    ])
+
+    // 期间被重新 start/stop，本轮的退避结论作废
+    if (generation !== refreshGeneration) return
+    if (!state.autoRefresh) return
+
+    // 处理中文件数量持续不变则按 2 倍退避，达到上限仍无进展即自动停止（覆盖僵尸状态）
+    const processingCount = Number(database.value?.stats?.processing_count || 0)
+    if (processingCount === refreshLastProcessingCount) {
+      refreshStablePolls += 1
+      refreshIntervalMs = Math.min(refreshIntervalMs * 2, AUTO_REFRESH_MAX_INTERVAL_MS)
+    } else {
+      refreshStablePolls = 0
+      refreshIntervalMs = AUTO_REFRESH_POLL_INTERVAL_MS
     }
+    refreshLastProcessingCount = processingCount
+
+    if (refreshStablePolls >= AUTO_REFRESH_STALE_POLLS_LIMIT) {
+      state.autoRefresh = false
+      autoRefreshSource = null
+      autoRefreshManualOverride = false
+      stopAutoRefresh()
+      return
+    }
+    scheduleAutoRefresh()
+  }
+
+  function startAutoRefresh() {
+    if (!state.autoRefresh) return
+    refreshGeneration += 1
+    refreshStablePolls = 0
+    refreshIntervalMs = AUTO_REFRESH_POLL_INTERVAL_MS
+    refreshLastProcessingCount = Number(database.value?.stats?.processing_count || 0)
+    if (refreshTimer) {
+      clearTimeout(refreshTimer)
+      refreshTimer = null
+    }
+    scheduleAutoRefresh()
   }
 
   function stopAutoRefresh() {
-    if (refreshInterval) {
-      clearInterval(refreshInterval)
-      refreshInterval = null
+    refreshGeneration += 1
+    if (refreshTimer) {
+      clearTimeout(refreshTimer)
+      refreshTimer = null
     }
   }
 

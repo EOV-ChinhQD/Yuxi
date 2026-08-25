@@ -1,5 +1,3 @@
-from typing import Any
-
 from langchain.chat_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
@@ -8,8 +6,6 @@ from yuxi import config as sys_config
 from yuxi.models.providers.cache import model_cache
 from yuxi.utils import get_docker_safe_url
 from yuxi.utils.logging_config import logger
-
-_TOOL_IMAGE_USER_TEXT = "Images returned by read_file are attached below. Inspect them when answering."
 
 
 def resolve_chat_model_spec(model_spec: str | None, *, fallback: str | None = None) -> str:
@@ -162,6 +158,17 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
         extra_body.update(info.request_body_overrides)
         kwargs = {**kwargs, "extra_body": extra_body}
 
+    metadata = dict(kwargs.pop("metadata", {}) or {})
+    metadata.update(
+        {
+            "yuxi_provider_id": info.provider_id,
+            "yuxi_provider_type": info.provider_type,
+            "yuxi_model_id": info.model_id,
+            "yuxi_model_spec": info.spec,
+        }
+    )
+    kwargs["metadata"] = metadata
+
     logger.info(f"Cache MISS. Loading model {fully_specified_name} with provider_type={info.provider_type}")
 
     try:
@@ -205,11 +212,6 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
 class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
     """Chuẩn hóa name/id rỗng trong tool_call streaming chunks để tránh lỗi tích lũy stream v3."""
 
-    def _get_request_payload(self, input_, *, stop=None, **kwargs):
-        """Override to bridge tool image blocks to user messages."""
-        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
-        return _bridge_tool_images_to_user_messages(payload)
-
     async def _astream(self, *args, **kwargs):
         async for chunk in super()._astream(*args, **kwargs):
             _normalize_tool_call_chunks(chunk.message)
@@ -219,59 +221,6 @@ class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
         for chunk in super()._stream(*args, **kwargs):
             _normalize_tool_call_chunks(chunk.message)
             yield chunk
-
-
-def _bridge_tool_images_to_user_messages(payload: dict[str, Any]) -> dict[str, Any]:
-    """Cầu nối các khối image_url từ kết quả gọi công cụ sang tin nhắn người dùng để tránh lỗi hiển thị."""
-    messages = payload.get("messages")
-    if not isinstance(messages, list):
-        return payload
-    if not any(isinstance(m, dict) and m.get("role") == "tool" and _tool_image_blocks(m) for m in messages):
-        return payload
-
-    bridged_messages: list[dict[str, Any]] = []
-    pending_images: list[dict[str, Any]] = []
-
-    def flush_pending_images() -> None:
-        nonlocal pending_images
-        if not pending_images:
-            return
-
-        bridged_messages.append(
-            {
-                "role": "user",
-                "content": [{"type": "text", "text": _TOOL_IMAGE_USER_TEXT}, *pending_images],
-            }
-        )
-        pending_images = []
-
-    for message in messages:
-        if not isinstance(message, dict):
-            flush_pending_images()
-            bridged_messages.append(message)
-            continue
-
-        role = message.get("role")
-        if role != "tool":
-            flush_pending_images()
-
-        image_blocks = _tool_image_blocks(message) if role == "tool" else []
-        if image_blocks:
-            pending_images.extend(image_blocks)
-
-            content = _text_without_images(message.get("content"), image_blocks)
-            if not content:
-                content = (
-                    f"read_file trả về {len(image_blocks)} hình ảnh. "
-                    "Nội dung hình ảnh được đính kèm trong tin nhắn người dùng tiếp theo để xử lý thị giác."
-                )
-            message = {**message, "content": content}
-
-        bridged_messages.append(message)
-
-    flush_pending_images()
-
-    return {**payload, "messages": bridged_messages}
 
 
 def _normalize_tool_call_chunks(message) -> None:
@@ -286,37 +235,3 @@ def _normalize_tool_call_chunks(message) -> None:
             chunk["name"] = None
         if chunk.get("id") == "":
             chunk["id"] = None
-
-
-def _tool_image_blocks(message: dict[str, Any]) -> list[dict[str, Any]]:
-    content = message.get("content")
-    if not isinstance(content, list):
-        return []
-    return [
-        block
-        for block in content
-        if isinstance(block, dict)
-        and block.get("type") == "image_url"
-        and isinstance(block.get("image_url"), dict)
-        and isinstance(block["image_url"].get("url"), str)
-    ]
-
-
-def _text_without_images(content: Any, image_blocks: list[dict[str, Any]]) -> str:
-    if isinstance(content, str):
-        return content
-    if not isinstance(content, list):
-        return ""
-
-    image_ids = {id(block) for block in image_blocks}
-    parts: list[str] = []
-    for block in content:
-        if id(block) in image_ids:
-            continue
-        if isinstance(block, str):
-            parts.append(block)
-        elif isinstance(block, dict) and block.get("type") in {"text", "input_text"}:
-            text = block.get("text")
-            if isinstance(text, str):
-                parts.append(text)
-    return "\n".join(part for part in parts if part)

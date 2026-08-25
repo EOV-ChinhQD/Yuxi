@@ -83,7 +83,12 @@
                     cancel-text="Hủy bỏ"
                   >
                     <a-tooltip title="Xóa">
-                      <a-button type="text" size="small" danger class="action-btn lucide-icon-btn">
+                      <a-button
+                        type="text"
+                        size="small"
+                        danger
+                        class="action-btn delete-action-btn lucide-icon-btn"
+                      >
                         <Trash2 :size="14" />
                         <span>Xóa</span>
                       </a-button>
@@ -471,6 +476,16 @@ onMounted(() => {
 
             &:hover {
               color: var(--main-600);
+            }
+
+            &.delete-action-btn:hover {
+              color: var(--color-error-700);
+              background: var(--color-error-50);
+            }
+
+            &.delete-action-btn {
+              border-color: var(--color-error-100);
+              color: var(--color-error-700);
             }
           }
         }

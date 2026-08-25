@@ -20,9 +20,14 @@
         </div>
         <p class="empty-title">Chưa có bản đồ tư duy</p>
         <p class="empty-description">
-          Tạo bản đồ có cấu trúc từ nội dung cơ sở kiến thức hiện tại。
+          {{
+            readonly
+              ? 'Bản đồ tư duy chưa được tạo, vui lòng đợi quản trị viên cơ sở tri thức tạo.'
+              : 'Tạo bản đồ có cấu trúc từ nội dung cơ sở kiến thức hiện tại。'
+          }}
         </p>
         <button
+          v-if="!readonly"
           type="button"
           class="lucide-icon-btn mindmap-primary-action"
           @click="generateMindmap"
@@ -37,6 +42,7 @@
         <div class="mindmap-toolbar">
           <a-space :size="8">
             <button
+              v-if="!readonly"
               type="button"
               class="lucide-icon-btn mindmap-toolbar-btn"
               :disabled="generating"
@@ -47,7 +53,7 @@
               <span class="toolbar-text">tái sinh</span>
             </button>
             <button
-              v-if="isIncremental && mindmapData"
+              v-if="!readonly && isIncremental && mindmapData"
               type="button"
               class="lucide-icon-btn mindmap-toolbar-btn mindmap-toolbar-btn--accent"
               :disabled="generating"
@@ -91,6 +97,10 @@ const props = defineProps({
   kbId: {
     type: String,
     required: true
+  },
+  readonly: {
+    type: Boolean,
+    default: false
   }
 })
 

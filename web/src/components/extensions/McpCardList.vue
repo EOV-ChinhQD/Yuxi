@@ -45,7 +45,7 @@
               type="button"
               class="mcp-card-action mcp-card-action-danger"
               :disabled="isActionLoading(server)"
-              :aria-label="server.created_by === 'system' ? 'Xóa MCP' : 'Xóa MCP'"
+              :aria-label="server.is_builtin ? 'Gỡ MCP' : 'Xóa MCP'"
               @click.stop="handleRemoveServer(server)"
             >
               <Check :size="15" class="action-icon action-icon-check" />
@@ -64,8 +64,10 @@
           :key="server.slug"
           variant="mini"
           :title="formatExtensionCardTitle(server.name)"
-          :description="server.description || 'Chưa có mô tả'"
-          @click="openBasicInfo(server)"
+          :description="
+            server.requires_migration ? 'Cần chuyển đổi sang MCP từ xa' : server.description || 'Chưa có mô tả'
+          "
+          @click="handleCardClick(server)"
         >
           <template #icon>
             <span class="info-card-emoji-icon">{{ server.icon || '🔌' }}</span>
@@ -73,12 +75,20 @@
           <template #action>
             <button
               type="button"
-              class="mcp-card-action"
+              :class="[
+                'mcp-card-action',
+                { 'mcp-card-action-danger': server.requires_migration }
+              ]"
               :disabled="isActionLoading(server)"
-              aria-label="thêm MCP"
-              @click.stop="handleSetServerEnabled(server, true)"
+              :aria-label="server.requires_migration ? 'Xóa MCP' : 'thêm MCP'"
+              @click.stop="
+                server.requires_migration
+                  ? handleRemoveServer(server)
+                  : handleSetServerEnabled(server, true)
+              "
             >
-              <Plus :size="15" class="action-icon" />
+              <Trash2 v-if="server.requires_migration" :size="15" class="action-icon" />
+              <Plus v-else :size="15" class="action-icon" />
             </button>
           </template>
         </InfoCard>
@@ -104,7 +114,7 @@
             </div>
             <div class="mcp-basic-info-meta">
               <span>{{ previewServer.transport || 'Loại chuyển không xác định' }}</span>
-              <span v-if="previewServer.created_by === 'system'" class="mcp-basic-info-tag">
+              <span v-if="previewServer.is_builtin" class="mcp-basic-info-tag">
                 Tích hợp sẵn
               </span>
             </div>
@@ -206,7 +216,7 @@ const navigateToDetail = (server) => {
 }
 
 const handleCardClick = (server) => {
-  if (server.enabled) {
+  if (server.enabled || server.requires_migration) {
     navigateToDetail(server)
     return
   }
@@ -253,7 +263,7 @@ const handleSetServerEnabled = async (server, enabled) => {
 }
 
 const handleRemoveServer = (server) => {
-  if (server.created_by === 'system') {
+  if (server.is_builtin) {
     handleSetServerEnabled(server, false)
     return
   }

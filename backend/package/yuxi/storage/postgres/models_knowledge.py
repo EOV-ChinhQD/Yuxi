@@ -125,6 +125,7 @@ class KnowledgeChunk(Base):
         Index("ix_knowledge_chunks_file_id", "file_id"),
         Index("ix_knowledge_chunks_kb_id", "kb_id"),
         Index("ix_knowledge_chunks_graph_indexed", "graph_indexed"),
+        Index("ix_knowledge_chunks_graph_structure_indexed", "graph_structure_indexed"),
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -137,7 +138,14 @@ class KnowledgeChunk(Base):
     end_char_pos = Column(Integer)
     start_token_pos = Column(Integer)
     end_token_pos = Column(Integer)
+    graph_structure_indexed = Column(Boolean, default=False, nullable=False)
     graph_indexed = Column(Boolean, default=False)
+    graph_extraction_details = Column(
+        JSON_VALUE,
+        default=lambda: {"status": "pending", "attempt_count": 0},
+        nullable=False,
+    )
+    # Các cột do nhánh ours bổ sung
     neo4j_sync_status = Column(
         String(20), nullable=False, default="pending", comment="Neo4j sync status: pending/synced/failed"
     )
@@ -160,6 +168,7 @@ class KnowledgeGraphEntity(Base):
         UniqueConstraint("entity_id", name="uq_knowledge_graph_entities_entity_id"),
         UniqueConstraint("kb_id", "normalized_name", "label", name="uq_knowledge_graph_entities_identity"),
         Index("ix_knowledge_graph_entities_kb_id", "kb_id"),
+        Index("ix_knowledge_graph_entities_vector_pending", "kb_id", "vector_status", "vector_next_retry_at"),
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -171,6 +180,12 @@ class KnowledgeGraphEntity(Base):
     canonical_name = Column(String(512), nullable=True)
     aliases = Column(JSON_VALUE)
     attributes = Column(JSON_VALUE)
+    vector_status = Column(String(16), nullable=False, default="pending")
+    vector_attempt_count = Column(Integer, nullable=False, default=0)
+    vector_last_error = Column(Text)
+    vector_next_retry_at = Column(DateTime(timezone=True))
+    vector_locked_until = Column(DateTime(timezone=True))
+    vector_lock_token = Column(String(32))
     created_at = Column(DateTime(timezone=True), default=utc_now_naive)
     updated_at = Column(DateTime(timezone=True), default=utc_now_naive, onupdate=utc_now_naive)
 
@@ -201,6 +216,7 @@ class KnowledgeGraphTriple(Base):
     __table_args__ = (
         UniqueConstraint("triple_id", name="uq_knowledge_graph_triples_triple_id"),
         Index("ix_knowledge_graph_triples_kb_id", "kb_id"),
+        Index("ix_knowledge_graph_triples_vector_pending", "kb_id", "vector_status", "vector_next_retry_at"),
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -214,6 +230,12 @@ class KnowledgeGraphTriple(Base):
     )
     relation_type = Column(String(256), nullable=False)
     content = Column(Text, nullable=False)
+    vector_status = Column(String(16), nullable=False, default="pending")
+    vector_attempt_count = Column(Integer, nullable=False, default=0)
+    vector_last_error = Column(Text)
+    vector_next_retry_at = Column(DateTime(timezone=True))
+    vector_locked_until = Column(DateTime(timezone=True))
+    vector_lock_token = Column(String(32))
     created_at = Column(DateTime(timezone=True), default=utc_now_naive)
     updated_at = Column(DateTime(timezone=True), default=utc_now_naive, onupdate=utc_now_naive)
 

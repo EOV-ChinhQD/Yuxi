@@ -29,6 +29,7 @@
             <a-select v-model:value="form.transport">
               <a-select-option value="streamable_http">streamable_http</a-select-option>
               <a-select-option value="sse">sse</a-select-option>
+              <!-- Tính năng riêng của bản fork: hỗ trợ MCP cục bộ qua stdio -->
               <a-select-option value="stdio">stdio</a-select-option>
             </a-select>
           </a-form-item>
@@ -109,6 +110,7 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { mcpApi } from '@/apis/mcp_api'
+// Tính năng riêng của bản fork: trình soạn thảo biến môi trường cho MCP stdio
 import McpEnvEditor from '@/components/McpEnvEditor.vue'
 
 const props = defineProps({
@@ -240,7 +242,6 @@ const handleFormSubmit = async () => {
         return
       }
     }
-
     if (props.editMode) {
       const { slug, ...updateData } = data
       const result = await mcpApi.updateMcpServer(props.editData?.slug || slug, updateData)

@@ -135,6 +135,7 @@
               <span class="suggestion-text">{{ example }}</span>
             </button>
             <button
+              v-if="canGenerateQuestions"
               type="button"
               class="suggestion-row"
               @click="() => generateSampleQuestions(false)"
@@ -144,11 +145,14 @@
             </button>
           </div>
 
-          <div v-else class="suggestions-empty">
+          <div v-else-if="canGenerateQuestions" class="suggestions-empty">
             <button class="suggestion-row" @click="() => generateSampleQuestions(false)">
               <RefreshCw class="suggestion-icon" />
               <span class="suggestion-text">Tạo câu hỏi mẫu</span>
             </button>
+          </div>
+          <div v-else class="suggestions-empty">
+            <span class="suggestion-text">Chưa có câu hỏi mẫu</span>
           </div>
         </div>
       </div>
@@ -185,6 +189,9 @@ const searchLoading = computed(() => store.state.searchLoading)
 const queryResult = ref('')
 const showRawData = ref(false)
 const showQuerySuggestions = computed(() => !searchLoading.value && !queryResult.value)
+
+// Việc tạo câu hỏi mẫu là thao tác ghi, chỉ mở cho các cơ sở tri thức có quyền quản lý (không phải quyền chỉ đọc)
+const canGenerateQuestions = computed(() => store.database?.can_manage === true)
 
 // kiểm tra truy vấn
 const queryText = ref('')

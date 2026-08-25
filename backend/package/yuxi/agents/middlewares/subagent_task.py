@@ -7,7 +7,6 @@ from typing import Annotated, Any
 import time
 import asyncio
 
-from deepagents import SubagentTransformer as DeepAgentsSubagentTransformer
 from deepagents.middleware._utils import append_to_system_message
 from langchain.agents.middleware.types import AgentMiddleware, ContextT, ModelRequest, ModelResponse, ResponseT
 from langchain_core.messages import ToolMessage
@@ -22,8 +21,6 @@ from yuxi.services.input_message_service import build_chat_input_message
 from yuxi.storage.postgres.manager import pg_manager
 from yuxi.storage.postgres.models_business import Agent
 
-YUXI_SUBAGENTS_STREAM_KEY = "yuxi_subagents"
-
 
 def _subagent_run_service_module():
     from yuxi.services import subagent_run_service
@@ -34,11 +31,6 @@ def _subagent_run_service_module():
 def _async_only_tool(*, name: str, coroutine: Callable[..., Awaitable[Any]], description: str) -> StructuredTool:
     """Công cụ sub-agent chạy nền chỉ thực thi trong luồng bất đồng bộ; chỉ khai báo coroutine, các lệnh gọi đồng bộ sẽ bị lỗi trực tiếp bởi LangChain."""
     return StructuredTool.from_function(name=name, coroutine=coroutine, description=description, infer_schema=True)
-
-
-class YuxiSubagentTransformer(DeepAgentsSubagentTransformer):
-    def init(self) -> dict[str, Any]:
-        return {YUXI_SUBAGENTS_STREAM_KEY: self._log}
 
 
 TASK_SYSTEM_PROMPT = """## `task` (Công cụ giao nhiệm vụ cho sub-agent)
@@ -79,7 +71,7 @@ Do not call subagents through shell, curl, HTTP APIs, or command-line indirectio
 
 SUBAGENT_START_DESCRIPTION = """Start a configured Yuxi subagent asynchronously.
 
-Returns a child thread ID for future continuation and a run ID for status/events/cancel/result checks.
+Returns a child thread ID for future continuation and a run ID for status/cancel/result checks.
 Use this for long-running or parallelizable subagent work. If `thread_id` is provided, it continues that subagent
 thread when no active run is currently writing to it."""
 
@@ -88,11 +80,11 @@ SUBAGENT_STATUS_DESCRIPTION = """Check a subagent run status by run_id.
 Returns the current run status, a compact progress summary with the latest 3 readable messages, and the final result
 when the run has reached a terminal status."""
 
-SUBAGENT_EVENTS_DESCRIPTION = """Read recent events for a subagent run by run_id and Redis stream cursor."""
-
 SUBAGENT_CANCEL_DESCRIPTION = """Cancel a running subagent run by run_id."""
 
 SUBAGENT_AWAIT_DESCRIPTION = """Wait for a subagent run to finish and return its final result."""
+
+SUBAGENT_EVENTS_DESCRIPTION = """Read recent events for a subagent run by run_id and Redis stream cursor."""
 
 TASK_DESCRIPTION_ARG = (
     "Mô tả nhiệm vụ cần sub-agent hoàn thành độc lập, bao gồm ngữ cảnh cần thiết và kết quả mong muốn."
@@ -167,8 +159,6 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
         available_agents = "\n".join(f"- {agent.slug}: {agent.description or agent.name}" for agent in subagents)
         self.system_prompt = TASK_SYSTEM_PROMPT.format(available_agents=available_agents)
         self.tools = [self._build_task_tool(available_agents), *self._build_async_subagent_tools(available_agents)]
-        self.subagent_names = frozenset(self.subagents)
-        self.transformers = [lambda scope: YuxiSubagentTransformer(scope, subagent_names=self.subagent_names)]
 
     def wrap_model_call(
         self,

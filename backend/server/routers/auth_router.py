@@ -4,7 +4,7 @@ from yuxi.utils import logger
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,6 +31,7 @@ from yuxi.services.auth_service import (
     get_cli_auth_session_for_user,
 )
 from yuxi.storage.minio import upload_image_to_minio
+from yuxi.storage.minio.client import normalize_public_minio_url
 from yuxi.utils.datetime_utils import utc_now_naive
 
 # OIDC certification related import
@@ -61,16 +62,17 @@ class Token(BaseModel):
 
 class UserCreate(BaseModel):
     username: str
-    password: str
+    password: str = Field(min_length=8)
     role: str = "user"
     phone_number: str | None = None
     department_id: int | None = None
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     username: str | None = None
-    password: str | None = None
-    role: str | None = None
+    password: str | None = Field(default=None, min_length=8)
     phone_number: str | None = None
     avatar: str | None = None
     department_id: int | None = None
@@ -103,8 +105,9 @@ class UserAccessOption(BaseModel):
 
 
 class InitializeAdmin(BaseModel):
-    uid: str  # Enter user ID directly
-    password: str
+    uid: str  # Nhập trực tiếp ID người dùng
+    password: str = Field(min_length=8)
+
     phone_number: str | None = None
 
 
@@ -284,7 +287,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         "username": user.username,
         "uid": user.uid,
         "phone_number": user.phone_number,
-        "avatar": user.avatar,
+        "avatar": normalize_public_minio_url(user.avatar),
         "role": user.role,
         "department_id": user.department_id,
         "department_name": department_name,
@@ -711,12 +714,7 @@ async def update_user(
             detail="Chỉ có superadmin mới có thể sửa đổi tài khoản superadmin",
         )
 
-    # The super administrator account cannot be downgraded (can only be modified by other super administrators)
-    if user.role == "superadmin" and user_data.role and user_data.role != "superadmin" and current_user.id != user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Không thể hạ cấp tài khoản superadmin",
-        )
+    # Tài khoản superadmin không thể bị hạ cấp (UserUpdate đã bỏ trường role nên không thể đổi vai trò tại đây)
 
     if current_user.role == "admin":
         if user.role != "user":
@@ -724,11 +722,8 @@ async def update_user(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Quản trị viên chỉ có thể sửa đổi tài khoản người dùng bình thường",
             )
-        if user_data.role is not None and user_data.role != "user":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Quản trị viên chỉ có thể đặt vai trò người dùng là người dùng bình thường",
-            )
+
+
 
     # Update information
     update_details = []
@@ -749,19 +744,9 @@ async def update_user(
         user.password_hash = AuthUtils.hash_password(user_data.password)
         update_details.append("Mật khẩu đã cập nhật")
 
-    if user_data.role is not None:
-        # Check to demote administrator to normal user
-        if user.role == "admin" and user_data.role == "user" and user.department_id is not None:
-            admin_count = await UserRepository().get_admin_count_in_department(
-                user.department_id, exclude_user_id=user_id
-            )
-            if admin_count <= 1:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Không thể hạ cấp quản trị viên xuống người dùng bình thường vì người dùng này là quản trị viên duy nhất của bộ phận",
-                )
-        user.role = user_data.role
-        update_details.append(f"Role: {user_data.role}")
+    # PORT-CONFLICT: nhánh ours cho phép đổi vai trò khi cập nhật người dùng; upstream đã loại bỏ
+    # trường role khỏi UserUpdate (extra="forbid") nên các kiểm tra hạ cấp/quản trị viên duy nhất
+    # của bộ phận không còn áp dụng tại endpoint này.
 
     if user_data.phone_number is not None:
         user.phone_number = user_data.phone_number
@@ -995,7 +980,7 @@ async def impersonate_user(
         "username": target_user.username,
         "uid": target_user.uid,
         "phone_number": target_user.phone_number,
-        "avatar": target_user.avatar,
+        "avatar": normalize_public_minio_url(target_user.avatar),
         "role": target_user.role,
         "department_id": target_user.department_id,
         "department_name": department_name,

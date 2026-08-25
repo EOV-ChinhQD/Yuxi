@@ -67,90 +67,14 @@
             <p class="param-description">Chọn thư mục đích để lưu tệp</p>
           </div>
           <div class="col-item" v-if="uploadMode !== 'url'">
-            <div class="setting-label">
-              OCR Động cơ (chỉ áp dụng cho PDF/Tệp hình ảnh）
-              <a-tooltip title="Kiểm tra trạng thái dịch vụ">
-                <ReloadOutlined
-                  class="action-icon refresh-icon"
-                  :class="{ spinning: ocrHealthChecking }"
-                  @click="checkOcrHealth"
-                />
-              </a-tooltip>
-            </div>
+            <div class="setting-label">OCR Động cơ (chỉ áp dụng cho PDF/Tệp hình ảnh）</div>
             <div class="setting-content">
-              <a-popover
-                v-model:open="ocrPanelOpen"
-                placement="bottomLeft"
-                trigger="click"
-                overlayClassName="ocr-engine-popover"
-                @openChange="handleOcrPanelOpenChange"
-              >
-                <template #content>
-                  <div class="ocr-engine-panel">
-                    <button
-                      v-for="option in availableOcrOptions"
-                      :key="option.value"
-                      type="button"
-                      class="ocr-engine-option"
-                      :class="{ selected: processingParams.ocr_engine === option.value }"
-                      :disabled="chunkLoading"
-                      @click="selectOcrEngine(option.value)"
-                    >
-                      <span class="ocr-engine-option-header">
-                        <span class="ocr-engine-name">{{ option.label }}</span>
-                        <span
-                          class="ocr-engine-status"
-                          :class="`status-${getOcrStatus(option.value)}`"
-                        >
-                          {{ getOcrStatusLabel(option.value) }}
-                        </span>
-                      </span>
-                      <span class="ocr-engine-desc">{{ getOcrDescription(option.value) }}</span>
-                    </button>
-
-                    <div v-if="unavailableOcrOptions.length" class="unavailable-ocr-options">
-                      <button
-                        type="button"
-                        class="unavailable-toggle"
-                        @click="toggleUnavailableOcrOptions"
-                      >
-                        <span>tùy chọn không khả dụng（{{ unavailableOcrOptions.length }}）</span>
-                        <ChevronUp v-if="unavailableOcrExpanded" :size="14" />
-                        <ChevronDown v-else :size="14" />
-                      </button>
-
-                      <div v-if="unavailableOcrExpanded" class="unavailable-ocr-list">
-                        <button
-                          v-for="option in unavailableOcrOptions"
-                          :key="option.value"
-                          type="button"
-                          class="ocr-engine-option disabled"
-                          disabled
-                        >
-                          <span class="ocr-engine-option-header">
-                            <span class="ocr-engine-name">{{ option.label }}</span>
-                            <span
-                              class="ocr-engine-status"
-                              :class="`status-${getOcrStatus(option.value)}`"
-                            >
-                              {{ getOcrStatusLabel(option.value) }}
-                            </span>
-                          </span>
-                          <span class="ocr-engine-desc">{{ getOcrDescription(option.value) }}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </template>
-
-                <a-button class="ocr-engine-trigger" block>
-                  <span class="ocr-engine-trigger-main">
-                    <ReloadOutlined v-if="ocrHealthChecking" class="ocr-engine-trigger-loading" />
-                    <span class="ocr-engine-trigger-label">{{ selectedOcrEngineLabel }}</span>
-                  </span>
-                  <ChevronDown :size="14" />
-                </a-button>
-              </a-popover>
+              <OCRSelector
+                v-model="processingParams.ocr_engine"
+                :disabled="chunkLoading"
+                @change="ocrEngineTouched = true"
+                @options-loaded="handleOcrOptionsLoaded"
+              />
             </div>
           </div>
         </div>
@@ -436,10 +360,8 @@ import { message, Upload, Modal } from 'ant-design-vue'
 import { useUserStore } from '@/stores/user'
 import { useConfigStore } from '@/stores/config'
 import { useDatabaseStore } from '@/stores/database'
-import { ocrApi } from '@/apis/system_api'
 import { fileApi, documentApi } from '@/apis/knowledge_api'
 import { getWorkspaceTree } from '@/apis/workspace_api'
-import { ReloadOutlined } from '@ant-design/icons-vue'
 import {
   FileUp,
   FolderUp,
@@ -458,6 +380,7 @@ import {
 import { buildChunkParamsPayload } from '@/utils/chunkUtils'
 import ChunkParamsConfig from '@/components/ChunkParamsConfig.vue'
 import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
+import OCRSelector from '@/components/OCRSelector.vue'
 
 const props = defineProps({
   visible: {
@@ -487,6 +410,7 @@ const emit = defineEmits(['update:visible', 'success'])
 const store = useDatabaseStore()
 const configStore = useConfigStore()
 const DEFAULT_OCR_ENGINE = 'rapid_ocr'
+const defaultOcrEngine = ref(DEFAULT_OCR_ENGINE)
 
 // Liên quan đến chọn thư mục
 const selectedFolderId = ref(null)
@@ -593,9 +517,7 @@ const loadSupportedFileTypes = async () => {
   }
 }
 
-onMounted(() => {
-  loadSupportedFileTypes()
-})
+onMounted(loadSupportedFileTypes)
 
 const visible = computed({
   get: () => props.visible,
@@ -829,7 +751,7 @@ const handleFetchUrls = async () => {
     return
   }
 
-  newUrl.value = '' // Xóa sạchNhập框
+  newUrl.value = '' // Xóa sạch nội dung đã nhập
   fetchingUrls.value = true
 
   await Promise.all(newItems.map(fetchSingleUrlItem))
@@ -905,27 +827,11 @@ const toggleWorkspacePath = (path, checked) => {
   selectedWorkspacePaths.value = selectedWorkspacePaths.value.filter((item) => item !== path)
 }
 
-// OCRTrạng thái sức khỏe dịch vụ
-const ocrHealthStatus = ref({
-  rapid_ocr: { status: 'unknown', message: '' },
-  mineru_ocr: { status: 'unknown', message: '' },
-  mineru_official: { status: 'unknown', message: '' },
-  pp_structure_v3_ocr: { status: 'unknown', message: '' },
-  deepseek_ocr: { status: 'unknown', message: '' },
-  paddleocr_vl_1_6: { status: 'unknown', message: '' },
-  paddleocr_pp_ocrv6: { status: 'unknown', message: '' }
-})
-
-// OCRTrạng thái kiểm tra sức khỏe
-const ocrHealthChecking = ref(false)
-const ocrPanelOpen = ref(false)
-const unavailableOcrExpanded = ref(false)
 const ocrEngineTouched = ref(false)
 
 // Phân tích tham số
 const processingParams = ref({
-  ocr_engine: DEFAULT_OCR_ENGINE,
-  ocr_engine_config: {}
+  ocr_engine: DEFAULT_OCR_ENGINE
 })
 
 // Liên quan đến tự động nhập kho
@@ -948,7 +854,7 @@ const isOcrEnabled = computed(() => {
   return processingParams.value.ocr_engine !== 'disable'
 })
 
-// chế độ tải lên切换相关逻辑Đã移除
+// Logic chuyển đổi chế độ tải lên đã bị xóa
 
 // Thuộc tính tính toán: có tồn tại khôngPDFHoặc tệp hình ảnh
 const hasPdfOrImageFiles = computed(() => {
@@ -996,54 +902,24 @@ const hasZipFiles = computed(() => {
   })
 })
 
-const ocrEngineOptions = [
-  {
-    value: 'disable',
-    label: 'Không bật',
-    description: 'Không bật OCR，Chỉ xử lý tệp tin văn bản'
-  },
-  {
-    value: 'rapid_ocr',
-    label: 'RapidOCR (ONNX)',
-    description: 'ONNX with RapidOCR'
-  },
-  {
-    value: 'mineru_ocr',
-    label: 'MinerU OCR',
-    description: 'MinerU OCR'
-  },
-  {
-    value: 'mineru_official',
-    label: 'MinerU Official API',
-    description: 'MinerU Official API'
-  },
-  {
-    value: 'pp_structure_v3_ocr',
-    label: 'PP-Structure-V3',
-    description: 'PP-Structure-V3'
-  },
-  {
-    value: 'deepseek_ocr',
-    label: 'DeepSeek OCR',
-    description: 'DeepSeek OCR (SiliconFlow)'
-  },
-  {
-    value: 'paddleocr_vl_1_6',
-    label: 'PaddleOCR-VL-1.6',
-    description: 'PaddleOCR-VL-1.6 API'
-  },
-  {
-    value: 'paddleocr_pp_ocrv6',
-    label: 'PP-OCRv6',
-    description: 'PaddleOCR PP-OCRv6 API'
-  }
-]
+
+const ocrEngineOptions = ref([])
+
+const handleOcrOptionsLoaded = (data) => {
+  const engines = Array.isArray(data?.engines) ? data.engines : []
+  ocrEngineOptions.value = engines
+    .filter((engine) => engine.engine_id !== 'disable')
+    .map((engine) => ({ value: engine.engine_id }))
+  defaultOcrEngine.value = data?.default_engine || DEFAULT_OCR_ENGINE
+  if (!ocrEngineTouched.value) applyDefaultOcrEngine()
+}
 
 const resolveDefaultOcrEngine = () => {
   const configuredEngine = String(
-    configStore.config?.default_ocr_engine || DEFAULT_OCR_ENGINE
+    configStore.config?.default_ocr_engine || defaultOcrEngine.value || DEFAULT_OCR_ENGINE
   ).trim()
-  return ocrEngineOptions.some((option) => option.value === configuredEngine)
+  if (configuredEngine === 'disable') return configuredEngine
+  return ocrEngineOptions.value.some((option) => option.value === configuredEngine)
     ? configuredEngine
     : DEFAULT_OCR_ENGINE
 }
@@ -1055,82 +931,9 @@ const applyDefaultOcrEngine = () => {
 watch(
   () => configStore.config?.default_ocr_engine,
   () => {
-    if (props.visible && !ocrEngineTouched.value) {
-      applyDefaultOcrEngine()
-    }
+    if (props.visible && !ocrEngineTouched.value) applyDefaultOcrEngine()
   }
 )
-
-const ocrStatusLabels = {
-  local: 'Không bật',
-  healthy: 'Có sẵn',
-  configured: 'Đã cấu hình',
-  unavailable: 'Không khả dụng',
-  unhealthy: 'lỗi',
-  timeout: 'Hết thời gian',
-  error: 'lỗi',
-  checking: 'Đang kiểm tra',
-  unknown: 'Trạng thái không xác định'
-}
-
-const getOcrStatus = (engine) => {
-  if (engine === 'disable') return 'local'
-  const current = ocrHealthStatus.value?.[engine]
-  if (ocrHealthChecking.value && (!current || current.status === 'unknown')) return 'checking'
-  return current?.status || 'unknown'
-}
-
-const getOcrStatusLabel = (engine) =>
-  ocrStatusLabels[getOcrStatus(engine)] || 'Trạng thái không xác định'
-
-const getOcrDescription = (engine) => {
-  const option = ocrEngineOptions.find((item) => item.value === engine)
-  if (engine === 'disable') return option?.description || 'Không bật OCR，Chỉ xử lý tệp tin văn bản'
-
-  const messageText = ocrHealthStatus.value?.[engine]?.message
-  if (messageText) return messageText
-
-  const status = getOcrStatus(engine)
-  const fallbackMap = {
-    healthy: 'Dịch vụ hoạt động bình thường',
-    configured: 'Token Được cấu hình, sẽ được xác thực khi phân tích',
-    unavailable: 'Dịch vụ không khả dụng',
-    unhealthy: 'Ngoại lệ dịch vụ',
-    timeout: 'Kiểm tra dịch vụ hết thời gian',
-    error: 'Ngoại lệ dịch vụ',
-    checking: 'Đang kiểm tra trạng thái dịch vụ',
-    unknown: option?.description || 'Trạng thái dịch vụ không xác định'
-  }
-  return fallbackMap[status] || option?.description || 'Trạng thái dịch vụ không xác định'
-}
-
-const isUnavailableOcrEngine = (engine) => ['unavailable', 'error'].includes(getOcrStatus(engine))
-
-const availableOcrOptions = computed(() =>
-  ocrEngineOptions.filter((option) => !isUnavailableOcrEngine(option.value))
-)
-
-const unavailableOcrOptions = computed(() =>
-  ocrEngineOptions.filter((option) => isUnavailableOcrEngine(option.value))
-)
-
-const selectedOcrEngineLabel = computed(() => {
-  return (
-    ocrEngineOptions.find((option) => option.value === processingParams.value.ocr_engine)?.label ||
-    'Chọn OCR Công cụ'
-  )
-})
-
-const selectOcrEngine = (engine) => {
-  if (isUnavailableOcrEngine(engine)) return
-  ocrEngineTouched.value = true
-  processingParams.value.ocr_engine = engine
-  ocrPanelOpen.value = false
-}
-
-const toggleUnavailableOcrOptions = () => {
-  unavailableOcrExpanded.value = !unavailableOcrExpanded.value
-}
 
 // Xác minhOCRTính khả dụng của dịch vụ
 const validateOcrService = () => {
@@ -1138,9 +941,10 @@ const validateOcrService = () => {
     return true
   }
 
-  const engine = processingParams.value.ocr_engine
-  if (isUnavailableOcrEngine(engine)) {
-    message.error(`OCRDịch vụ không khả dụng: ${getOcrDescription(engine)}`)
+  if (
+    !ocrEngineOptions.value.some((option) => option.value === processingParams.value.ocr_engine)
+  ) {
+    message.error('Tùy chọn công cụ OCR chưa được tải, vui lòng thử lại sau')
     return false
   }
 
@@ -1424,28 +1228,6 @@ const handleDrop = () => {}
 
 // Đã xóa logic tải thư mục lên
 
-const checkOcrHealth = async () => {
-  if (ocrHealthChecking.value) return
-
-  ocrHealthChecking.value = true
-  try {
-    const healthData = await ocrApi.getHealth()
-    ocrHealthStatus.value = healthData.services
-  } catch (error) {
-    console.error('OCRKiểm tra sức khỏe thất bại:', error)
-    message.error('OCRKiểm tra sức khỏe dịch vụ thất bại')
-  } finally {
-    ocrHealthChecking.value = false
-  }
-}
-
-const handleOcrPanelOpenChange = (open) => {
-  ocrPanelOpen.value = open
-  if (open) {
-    checkOcrHealth()
-  }
-}
-
 const getAuthHeaders = () => {
   const userStore = useUserStore()
   return userStore.getAuthHeaders()
@@ -1534,7 +1316,7 @@ const chunkData = async () => {
 
   // URL Xử lý theo chế độ
   if (uploadMode.value === 'url') {
-    // 过滤出Thành côngcủaMục
+    // Lọc ra các mục thành công
     const successfulItems = urlList.value.filter((item) => item.status === 'success' && item.data)
     if (successfulItems.length === 0) {
       message.error('Vui lòng thêm và chờ ít nhất một URL phân tíchThành công')
@@ -1817,150 +1599,6 @@ const chunkData = async () => {
 .folder-checkbox {
   margin-left: 12px;
   white-space: nowrap;
-}
-
-.ocr-engine-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  min-width: 0;
-}
-
-.ocr-engine-trigger-main {
-  display: inline-flex;
-  align-items: center;
-  flex: 1 1 auto;
-  min-width: 0;
-  gap: 8px;
-}
-
-.ocr-engine-trigger-loading {
-  flex: 0 0 auto;
-  color: var(--main-color);
-  animation: spin 1s linear infinite;
-}
-
-.ocr-engine-trigger-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ocr-engine-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 280px;
-}
-
-.ocr-engine-option {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--gray-100);
-  border-radius: 8px;
-  background: var(--gray-0);
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-
-.ocr-engine-option:hover:not(:disabled) {
-  border-color: var(--main-color);
-  background: color-mix(in srgb, var(--main-color) 6%, var(--gray-0));
-}
-
-.ocr-engine-option.selected {
-  border-color: var(--main-color);
-  background: color-mix(in srgb, var(--main-color) 8%, var(--gray-0));
-}
-
-.ocr-engine-option.disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.unavailable-ocr-options,
-.unavailable-ocr-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.unavailable-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 4px 2px;
-  border: none;
-  background: transparent;
-  color: var(--gray-500);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.unavailable-toggle:hover {
-  color: var(--gray-800);
-}
-
-.ocr-engine-option-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-width: 0;
-}
-
-.ocr-engine-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--gray-900);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.ocr-engine-status {
-  display: inline-flex;
-  align-items: center;
-  min-height: 18px;
-  flex: none;
-  font-size: 12px;
-  line-height: 1;
-}
-
-.ocr-engine-status.status-local,
-.ocr-engine-status.status-healthy,
-.ocr-engine-status.status-configured {
-  color: var(--color-success-700);
-}
-
-.ocr-engine-status.status-unavailable,
-.ocr-engine-status.status-error {
-  color: var(--color-error-700);
-}
-
-.ocr-engine-status.status-unhealthy,
-.ocr-engine-status.status-timeout,
-.ocr-engine-status.status-unknown,
-.ocr-engine-status.status-checking {
-  color: var(--color-warning-700);
-}
-
-.ocr-engine-desc {
-  color: var(--gray-500);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-:global(.ocr-engine-popover .ant-popover-inner-content) {
-  padding: 10px;
 }
 
 .param-description {

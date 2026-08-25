@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, provide, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, provide, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { GithubOutlined } from '@ant-design/icons-vue'
 import {
@@ -8,7 +8,7 @@ import {
   LibraryBig,
   Box,
   FolderKanban,
-  PanelLeftClose,
+  PanelLeft,
   PanelLeftOpen,
   MessageCirclePlus,
   Search
@@ -108,6 +108,31 @@ onMounted(async () => {
     taskerStore.loadTasks()
     fetchGithubStars() // Fetch GitHub stars on mount
   }
+  startThreadStatusSync()
+})
+
+// Làm mới trạng thái thread trên thanh bên với tần suất thấp, để các thread nền khi hoàn thành cũng chuyển từ loading sang ready/done.
+const THREAD_STATUS_SYNC_INTERVAL_MS = 12 * 1000
+let threadStatusSyncTimer = null
+
+const startThreadStatusSync = () => {
+  if (threadStatusSyncTimer) return
+  threadStatusSyncTimer = setInterval(() => {
+    if (
+      sidebarCollapsed.value ||
+      (typeof document !== 'undefined' && document.visibilityState !== 'visible')
+    ) {
+      return
+    }
+    void chatThreadsStore.syncThreadStatuses()
+  }, THREAD_STATUS_SYNC_INTERVAL_MS)
+}
+
+onUnmounted(() => {
+  if (threadStatusSyncTimer) {
+    clearInterval(threadStatusSyncTimer)
+    threadStatusSyncTimer = null
+  }
 })
 
 const route = useRoute()
@@ -135,6 +160,15 @@ const mainList = computed(() => {
   ]
 
   items.push({
+    // PORT-CONFLICT: upstream đổi điều hướng quản lý agent sang /agent-manage;
+    // giữ nhãn tiếng của bên ta nhưng trỏ sang route mới (ModelManageView cũ đã bị thay thế)
+    name: 'Agent Management',
+    path: '/agent-manage',
+    icon: Box,
+    activeIcon: Box
+  })
+
+  items.push({
     name: 'Workspace',
     path: '/workspace',
     icon: FolderKanban,
@@ -149,13 +183,8 @@ const mainList = computed(() => {
     activeIcon: LibraryBig
   })
 
-  items.push({
-    name: 'Agent Management',
-    path: '/model-manage',
-    icon: Box,
-    activeIcon: Box
-  })
-
+  // PORT-CONFLICT: mục "Agent Management" của bên ta đã được gộp vào phía trên
+  // (trỏ tới /agent-manage theo route mới của upstream), nên khối push cũ bị bỏ
   if (userStore.isSuperAdmin) {
     items.push({
       name: 'Data Dashboard',
@@ -298,7 +327,7 @@ provide('settingsModal', {
           aria-label="Thu gọn thanh bên"
           @click="toggleSidebar"
         >
-          <PanelLeftClose size="18" />
+          <PanelLeft size="18" />
         </button>
       </div>
       <div class="nav">
@@ -527,7 +556,7 @@ div.header,
     justify-content: flex-start;
     align-items: stretch;
     position: relative;
-    gap: 4px;
+    gap: 0;
   }
 
   .sidebar-conversations {

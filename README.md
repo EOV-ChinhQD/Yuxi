@@ -67,7 +67,7 @@ Phân tích ngôn ngữ（Yuxi）là một nền tảng RAG mở, có khả năn
 **1. Sao chép mã và khởi tạo nó**
 
 ```bash
-git clone --branch v0.7.1.beta1 --depth 1 https://github.com/xerrors/Yuxi.git
+git clone --branch v0.7.1 --depth 1 https://github.com/xerrors/Yuxi.git
 cd Yuxi
 
 # Linux/macOS

@@ -14,24 +14,27 @@ def vietnam_now() -> datetime:
 
 
 def is_text_pdf(pdf_path):
-    import fitz
+    import pypdfium2 as pdfium
 
-    doc = fitz.open(pdf_path)
-    total_pages = len(doc)
-    if total_pages == 0:
-        return False
+    doc = pdfium.PdfDocument(pdf_path)
+    try:
+        total_pages = len(doc)
+        if total_pages == 0:
+            return False
 
-    text_pages = 0
-    for page_num in range(total_pages):
-        page = doc.load_page(page_num)
-        text = page.get_text()
-        if text.strip():  # Kiểm tra xem có nội dung văn bản không
-            text_pages += 1
+        text_pages = 0
+        for page_num in range(total_pages):
+            page = doc[page_num]
+            text = page.get_textpage().get_text_bounded()
+            if text.strip():  # Kiểm tra xem có nội dung văn bản không
+                text_pages += 1
 
-    # Tính tỷ lệ số trang có nội dung văn bản
-    text_ratio = text_pages / total_pages
-    # Nếu hơn 50% số trang có nội dung văn bản thì coi là PDF dạng văn bản
-    return text_ratio > 0.5
+        # Tính tỷ lệ số trang có nội dung văn bản
+        text_ratio = text_pages / total_pages
+        # Nếu hơn 50% số trang có nội dung văn bản thì coi là PDF dạng văn bản
+        return text_ratio > 0.5
+    finally:
+        doc.close()
 
 
 def get_docker_safe_url(base_url):

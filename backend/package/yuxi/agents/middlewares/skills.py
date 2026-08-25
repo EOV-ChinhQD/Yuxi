@@ -18,10 +18,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from yuxi.agents.mcp.service import get_enabled_mcp_tools
 from yuxi.agents.skills.repository import SkillRepository
-from yuxi.agents.skills.service import is_valid_skill_slug, list_accessible_skills, normalize_string_list
+from yuxi.agents.skills.service import (
+    PERSONAL_SKILL_SOURCE_TYPE,
+    is_valid_skill_slug,
+    list_accessible_skills,
+    normalize_string_list,
+)
 from yuxi.agents.toolkits import get_all_tool_instances
 from yuxi.storage.postgres.manager import pg_manager
 from yuxi.utils.logging_config import logger
+from yuxi.utils.paths import VIRTUAL_PATH_WORKSPACE_SKILLS, VIRTUAL_SKILLS_PATH
 
 # =============================================================================
 # type definition
@@ -61,15 +67,22 @@ async def _list_skills_from_db(db: AsyncSession | None = None, user=None) -> lis
 
 
 def build_prompt_metadata(skills: list) -> dict[str, SkillPromptMetadata]:
-    return {
-        item.slug: {
+    """构建 Skill 提示词元数据，并为个人 Skill 使用工作区真实路径。"""
+    result: dict[str, SkillPromptMetadata] = {}
+    for item in skills:
+        if not item.slug:
+            continue
+        root = (
+            VIRTUAL_PATH_WORKSPACE_SKILLS
+            if getattr(item, "source_scope", None) == PERSONAL_SKILL_SOURCE_TYPE
+            else VIRTUAL_SKILLS_PATH
+        )
+        result[item.slug] = {
             "name": item.name,
             "description": item.description,
-            "path": f"/home/gem/skills/{item.slug}/SKILL.md",
+            "path": f"{root}/{item.slug}/SKILL.md",
         }
-        for item in skills
-        if item.slug
-    }
+    return result
 
 
 def build_dependency_map(skills: list) -> dict[str, SkillDependencyNode]:
@@ -107,6 +120,17 @@ async def _get_cached_skills_data(db: AsyncSession | None = None, user=None) -> 
             "time": time.time()
         }
     return metadata, dep_map
+
+def build_source_map(skills: list) -> dict[str, str]:
+    """构建需要复制到线程只读目录的 Skill 来源映射。"""
+    return {
+        item.slug: str(item.source_dir)
+        for item in skills
+        if item.slug
+        and getattr(item, "source_scope", None) != PERSONAL_SKILL_SOURCE_TYPE
+        and getattr(item, "source_dir", None)
+    }
+
 
 async def get_prompt_metadata(db: AsyncSession | None = None, user=None) -> dict[str, SkillPromptMetadata]:
     """Get prompt word metadata (load directly from database)"""
@@ -169,6 +193,7 @@ async def resolve_runtime_skills_for_context(context, *, db: AsyncSession | None
         "readable_skills": prompt_skills,
         "runtime_skill_metadata": prompt_metadata,
         "runtime_skill_dependency_map": dependency_map,
+        "runtime_skill_sources": build_source_map(skill_items),
     }
 
 
@@ -240,7 +265,10 @@ class SkillsMiddleware(AgentMiddleware):
         super().__init__()
         self.skills_context_name = skills_context_name
         self.enable_skills_prompt = enable_skills_prompt
-        self.skills_sources_for_prompt = skills_sources_for_prompt or ["/home/gem/skills/"]
+        self.skills_sources_for_prompt = skills_sources_for_prompt or [
+            f"{VIRTUAL_SKILLS_PATH}/",
+            f"{VIRTUAL_PATH_WORKSPACE_SKILLS}/",
+        ]
 
     async def awrap_model_call(
         self, request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
@@ -442,20 +470,14 @@ class SkillsMiddleware(AgentMiddleware):
         if not raw:
             return None
         pure = PurePosixPath(raw if raw.startswith("/") else f"/{raw}")
-        parts = [p for p in pure.parts if p not in ("/", "")]
-        slug: str | None = None
-        if (
-            len(parts) == 5
-            and parts[0] == "home"
-            and parts[1] == "gem"
-            and parts[2] == "skills"
-            and parts[4] == "SKILL.md"
-        ):
-            slug = parts[3]
-
-        if not is_valid_skill_slug(slug):
-            return None
-        return slug
+        for root in (PurePosixPath(VIRTUAL_SKILLS_PATH), PurePosixPath(VIRTUAL_PATH_WORKSPACE_SKILLS)):
+            try:
+                relative = pure.relative_to(root)
+            except ValueError:
+                continue
+            if len(relative.parts) == 2 and relative.name == "SKILL.md" and is_valid_skill_slug(relative.parts[0]):
+                return relative.parts[0]
+        return None
 
     def _get_readable_skills(self, runtime_context) -> set[str]:
         selected = getattr(runtime_context, "_readable_skills", [])

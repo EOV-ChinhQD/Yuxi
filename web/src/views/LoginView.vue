@@ -101,9 +101,19 @@
                   <a-form-item
                     label="Mật khẩu"
                     name="password"
-                    :rules="[{ required: true, message: 'Vui lòng nhập mật khẩu' }]"
+                    :rules="[
+                      { required: true, message: 'Vui lòng nhập mật khẩu' },
+                      {
+                        min: MIN_PASSWORD_LENGTH,
+                        message: `Mật khẩu cần ít nhất ${MIN_PASSWORD_LENGTH} ký tự`
+                      }
+                    ]"
                   >
-                    <a-input-password v-model:value="adminForm.password" prefix-icon="lock" />
+                    <a-input-password
+                      v-model:value="adminForm.password"
+                      prefix-icon="lock"
+                      :minlength="MIN_PASSWORD_LENGTH"
+                    />
                   </a-form-item>
 
                   <a-form-item
@@ -288,6 +298,7 @@ import {
   AlertCircle as ExclamationCircleIcon
 } from 'lucide-vue-next'
 import { tryAutoStartOIDC, sanitizeRedirect } from '@/utils/oidcAutoStart'
+import { MIN_PASSWORD_LENGTH } from '@/utils/passwordValidation'
 
 const router = useRouter()
 const route = useRoute()

@@ -3,9 +3,7 @@
     <div class="header-section">
       <div class="header-content">
         <div class="section-title">Cài đặt tài khoản</div>
-        <p class="section-description">
-          Quản lý thông tin tài khoản, thông tin cá nhân và API Key。
-        </p>
+        <p class="section-description">Quản lý thông tin tài khoản và thông tin cá nhân.</p>
       </div>
       <a-button class="lucide-icon-btn" :loading="refreshing" @click="refreshProfile">
         <template #icon><RefreshCw :size="16" :class="{ spin: refreshing }" /></template>
@@ -14,109 +12,114 @@
     </div>
 
     <div class="account-card profile-card">
-      <div class="profile-left">
-        <a-upload
-          :show-upload-list="false"
-          :before-upload="beforeUpload"
-          @change="handleAvatarChange"
-          accept="image/*"
-        >
-          <div class="avatar-upload" :class="{ uploading: avatarUploading }">
-            <FallbackAvatar
-              :src="userStore.avatar"
-              :default-src="avatarDefaultSrc"
-              :name="userStore.username"
-              :seed="userStore.uid || userStore.username"
-              kind="user"
-              :size="80"
-              shape="circle"
-              :alt="userStore.username"
-              class="account-avatar"
-            />
-            <div class="avatar-mask">
-              <Upload v-if="!avatarUploading" :size="16" />
-              <RefreshCw v-else :size="16" class="spin" />
-              <span>{{ userStore.avatar ? 'Thay thế' : 'Tải lên' }}</span>
+      <div class="profile-summary">
+        <div class="profile-left">
+          <a-upload
+            :show-upload-list="false"
+            :before-upload="beforeUpload"
+            @change="handleAvatarChange"
+            accept="image/*"
+          >
+            <div class="avatar-upload" :class="{ uploading: avatarUploading }">
+              <FallbackAvatar
+                :src="userStore.avatar"
+                :default-src="avatarDefaultSrc"
+                :name="userStore.username"
+                :seed="userStore.uid || userStore.username"
+                kind="user"
+                :size="80"
+                shape="circle"
+                :alt="userStore.username"
+                class="account-avatar"
+              />
+              <div class="avatar-mask">
+                <Upload v-if="!avatarUploading" :size="16" />
+                <RefreshCw v-else :size="16" class="spin" />
+                <span>{{ userStore.avatar ? 'Thay thế' : 'Tải lên' }}</span>
+              </div>
+            </div>
+          </a-upload>
+
+          <div class="profile-fields">
+            <div class="profile-row editable-row">
+              <span class="profile-label">Tên người dùng</span>
+              <a-input
+                v-if="editingField === 'username'"
+                ref="usernameInput"
+                v-model:value="profileDraft.username"
+                class="inline-input"
+                size="small"
+                :max-length="20"
+                :disabled="savingField === 'username'"
+                @press-enter="saveField('username')"
+                @keydown.esc.stop.prevent="cancelField"
+                @blur="cancelField"
+              />
+              <button
+                v-else
+                type="button"
+                class="editable-value"
+                @click="startFieldEdit('username')"
+              >
+                {{ userStore.username || 'Chưa thiết lập' }}
+              </button>
+            </div>
+            <div class="profile-row editable-row">
+              <span class="profile-label">Số điện thoại</span>
+              <a-input
+                v-if="editingField === 'phone_number'"
+                ref="phoneInput"
+                v-model:value="profileDraft.phone_number"
+                class="inline-input"
+                size="small"
+                :max-length="11"
+                :disabled="savingField === 'phone_number'"
+                @press-enter="saveField('phone_number')"
+                @keydown.esc.stop.prevent="cancelField"
+                @blur="cancelField"
+              />
+              <button
+                v-else
+                type="button"
+                class="editable-value"
+                @click="startFieldEdit('phone_number')"
+              >
+                {{ userStore.phoneNumber || 'Chưa thiết lập' }}
+              </button>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">UID</span>
+              <span class="profile-value mono">{{ userStore.uid || 'Chưa thiết lập' }}</span>
             </div>
           </div>
-        </a-upload>
+        </div>
 
-        <div class="profile-fields">
-          <div class="profile-row editable-row">
-            <span class="profile-label">Tên người dùng</span>
-            <a-input
-              v-if="editingField === 'username'"
-              ref="usernameInput"
-              v-model:value="profileDraft.username"
-              class="inline-input"
-              size="small"
-              :max-length="20"
-              :disabled="savingField === 'username'"
-              @press-enter="saveField('username')"
-              @keydown.esc.stop.prevent="cancelField"
-              @blur="cancelField"
-            />
-            <button v-else type="button" class="editable-value" @click="startFieldEdit('username')">
-              {{ userStore.username || 'Chưa thiết lập' }}
-            </button>
+        <div class="identity-panel">
+          <div class="identity-item">
+            <span class="identity-icon"><ShieldCheck :size="15" /></span>
+            <span class="profile-label">Quyền</span>
+            <span class="profile-value" :style="{ color: getRoleColor(userStore.userRole) }">
+              {{ userRoleText }}
+            </span>
           </div>
-          <div class="profile-row editable-row">
-            <span class="profile-label">Số điện thoại</span>
-            <a-input
-              v-if="editingField === 'phone_number'"
-              ref="phoneInput"
-              v-model:value="profileDraft.phone_number"
-              class="inline-input"
-              size="small"
-              :max-length="11"
-              :disabled="savingField === 'phone_number'"
-              @press-enter="saveField('phone_number')"
-              @keydown.esc.stop.prevent="cancelField"
-              @blur="cancelField"
-            />
-            <button
-              v-else
-              type="button"
-              class="editable-value"
-              @click="startFieldEdit('phone_number')"
-            >
-              {{ userStore.phoneNumber || 'Chưa thiết lập' }}
-            </button>
-          </div>
-          <div class="profile-row">
-            <span class="profile-label">UID</span>
-            <span class="profile-value mono">{{ userStore.uid || 'Chưa thiết lập' }}</span>
+          <div class="identity-item">
+            <span class="identity-icon"><Building2 :size="15" /></span>
+            <span class="profile-label">Bộ phận</span>
+            <span class="profile-value">{{ userStore.departmentName || 'Phòng ban mặc định' }}</span>
           </div>
         </div>
       </div>
-
-      <div class="identity-panel">
-        <div class="identity-item">
-          <span class="identity-icon"><ShieldCheck :size="15" /></span>
-          <span class="profile-label">Quyền</span>
-          <span class="profile-value" :style="{ color: getRoleColor(userStore.userRole) }">
-            {{ userRoleText }}
-          </span>
-        </div>
-        <div class="identity-item">
-          <span class="identity-icon"><Building2 :size="15" /></span>
-          <span class="profile-label">Bộ phận</span>
-          <span class="profile-value">{{ userStore.departmentName || 'Phòng ban mặc định' }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="account-card apikey-card">
-      <ApiKeyManagementComponent />
+      <UserConfigSettingsCard ref="userConfigRef" />
     </div>
   </div>
 </template>
 
 <script setup>
+import UserConfigSettingsCard from '@/components/UserConfigSettingsCard.vue'
+
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { Building2, RefreshCw, ShieldCheck, Upload } from 'lucide-vue-next'
-import ApiKeyManagementComponent from '@/components/ApiKeyManagementComponent.vue'
 import FallbackAvatar from '@/components/common/FallbackAvatar.vue'
 import { useUserStore } from '@/stores/user'
 import { generatePixelAvatar } from '@/utils/pixelAvatar'
@@ -128,6 +131,7 @@ const savingField = ref('')
 const editingField = ref('')
 const usernameInput = ref(null)
 const phoneInput = ref(null)
+const userConfigRef = ref(null)
 const profileDraft = reactive({
   username: '',
   phone_number: ''
@@ -156,7 +160,7 @@ const syncProfileDraft = () => {
 const refreshProfile = async () => {
   refreshing.value = true
   try {
-    await userStore.getCurrentUser()
+    await Promise.all([userStore.getCurrentUser(), userConfigRef.value?.refresh?.()])
     syncProfileDraft()
     message.success('Thông tin tài khoản đã được làm mới')
   } catch (error) {
@@ -299,10 +303,16 @@ watch(() => [userStore.username, userStore.phoneNumber], syncProfileDraft, { imm
 
   .profile-card {
     display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: var(--gray-25);
+  }
+
+  .profile-summary {
+    display: flex;
     align-items: stretch;
     justify-content: space-between;
     gap: 20px;
-    background: var(--gray-25);
 
     @media (max-width: 760px) {
       flex-direction: column;
@@ -362,7 +372,7 @@ watch(() => [userStore.username, userStore.phoneNumber], syncProfileDraft, { imm
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
     flex: 1;
   }
 

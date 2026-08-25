@@ -9,6 +9,11 @@ import {
   Settings2,
   Trash2,
   CheckCircle2,
+  TextInitial,
+  Image,
+  Video,
+  AudioLines,
+  FileText,
   LayersPlus,
   LoaderCircle,
   Zap
@@ -16,7 +21,13 @@ import {
 
 import { modelProviderApi } from '@/apis/system_api'
 import { useConfigStore } from '@/stores/config'
-import { modelIcons } from '@/utils/modelIcon'
+import { modelAvatars } from '@/utils/modelIcon'
+import {
+  formatModelPriceDisplay,
+  loadModelMetadataCatalog,
+  resolveModelDisplayMetadata,
+  USD_TO_CNY_RATE
+} from '@/utils/modelMetadata'
 import PageShoulder from '@/components/shared/PageShoulder.vue'
 import InfoCard from '@/components/shared/InfoCard.vue'
 import ExtensionCardGrid from '@/components/extensions/ExtensionCardGrid.vue'
@@ -27,17 +38,26 @@ const configStore = useConfigStore()
 const loading = ref(false)
 const remoteLoading = ref(false)
 const saving = ref(false)
-const togglingProviderId = ref(null)
 const providers = ref([])
 const searchQuery = ref('')
 const modelTestLoadingBySpec = ref({})
 const modelTestResultBySpec = ref({})
 
-// Modals state
+// PORT-CONFLICT: giữ kiến thức quản lý provider bằng ProviderCatalogModal/ProviderConfigModal
+// của bản fork; chỉ giữ lại từ upstream các hằng hiển thị dùng chung (modality, placeholder)
 const showCatalogModal = ref(false)
 const showConfigModal = ref(false)
 const configModalMode = ref('quick') // 'quick' | 'full' | 'edit'
 const selectedProviderForConfig = ref(null)
+
+const MODALITY_DISPLAY = {
+  text: { icon: TextInitial, label: 'Đầu vào văn bản' },
+  image: { icon: Image, label: 'Đầu vào hình ảnh' },
+  video: { icon: Video, label: 'Đầu vào video' },
+  audio: { icon: AudioLines, label: 'Đầu vào âm thanh' },
+  pdf: { icon: FileText, label: 'Đầu vào tài liệu PDF' }
+}
+const REQUEST_BODY_OVERRIDES_PLACEHOLDER = '{\n  "enable_thinking": false\n}'
 
 // Model form state
 const showModelModal = ref(false)
@@ -49,6 +69,8 @@ const editingModel = ref({
   source: 'remote',
   protocol_override: null,
   base_url_override: null,
+  request_body_overrides: {},
+  request_body_overrides_text: '{}',
   context_length: null,
   dimension: null,
   batch_size: null,
@@ -65,10 +87,12 @@ const remoteModelsMap = ref({})
 
 // Remote model loading state per provider
 const remoteModelsLoaded = ref({})
+const modelCatalogProviders = ref({})
 
 // Remote model search state per provider
 const remoteModelSearch = ref({})
 const remoteModelTypeFilter = ref({})
+const priceCurrency = ref('USD')
 const filteredProviders = computed(() => {
   const keyword = searchQuery.value.trim().toLowerCase()
   const filtered = keyword
@@ -79,13 +103,15 @@ const filteredProviders = computed(() => {
       )
     : providers.value
   return [...filtered].sort((a, b) => {
-    if (a.is_enabled !== b.is_enabled) return a.is_enabled ? -1 : 1
     if (a.is_enabled && b.is_enabled && a.credential_status !== b.credential_status) {
       return a.credential_status === 'warning' ? 1 : -1
     }
     return a.provider_id.localeCompare(b.provider_id)
   })
 })
+
+const enabledProviders = computed(() => filteredProviders.value.filter((p) => p.is_enabled))
+const disabledProviders = computed(() => filteredProviders.value.filter((p) => !p.is_enabled))
 
 const providerStats = computed(() => {
   let enabled = 0,
@@ -102,52 +128,10 @@ const providerStats = computed(() => {
 })
 
 // ============ Helpers ============
-const getProviderIcon = (provider) => {
+const getProviderAvatar = (provider) => {
   const providerId = provider?.provider_id?.toLowerCase()
   const providerType = provider?.provider_type?.toLowerCase()
-  return modelIcons[providerId] || modelIcons[providerType] || modelIcons.default
-}
-
-const getProviderTypeLabel = (providerType) => {
-  const map = {
-    openai: 'OpenAI Completions API',
-    anthropic: 'Anthropic Messages API',
-    gemini: 'Google Gemini API',
-    openrouter: 'OpenRouter API'
-  }
-  return map[providerType] || providerType || '-'
-}
-
-const getIconUrl = (icon) => {
-  if (!icon) return modelIcons.default
-  if (typeof icon === 'string') return icon
-  if (icon instanceof URL || icon?.default) return icon.default || icon
-  return modelIcons.default
-}
-
-const formatContextLength = (len) => {
-  if (!len) return '-'
-  if (len >= 1000000) return `${(len / 1000000).toFixed(1)}M`
-  if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
-  return len.toString()
-}
-
-const formatMtokenPrice = (pricing) => {
-  if (!pricing) return null
-  const prompt = parseFloat(pricing.prompt || pricing.prompt_price || 0)
-  const completion = parseFloat(pricing.completion || pricing.completion_price || 0)
-  if (prompt < 0 || completion < 0) return null
-  if (prompt === 0 && completion === 0) return null
-  return {
-    prompt: prompt * 100000,
-    completion: completion * 100000
-  }
-}
-
-const formatPriceDisplay = (pricing) => {
-  const p = formatMtokenPrice(pricing)
-  if (!p) return null
-  return `$${p.prompt.toFixed(2)} / $${p.completion.toFixed(2)}`
+  return modelAvatars[providerId] || modelAvatars[providerType] || modelAvatars.default
 }
 
 const getModelDisplayName = (model) => {
@@ -197,13 +181,27 @@ const getModelTestTitle = (providerId, model) => {
   return `${statusText}: ${result.message || 'Không có chi tiết'}`
 }
 
-const getInputModalities = (model) => {
-  if (!model) return []
-  if (model.input_modalities) return model.input_modalities
-  if (model.architecture?.input_modalities) return model.architecture.input_modalities
-  if (model.raw_metadata?.architecture?.input_modalities)
-    return model.raw_metadata.architecture.input_modalities
-  return []
+const getProviderModelInfo = (providerId, model) =>
+  resolveModelDisplayMetadata(modelCatalogProviders.value, providerId, model)
+
+const getRemoteModelPriceDisplay = (providerId, model) =>
+  formatModelPriceDisplay(getProviderModelInfo(providerId, model).price, priceCurrency.value)
+
+const togglePriceCurrency = () => {
+  priceCurrency.value = priceCurrency.value === 'CNY' ? 'USD' : 'CNY'
+}
+
+const getModalityDisplay = (modality) =>
+  MODALITY_DISPLAY[modality] || { icon: FileText, label: modality }
+
+const loadModelMetadata = async () => {
+  if (Object.keys(modelCatalogProviders.value).length) return
+  try {
+    const catalog = await loadModelMetadataCatalog()
+    modelCatalogProviders.value = catalog.providers
+  } catch (error) {
+    console.warn('Failed to load model metadata catalog:', error)
+  }
 }
 
 const remoteIdsMap = computed(() => {
@@ -259,6 +257,22 @@ const editingModelTypeOptions = computed(() => {
   return types.map((c) => ({ value: c, label: c }))
 })
 
+const parseJsonObject = (text, label) => {
+  let parsed
+  try {
+    const source = typeof text === 'string' && text.trim() ? text : '{}'
+    parsed = JSON.parse(source)
+  } catch (error) {
+    const reason = error?.message ? `：${error.message}` : ''
+    throw new Error(`${label} có định dạng không đúng${reason}`, { cause: error })
+  }
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+    throw new Error(`${label} phải là một đối tượng JSON`)
+  }
+  return parsed
+}
+
+const formatJsonText = (value) => JSON.stringify(value || {}, null, 2)
 const loadProviders = async () => {
   loading.value = true
   try {
@@ -276,7 +290,6 @@ const loadProviders = async () => {
 
 function getProviderInfo(provider) {
   return [
-    { label: 'Provider Type', value: getProviderTypeLabel(provider.provider_type) },
     { label: 'Base URL', value: provider.base_url || '-' },
     { label: 'khả năng', value: provider.capabilities?.join(', ') || 'chat' }
   ]
@@ -286,8 +299,7 @@ function getProviderStatus(provider) {
   if (!provider.is_enabled) return { label: 'Chưa bật', level: 'info' }
   if (provider.credential_status === 'warning')
     return { label: 'Thiếu thông tin xác thực', level: 'warning' }
-  if (provider.is_enabled) return { label: '', level: 'success' }
-  return null
+  return { label: '', level: 'success' }
 }
 
 const handleSelectCatalogProvider = ({ mode, provider }) => {
@@ -336,25 +348,6 @@ const handleDeletedProvider = (providerId) => {
   loadProviders()
 }
 
-const toggleProviderEnabled = async (provider, checked) => {
-  if (!checked && providerContainsDefaultModel(provider.provider_id)) {
-    warnDefaultModelProtected()
-    return
-  }
-
-  togglingProviderId.value = provider.provider_id
-  try {
-    await modelProviderApi.updateProvider(provider.provider_id, { is_enabled: checked })
-    message.success(checked ? 'Đã bật' : 'Đã tắt')
-    await loadProviders()
-  } catch (error) {
-    message.error(error.message || 'Thao tác không thành công')
-    await loadProviders()
-  } finally {
-    togglingProviderId.value = null
-  }
-}
-
 // ============ Models Modal Operations ============
 const openModelsModal = (provider) => {
   currentProviderForModels.value = provider
@@ -365,6 +358,7 @@ const openModelsModal = (provider) => {
     remoteModelSearch.value[provider.provider_id] || ''
   remoteModelTypeFilter.value[provider.provider_id] = 'all'
   showModelsModal.value = true
+  loadModelMetadata()
 }
 
 // ============ Remote Models Operations ============
@@ -393,6 +387,12 @@ const normalizeModel = (model = {}) => ({
   source: model.source || 'remote',
   protocol_override: model.protocol_override || null,
   base_url_override: model.base_url_override || null,
+  request_body_overrides:
+    model.request_body_overrides &&
+    typeof model.request_body_overrides === 'object' &&
+    !Array.isArray(model.request_body_overrides)
+      ? model.request_body_overrides
+      : {},
   context_length: model.context_length || null,
   dimension: model.dimension || null,
   batch_size: model.batch_size || null,
@@ -459,7 +459,9 @@ const addModelFromRemote = async (providerId, remoteModel) => {
 }
 
 const openModelConfigModal = (model) => {
-  Object.assign(editingModel.value, normalizeModel(model))
+  const normalized = normalizeModel(model)
+  normalized.request_body_overrides_text = formatJsonText(normalized.request_body_overrides)
+  Object.assign(editingModel.value, normalized)
   isCreating.value = false
   showModelModal.value = true
 }
@@ -476,6 +478,8 @@ const openCreateModal = (provider) => {
     source: 'manual',
     protocol_override: null,
     base_url_override: null,
+    request_body_overrides: {},
+    request_body_overrides_text: '{}',
     context_length: null,
     dimension: null,
     batch_size: null,
@@ -484,6 +488,19 @@ const openCreateModal = (provider) => {
   })
   isCreating.value = true
   showModelModal.value = true
+}
+
+const buildModelConfigPayload = () => {
+  const requestBodyOverrides = parseJsonObject(
+    editingModel.value.request_body_overrides_text,
+    'Tham số yêu cầu mô hình'
+  )
+  const modelPayload = { ...editingModel.value }
+  delete modelPayload.request_body_overrides_text
+  return {
+    ...modelPayload,
+    request_body_overrides: requestBodyOverrides
+  }
 }
 
 const saveModelConfig = async () => {
@@ -495,9 +512,10 @@ const saveModelConfig = async () => {
     )
     if (!provider) return
 
+    const modelPayload = buildModelConfigPayload()
     let enabledModels
     if (isCreating.value) {
-      const newId = (editingModel.value.id || '').trim()
+      const newId = (modelPayload.id || '').trim()
       if (!newId) {
         message.error('Vui lòng điền vào mẫu ID')
         return
@@ -506,11 +524,11 @@ const saveModelConfig = async () => {
         message.error('người mẫu ID Đã tồn tại')
         return
       }
-      const newModel = { ...editingModel.value, id: newId, source: 'manual', enabled: true }
+      const newModel = { ...modelPayload, id: newId, source: 'manual', enabled: true }
       enabledModels = [...(provider.enabled_models || []), newModel]
     } else {
       enabledModels = (provider.enabled_models || []).map((m) =>
-        m.id === editingModel.value.id ? { ...editingModel.value } : m
+        m.id === modelPayload.id ? { ...modelPayload } : m
       )
     }
 
@@ -586,43 +604,86 @@ defineExpose({
       </template>
     </PageShoulder>
 
-    <ExtensionCardGrid :min-width="320">
-      <InfoCard
-        v-for="provider in filteredProviders"
-        :key="provider.provider_id"
-        :title="provider.display_name"
-        :subtitle="provider.provider_id"
-        :default-icon="Globe"
-        :info="getProviderInfo(provider)"
-        :status="getProviderStatus(provider)"
-        @click="openEditProviderModal(provider)"
-      >
-        <template #icon>
-          <img
-            v-if="getProviderIcon(provider)"
-            :src="getIconUrl(getProviderIcon(provider))"
-            :alt="provider.display_name"
-          />
-        </template>
-        <template #footer>
-          <button class="view-models-btn" type="button" @click.stop="openModelsModal(provider)">
-            <Settings2 :size="14" />
-            mô hình quản lý
-            <span v-if="provider.enabled_models?.length" class="enabled-count"
-              >（Đã bật {{ provider.enabled_models.length }} một）</span
+    <div
+      v-if="!loading && enabledProviders.length === 0 && disabledProviders.length === 0"
+      class="provider-empty-state"
+    >
+      <a-empty
+        :image="false"
+        :description="searchQuery ? 'Không có nhà cung cấp phù hợp' : 'Chưa có nhà cung cấp, bấm nút phía trên để thêm'"
+      />
+    </div>
+
+    <template v-else>
+      <div v-if="enabledProviders.length" class="provider-section-header">
+        Đã bật ({{ enabledProviders.length }})
+      </div>
+      <ExtensionCardGrid v-if="enabledProviders.length" :min-width="320">
+        <InfoCard
+          v-for="provider in enabledProviders"
+          :key="provider.provider_id"
+          :title="provider.display_name"
+          :subtitle="provider.provider_id"
+          :default-icon="Globe"
+          :info="getProviderInfo(provider)"
+          :status="getProviderStatus(provider)"
+          @click="openEditProviderModal(provider)"
+        >
+          <template #icon>
+            <span
+              class="provider-avatar"
+              role="img"
+              :aria-label="`Biểu tượng ${provider.display_name}`"
+              :style="{
+                background: getProviderAvatar(provider).background,
+                '--provider-avatar-scale': getProviderAvatar(provider).scale,
+                '--provider-avatar-filter': getProviderAvatar(provider).filter
+              }"
             >
-          </button>
-          <span class="provider-enable-switch" @click.stop>
-            <a-switch
-              size="small"
-              :checked="provider.is_enabled"
-              :loading="togglingProviderId === provider.provider_id"
-              @change="(checked) => toggleProviderEnabled(provider, checked)"
-            />
-          </span>
-        </template>
-      </InfoCard>
-    </ExtensionCardGrid>
+              <img :src="getProviderAvatar(provider).icon" alt="" />
+            </span>
+          </template>
+          <template #footer>
+            <button class="view-models-btn" type="button" @click.stop="openModelsModal(provider)">
+              <Settings2 :size="14" />
+              Quản lý mô hình
+              <span v-if="provider.enabled_models?.length" class="enabled-count"
+                >（Đã bật {{ provider.enabled_models.length }} mô hình）</span
+              >
+            </button>
+          </template>
+        </InfoCard>
+      </ExtensionCardGrid>
+
+      <div v-if="disabledProviders.length" class="provider-section-header">
+        Chưa bật ({{ disabledProviders.length }})
+      </div>
+      <ExtensionCardGrid v-if="disabledProviders.length" :min-width="320">
+        <InfoCard
+          v-for="provider in disabledProviders"
+          :key="provider.provider_id"
+          variant="mini"
+          :title="provider.display_name"
+          :description="provider.provider_id"
+          @click="openEditProviderModal(provider)"
+        >
+          <template #icon>
+            <span
+              class="provider-avatar"
+              role="img"
+              :aria-label="`Biểu tượng ${provider.display_name}`"
+              :style="{
+                background: getProviderAvatar(provider).background,
+                '--provider-avatar-scale': getProviderAvatar(provider).scale,
+                '--provider-avatar-filter': getProviderAvatar(provider).filter
+              }"
+            >
+              <img :src="getProviderAvatar(provider).icon" alt="" />
+            </span>
+          </template>
+        </InfoCard>
+      </ExtensionCardGrid>
+    </template>
 
     <!-- Provider Catalog Modal -->
     <ProviderCatalogModal
@@ -641,7 +702,6 @@ defineExpose({
       @saved="loadProviders"
       @deleted="handleDeletedProvider"
     />
-    <!-- Models Management Modal -->
     <a-modal
       v-model:open="showModelsModal"
       :title="
@@ -708,7 +768,12 @@ defineExpose({
                   <LayersPlus :size="12" />
                 </span>
               </span>
-              <span class="col-context">{{ formatContextLength(model.context_length) }}</span>
+              <span class="col-context">
+                {{
+                  getProviderModelInfo(currentProviderForModels.provider_id, model).contextLabel ||
+                  '-'
+                }}
+              </span>
               <span class="col-dim">
                 <span
                   v-if="model.type === 'embedding' && !model.dimension"
@@ -737,13 +802,21 @@ defineExpose({
                   />
                   <Zap v-else :size="13" />
                 </a-button>
-                <a-button size="small" class="lucide-icon-btn" @click="openModelConfigModal(model)">
+                <a-button
+                  size="small"
+                  class="lucide-icon-btn"
+                  :title="`Cấu hình ${getModelDisplayName(model)}`"
+                  :aria-label="`Cấu hình ${getModelDisplayName(model)}`"
+                  @click="openModelConfigModal(model)"
+                >
                   <Settings2 :size="13" />
                 </a-button>
                 <a-button
                   size="small"
                   danger
                   class="lucide-icon-btn"
+                  :title="`Gỡ bỏ ${getModelDisplayName(model)}`"
+                  :aria-label="`Gỡ bỏ ${getModelDisplayName(model)}`"
                   @click="removeModel(currentProviderForModels.provider_id, model.id)"
                 >
                   <Trash2 :size="13" />
@@ -757,24 +830,42 @@ defineExpose({
         <!-- Remote Models Section -->
         <div class="models-section">
           <div class="remote-header">
-            <h4 class="models-section-title">
-              mô hình ứng viên từ xa ({{ filteredRemoteModels.length }})
-            </h4>
-            <a-input
+            <h4 class="models-section-title">Mô hình ứng viên từ xa ({{ filteredRemoteModels.length }})</h4>
+            <div
               v-if="remoteModelsMap[currentProviderForModels.provider_id]?.length"
-              v-model:value="remoteModelSearch[currentProviderForModels.provider_id]"
-              class="remote-search-input"
-              placeholder="Tìm kiếm mô hình..."
-              allow-clear
+              class="remote-controls"
             >
-              <template #prefix><Search :size="12" /></template>
-            </a-input>
-            <a-segmented
-              v-if="remoteModelsMap[currentProviderForModels.provider_id]?.length"
-              v-model:value="remoteModelTypeFilter[currentProviderForModels.provider_id]"
-              :options="remoteModelTypeOptions"
-              class="remote-type-filter"
-            />
+              <a-input
+                v-model:value="remoteModelSearch[currentProviderForModels.provider_id]"
+                class="remote-search-input"
+                placeholder="Tìm kiếm mô hình..."
+                allow-clear
+                autocomplete="off"
+                autocapitalize="none"
+                autocorrect="off"
+                spellcheck="false"
+              >
+                <template #prefix><Search :size="12" /></template>
+              </a-input>
+              <button
+                type="button"
+                class="currency-toggle"
+                :title="
+                  priceCurrency === 'CNY'
+                    ? `Đang hiển thị theo NDT, bấm để chuyển sang USD (1 USD ≈ ¥${USD_TO_CNY_RATE})`
+                    : `Đang hiển thị theo USD, bấm để chuyển sang NDT (1 USD ≈ ¥${USD_TO_CNY_RATE})`
+                "
+                :aria-label="priceCurrency === 'CNY' ? 'Chuyển sang tính giá bằng USD' : 'Chuyển sang tính giá bằng NDT'"
+                @click="togglePriceCurrency"
+              >
+                {{ priceCurrency === 'CNY' ? '¥' : '$' }}
+              </button>
+              <a-segmented
+                v-model:value="remoteModelTypeFilter[currentProviderForModels.provider_id]"
+                :options="remoteModelTypeOptions"
+                class="remote-type-filter"
+              />
+            </div>
           </div>
           <div
             class="remote-list"
@@ -787,20 +878,38 @@ defineExpose({
             >
               <span class="remote-name">{{ getModelDisplayName(remoteModel) }}</span>
               <div class="remote-tags">
+                <template
+                  v-for="mod in getProviderModelInfo(
+                    currentProviderForModels.provider_id,
+                    remoteModel
+                  ).inputModalities"
+                  :key="mod"
+                >
+                  <a-tooltip :title="getModalityDisplay(mod).label">
+                    <span
+                      class="modality-tag"
+                      role="img"
+                      :aria-label="getModalityDisplay(mod).label"
+                    >
+                      <component :is="getModalityDisplay(mod).icon" :size="13" />
+                    </span>
+                  </a-tooltip>
+                </template>
                 <span class="type-tag" :class="remoteModel.type || 'chat'">
                   {{ remoteModel.type || 'chat' }}
                 </span>
-                <template v-for="mod in getInputModalities(remoteModel) || []" :key="mod">
-                  <span class="modality-tag">{{ mod }}</span>
-                </template>
               </div>
               <span class="remote-context">{{
-                formatContextLength(remoteModel.context_length)
+                getProviderModelInfo(currentProviderForModels.provider_id, remoteModel)
+                  .contextLabel || '-'
               }}</span>
-              <span class="remote-price" v-if="formatMtokenPrice(remoteModel.pricing)">
-                {{ formatPriceDisplay(remoteModel.pricing) }}
+              <span
+                v-if="getRemoteModelPriceDisplay(currentProviderForModels.provider_id, remoteModel)"
+                class="remote-price"
+              >
+                {{ getRemoteModelPriceDisplay(currentProviderForModels.provider_id, remoteModel) }}
               </span>
-              <span class="remote-price placeholder" v-else>N/A</span>
+              <span v-else class="remote-price placeholder">N/A</span>
               <a-button
                 size="small"
                 :type="
@@ -809,6 +918,16 @@ defineExpose({
                     : 'default'
                 "
                 class="lucide-icon-btn"
+                :title="
+                  currentProviderForModels.enabled_models?.some((m) => m.id === remoteModel.id)
+                    ? `${getModelDisplayName(remoteModel)} đã được bật`
+                    : `Bật ${getModelDisplayName(remoteModel)}`
+                "
+                :aria-label="
+                  currentProviderForModels.enabled_models?.some((m) => m.id === remoteModel.id)
+                    ? `${getModelDisplayName(remoteModel)} đã được bật`
+                    : `Bật ${getModelDisplayName(remoteModel)}`
+                "
                 :disabled="
                   currentProviderForModels.enabled_models?.some((m) => m.id === remoteModel.id)
                 "
@@ -823,6 +942,12 @@ defineExpose({
                 <Plus :size="13" v-else />
               </a-button>
             </div>
+          </div>
+          <div v-if="Object.keys(modelCatalogProviders).length" class="model-metadata-source">
+            Một số thông tin (giá, khả năng, v.v.) lấy từ
+            <a href="https://models.dev" target="_blank" rel="noreferrer">models.dev</a>
+            . Giá theo NDT quy đổi theo tỷ giá cố định 1 USD = ¥{{ USD_TO_CNY_RATE }}. Thông tin
+            trên chỉ để tham khảo, có thể chênh lệch với trang chủ hoặc tỷ giá thực tế.
           </div>
           <div class="remote-fetch-actions"></div>
         </div>
@@ -874,6 +999,20 @@ defineExpose({
           </label>
         </div>
 
+        <label class="form-label full-width">
+          <span>Tham số yêu cầu mô hình (JSON)</span>
+          <a-textarea
+            v-model:value="editingModel.request_body_overrides_text"
+            :rows="6"
+            :placeholder="REQUEST_BODY_OVERRIDES_PLACEHOLDER"
+          />
+          <small class="form-help">
+            Chỉ các mô hình chat của nhà cung cấp tương thích OpenAI (bao gồm OpenRouter) mới
+            được truyền qua extra_body; hỗ trợ enable_thinking, thinking_budget, thinking,
+            reasoning và reasoning_effort.
+          </small>
+        </label>
+
         <div class="form-row">
           <label class="form-label" v-if="editingModel.type === 'embedding'">
             <span>Kích thước</span>
@@ -897,9 +1036,27 @@ defineExpose({
   height: 100%;
   min-height: 0;
 
-  :deep(.info-card-icon img) {
-    width: 30px;
-    height: 30px;
+  :deep(.info-card-icon) {
+    border: none;
+    background: transparent;
+  }
+}
+
+.provider-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border: 1px solid rgb(0 0 0 / 6%);
+  border-radius: 8px;
+
+  img {
+    width: calc(100% * var(--provider-avatar-scale));
+    height: calc(100% * var(--provider-avatar-scale));
+    object-fit: contain;
+    filter: var(--provider-avatar-filter);
   }
 }
 
@@ -923,9 +1080,20 @@ defineExpose({
   }
 }
 
-.provider-enable-switch {
-  display: inline-flex;
+.provider-section-header {
+  padding: 12px var(--page-padding) 0;
+  color: var(--gray-500);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.provider-empty-state {
+  display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 100px 20px;
+  text-align: center;
 }
 
 .enabled-count {
@@ -1117,7 +1285,6 @@ defineExpose({
 .remote-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
 
   .models-section-title {
@@ -1126,8 +1293,43 @@ defineExpose({
   }
 }
 
+.remote-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-left: auto;
+}
+
 .remote-search-input {
   width: 180px;
+}
+
+.currency-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 1px solid var(--gray-150);
+  border-radius: 8px;
+  background: var(--gray-0);
+  color: var(--gray-700);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--gray-200);
+    background: var(--gray-25);
+    color: var(--gray-900);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--main-200);
+    outline-offset: 1px;
+  }
 }
 
 .remote-type-filter {
@@ -1170,12 +1372,12 @@ defineExpose({
 .modality-tag {
   display: inline-flex;
   align-items: center;
-  padding: 2px 6px;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
   border-radius: 3px;
   background: var(--color-accent-50);
   color: var(--color-accent-700);
-  font-size: 10px;
-  font-weight: 500;
 }
 
 .dim-warning {
@@ -1206,6 +1408,16 @@ defineExpose({
   }
 }
 
+.model-metadata-source {
+  color: var(--gray-500);
+  font-size: 11px;
+  line-height: 1.5;
+
+  a {
+    color: var(--main-600);
+  }
+}
+
 .modal-form {
   display: flex;
   flex-direction: column;
@@ -1228,6 +1440,12 @@ defineExpose({
     font-size: 12px;
     font-weight: 500;
   }
+}
+
+.form-help {
+  color: var(--gray-500);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .full-width {

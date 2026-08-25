@@ -3,6 +3,8 @@ from typing import Any
 
 from yuxi.knowledge.eval.metrics import EvaluationMetricsCalculator
 from yuxi.knowledge.retrieval.multi_hop_retriever import detect_and_decompose, MultiHopRetriever
+from yuxi.knowledge.runtime import knowledge_base as kb_manager
+
 
 from yuxi.utils import logger
 
@@ -59,7 +61,6 @@ async def generate_answer_if_needed(
 
 async def evaluate_question(
     *,
-    kb_instance: Any,
     kb_id: str,
     question_data: dict[str, Any],
     retrieval_config: dict[str, Any],
@@ -94,7 +95,7 @@ async def evaluate_question(
         elif route_type == RouteType.EXACT_MATCH:
             retrieval_config_copy = retrieval_config.copy()
             retrieval_config_copy["search_mode"] = "keyword"
-            query_result = await kb_instance.aquery(query, kb_id, **retrieval_config_copy)
+            query_result = await kb_manager.aquery(query, kb_id, **retrieval_config_copy)
         elif route_type == RouteType.MULTI_HOP:
             decompose_result = await detect_and_decompose(query, model_spec=model_spec)
             # handle both bool/list tuple and dict returns from detect_and_decompose
@@ -120,14 +121,16 @@ async def evaluate_question(
                 query_result = {"answer": "", "chunks": retrieved_chunks_raw}
                 logger.info(f"[Eval] Đã sử dụng Multi-hop cho truy vấn: {query}")
             else:
-                query_result = await kb_instance.aquery(query, kb_id, **retrieval_config)
+                query_result = await kb_manager.aquery(query, kb_id, **retrieval_config)
         else:
-            query_result = await kb_instance.aquery(query, kb_id, **retrieval_config)
+            query_result = await kb_manager.aquery(query, kb_id, **retrieval_config)
 
     except Exception as e:
         logger.error(f"[Eval] Router error: {e}. Fallback to naive search.")
-        query_result = await kb_instance.aquery(query, kb_id, **retrieval_config)
+        query_result = await kb_manager.aquery(query, kb_id, **retrieval_config)
 
+    # PORT-CONFLICT: upstream đã đơn giản hóa thành một lời gọi kb_manager.aquery duy nhất;
+    # giữ lại định tuyến ngữ nghĩa và multi-hop retrieval của nhánh ours cho đánh giá.
     generated_answer, retrieved_chunks = normalize_query_result(query_result)
     generated_answer = await generate_answer_if_needed(
         query=query,

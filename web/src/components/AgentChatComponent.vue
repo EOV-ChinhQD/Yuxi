@@ -90,8 +90,8 @@
                   />
                 </template>
                 <AgentArtifactsCard
-                  v-if="shouldShowArtifacts(row.conv)"
-                  :artifacts="currentArtifacts"
+                  v-if="row.artifacts.length"
+                  :artifacts="row.artifacts"
                   :thread-id="currentChatId"
                   @saved="handleArtifactSaved"
                   @open-preview="openPanelPreview"
@@ -123,14 +123,6 @@
             </div>
           </div>
           <div class="bottom" :class="{ 'start-screen': !conversations.length }">
-            <!-- Cửa sổ phê duyệt thủ công - đặt trên trên ô nhập -->
-            <HumanApprovalModal
-              :visible="currentApprovalModalVisible"
-              :questions="currentApprovalQuestions"
-              @submit="handleQuestionSubmit"
-              @cancel="handleQuestionCancel"
-            />
-
             <div class="message-input-wrapper">
               <!-- Trạng thái tải: đang tải tin -->
               <div v-if="isLoadingMessages" class="chat-loading">
@@ -143,35 +135,139 @@
                 <h1>{{ randomGreeting }}</h1>
               </div>
 
-              <AgentInputArea
-                v-model="userInput"
-                :is-loading="isProcessing"
-                :disabled="!currentAgent"
-                :send-button-disabled="isSendButtonDisabled"
-                :mention="mentionConfig"
-                :thread-id="currentChatId"
-                :supports-file-upload="supportsFileUpload"
-                :attachments="currentPendingThreadAttachments"
-                @send="handleSendOrStop"
-                @upload-attachment="handleAttachmentUpload"
-                @remove-attachment="handleAttachmentRemove"
+              <section
+                v-if="currentQueuedRequests.length"
+                class="queued-request-panel"
+                aria-label="Yêu cầu đang xếp hàng"
               >
-                <template #actions-left-extra>
-                  <slot name="input-actions-left" :has-active-thread="!!currentChatId"></slot>
-                </template>
-                <template #actions-right-extra>
-                  <div class="input-model-selector">
-                    <ModelSelectorComponent
-                      :model_spec="currentModelSpec"
-                      size="nano"
-                      display-name="mini"
-                      placeholder="Select Model"
-                      @select-model="handleModelSelect"
-                    />
+                <div
+                  v-if="currentQueueSnapshot.status === 'paused'"
+                  class="queued-request-notice is-paused"
+                >
+                  <span>{{ queuePausedMessage }}</span>
+                  <button
+                    type="button"
+                    class="queued-request-continue"
+                    :disabled="currentThreadState?.continueQueueInFlight"
+                    @click="handleContinueQueue"
+                  >
+                    <Play :size="14" fill="currentColor" />
+                    Tiếp tục hàng đợi
+                  </button>
+                </div>
+                <div
+                  v-else-if="currentQueueSnapshot.status === 'interrupted'"
+                  class="queued-request-notice"
+                >
+                  Tác vụ hiện tại đang chờ trả lời hoặc phê duyệt, sau khi hoàn tất sẽ tiếp tục xử
+                  lý các yêu cầu phía sau.
+                </div>
+                <div class="queued-request-list">
+                  <div
+                    v-for="request in currentQueuedRequests"
+                    :key="request.request_id"
+                    class="queued-request-row"
+                  >
+                    <CornerDownRight :size="16" class="queued-request-icon" aria-hidden="true" />
+                    <span
+                      class="queued-request-content"
+                      :title="request.content || 'Yêu cầu đang xếp hàng'"
+                    >
+                      {{ request.content || 'Yêu cầu đang xếp hàng' }}
+                    </span>
+                    <div class="queued-request-actions">
+                      <span v-if="request.queue_policy === 'steer'" class="queued-request-position">
+                        Dẫn hướng · sẽ thực thi tiếp theo
+                      </span>
+                      <button
+                        v-if="canSteerQueuedRequest(request)"
+                        type="button"
+                        class="queued-request-steer"
+                        :disabled="steeringRequestIds.has(request.request_id)"
+                        @click="handleSteerQueuedRequest(request.request_id)"
+                      >
+                        <CornerDownRight :size="14" aria-hidden="true" />
+                        Dẫn hướng
+                      </button>
+                      <button
+                        v-if="canCancelQueuedRequest(request)"
+                        type="button"
+                        class="queued-request-delete lucide-icon-btn"
+                        :disabled="cancellingRequestIds.has(request.request_id)"
+                        :aria-label="`Xóa yêu cầu đang xếp hàng: ${request.content || 'Yêu cầu đang xếp hàng'}`"
+                        @click="handleCancelQueuedRequest(request.request_id)"
+                      >
+                        <Trash2 :size="16" />
+                      </button>
+                    </div>
                   </div>
-                  <slot name="input-actions-right" :has-active-thread="!!currentChatId"></slot>
-                </template>
-              </AgentInputArea>
+                </div>
+              </section>
+
+              <div
+                class="message-input-stage"
+                :class="{ 'has-tool-approval': currentToolApprovalVisible }"
+              >
+                <HumanApprovalModal
+                  :visible="currentApprovalModalVisible"
+                  :questions="currentApprovalQuestions"
+                  :kind="approvalState.kind"
+                  :action-requests="approvalState.actionRequests"
+                  @submit="handleQuestionSubmit"
+                  @cancel="handleQuestionCancel"
+                />
+
+                <div
+                  class="message-input-surface"
+                  :inert="currentToolApprovalVisible"
+                  :aria-hidden="currentToolApprovalVisible ? 'true' : undefined"
+                >
+                  <AgentInputArea
+                    ref="agentInputAreaRef"
+                    v-model="userInput"
+                    :is-loading="shouldShowStopButton"
+                    :disabled="!currentAgent || currentToolApprovalVisible"
+                    :send-button-disabled="isSendButtonDisabled"
+                    :mention="mentionConfig"
+                    :thread-id="currentChatId"
+                    :supports-file-upload="supportsFileUpload"
+                    :attachments="currentPendingThreadAttachments"
+                    @send="handleSendOrStop"
+                    @upload-attachment="handleAttachmentUpload"
+                    @remove-attachment="handleAttachmentRemove"
+                  >
+                    <template #actions-left-extra>
+                      <ToolApprovalModeSelector
+                        :model-value="currentToolApprovalMode"
+                        @update:model-value="handleToolApprovalModeSelect"
+                      />
+                      <slot name="input-actions-left" :has-active-thread="!!currentChatId"></slot>
+                    </template>
+                    <template #actions-right-extra>
+                      <button
+                        v-if="canSubmitSteer"
+                        type="button"
+                        class="direct-steer-button"
+                        title="Ưu tiên thực thi tin nhắn này ngay sau bước hiện tại"
+                        @click="handleDirectSteer"
+                      >
+                        <CornerDownRight :size="14" aria-hidden="true" />
+                        Dẫn hướng
+                      </button>
+                      <div class="input-model-selector">
+                        <ModelSelectorComponent
+                          :model_spec="currentModelSpec"
+                          size="nano"
+                          display-name="mini"
+                          placeholder="Chọn mô hình"
+                          @select-model="handleModelSelect"
+                        />
+                      </div>
+                      <slot name="input-actions-right" :has-active-thread="!!currentChatId"></slot>
+                    </template>
+                  </AgentInputArea>
+                </div>
+              </div>
 
               <AttachmentTmpUploadModal
                 v-model:open="attachmentUploadModalOpen"
@@ -208,7 +304,6 @@
             <div class="side-panel__header state-panel-header">
               <span class="state-panel-title">Status</span>
               <div class="state-panel-header-actions">
-                <span class="state-panel-summary">{{ stateSummaryLabel }}</span>
                 <button
                   type="button"
                   class="state-refresh-btn"
@@ -224,71 +319,132 @@
             <div class="state-panel-body">
               <section
                 v-if="currentTokenUsage"
-                class="state-section"
-                :class="{ 'is-collapsed': !isStateSectionExpanded('tokenUsage') }"
-                aria-label="Context Usage"
+                class="state-section token-usage-section"
+                aria-label="Sử dụng ngữ cảnh"
               >
                 <button
                   type="button"
-                  class="state-section-header"
-                  :aria-expanded="isStateSectionExpanded('tokenUsage')"
-                  aria-controls="state-section-token-usage"
-                  @click="toggleStateSection('tokenUsage')"
+                  class="token-usage-context-card"
+                  :aria-expanded="isStateSectionExpanded('tokenUsageDetails')"
+                  aria-controls="token-usage-details"
+                  @click="toggleStateSection('tokenUsageDetails')"
                 >
-                  <span class="state-section-label">
-                    <span class="state-section-title">Context Usage</span>
+                  <span class="token-usage-card-topline">
+                    <span class="token-usage-card-title">Sử dụng ngữ cảnh</span>
+                    <span class="token-usage-card-summary">{{ tokenUsageStackHeadLabel }}</span>
                     <ChevronDown
                       :size="15"
                       class="state-section-chevron"
-                      :class="{ 'is-collapsed': !isStateSectionExpanded('tokenUsage') }"
+                      :class="{
+                        'is-collapsed': !isStateSectionExpanded('tokenUsageDetails')
+                      }"
                     />
                   </span>
-                  <span class="state-section-meta">
-                    {{ tokenUsageHeaderPercentLabel }}
+                  <strong class="token-usage-card-percent">{{
+                    tokenUsageHeaderPercentLabel
+                  }}</strong>
+
+                  <span
+                    class="token-usage-context-track"
+                    role="progressbar"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    :aria-valuenow="
+                      tokenUsageContextRatio === null ? undefined : tokenUsageContextRatio * 100
+                    "
+                    :aria-valuetext="tokenUsageContextAriaLabel"
+                  >
+                    <span
+                      class="token-usage-context-fill"
+                      :class="tokenUsageContextTone"
+                      :style="{ width: tokenUsageContextPercent }"
+                    ></span>
+                  </span>
+
+                  <span v-if="hasTokenUsageMetrics" class="token-usage-card-metrics">
+                    <span v-if="tokenUsageRunTotalLabel !== null">
+                      <small>Tích lũy Run hiện tại</small>
+                      <strong>{{ tokenUsageRunTotalLabel }} Token</strong>
+                    </span>
+                    <span v-if="tokenUsageThreadTotalLabel !== null">
+                      <small>Tích lũy Thread hiện tại</small>
+                      <strong>{{ tokenUsageThreadTotalLabel }} Token</strong>
+                    </span>
+                    <span v-if="tokenUsageCacheHitLabel !== null">
+                      <small>Tỷ lệ trúng bộ nhớ đệm tích lũy</small>
+                      <strong>{{ tokenUsageCacheHitLabel }}</strong>
+                    </span>
                   </span>
                 </button>
                 <div
-                  v-show="isStateSectionExpanded('tokenUsage')"
-                  id="state-section-token-usage"
-                  class="state-section-content"
+                  v-show="isStateSectionExpanded('tokenUsageDetails')"
+                  id="token-usage-details"
+                  class="token-usage-details"
                 >
-                  <div class="token-usage-content">
-                    <div class="token-usage-stack">
-                      <div class="token-usage-stack-head">
-                        <span>Current Context</span>
-                        <strong>{{ tokenUsageStackHeadLabel }}</strong>
+                  <div v-if="tokenUsageModelItems.length" class="token-usage-model-list">
+                    <article
+                      v-for="model in tokenUsageModelItems"
+                      :key="model.key"
+                      class="token-usage-model-item"
+                    >
+                      <header class="token-usage-model-header">
+                        <div>
+                          <strong>{{ model.name }}</strong>
+                          <span v-if="model.responseModel">Phản hồi {{ model.responseModel }}</span>
+                        </div>
+                        <span>{{ model.callCount }} lượt gọi</span>
+                      </header>
+                      <div class="token-usage-model-stats">
+                        <div class="is-io">
+                          <span>Đầu vào / Đầu ra</span>
+                          <strong>{{ model.io }}</strong>
+                        </div>
+                        <div v-if="model.cache" class="is-cache">
+                          <span>Bộ nhớ đệm</span>
+                          <strong>{{ model.cache }}</strong>
+                        </div>
+                        <div v-if="model.reasoning" class="is-reasoning">
+                          <span>Suy luận</span>
+                          <strong>{{ model.reasoning }}</strong>
+                        </div>
                       </div>
-                      <div class="token-usage-stack-track" aria-label="Token Composition">
-                        <div
-                          v-for="segment in tokenUsageBarSegments"
-                          :key="segment.key"
-                          class="token-usage-stack-segment"
-                          :class="segment.tone"
-                          :style="{ width: segment.percent }"
-                          :title="`${segment.label}: ${segment.valueLabel}`"
-                        ></div>
-                      </div>
-                      <div class="token-usage-stack-legend">
-                        <span
-                          v-for="segment in tokenUsageSegments"
-                          :key="segment.key"
-                          class="token-usage-stack-legend-item"
-                        >
-                          <i :class="segment.tone"></i>
-                          {{ segment.label }} {{ segment.valueLabel }}
-                        </span>
+                    </article>
+                  </div>
+
+                  <div class="token-usage-composition">
+                    <div class="token-usage-detail-heading">
+                      <span>Cấu thành ngữ cảnh gần đây</span>
+                    </div>
+                    <div class="token-usage-stack-track" aria-label="Cấu thành Token">
+                      <div
+                        v-for="segment in tokenUsageBarSegments"
+                        :key="segment.key"
+                        class="token-usage-stack-segment"
+                        :class="segment.tone"
+                        :style="{ width: segment.percent }"
+                        :title="`${segment.label}: ${segment.valueLabel}`"
+                      ></div>
+                    </div>
+                    <div class="token-usage-composition-list">
+                      <div
+                        v-for="segment in tokenUsageSegments"
+                        :key="segment.key"
+                        class="token-usage-composition-item"
+                      >
+                        <span><i :class="segment.tone"></i>{{ segment.label }}</span>
+                        <strong>{{ segment.valueLabel }}</strong>
                       </div>
                     </div>
+                  </div>
 
-                    <div v-if="tokenUsageMetaRows.length" class="token-usage-breakdown">
-                      <div
-                        v-for="item in tokenUsageMetaRows"
-                        :key="item.key"
-                        class="token-usage-breakdown-row"
-                      >
-                        <span>{{ item.label }}</span>
-                        <strong>{{ item.value }}</strong>
-                      </div>
+                  <div v-if="tokenUsageSupplementRows.length" class="token-usage-supplement">
+                    <div
+                      v-for="item in tokenUsageSupplementRows"
+                      :key="item.key"
+                      class="token-usage-supplement-row"
+                    >
+                      <span>{{ item.label }}</span>
+                      <strong>{{ item.value }}</strong>
                     </div>
                   </div>
                 </div>
@@ -315,7 +471,7 @@
                     />
                   </span>
                   <span v-if="totalTodoCount" class="state-section-meta">
-                    {{ completedTodoCount }}/{{ totalTodoCount }} · {{ todoProgress }}%
+                    {{ completedTodoCount }}/{{ totalTodoCount }}
                   </span>
                 </button>
                 <div
@@ -328,6 +484,7 @@
                       v-for="(todo, index) in currentTodos"
                       :key="`${todo.fullContent}-${index}`"
                       class="todo-item"
+                      :class="{ completed: todo.status === 'completed' }"
                     >
                       <div class="todo-item-icon" :class="todo.status || 'unknown'">
                         <CheckCircleOutlined v-if="todo.status === 'completed'" />
@@ -535,6 +692,7 @@
           :thread-id="currentChatId"
           :panel-ratio="panelRatio"
           :preview-tabs="agentPanelPreviewTabs"
+          :preview-cache="agentPanelPreviewCache"
           :active-preview-path="agentPanelActivePreviewPath"
           :view-mode="agentPanelViewMode"
           @close="closeFilePanel"
@@ -578,7 +736,15 @@ import {
   onDeactivated
 } from 'vue'
 import { message } from 'ant-design-vue'
-import { ChevronDown, FolderKanban, LayoutList, RefreshCw } from 'lucide-vue-next'
+import {
+  ChevronDown,
+  CornerDownRight,
+  FolderKanban,
+  LayoutList,
+  Play,
+  RefreshCw,
+  Trash2
+} from 'lucide-vue-next'
 import { formatFileSize } from '@/utils/file_utils'
 import FileTypeIcon from '@/components/common/FileTypeIcon.vue'
 import { generatePixelAvatar } from '@/utils/pixelAvatar'
@@ -590,6 +756,7 @@ import {
   SyncOutlined
 } from '@ant-design/icons-vue'
 import AgentInputArea from '@/components/AgentInputArea.vue'
+import ToolApprovalModeSelector from '@/components/ToolApprovalModeSelector.vue'
 import ModelSelectorComponent from '@/components/ModelSelectorComponent.vue'
 import AgentMessageComponent from '@/components/AgentMessageComponent.vue'
 import RefsComponent from '@/components/RefsComponent.vue'
@@ -605,11 +772,12 @@ import { storeToRefs } from 'pinia'
 import { MessageProcessor } from '@/utils/messageProcessor'
 import { agentApi, threadApi } from '@/apis'
 import HumanApprovalModal from '@/components/HumanApprovalModal.vue'
-import { useApproval } from '@/composables/useApproval'
-import { useAgentThreadState } from '@/composables/useAgentThreadState'
+import { extractPendingInterrupt, useApproval } from '@/composables/useApproval'
+import { useAgentThreadState, IDLE_QUEUE_SNAPSHOT } from '@/composables/useAgentThreadState'
 import { useAgentRunStream } from '@/composables/useAgentRunStream'
 import { useAgentStreamHandler } from '@/composables/useAgentStreamHandler'
 import { useStreamSmoother } from '@/composables/useStreamSmoother'
+import { useAgentRequestQueue } from '@/composables/useAgentRequestQueue'
 import { useAgentMentionConfig } from '@/composables/useAgentMentionConfig'
 import AgentArtifactsCard from '@/components/AgentArtifactsCard.vue'
 import AgentPanel from '@/components/AgentPanel.vue'
@@ -619,6 +787,14 @@ import FallbackAvatar from '@/components/common/FallbackAvatar.vue'
 import { enrichTaskToolCalls, parseToolCallArgs } from '@/components/ToolCallingResult/toolRegistry'
 import { getConversationDisplayItems } from '@/utils/messageGrouping'
 import { makeChildThreadId } from '@/utils/subagentThread'
+import {
+  isRunInterruptedConflict,
+  isThreadWaitingForUserAction,
+  isToolApprovalMode,
+  readToolApprovalModePreference,
+  resolveToolApprovalMode,
+  writeToolApprovalModePreference
+} from '@/utils/toolApproval'
 
 // ==================== PROPS & EMITS ====================
 const props = defineProps({
@@ -639,7 +815,10 @@ const { threads, currentThreadId, currentThread } = storeToRefs(chatThreadsStore
 
 // ==================== LOCAL CHAT & UI STATE ====================
 const userInput = ref('')
+const agentInputAreaRef = ref(null)
 const sendCooldownActive = ref(false)
+const cancellingRequestIds = reactive(new Set())
+const steeringRequestIds = reactive(new Set())
 let sendCooldownTimer = null
 // Predefined greeting texts
 const greetingMessages = [
@@ -692,7 +871,7 @@ const attachmentInitialFiles = ref([])
 const attachmentInitialFilesKey = ref(0)
 const isRefreshingState = ref(false)
 const collapsedStateSections = reactive({
-  tokenUsage: false,
+  tokenUsageDetails: true,
   todos: false,
   files: false,
   artifacts: false,
@@ -731,6 +910,7 @@ const statePanelDockMinChatWidth = 800
 const panelRatio = ref(defaultPanelRatio) // Tỷ lệ chiều rộng bảng điều khiển (0-1)
 const filePanelDragWidth = ref(null)
 const agentPanelPreviewTabs = ref([])
+const agentPanelPreviewCache = reactive(new Map())
 const agentPanelActivePreviewPath = ref('')
 const agentPanelViewMode = ref('tree')
 const chatContentContainerRef = ref(null)
@@ -878,6 +1058,24 @@ const resetAgentPanelState = () => {
   agentPanelViewMode.value = 'tree'
 }
 
+const previewCacheKey = (path, threadId = currentChatId.value) => `${threadId}:${path}`
+
+const releasePreviewCacheEntry = (path, threadId = currentChatId.value) => {
+  const key = previewCacheKey(path, threadId)
+  const entry = agentPanelPreviewCache.get(key)
+  if (entry?.file?.previewUrl) window.URL.revokeObjectURL(entry.file.previewUrl)
+  agentPanelPreviewCache.delete(key)
+}
+
+const invalidatePreviewCachePath = (targetPath, threadId = currentChatId.value) => {
+  for (const key of agentPanelPreviewCache.keys()) {
+    const separatorIndex = key.indexOf(':')
+    if (separatorIndex < 0 || key.slice(0, separatorIndex) !== String(threadId)) continue
+    const path = key.slice(separatorIndex + 1)
+    if (isSameOrChildPanelPath(path, targetPath)) releasePreviewCacheEntry(path, threadId)
+  }
+}
+
 const setAgentPanelViewMode = (mode) => {
   agentPanelViewMode.value =
     mode === 'preview' && agentPanelActivePreviewPath.value ? 'preview' : 'tree'
@@ -901,6 +1099,10 @@ const openPanelPreview = (file, keepTreeOpen = false) => {
   const existingIndex = agentPanelPreviewTabs.value.findIndex((item) => item.path === tab.path)
 
   if (existingIndex >= 0) {
+    const existingTab = agentPanelPreviewTabs.value[existingIndex]
+    if (existingTab.modified_at !== tab.modified_at || existingTab.size !== tab.size) {
+      releasePreviewCacheEntry(tab.path)
+    }
     agentPanelPreviewTabs.value = agentPanelPreviewTabs.value.map((item, index) =>
       index === existingIndex ? { ...item, ...tab } : item
     )
@@ -914,6 +1116,8 @@ const openPanelPreview = (file, keepTreeOpen = false) => {
 
 const closePanelPreviewTab = (path) => {
   if (!path) return
+
+  releasePreviewCacheEntry(path)
 
   const closingIndex = agentPanelPreviewTabs.value.findIndex((item) => item.path === path)
   const nextTabs = agentPanelPreviewTabs.value.filter((item) => item.path !== path)
@@ -929,6 +1133,8 @@ const closePanelPreviewTab = (path) => {
 
 const closePanelPreviewPath = (targetPath) => {
   if (!targetPath) return
+
+  invalidatePreviewCachePath(targetPath)
 
   const nextTabs = agentPanelPreviewTabs.value.filter(
     (item) => !isSameOrChildPanelPath(item.path, targetPath)
@@ -967,6 +1173,7 @@ const currentChatId = computed(() => currentThreadId.value)
 // Lưu lựa chọn mô hình của người dùng theo thread. Nếu chưa chọn thì quay về mô hình cấu hình của tác nhân.
 const DRAFT_MODEL_KEY = '__draft__'
 const selectedModelByThread = reactive({})
+const savedToolApprovalMode = ref(readToolApprovalModePreference())
 const agentDefaultModel = computed(
   () =>
     agentConfig.value?.model ||
@@ -984,6 +1191,40 @@ const handleModelSelect = (spec) => {
     } else {
       delete selectedModelByThread[currentChatId.value || DRAFT_MODEL_KEY]
     }
+  }
+}
+
+const configuredAgentToolApprovalMode = computed(() => {
+  const configJson = currentAgent.value?.config_json
+  return configJson?.context?.tool_approval_mode || configJson?.tool_approval_mode || null
+})
+const currentToolApprovalMode = computed(() =>
+  resolveToolApprovalMode({
+    hasThread: Boolean(currentChatId.value),
+    threadMode: currentThread.value?.metadata?.tool_approval_mode,
+    agentMode: configuredAgentToolApprovalMode.value,
+    savedMode: savedToolApprovalMode.value
+  })
+)
+const handleToolApprovalModeSelect = async (mode) => {
+  if (!isToolApprovalMode(mode)) return
+
+  const thread = currentThread.value
+  if (!thread) {
+    savedToolApprovalMode.value = mode
+    writeToolApprovalModePreference(mode)
+    return
+  }
+
+  const previousMetadata = { ...(thread.metadata || {}) }
+  thread.metadata = { ...(thread.metadata || {}), tool_approval_mode: mode }
+  try {
+    await chatThreadsStore.updateThread(thread.id, null, undefined, mode)
+    savedToolApprovalMode.value = mode
+    writeToolApprovalModePreference(mode)
+  } catch {
+    thread.metadata = previousMetadata
+    message.error('Lưu chế độ phê duyệt thất bại')
   }
 }
 
@@ -1015,6 +1256,8 @@ const currentAgentState = computed(() => {
   return currentChatId.value ? getThreadState(currentChatId.value)?.agentState || null : null
 })
 const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === '' || typeof value === 'boolean')
+    return null
   const numeric = Number(value)
   return Number.isFinite(numeric) ? numeric : null
 }
@@ -1027,6 +1270,10 @@ const formatTokenCount = (value) => {
     return `${(numeric / TOKEN_COUNT_K_UNIT).toFixed(digits).replace(/\.0+$/, '')}k`
   }
   return String(Math.round(numeric))
+}
+const formatTokenRatio = (value) => {
+  const numeric = toFiniteNumber(value)
+  return numeric === null ? 'Chưa báo cáo' : `${(Math.max(0, Math.min(numeric, 1)) * 100).toFixed(1)}%`
 }
 const currentTokenUsage = computed(() => {
   const usage = currentAgentState.value?.token_usage
@@ -1067,11 +1314,16 @@ const tokenUsageSegments = computed(() => {
   const inputTokens = Math.max(toFiniteNumber(usage.llm_input_tokens) || 0, 0)
   const rawSegments = [
     {
-      key: 'cut',
-      label: 'Đã nén',
-      value: cutMessageTokens,
-      messageCount: cutMessageCount,
-      tone: 'is-cut'
+      key: 'system',
+      label: 'Tin nhắn hệ thống',
+      value: systemTokens,
+      tone: 'is-system'
+    },
+    {
+      key: 'tools',
+      label: `Định nghĩa công cụ (${usage.tool_count || 0})`,
+      value: toolsTokens,
+      tone: 'is-tools'
     },
     {
       key: 'messages',
@@ -1095,16 +1347,11 @@ const tokenUsageSegments = computed(() => {
       tone: 'is-summary'
     },
     {
-      key: 'system',
-      label: 'Tin nhắn hệ thống',
-      value: systemTokens,
-      tone: 'is-system'
-    },
-    {
-      key: 'tools',
-      label: `Định nghĩa công cụ (${usage.tool_count || 0})`,
-      value: toolsTokens,
-      tone: 'is-tools'
+      key: 'cut',
+      label: 'Đã nén',
+      value: cutMessageTokens,
+      messageCount: cutMessageCount,
+      tone: 'is-cut'
     }
   ].filter((segment) => segment.value > 0)
 
@@ -1145,13 +1392,35 @@ const tokenUsageStackLimit = computed(() => {
   const contextWindow = toFiniteNumber(currentTokenUsage.value?.context_window)
   if (contextWindow && contextWindow > 0) return contextWindow
 
-  return Math.max(tokenUsageStackTotal.value, 1)
+  return null
+})
+const tokenUsageContextRatio = computed(() => {
+  if (tokenUsageStackLimit.value === null) return null
+  return Math.max(0, Math.min(tokenUsageStackTotal.value / tokenUsageStackLimit.value, 1))
 })
 const tokenUsageHeaderPercentLabel = computed(() => {
-  const limit = Math.max(tokenUsageStackLimit.value, 1)
-  const percent = Math.max(0, Math.min((tokenUsageStackTotal.value / limit) * 100, 100))
+  if (tokenUsageContextRatio.value === null) return '--'
+  const percent = tokenUsageContextRatio.value * 100
   if (percent > 0 && percent < 1) return '<1%'
   return `${Math.round(percent)}%`
+})
+const tokenUsageContextPercent = computed(() => {
+  return tokenUsageContextRatio.value === null
+    ? '0%'
+    : `${(tokenUsageContextRatio.value * 100).toFixed(2)}%`
+})
+const tokenUsageContextTone = computed(() => {
+  const ratio = tokenUsageContextRatio.value
+  if (ratio === null) return ''
+  if (ratio >= 0.9) return 'is-danger'
+  if (ratio >= 0.75) return 'is-warning'
+  return ''
+})
+const tokenUsageContextAriaLabel = computed(() => {
+  if (tokenUsageContextRatio.value === null) {
+    return `Giới hạn ngữ cảnh không rõ, ước tính hiện tại ${formatTokenCount(tokenUsageStackTotal.value)} Token`
+  }
+  return `Mức chiếm dụng ngữ cảnh ${tokenUsageHeaderPercentLabel.value}`
 })
 const tokenUsageStackHeadLabel = computed(() => {
   const summaryTriggerTokens = toFiniteNumber(currentTokenUsage.value?.summary_trigger_tokens)
@@ -1160,8 +1429,46 @@ const tokenUsageStackHeadLabel = computed(() => {
   }
   return `${formatTokenCount(tokenUsageStackTotal.value)} Token`
 })
+const tokenUsageRunTotal = computed(() => {
+  const total = toFiniteNumber(currentTokenUsage.value?.run?.total?.total_tokens)
+  return total === null ? null : Math.max(total, 0)
+})
+const tokenUsageRunTotalLabel = computed(() => {
+  if (tokenUsageRunTotal.value === null) return null
+  return formatTokenCount(tokenUsageRunTotal.value)
+})
+const tokenUsageThreadTotal = computed(() => {
+  const total = toFiniteNumber(currentTokenUsage.value?.thread?.total?.total_tokens)
+  return total === null ? null : Math.max(total, 0)
+})
+const tokenUsageThreadTotalLabel = computed(() => {
+  if (tokenUsageThreadTotal.value === null) return null
+  return formatTokenCount(tokenUsageThreadTotal.value)
+})
+const tokenUsageCacheHitLabel = computed(() => {
+  const models = currentTokenUsage.value?.thread?.models
+  if (!models || typeof models !== 'object' || Object.keys(models).length === 0) return null
+  let observedInputTokens = 0
+  let cacheReadTokens = 0
+  let observedCalls = 0
+  Object.values(models).forEach((bucket) => {
+    if (!bucket || typeof bucket !== 'object') return
+    observedInputTokens += Math.max(toFiniteNumber(bucket.cache_observed_input_tokens) || 0, 0)
+    cacheReadTokens += Math.max(toFiniteNumber(bucket.cache_read_input_tokens) || 0, 0)
+    observedCalls += Math.max(toFiniteNumber(bucket.cache_observed_call_count) || 0, 0)
+  })
+  if (observedCalls <= 0 || observedInputTokens <= 0) return null
+  return formatTokenRatio(cacheReadTokens / observedInputTokens)
+})
+// Phiên cũ không có thống kê tích lũy, khi cả hai chỉ số đều null thì ẩn toàn bộ dòng chỉ số
+const hasTokenUsageMetrics = computed(
+  () =>
+    tokenUsageRunTotalLabel.value !== null ||
+    tokenUsageThreadTotalLabel.value !== null ||
+    tokenUsageCacheHitLabel.value !== null
+)
 const tokenUsageBarSegments = computed(() => {
-  const limit = Math.max(tokenUsageStackLimit.value, 1)
+  const limit = tokenUsageStackLimit.value || Math.max(tokenUsageStackTotal.value, 1)
   let remaining = limit
   return tokenUsageSegments.value
     .filter((segment) => segment.key !== 'cut')
@@ -1175,15 +1482,52 @@ const tokenUsageBarSegments = computed(() => {
     })
     .filter((segment) => segment.value > 0 && segment.percent !== '0.00%')
 })
-const tokenUsageMetaRows = computed(() => {
+const tokenUsageModelItems = computed(() => {
+  const usage = currentTokenUsage.value
+  if (!usage) return []
+  const threadUsage = usage.thread && typeof usage.thread === 'object' ? usage.thread : null
+  const models =
+    threadUsage?.models && typeof threadUsage.models === 'object' ? threadUsage.models : {}
+  return Object.entries(models).map(([bucketKey, bucket]) => {
+    const model = bucket?.model && typeof bucket.model === 'object' ? bucket.model : {}
+    const modelUsage = bucket?.usage && typeof bucket.usage === 'object' ? bucket.usage : {}
+    const responseModelIds = Array.isArray(model.response_model_ids)
+      ? [...new Set(model.response_model_ids.filter((item) => typeof item === 'string' && item))]
+      : []
+    const responseModels = responseModelIds.filter((item) => item !== model.configured_model_id)
+    const cacheRatio = toFiniteNumber(bucket?.cache_hit_ratio)
+    const cacheObservedCalls = toFiniteNumber(bucket?.cache_observed_call_count) || 0
+    const reasoning = toFiniteNumber(modelUsage.output_token_details?.reasoning)
+    return {
+      key: bucketKey,
+      name: model.configured_model_spec || bucketKey,
+      responseModel:
+        responseModels.length > 1
+          ? `${responseModels[0]} và ${responseModels.length} mô hình`
+          : responseModels[0] || '',
+      callCount: Math.max(toFiniteNumber(bucket?.model_call_count) || 0, 0),
+      io: `${formatTokenCount(modelUsage.input_tokens)} / ${formatTokenCount(modelUsage.output_tokens)}`,
+      cache:
+        cacheObservedCalls === 0
+          ? ''
+          : cacheRatio === null
+            ? formatTokenCount(bucket?.cache_read_input_tokens)
+            : `${formatTokenCount(bucket?.cache_read_input_tokens)} · ${formatTokenRatio(cacheRatio)}`,
+      reasoning: reasoning === null ? '' : formatTokenCount(reasoning)
+    }
+  })
+})
+const tokenUsageSupplementRows = computed(() => {
   const usage = currentTokenUsage.value
   if (!usage) return []
   const rows = []
-  if (toFiniteNumber(usage.context_window)) {
+  const latest = usage.latest && typeof usage.latest === 'object' ? usage.latest : null
+
+  if (latest?.usage && typeof latest.usage === 'object') {
     rows.push({
-      key: 'context',
-      label: 'Cửa sổ/còn lại',
-      value: `${formatTokenCount(usage.context_window)} / ${formatTokenCount(usage.remaining_context_tokens)}`
+      key: 'latestUsage',
+      label: 'Lượt gọi gần nhất',
+      value: `Đầu vào ${formatTokenCount(latest.usage.input_tokens)} · Đầu ra ${formatTokenCount(latest.usage.output_tokens)}`
     })
   }
   return rows
@@ -1303,19 +1647,7 @@ const completedTodoCount = computed(
 )
 const showStateEntry = computed(() => Boolean(currentChatId.value))
 const showFileEntry = computed(() => Boolean(currentChatId.value))
-const todoProgress = computed(() => {
-  if (!totalTodoCount.value) return 0
-  return Math.round((completedTodoCount.value / totalTodoCount.value) * 100)
-})
-const stateSummaryLabel = computed(() => {
-  const total =
-    (currentTokenUsage.value ? 1 : 0) +
-    totalTodoCount.value +
-    currentStateFiles.value.length +
-    currentArtifactFiles.value.length +
-    displaySubagentRuns.value.length
-  return total ? `${total} Mục` : 'Chưa có nội dung'
-})
+// PORT-CONFLICT: bỏ computed todoProgress/stateSummaryLabel của bản Việt (không còn nơi nào sử dụng sau khi thay bằng UI trạng thái mới)
 const hasVisibleStateSections = computed(
   () =>
     Boolean(currentTokenUsage.value) ||
@@ -1347,6 +1679,9 @@ const currentApprovalModalVisible = computed(
 )
 const currentApprovalQuestions = computed(() =>
   currentApprovalModalVisible.value ? approvalState.questions : []
+)
+const currentToolApprovalVisible = computed(
+  () => currentApprovalModalVisible.value && approvalState.kind === 'tool_approval'
 )
 
 const shouldSuppressRefsForApproval = () =>
@@ -1380,15 +1715,9 @@ const shouldShowRefs = computed(() => {
   }
 })
 
-const shouldShowArtifacts = computed(() => {
-  return (conv) => {
-    if (!currentArtifacts.value.length || conv.status === 'streaming') return false
-    const latestConv = conversations.value[conversations.value.length - 1]
-    return latestConv === conv
-  }
-})
+// PORT-CONFLICT: bỏ computed shouldShowArtifacts của bản Việt (không còn nơi nào sử dụng sau khi thay bằng UI trạng thái mới)
 
-// Trạng thái luồng hiện tạicomputedthuộc tính
+// Thuộc tính computed của trạng thái thread hiện tại
 const currentThreadState = computed(() => {
   return getThreadState(currentChatId.value)
 })
@@ -1738,7 +2067,8 @@ const conversationRows = computed(() => {
     type: 'conversation',
     key: conv.status === 'streaming' ? 'ongoing-conversation' : `history-${index}`,
     conv,
-    displayItems: getDisplayItems(conv)
+    displayItems: getDisplayItems(conv),
+    artifacts: MessageProcessor.extractArtifactsFromConversation(conv)
   }))
 
   if (currentThreadConfigNotice.value) {
@@ -1764,22 +2094,71 @@ const isStreaming = computed(() => {
   const threadState = currentThreadState.value
   return threadState ? threadState.isStreaming : false
 })
+const currentQueuedRequests = computed(() => currentThreadState.value?.queuedRequests || [])
+const hasPendingSteer = computed(() =>
+  currentQueuedRequests.value.some(
+    (request) => request?.queue_policy === 'steer' && request?.status === 'queued'
+  )
+)
+const currentQueueSnapshot = computed(
+  () => currentThreadState.value?.queueSnapshot || IDLE_QUEUE_SNAPSHOT
+)
+const queuedRequestCount = computed(() => currentQueuedRequests.value.length)
+const hasQueuedRequests = computed(() => queuedRequestCount.value > 0)
+const isWaitingForUserAction = computed(() =>
+  isThreadWaitingForUserAction(currentThreadState.value)
+)
+const queuePausedMessage = computed(() =>
+  currentQueueSnapshot.value.paused_reason === 'cancelled'
+    ? 'Tác vụ hiện tại đã dừng, các yêu cầu phía sau trong hàng đợi đã tạm dừng.'
+    : 'Tác vụ trước đó thất bại, các yêu cầu phía sau trong hàng đợi đã tạm dừng.'
+)
+const shouldShowStopButton = computed(
+  () => isStreaming.value && !String(userInput.value || '').trim()
+)
+const canSubmitSteer = computed(
+  () =>
+    isStreaming.value &&
+    currentThreadState.value?.activeRunSteerable === true &&
+    Boolean(String(userInput.value || '').trim()) &&
+    !hasPendingSteer.value &&
+    !sendCooldownActive.value &&
+    !isWaitingForUserAction.value
+)
+const canSteerQueuedRequest = (request) =>
+  isStreaming.value &&
+  currentThreadState.value?.activeRunSteerable === true &&
+  !hasPendingSteer.value &&
+  request?.status === 'queued' &&
+  request?.queue_policy === 'enqueue' &&
+  request?.source === 'chat'
+const canCancelQueuedRequest = (request) =>
+  request?.queue_policy !== 'steer' ||
+  (!isStreaming.value && currentQueueSnapshot.value.status !== 'running')
 const shouldRefreshStateWhileStreaming = computed(
   () => Boolean(currentChatId.value) && isStreaming.value && statePanelOpen.value
 )
-const isProcessing = computed(() => isStreaming.value)
+const isProcessing = computed(
+  () =>
+    isStreaming.value || (hasQueuedRequests.value && currentQueueSnapshot.value.status !== 'paused')
+)
 const isReplyLoading = computed(() => {
   const threadState = currentThreadState.value
-  return Boolean(threadState?.replyLoadingVisible)
+  return Boolean(threadState?.replyLoadingVisible) && currentQueueSnapshot.value.status !== 'paused'
 })
-const replyLoadingText = computed(() =>
-  currentThreadState.value?.contextCompressing ? 'Đang nén ngữ cảnh...' : 'Đang tạo phản hồi...'
-)
+const replyLoadingText = computed(() => {
+  const threadState = currentThreadState.value
+  if (threadState?.contextCompressing) return 'Đang nén ngữ cảnh...'
+  if (hasQueuedRequests.value) return `Đang xếp hàng (${queuedRequestCount.value} yêu cầu)...`
+  return 'Đang tạo phản hồi...'
+})
 const isSendButtonDisabled = computed(() => {
   return (
     sendCooldownActive.value ||
-    (props.sendDisabled && !isProcessing.value) ||
-    ((!userInput.value || !currentAgent.value) && !isProcessing.value)
+    props.sendDisabled ||
+    isWaitingForUserAction.value ||
+    (!userInput.value && !isProcessing.value) ||
+    !currentAgent.value
   )
 })
 
@@ -2091,6 +2470,10 @@ onUnmounted(() => {
   }
   // Dọn dẹp tất cả trạng thái luồng
   resetOnGoingConv()
+  for (const entry of agentPanelPreviewCache.values()) {
+    if (entry.file?.previewUrl) window.URL.revokeObjectURL(entry.file.previewUrl)
+  }
+  agentPanelPreviewCache.clear()
 })
 
 // ==================== Phương pháp quản lý luồng ====================
@@ -2107,7 +2490,9 @@ const createThread = async (agentId, title = 'Cuộc trò chuyện mới') => {
   if (!agentId) return null
 
   try {
-    const thread = await chatThreadsStore.createThread(agentId, title)
+    const thread = await chatThreadsStore.createThread(agentId, title, {
+      tool_approval_mode: currentToolApprovalMode.value
+    })
     if (thread) {
       threadMessages.value[thread.id] = []
       threadFilesMap.value[thread.id] = []
@@ -2141,18 +2526,29 @@ const fetchThreadMessages = async ({ agentId, threadId, delay = 0 }) => {
   }
 }
 
-// Phục hồi qua phiên: Sử dụng bản ghi tin nhắn gần nhất của người dùng (model_spec) để khôi phục lựa chọn mô hình
+// Chuyển lựa chọn của thread nháp sang thread thật: chỉ ghi đè khi thread thật chưa đặt giá trị, xóa bản nháp sau khi chuyển.
+const promoteDraftSelection = (selectionByThread, threadId) => {
+  const draft = selectionByThread[DRAFT_MODEL_KEY]
+  if (!draft) return
+  if (!selectionByThread[threadId]) selectionByThread[threadId] = draft
+  delete selectionByThread[DRAFT_MODEL_KEY]
+}
+
+// Khôi phục xuyên phiên: lấy lựa chọn cấp thread từ tin nhắn người dùng gần nhất có tường minh kèm giá trị ghi đè.
 const restoreThreadModelSelection = (threadId, history) => {
-  if (selectedModelByThread[threadId]) return
-  for (let i = history.length - 1; i >= 0; i -= 1) {
-    const msg = history[i]
-    if (msg?.type !== 'human') continue
-    const modelSpec = msg?.extra_metadata?.model_spec
-    if (modelSpec) {
-      selectedModelByThread[threadId] = modelSpec
-      return
+  const restoreField = (target, accept, key) => {
+    if (target[key]) return
+    for (let i = history.length - 1; i >= 0; i -= 1) {
+      const msg = history[i]
+      if (msg?.type !== 'human') continue
+      const value = msg?.extra_metadata?.[key]
+      if (accept(value)) {
+        target[key] = value
+        return
+      }
     }
   }
+  restoreField(selectedModelByThread, (spec) => spec, 'model_spec')
 }
 
 const fetchThreadFiles = async (threadId) => {
@@ -2191,15 +2587,46 @@ const handleArtifactSaved = async () => {
   showFileTreePanel()
 }
 
-const fetchAgentState = async (agentId, threadId) => {
-  if (!threadId) return
+const invalidateAgentStateRequest = (threadId) => {
+  const threadState = getThreadState(threadId)
+  if (!threadState) return
+  threadState.agentStateRequestVersion = (threadState.agentStateRequestVersion || 0) + 1
+}
+
+const fetchAgentState = async (agentId, threadId, { required = false } = {}) => {
+  if (!threadId) return false
+  const targetState = getThreadState(threadId)
+  if (!targetState) return false
+  const requestVersion = (targetState.agentStateRequestVersion || 0) + 1
+  targetState.agentStateRequestVersion = requestVersion
+
   try {
     const res = await agentApi.getAgentState(threadId)
-    const targetState = getThreadState(threadId)
-    if (!targetState) return
-    targetState.agentState = res.agent_state || null
-  } catch {
-    // agent state is optional UI state
+    const latestState = getThreadState(threadId)
+    if (!latestState || latestState.agentStateRequestVersion !== requestVersion) return false
+
+    latestState.agentState = res.agent_state || null
+    const pendingInterrupt = extractPendingInterrupt(res.interrupt, threadId)
+    // resume đã bắt đầu hoặc active run đã chuyển sang run khác thì response checkpoint cũ không được hiển thị lại phê duyệt.
+    const interruptIsCurrent =
+      pendingInterrupt &&
+      !latestState.isStreaming &&
+      (!pendingInterrupt.interruptedRunId ||
+        !latestState.activeRunId ||
+        pendingInterrupt.interruptedRunId === latestState.activeRunId)
+    if (required && !interruptIsCurrent) {
+      throw new Error('Không có trạng thái phê duyệt nào có thể khôi phục trong checkpoint')
+    }
+    if (interruptIsCurrent) {
+      latestState.pendingInterrupt = pendingInterrupt
+      if (currentChatId.value === threadId) {
+        restorePendingInterruptForThread(threadId)
+      }
+    }
+    return true
+  } catch (error) {
+    if (required) throw error
+    return false
   }
 }
 
@@ -2308,13 +2735,88 @@ const { startRunStream, resumeActiveRunForThread, stopRunStreamSubscription } = 
   streamSmoother,
   onInterruptDetected: ({ threadId }) => {
     restorePendingInterruptForThread(threadId)
+    void resumeQueuedRequestsForThread(threadId)
+    if (threadId === chatState.currentThreadId) {
+      void chatThreadsStore.markThreadViewed(threadId)
+    }
   },
-  onTerminalDetected: ({ threadId, touchedThreadIds = [] }) => {
+  onTerminalDetected: ({ threadId, runId, touchedThreadIds = [] }) => {
     if (approvalState.threadId === threadId || touchedThreadIds.includes(approvalState.threadId)) {
       hideApprovalState()
     }
+    void resumeQueuedRequestsForThread(threadId)
+    // Chỉ tự động đánh dấu đã đọc khi sự kiện trạng thái cuối thuộc về thread đang xem; thread nền giữ trạng thái ready
+    if (runId && threadId === chatState.currentThreadId) {
+      void chatThreadsStore.markThreadViewed(threadId)
+    }
+  },
+  onRunStarted: ({ threadId }) => {
+    chatThreadsStore.setThreadStatus(threadId, 'loading')
   }
 })
+const {
+  startRequestStream,
+  stopAllRequestStreams,
+  cancelRequest,
+  syncQueuedRequests,
+  continueQueue,
+  steerRequest
+} = useAgentRequestQueue({
+  getThreadState,
+  resetOnGoingConv,
+  startRunStream,
+  onStreamError: () => {}
+})
+
+const handleCancelQueuedRequest = async (requestId) => {
+  const threadId = currentChatId.value
+  if (!threadId || !requestId || cancellingRequestIds.has(requestId)) return
+
+  cancellingRequestIds.add(requestId)
+  const cancelled = await cancelRequest(threadId, requestId)
+  cancellingRequestIds.delete(requestId)
+  if (cancelled) {
+    await resumeQueuedRequestsForThread(threadId)
+    message.success('Đã xóa yêu cầu đang xếp hàng')
+  }
+}
+
+const handleSteerQueuedRequest = async (requestId) => {
+  const threadId = currentChatId.value
+  const agentSlug = currentThread.value?.agent_id || currentAgentId.value
+  if (!threadId || !agentSlug || !requestId || steeringRequestIds.has(requestId)) return
+
+  steeringRequestIds.add(requestId)
+  const steered = await steerRequest(threadId, agentSlug, requestId)
+  steeringRequestIds.delete(requestId)
+  if (steered) {
+    message.success('Đã đặt làm yêu cầu dẫn hướng tiếp theo')
+  }
+}
+
+const handleContinueQueue = async () => {
+  const threadId = currentChatId.value
+  const agentSlug =
+    threads.value.find((thread) => thread.id === threadId)?.agent_id || currentAgentId.value
+  if (!threadId || !agentSlug || currentThreadState.value?.continueQueueInFlight) return
+
+  if (await continueQueue(threadId, agentSlug)) {
+    message.success('Hàng đợi đã tiếp tục')
+  }
+}
+
+const resumeQueuedRequestsForThread = async (threadId) => {
+  const ts = getThreadState(threadId)
+  if (!ts) return
+  const agentSlug = threads.value.find((t) => t.id === threadId)?.agent_id || currentAgentId.value
+  if (!agentSlug) return
+  await syncQueuedRequests(threadId, agentSlug)
+  if (ts.queuedRequests && ts.queuedRequests.length > 0) {
+    for (const req of ts.queuedRequests) {
+      void startRequestStream(threadId, req.request_id)
+    }
+  }
+}
 
 const resumeCurrentRunForVisiblePage = async () => {
   if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
@@ -2323,6 +2825,7 @@ const resumeCurrentRunForVisiblePage = async () => {
 
   try {
     await resumeActiveRunForThread(threadId)
+    await resumeQueuedRequestsForThread(threadId)
     restorePendingInterruptForThread(threadId)
   } catch (error) {
     console.warn('Failed to resume current run after page became visible:', error)
@@ -2365,6 +2868,7 @@ const selectChat = async (chatId) => {
     stopThreadStream(previousThreadId)
     // Chỉ ngắt kết nối đăng ký SSE của run, không hủy tác vụ đang chạy nền
     stopRunStreamSubscription(previousThreadId)
+    stopAllRequestStreams(previousThreadId)
   }
 
   if (previousThreadId !== chatId) {
@@ -2395,6 +2899,7 @@ const selectChat = async (chatId) => {
   chatUIStore.isLoadingMessages = true
   try {
     await fetchThreadMessages({ agentId: targetAgentId, threadId: chatId })
+    void chatThreadsStore.markThreadViewed(chatId)
   } catch (error) {
     handleChatError(error, 'load')
   } finally {
@@ -2407,6 +2912,7 @@ const selectChat = async (chatId) => {
   await handleAgentStateRefresh(chatId)
   syncThreadConfigSnapshot(chatId, { overwrite: false })
   await resumeActiveRunForThread(chatId)
+  await resumeQueuedRequestsForThread(chatId)
   restorePendingInterruptForThread(chatId)
   await scrollController.scrollToBottomStaticForce()
 }
@@ -2421,6 +2927,7 @@ const selectThreadFromRoute = async (threadId) => {
     if (previousThreadId) {
       stopThreadStream(previousThreadId)
       stopRunStreamSubscription(previousThreadId)
+      stopAllRequestStreams(previousThreadId)
     }
     resetAgentPanelState()
     setCurrentThreadId(null)
@@ -2444,15 +2951,15 @@ const selectThreadFromRoute = async (threadId) => {
   return true
 }
 
-const handleSendMessage = async ({ image } = {}) => {
+const handleSendMessage = async ({ image, queuePolicy = 'enqueue' } = {}) => {
   const text = userInput.value.trim()
   const imageContent = image?.imageContent || null
   if (
     (!text && !image) ||
     !currentAgent.value ||
-    isProcessing.value ||
     sendCooldownActive.value ||
-    props.sendDisabled
+    props.sendDisabled ||
+    isWaitingForUserAction.value
   )
     return
 
@@ -2466,17 +2973,12 @@ const handleSendMessage = async ({ image } = {}) => {
       message.error('Tạo cuộc trò chuyện thất bại, vui lòng thử lại')
       return
     }
-    // Tạo chủ đề mới: Di chuyển lựa chọn mô hình ở trạng thái bản nháp vào chủ đề thực, tránh mất lựa chọn
-    const draftModelSpec = selectedModelByThread[DRAFT_MODEL_KEY]
-    if (draftModelSpec) {
-      if (!selectedModelByThread[threadId]) {
-        selectedModelByThread[threadId] = draftModelSpec
-      }
-      delete selectedModelByThread[DRAFT_MODEL_KEY]
-    }
+    // Tạo thread mới: chuyển lựa chọn mô hình ở trạng thái nháp sang thread thật, tránh mất lựa chọn
+    promoteDraftSelection(selectedModelByThread, threadId)
   }
   // Chỉ gửi bản ghi đè khi người dùng đã chọn mô hình rõ ràng; nếu không, gửi... null，Mô hình được cấu hình bởi tác nhân sử dụng bởi backend
   const modelSpec = selectedModelByThread[threadId] || null
+  const toolApprovalMode = currentToolApprovalMode.value
 
   userInput.value = ''
 
@@ -2485,6 +2987,7 @@ const handleSendMessage = async ({ image } = {}) => {
 
   const threadState = getThreadState(threadId)
   if (!threadState) return
+  const hadActiveRun = Boolean(threadState.activeRunId && threadState.isStreaming)
   threadState.pendingInterrupt = null
   if (approvalState.threadId === threadId) {
     hideApprovalState()
@@ -2518,19 +3021,21 @@ const handleSendMessage = async ({ image } = {}) => {
     }
   }
 
-  resetOnGoingConv(threadId)
   const requestId = createClientRequestId()
   const previousAttachments = markAttachmentsRequestId(threadId, pendingAttachments, requestId)
-  insertOptimisticHumanMessage(threadState, {
-    requestId,
-    text,
-    imageContent,
-    attachments: pendingAttachments.map((attachment) => ({
-      ...attachment,
-      request_id: requestId
-    }))
-  })
-  threadState.isStreaming = true
+  if (!hadActiveRun) {
+    resetOnGoingConv(threadId)
+    insertOptimisticHumanMessage(threadState, {
+      requestId,
+      text,
+      imageContent,
+      attachments: pendingAttachments.map((attachment) => ({
+        ...attachment,
+        request_id: requestId
+      }))
+    })
+    threadState.isStreaming = true
+  }
 
   try {
     const runResp = await agentApi.createAgentRun({
@@ -2542,21 +3047,64 @@ const handleSendMessage = async ({ image } = {}) => {
         attachment_file_ids: pendingAttachmentFileIds
       },
       image_content: imageContent,
-      model_spec: modelSpec
+      model_spec: modelSpec,
+      tool_approval_mode: toolApprovalMode,
+      queue_policy: queuePolicy
     })
+    const status = runResp?.status
     const runId = runResp?.run_id
-    if (!runId) {
+    if (status === 'queued' || (!runId && status !== 'rejected')) {
+      threadState.queuedRequests = threadState.queuedRequests || []
+      threadState.queuedRequests.push({
+        request_id: requestId,
+        status: 'queued',
+        queue_policy: runResp?.queue_policy || queuePolicy,
+        queue_position: runResp?.queue_position || 1,
+        content: text
+      })
+      if (!hadActiveRun) {
+        threadState.isStreaming = false
+        threadState.replyLoadingVisible = false
+      }
+      await resumeQueuedRequestsForThread(threadId)
+    } else if (runId) {
+      threadState.pendingRequestId = requestId
+      await startRunStream(threadId, runId, 0)
+    } else {
       throw new Error('Tạo run Thất bại: Thiếu run_id')
     }
-    await startRunStream(threadId, runId, 0)
   } catch (error) {
-    threadState.isStreaming = false
-    threadState.replyLoadingVisible = false
-    threadState.pendingRequestId = null
+    if (!hadActiveRun) {
+      threadState.isStreaming = false
+      threadState.replyLoadingVisible = false
+      threadState.pendingRequestId = null
+      resetOnGoingConv(threadId)
+    }
     rollbackAttachments(threadId, previousAttachments)
-    resetOnGoingConv(threadId)
+    if (isRunInterruptedConflict(error)) {
+      threadState.isStreaming = false
+      threadState.activeRunSteerable = false
+      if (currentChatId.value === threadId) {
+        const currentDraft = userInput.value
+        userInput.value = [text, currentDraft].filter(Boolean).join('\n')
+        agentInputAreaRef.value?.restoreImage?.(image)
+      }
+      try {
+        await fetchAgentState(currentAgentId.value, threadId, { required: true })
+      } catch {
+        message.error('Khôi phục trạng thái phê duyệt thất bại, vui lòng làm mới trang rồi thử lại')
+      }
+    }
+    if (queuePolicy === 'steer' && currentChatId.value === threadId && !userInput.value) {
+      userInput.value = text
+    }
     handleChatError(error, 'send')
   }
+}
+
+const handleDirectSteer = async () => {
+  if (!canSubmitSteer.value) return
+  await handleSendMessage({ queuePolicy: 'steer' })
 }
 
 // Gửi hoặc ngắt
@@ -2567,7 +3115,8 @@ const handleSendOrStop = async (payload) => {
 
   const threadId = currentChatId.value
   const threadState = getThreadState(threadId)
-  if (isProcessing.value && threadState?.activeRunId) {
+  const hasNewInput = Boolean(String(userInput.value || '').trim() || payload?.image)
+  if (threadState?.activeRunId && threadState?.isStreaming && !hasNewInput) {
     try {
       await agentApi.cancelAgentRun(threadState.activeRunId)
       threadState.pendingInterrupt = null
@@ -2580,7 +3129,6 @@ const handleSendOrStop = async (payload) => {
     }
     return
   }
-  if (props.sendDisabled) return
   await handleSendMessage(payload)
 }
 
@@ -2610,10 +3158,11 @@ const handleApprovalWithStream = async (answer) => {
   const pendingInterrupt = threadState.pendingInterrupt
 
   try {
+    invalidateAgentStateRequest(threadId)
     hideApprovalState()
     threadState.pendingInterrupt = null
     threadState.isStreaming = true
-    resetOnGoingConv(threadId)
+    resetOnGoingConv(threadId, { preserveRequestStreams: true })
     const requestId = createClientRequestId()
     const runResp = await agentApi.createAgentRun({
       query: null,
@@ -2709,7 +3258,7 @@ const toggleAgentPanel = async () => {
     return
   }
 
-  showFileTreePanel()
+  showFilePanel(agentPanelActivePreviewPath.value ? 'preview' : 'tree')
   await handleAgentStateRefresh()
 }
 
@@ -2954,7 +3503,7 @@ watch(
       scrollController.scrollToBottom()
     }
   },
-  { deep: true, flush: 'post' }
+  { flush: 'post' }
 )
 
 watch(
@@ -3178,7 +3727,7 @@ watch(currentChatId, (threadId, oldThreadId) => {
 }
 
 .chat-greeting-input {
-  padding: 24px 0;
+  padding: 24px 0 34px;
   text-align: center;
 
   h1 {
@@ -3364,6 +3913,209 @@ watch(currentChatId, (threadId, oldThreadId) => {
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
+
+    .message-input-stage {
+      position: relative;
+      min-width: 0;
+    }
+
+    .queued-request-panel + .message-input-stage {
+      z-index: 1;
+      margin-top: -16px;
+    }
+
+    .message-input-stage.has-tool-approval {
+      display: grid;
+
+      > .approval-modal,
+      > .message-input-surface {
+        min-width: 0;
+        grid-area: 1 / 1;
+      }
+
+      > .approval-modal {
+        z-index: 2;
+      }
+
+      > .message-input-surface {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
+    .message-input-surface {
+      min-width: 0;
+      transition: opacity 0.18s ease;
+    }
+
+    .queued-request-panel {
+      max-height: 196px;
+      overflow-y: auto;
+      padding: 6px 12px 18px;
+      background: var(--gray-25);
+      border: 1px solid var(--gray-150);
+      border-radius: 16px 16px 12px 12px;
+    }
+
+    .queued-request-notice {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 6px 4px;
+      padding: 0;
+      color: var(--color-text-tertiary);
+      background: transparent;
+      font-size: 13px;
+      line-height: 1.5;
+
+      &.is-paused {
+        color: var(--color-warning-700);
+        background: transparent;
+      }
+    }
+
+    .queued-request-continue {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 0;
+      color: var(--color-warning-700);
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      font-size: 12px;
+
+      &:disabled {
+        opacity: 0.55;
+        cursor: wait;
+      }
+    }
+
+    .queued-request-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .queued-request-row {
+      min-height: 28px;
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 0 4px 0 6px;
+      color: var(--color-text);
+      border-radius: 8px;
+      transition: background-color 0.18s ease;
+
+      &:hover {
+        background: var(--gray-50);
+      }
+    }
+
+    .queued-request-icon {
+      color: var(--gray-500);
+    }
+
+    .queued-request-content {
+      min-width: 0;
+      overflow: hidden;
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.4;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .queued-request-position {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--gray-500);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+
+      &::before {
+        content: '↪';
+        color: var(--gray-400);
+        font-size: 14px;
+      }
+    }
+
+    .queued-request-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .queued-request-steer,
+    .direct-steer-button {
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0 6px;
+      color: var(--gray-500);
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      transition:
+        color 0.18s ease,
+        background-color 0.18s ease;
+
+      &:hover:not(:disabled) {
+        color: var(--gray-700);
+        background: var(--gray-100);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--main-color);
+        outline-offset: 1px;
+      }
+
+      &:disabled {
+        opacity: 0.45;
+        cursor: wait;
+      }
+    }
+
+    .queued-request-delete {
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: var(--gray-500);
+      background: transparent;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition:
+        color 0.18s ease,
+        background-color 0.18s ease;
+
+      &:hover:not(:disabled) {
+        color: var(--color-error-700);
+        background: var(--color-error-50);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--main-color);
+        outline-offset: 1px;
+      }
+
+      &:disabled {
+        color: var(--gray-300);
+        cursor: wait;
+      }
+    }
 
     .bottom-actions {
       display: flex;
@@ -3669,7 +4421,6 @@ watch(currentChatId, (threadId, oldThreadId) => {
   color: var(--gray-500);
 }
 
-.state-panel-summary,
 .state-section-meta {
   flex-shrink: 0;
   font-size: 12px;
@@ -3762,36 +4513,251 @@ watch(currentChatId, (threadId, oldThreadId) => {
   text-align: center;
 }
 
-.token-usage-content {
+.token-usage-section {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-top: 2px;
 }
 
-.token-usage-stack {
+.token-usage-context-card {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--gray-150);
+  border-radius: 10px;
+  background: var(--gray-0);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--gray-200);
+    background: var(--gray-10);
+
+    .token-usage-card-title,
+    .state-section-chevron {
+      color: var(--gray-900);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--main-200);
+    outline-offset: 2px;
+  }
 }
 
-.token-usage-stack-head {
+.token-usage-card-topline {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.token-usage-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.token-usage-card-summary {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--gray-500);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.token-usage-card-percent {
+  display: block;
+  color: var(--gray-900);
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.token-usage-context-track {
+  width: 100%;
+  height: 5px;
+  display: block;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--gray-100);
+}
+
+.token-usage-context-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: var(--main-500);
+  transition:
+    width 0.2s ease,
+    background-color 0.2s ease;
+
+  &.is-warning {
+    background: var(--color-warning-500);
+  }
+
+  &.is-danger {
+    background: var(--color-error-500);
+  }
+}
+
+.token-usage-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.token-usage-card-metrics > span {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.token-usage-card-metrics > span + span {
+  padding-left: 12px;
+  border-left: 1px solid var(--gray-150);
+}
+
+.token-usage-card-metrics small {
+  color: var(--gray-500);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.token-usage-card-metrics strong {
+  overflow: hidden;
+  color: var(--gray-900);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.token-usage-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 2px;
+}
+
+.token-usage-model-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--gray-150);
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.token-usage-model-item {
+  padding: 11px;
+  background: var(--gray-0);
+  border-bottom: 1px solid var(--gray-150);
+}
+
+.token-usage-model-item:last-child {
+  border-bottom: 0;
+}
+
+.token-usage-model-header {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
+  margin-bottom: 10px;
+}
+
+.token-usage-model-header > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.token-usage-model-header strong {
+  overflow: hidden;
+  color: var(--gray-900);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.token-usage-model-header span {
   font-size: 11px;
   color: var(--gray-500);
 }
 
-.token-usage-stack-head strong {
+.token-usage-model-header > span {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--gray-50);
+}
+
+.token-usage-model-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.token-usage-model-stats > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.token-usage-model-stats span {
+  color: var(--gray-500);
+  font-size: 10px;
+}
+
+.token-usage-model-stats strong {
+  overflow-wrap: anywhere;
   color: var(--gray-900);
-  font-weight: 650;
+  font-size: 12px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.token-usage-composition {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid var(--gray-150);
+  border-radius: 9px;
+  background: var(--gray-0);
+}
+
+.token-usage-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--gray-600);
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .token-usage-stack-track {
   display: flex;
+  gap: 1px;
   height: 10px;
   overflow: hidden;
   border-radius: 999px;
@@ -3804,24 +4770,36 @@ watch(currentChatId, (threadId, oldThreadId) => {
   transition: width 0.2s ease;
 }
 
-.token-usage-stack-legend {
+.token-usage-composition-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 10px;
-  font-size: 11px;
-  color: var(--gray-500);
+  gap: 6px 12px;
 }
 
-.token-usage-stack-legend-item {
+.token-usage-composition-item {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--gray-500);
+  font-size: 11px;
+}
+
+.token-usage-composition-item > span {
   min-width: 0;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  line-height: 1.35;
-  white-space: normal;
 }
 
-.token-usage-stack-legend-item i {
+.token-usage-composition-item strong {
+  color: var(--gray-800);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.token-usage-composition-item i {
   width: 7px;
   height: 7px;
   flex-shrink: 0;
@@ -3830,7 +4808,7 @@ watch(currentChatId, (threadId, oldThreadId) => {
 }
 
 .token-usage-stack-segment,
-.token-usage-stack-legend-item i {
+.token-usage-composition-item i {
   &.is-cut {
     background-color: var(--main-500);
     background-image: repeating-linear-gradient(
@@ -3843,23 +4821,23 @@ watch(currentChatId, (threadId, oldThreadId) => {
   }
 
   &.is-messages {
-    background: var(--main-500);
+    background: var(--chart-palette-1);
   }
 
   &.is-tool-messages {
-    background: var(--color-primary-500);
+    background: var(--chart-palette-6);
   }
 
   &.is-summary {
-    background: var(--color-info-500);
+    background: var(--chart-palette-5);
   }
 
   &.is-system {
-    background: var(--color-success-500);
+    background: var(--chart-palette-2);
   }
 
   &.is-tools {
-    background: var(--color-warning-500);
+    background: var(--chart-palette-3);
   }
 
   &.is-overhead {
@@ -3867,37 +4845,46 @@ watch(currentChatId, (threadId, oldThreadId) => {
   }
 }
 
-.token-usage-breakdown {
+.token-usage-supplement {
   display: flex;
   flex-direction: column;
-  gap: 6px 10px;
-  padding-top: 2px;
+  padding: 0 4px;
 }
 
-.token-usage-breakdown-row {
+.token-usage-supplement-row {
   min-width: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  font-size: 12px;
+  gap: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 11px;
   color: var(--gray-500);
-  flex-wrap: wrap;
 }
 
-.token-usage-breakdown-row span,
-.token-usage-breakdown-row strong {
+.token-usage-supplement-row:last-child {
+  border-bottom: 0;
+}
+
+.token-usage-supplement-row span,
+.token-usage-supplement-row strong {
   min-width: 0;
-  white-space: normal;
 }
 
-.token-usage-breakdown-row strong {
-  flex: 1 1 100%;
+.token-usage-supplement-row strong {
   color: var(--gray-800);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  line-height: 1.35;
-  word-break: break-word;
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .token-usage-context-fill,
+  .token-usage-stack-segment,
+  .state-section-chevron {
+    transition: none;
+  }
 }
 
 .todo-panel-list {
@@ -3958,6 +4945,11 @@ watch(currentChatId, (threadId, oldThreadId) => {
   line-height: 1.5;
   color: var(--gray-700);
   word-break: break-word;
+}
+
+.todo-item.completed .todo-item-text {
+  color: var(--gray-500);
+  text-decoration: line-through;
 }
 
 .state-list {

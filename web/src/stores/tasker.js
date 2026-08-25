@@ -131,7 +131,7 @@ export const useTaskerStore = defineStore('tasker', () => {
     if (!taskId) return
     try {
       await taskerApi.cancelTask(taskId)
-      message.success('Đã hủy tác vụ thành công')
+      message.success('Đã gửi yêu cầu hủy tác vụ')
       await refreshTask(taskId)
     } catch (error) {
       console.error(`Hủy tác vụ ${taskId} thất bại`, error)

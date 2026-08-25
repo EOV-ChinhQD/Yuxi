@@ -2,6 +2,7 @@ import traceback
 import uuid
 from typing import Any
 
+import aiofiles
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from yuxi.storage.postgres.models_business import User
 from server.utils.auth_middleware import get_db, get_required_user
 from yuxi import config as conf
+from yuxi.agents.tool_approval import ToolApprovalMode
 from yuxi.models import select_model
 from yuxi.services.chat_service import get_agent_state_view
 from yuxi.services.conversation_service import (
@@ -20,6 +22,7 @@ from yuxi.services.conversation_service import (
     get_thread_history_view,
     list_thread_attachments_view,
     list_threads_view,
+    mark_thread_viewed_view,
     parse_tmp_attachment_view,
     search_threads_view,
     update_thread_view,
@@ -132,6 +135,7 @@ class ThreadResponse(BaseModel):
     created_at: str
     updated_at: str
     metadata: dict[str, Any] = Field(default_factory=dict)
+    thread_status: str = "done"
 
 
 class ThreadSearchSnippet(BaseModel):
@@ -327,6 +331,7 @@ async def delete_thread(
 class ThreadUpdate(BaseModel):
     title: str | None = None
     is_pinned: bool | None = None
+    tool_approval_mode: ToolApprovalMode | None = None
 
 
 @chat.put("/thread/{thread_id}", response_model=ThreadResponse)
@@ -341,6 +346,21 @@ async def update_thread(
         thread_id=thread_id,
         title=thread_update.title,
         is_pinned=thread_update.is_pinned,
+        tool_approval_mode=thread_update.tool_approval_mode,
+        db=db,
+        current_uid=str(current_user.uid),
+    )
+
+
+@chat.post("/thread/{thread_id}/viewed", response_model=ThreadResponse)
+async def mark_thread_viewed(
+    thread_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_required_user),
+):
+    """记录用户已查看该线程的最新顶层 run，清除侧边栏未读状态。"""
+    return await mark_thread_viewed_view(
+        thread_id=thread_id,
         db=db,
         current_uid=str(current_user.uid),
     )
@@ -488,7 +508,9 @@ async def get_thread_artifact(
         path=path,
     )
 
-    media_type = detect_media_type(file_path.name, file_path.read_bytes())
+    async with aiofiles.open(file_path, "rb") as artifact_file:
+        file_head = await artifact_file.read(512)
+    media_type = detect_media_type(file_path.name, file_head)
     headers = {"Content-Disposition": f'attachment; filename="{file_path.name}"'} if download else None
     return FileResponse(path=file_path, media_type=media_type, headers=headers)
 

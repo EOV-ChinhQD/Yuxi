@@ -2,28 +2,138 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
 import fitz
+import pandas as pd
 import pytest
+import yuxi.knowledge.parser.factory as factory_module
 import yuxi.knowledge.parser.unified as parser_unified
 from docx import Document
 from PIL import Image
+from pypdf import PdfWriter
+from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 from yuxi.knowledge.parser import Parser
 from yuxi.knowledge.parser.factory import DocumentProcessorFactory
+from yuxi.knowledge.parser.mineru import MinerUParser
+from yuxi.knowledge.parser.mineru_official import MinerUOfficialParser
 from yuxi.knowledge.parser.models import ProcessingResult, ProcessingStatus
+from yuxi.knowledge.parser.rapid_ocr import RapidOCRParser
+from yuxi.knowledge.parser.registry import PROCESSOR_TYPES, get_parser_metadata
+from yuxi.services.ocr_service import parse_document
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
+def test_factory_cache_key_does_not_contain_credential():
+    cache_key = DocumentProcessorFactory._build_cache_key("deepseek_ocr", {"api_key": "top-secret"})
+
+    assert cache_key.startswith("deepseek_ocr|")
+    assert "top-secret" not in cache_key
+
+
+def test_clear_cache_can_target_single_engine(monkeypatch: pytest.MonkeyPatch):
+    first = SimpleNamespace()
+    second = SimpleNamespace()
+    monkeypatch.setattr(
+        factory_module,
+        "_PROCESSOR_CACHE",
+        {"rapid_ocr|one": first, "mineru_ocr|two": second},
+    )
+
+    DocumentProcessorFactory.clear_cache("rapid_ocr")
+
+    assert factory_module._PROCESSOR_CACHE == {"mineru_ocr|two": second}
+
+
+def test_parser_metadata_comes_from_parser_classes():
+    metadata = {engine_id: get_parser_metadata(engine_id) for engine_id in PROCESSOR_TYPES}
+
+    assert metadata["rapid_ocr"] == {
+        "service_name": "rapid_ocr",
+        "display_name": "RapidOCR (ONNX)",
+        "supported_extensions": RapidOCRParser.supported_extensions,
+    }
+    assert all(item["service_name"] == engine_id for engine_id, item in metadata.items())
+    assert all(item["display_name"] for item in metadata.values())
+
+
+def test_mineru_parser_normalizes_trailing_slash():
+    parser = MinerUParser(server_url="http://mineru-api:30001/")
+
+    assert parser.server_url == "http://mineru-api:30001"
+    assert parser.parse_endpoint == "http://mineru-api:30001/file_parse"
+
+
+def test_mineru_official_health_check_does_not_create_task(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        "yuxi.knowledge.parser.mineru_official.requests.post",
+        lambda *args, **kwargs: pytest.fail("Health check không được phép tạo tác vụ phân tích"),
+    )
+
+    health = MinerUOfficialParser(api_key="test-key").check_health()
+
+    assert health["status"] == "configured"
+
+
+def test_mineru_official_parsing_does_not_reject_configured_health(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    file_path = tmp_path / "mineru.pdf"
+    file_path.write_bytes(b"pdf")
+    parser = MinerUOfficialParser(api_key="test-key")
+
+    monkeypatch.setattr(parser, "_upload_file", lambda *args, **kwargs: "batch-id")
+    monkeypatch.setattr(
+        parser,
+        "_poll_batch_result",
+        lambda *args, **kwargs: {"state": "done", "full_zip_url": "https://example.test/result.zip"},
+    )
+
+    def raise_download_error(*args, **kwargs):
+        raise RuntimeError("use markdown fallback")
+
+    monkeypatch.setattr(parser, "_download_zip", raise_download_error)
+    monkeypatch.setattr(parser, "_download_and_extract", lambda *args, **kwargs: "parsed markdown")
+
+    assert parser.process_file(str(file_path)) == "parsed markdown"
+
+
+def test_rapid_ocr_health_check_does_not_load_model(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        "yuxi.knowledge.parser.rapid_ocr.RapidOCR",
+        lambda *args, **kwargs: pytest.fail("Health check không được phép tải model OCR"),
+    )
+
+    health = RapidOCRParser().check_health()
+
+    assert health["status"] == "healthy"
+
+
 def _build_pdf(file_path: Path, text: str) -> None:
-    doc = fitz.open()
-    page = doc.new_page()
-    page.insert_text((72, 72), text)
-    doc.save(str(file_path))
-    doc.close()
+    """Dùng pypdf dựng PDF tối giản có lớp văn bản (pypdfium2 chỉ đọc được, không ghi được)."""
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=595, height=842)
+    escaped = text.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+    stream = DecodedStreamObject()
+    stream.set_data(f"BT /F1 12 Tf 72 720 Td ({escaped}) Tj ET".encode())
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    font = DictionaryObject(
+        {
+            NameObject("/Type"): NameObject("/Font"),
+            NameObject("/Subtype"): NameObject("/Type1"),
+            NameObject("/BaseFont"): NameObject("/Helvetica"),
+            NameObject("/Encoding"): NameObject("/WinAnsiEncoding"),
+        }
+    )
+    resources = DictionaryObject()
+    resources[NameObject("/Font")] = DictionaryObject({NameObject("/F1"): font})
+    page[NameObject("/Resources")] = writer._add_object(resources)
+    writer.write(str(file_path))
 
 
 def _build_docx(file_path: Path, text: str) -> None:
@@ -37,11 +147,12 @@ def _build_png(file_path: Path) -> None:
     image.save(str(file_path))
 
 
-def test_parser_parse_pdf_file_returns_markdown_text(tmp_path: Path):
+@pytest.mark.asyncio
+async def test_parse_document_pdf_returns_markdown_text(tmp_path: Path):
     file_path = tmp_path / "parser_test.pdf"
     _build_pdf(file_path, "Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade.")
 
-    markdown = Parser.parse(str(file_path), params={"ocr_engine": "disable"})
+    markdown = await parse_document(str(file_path), params={"ocr_engine": "disable"})
 
     assert isinstance(markdown, str)
     assert "Parser" in markdown
@@ -49,7 +160,8 @@ def test_parser_parse_pdf_file_returns_markdown_text(tmp_path: Path):
     assert len(markdown.strip()) > 0
 
 
-def test_parser_parse_docx_file_returns_markdown_text(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+@pytest.mark.asyncio
+async def test_parse_document_docx_returns_markdown_text(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     file_path = tmp_path / "parser_test.docx"
     _build_docx(file_path, "Parser DOCX content")
 
@@ -59,11 +171,32 @@ def test_parser_parse_docx_file_returns_markdown_text(tmp_path: Path, monkeypatc
 
     monkeypatch.setattr(parser_unified, "_convert_with_docling", _raise_docling_error)
 
-    markdown = Parser.parse(str(file_path))
+    markdown = await parse_document(str(file_path))
 
     assert isinstance(markdown, str)
     assert "Parser DOCX content" in markdown
     assert len(markdown.strip()) > 0
+
+
+def test_convert_csv_to_markdown_preserves_column_dtypes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    file_path = tmp_path / "parser_test.csv"
+    file_path.write_text("id,score\n9007199254740993,2.5\n", encoding="utf-8")
+    captured_dtypes: list[dict[str, object]] = []
+    original_to_markdown = pd.DataFrame.to_markdown
+
+    def _capture_dtypes(dataframe: pd.DataFrame, *args, **kwargs) -> str:
+        captured_dtypes.append(dataframe.dtypes.to_dict())
+        return original_to_markdown(dataframe, *args, **kwargs)
+
+    monkeypatch.setattr(pd.DataFrame, "to_markdown", _capture_dtypes)
+
+    markdown = parser_unified._convert_csv_to_markdown(file_path)
+
+    assert markdown
+    assert str(captured_dtypes[0]["id"]) == "int64"
 
 
 def test_convert_with_docling_reinserts_image_links_in_document_order(
@@ -143,7 +276,8 @@ def test_convert_with_docling_keeps_image_placeholder_when_upload_fails(
     assert markdown == "before\n[picture: image_1000000.png]\nafter"
 
 
-def test_parser_parse_png_file_returns_markdown_text_with_mocked_ocr(
+@pytest.mark.asyncio
+async def test_parse_document_png_returns_markdown_text_with_mocked_ocr(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -153,21 +287,26 @@ def test_parser_parse_png_file_returns_markdown_text_with_mocked_ocr(
     async def _fake_parse_image_async(file, params=None):
         return "Parser PNG content"
 
-    monkeypatch.setattr(parser_unified, "parse_image_async", _fake_parse_image_async)
+    async def _resolve_params(params=None, db=None):
+        del db
+        return params or {}
 
-    markdown = Parser.parse(str(file_path), params={"ocr_engine": "rapid_ocr"})
+    monkeypatch.setattr(parser_unified, "parse_image_async", _fake_parse_image_async)
+    monkeypatch.setattr("yuxi.services.ocr_service.resolve_ocr_task_params", _resolve_params)
+
+    markdown = await parse_document(str(file_path), params={"ocr_engine": "rapid_ocr"})
 
     assert isinstance(markdown, str)
     assert "Parser PNG content" in markdown
     assert len(markdown.strip()) > 0
 
 
-def test_parse_image_uses_ocr_engine_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_parse_image_ignores_ocr_engine_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     file_path = tmp_path / "parser_test.png"
     _build_png(file_path)
     captured = {}
 
-    def _fake_process_file(processor_type, file, params=None):
+    def _fake_process_file(processor_type, file, params=None, processor_kwargs=None):
         captured["processor_type"] = processor_type
         captured["file"] = file
         captured["params"] = params
@@ -187,8 +326,8 @@ def test_parse_image_uses_ocr_engine_config(tmp_path: Path, monkeypatch: pytest.
     assert result == "OCR content"
     assert captured["processor_type"] == "mineru_ocr"
     assert captured["file"] == str(file_path)
-    assert captured["params"]["backend"] == "pipeline"
-    assert captured["params"]["formula_enable"] is False
+    assert captured["params"]["backend"] == "old-backend"
+    assert "formula_enable" not in captured["params"]
 
 
 def test_parse_image_ignores_enable_ocr(tmp_path: Path) -> None:
@@ -197,7 +336,6 @@ def test_parse_image_ignores_enable_ocr(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="bắt buộc phải bật OCR"):
         parser_unified.parse_image(str(file_path), params={"ocr_engine": "disable", "enable_ocr": "rapid_ocr"})
-
 
 
 @pytest.mark.asyncio
@@ -213,12 +351,38 @@ async def test_parser_aparse_pdf_file_returns_markdown_text(tmp_path: Path):
     assert len(markdown.strip()) > 0
 
 
+@pytest.mark.asyncio
+async def test_parse_document_docx_does_not_block_event_loop(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    file_path = tmp_path / "parser_test_async.docx"
+    file_path.write_bytes(b"fake docx")
+    completion_order: list[str] = []
+
+    def _slow_docling_conversion(*args, **kwargs) -> str:
+        time.sleep(0.1)
+        return "Async DOCX content"
+
+    async def _parse_document() -> None:
+        await parse_document(str(file_path))
+        completion_order.append("parse")
+
+    async def _record_event_loop_progress() -> None:
+        await asyncio.sleep(0.01)
+        completion_order.append("event_loop")
+
+    monkeypatch.setattr(parser_unified, "_convert_with_docling", _slow_docling_conversion)
+
+    await asyncio.gather(_parse_document(), _record_event_loop_progress())
+
+    assert completion_order == ["event_loop", "parse"]
+
+
 def test_parse_pdf_uses_config_default_ocr_when_engine_missing(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import yuxi
-
     file_path = tmp_path / "parser_test.pdf"
     _build_pdf(file_path, "Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade.")
     captured = {}
@@ -234,9 +398,10 @@ def test_parse_pdf_uses_config_default_ocr_when_engine_missing(
             return "default OCR content"
 
     def _fake_get_processor(processor_type, **kwargs):
+        del kwargs
         return _FakeProcessor(processor_type)
 
-    monkeypatch.setattr(yuxi.config, "default_ocr_engine", "mineru_ocr")
+    monkeypatch.setattr("yuxi.config.default_ocr_engine", "mineru_ocr")
     monkeypatch.setattr(DocumentProcessorFactory, "get_processor", _fake_get_processor)
 
     result = parser_unified.parse_pdf(str(file_path), params={})
@@ -248,13 +413,50 @@ def test_parse_pdf_uses_config_default_ocr_when_engine_missing(
     assert captured["file"] == str(file_path)
 
 
+@pytest.mark.asyncio
+async def test_parse_document_uses_config_default_ocr_when_engine_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Qua entrance parse_document, khi thiếu ocr_engine phải dùng default_ocr_engine trong config."""
+
+    file_path = tmp_path / "parser_test_default_engine.pdf"
+    _build_pdf(file_path, "Parser PDF content")
+    captured = {}
+
+    class _FakeProcessor:
+        def __init__(self, processor_type):
+            self.processor_type = processor_type
+
+        def process_file(self, file, params=None):
+            captured["processor_type"] = self.processor_type
+            captured["file"] = file
+            return "default OCR content"
+
+    def _fake_get_processor(processor_type, **kwargs):
+        del kwargs
+        return _FakeProcessor(processor_type)
+
+    async def _build_processor_kwargs(db, engine_id):
+        del db, engine_id
+        return {}
+
+    monkeypatch.setattr("yuxi.config.default_ocr_engine", "mineru_ocr")
+    monkeypatch.setattr(DocumentProcessorFactory, "get_processor", _fake_get_processor)
+    monkeypatch.setattr("yuxi.services.ocr_service._build_processor_kwargs", _build_processor_kwargs)
+
+    result = await parse_document(str(file_path), params={}, db=object())
+
+    assert result == "default OCR content"
+    assert captured["processor_type"] == "mineru_ocr"
+    assert captured["file"] == str(file_path)
+
+
 def test_parse_pdf_keeps_explicit_disable_when_default_ocr_enabled(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import yuxi
-
-    file_path = tmp_path / "parser_test.pdf"
+    file_path = tmp_path / "parser_test_disable.pdf"
     _build_pdf(file_path, "Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade.")
 
     class _FakeProcessor:
@@ -266,8 +468,8 @@ def test_parse_pdf_keeps_explicit_disable_when_default_ocr_enabled(
                 content="Parser PDF content. This is a longer string to make sure it is at least 50 characters long so docling does not degrade.",
             )
 
-    monkeypatch.setattr(yuxi.config, "default_ocr_engine", "mineru_ocr")
-    monkeypatch.setattr(DocumentProcessorFactory, "get_processor", lambda processor_type: _FakeProcessor())
+    monkeypatch.setattr("yuxi.config.default_ocr_engine", "mineru_ocr")
+    monkeypatch.setattr(DocumentProcessorFactory, "get_processor", lambda processor_type, **kwargs: _FakeProcessor())
 
     result = parser_unified.parse_pdf(str(file_path), params={"ocr_engine": "disable"})
 
@@ -277,8 +479,8 @@ def test_parse_pdf_keeps_explicit_disable_when_default_ocr_enabled(
 
 
 @pytest.mark.asyncio
-async def test_parser_aparse_image_file_with_mineru_when_available():
-    file_path = DATA_DIR / "test_image.png"
+async def test_parser_image_file_with_mineru_when_available():
+    file_path = DATA_DIR / "测试图片.png"
     assert file_path.exists(), f"Tệp kiểm thử không tồn tại: {file_path}"
 
     health = await asyncio.to_thread(DocumentProcessorFactory.check_health, "mineru_ocr")
@@ -298,7 +500,7 @@ async def test_parser_aparse_image_file_with_mineru_when_available():
 def test_density_analyzer_with_stratified_sampling(tmp_path: Path):
     from yuxi.knowledge.parser.density import PDFDensityAnalyzer
     analyzer = PDFDensityAnalyzer()
-    
+
     # Create a PDF with 20 pages (to trigger sampling > 15 pages)
     file_path = tmp_path / "density_test_sampled.pdf"
     doc = fitz.open()
@@ -308,7 +510,7 @@ def test_density_analyzer_with_stratified_sampling(tmp_path: Path):
         page.insert_text((72, 72), f"Page {i} Parser PDF content. This is page {i} text layer. We need to make sure this page has more than 100 characters to pass the threshold test cleanly.")
     doc.save(str(file_path))
     doc.close()
-    
+
     analysis = analyzer.analyze_document(file_path)
     assert analysis["total_pages"] == 20
     assert analysis["is_sampled"] is True
@@ -321,9 +523,9 @@ def test_density_analyzer_with_stratified_sampling(tmp_path: Path):
 def test_docling_processor_dynamic_degradation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     from yuxi.knowledge.parser.processors.docling import DoclingProcessor
     from yuxi.knowledge.parser.models import ProcessingStatus
-    
+
     processor = DoclingProcessor()
-    
+
     # Mock DocumentConverter
     class FakeConverter:
         def convert(self, path):
@@ -337,11 +539,10 @@ def test_docling_processor_dynamic_degradation(tmp_path: Path, monkeypatch: pyte
                 document=fake_doc,
                 pages=fake_pages
             )
-            
+
     monkeypatch.setattr(processor, "_get_converter", lambda ocr_policy: FakeConverter())
-    
+
     result = processor.process(str(tmp_path / "dummy.pdf"))
     assert result.status == ProcessingStatus.DEGRADED
     assert result.metadata["page_count"] == 10
     assert result.metadata["min_char_limit"] == 300
-

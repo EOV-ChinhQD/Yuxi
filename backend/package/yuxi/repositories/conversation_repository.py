@@ -9,7 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.attributes import flag_modified
 
-from yuxi.storage.postgres.models_business import Conversation, ConversationStats, Message, ToolCall
+from yuxi.storage.postgres.models_business import (
+    Conversation,
+    ConversationStats,
+    Message,
+    ToolCall,
+    UNVIEWED_RUN_MARKER,
+)
 from yuxi.utils import logger
 from yuxi.utils.datetime_utils import utc_now_naive
 
@@ -105,6 +111,7 @@ class ConversationRepository:
             title=normalized_title or "New Conversation",
             status="active",
             extra_metadata=metadata,
+            last_viewed_run_id=UNVIEWED_RUN_MARKER,
         )
 
         self.db.add(conversation)
@@ -141,9 +148,27 @@ class ConversationRepository:
         result = await self.db.execute(select(Conversation).where(Conversation.thread_id == thread_id))
         return result.scalar_one_or_none()
 
+    async def lock_conversation_by_thread_id(self, thread_id: str) -> Conversation | None:
+        """锁定线程根记录，串行化同一对话的调度决策。"""
+        result = await self.db.execute(
+            select(Conversation).where(Conversation.thread_id == thread_id).with_for_update()
+        )
+        return result.scalar_one_or_none()
+
     async def get_conversation_by_id(self, conversation_id: int) -> Conversation | None:
         result = await self.db.execute(select(Conversation).where(Conversation.id == conversation_id))
         return result.scalar_one_or_none()
+
+    async def mark_thread_viewed(self, thread_id: str, run_id: str) -> Conversation | None:
+        """记录用户最近查看过的顶层 run id；重复标记同一 run 时保持幂等。"""
+        conversation = await self.get_conversation_by_thread_id(thread_id)
+        if not conversation:
+            return None
+        if conversation.last_viewed_run_id != run_id:
+            conversation.last_viewed_run_id = run_id
+            await self.db.commit()
+            await self.db.refresh(conversation)
+        return conversation
 
     def _ensure_metadata(self, conversation: Conversation) -> dict:
         metadata = dict(conversation.extra_metadata or {})
@@ -347,6 +372,15 @@ class ConversationRepository:
 
         return pinned_conversations + non_pinned_conversations
 
+    async def list_active_conversations_for_user(self, uid: str) -> list[Conversation]:
+        """返回用户全部 active 对话，按最近更新时间排序。"""
+        result = await self.db.execute(
+            select(Conversation)
+            .where(Conversation.uid == str(uid), Conversation.status == "active")
+            .order_by(Conversation.updated_at.desc())
+        )
+        return list(result.scalars().all())
+
     async def search_conversations_by_message_content(
         self,
         *,
@@ -444,7 +478,7 @@ class ConversationRepository:
             conversation.is_pinned = is_pinned
 
         if metadata is not None:
-            current_metadata = conversation.extra_metadata or {}
+            current_metadata = dict(conversation.extra_metadata or {})
             current_metadata.update(metadata)
             conversation.extra_metadata = current_metadata
 
