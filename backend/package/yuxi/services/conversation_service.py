@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from yuxi.agents.backends.sandbox import (
     ensure_thread_dirs,
@@ -17,6 +18,9 @@ from yuxi.knowledge.parser.factory import DocumentProcessorFactory
 from yuxi.repositories.agent_repository import AgentRepository
 from yuxi.repositories.agent_run_repository import AgentRunRepository
 from yuxi.repositories.conversation_repository import INVOCATION_CONVERSATION_SOURCES, ConversationRepository
+from yuxi.repositories.project_repository import ProjectRepository
+from yuxi.services.project_service import create_implicit_project
+from yuxi.workspace.workdir import Workdir
 from yuxi.services.mention_search_service import invalidate_mention_cache
 from yuxi.services.ocr_service import parse_document
 from yuxi.storage.minio import StorageError, get_minio_client
@@ -68,8 +72,18 @@ def _thread_status(run_id: str | None, run_status: str | None, last_viewed_run_i
     return "ready"
 
 
+def _matches_thread_creation_intent(conversation, project, *, agent_slug: str, project_id: str | None) -> bool:
+    """Check whether a conversation matches the creation intent for idempotent replay."""
+    same_project_intent = (
+        conversation.project_id == project_id
+        if project_id
+        else project is not None and project.selection_status == "implicit"
+    )
+    return conversation.agent_id == agent_slug and same_project_intent
+
+
 def _serialize_thread(conversation: Any, *, thread_status: str) -> dict:
-    return {
+    result: dict[str, Any] = {
         "id": conversation.thread_id,
         "uid": conversation.uid,
         "agent_id": conversation.agent_id,
@@ -80,6 +94,12 @@ def _serialize_thread(conversation: Any, *, thread_status: str) -> dict:
         "metadata": conversation.extra_metadata or {},
         "thread_status": thread_status,
     }
+    # Expose project binding for frontend; keep backward compat when column missing in old DB
+    if hasattr(conversation, "project_id"):
+        result["project_id"] = getattr(conversation, "project_id")
+    if hasattr(conversation, "creation_request_id"):
+        result["creation_request_id"] = getattr(conversation, "creation_request_id")
+    return result
 
 
 async def _write_upload_to_disk(upload: UploadFile, dest: Path) -> int:
@@ -444,7 +464,12 @@ async def create_thread_view(
     metadata: dict | None,
     db: AsyncSession,
     current_uid: str,
+    request_id: str | None = None,
+    project_id: str | None = None,
 ) -> dict:
+    if metadata and "attachments" in metadata:
+        raise HTTPException(status_code=400, detail="metadata.attachments không được truyền trực tiếp")
+
     user_result = await db.execute(select(User).where(User.uid == str(current_uid)))
     current_user = user_result.scalar_one_or_none()
     if not current_user:
@@ -455,17 +480,98 @@ async def create_thread_view(
     if not agent_item:
         raise HTTPException(status_code=404, detail="Agent không tồn tại")
 
-    thread_id = str(uuid.uuid4())
     conv_repo = ConversationRepository(db)
+    normalized_request_id = str(request_id or "").strip() or None
+    if normalized_request_id:
+        existing = await conv_repo.get_conversation_by_creation_request_id(str(current_uid), normalized_request_id)
+        if existing is not None:
+            existing_project = await ProjectRepository(db).get_for_user(existing.project_id, str(current_uid))
+            if not _matches_thread_creation_intent(
+                existing,
+                existing_project,
+                agent_slug=agent_item.slug,
+                project_id=project_id,
+            ):
+                raise HTTPException(status_code=409, detail="request_id đã được dùng cho Conversation khác")
+            return _serialize_thread(existing, thread_status="done")
+
+    thread_id = str(uuid.uuid4())
     thread_metadata = dict(metadata or {})
     thread_metadata["backend_id"] = agent_item.backend_id
-    conversation = await conv_repo.create_conversation(
-        uid=str(current_uid),
-        agent_id=agent_item.slug,
-        title=title or "new conversation",
-        thread_id=thread_id,
-        metadata=thread_metadata,
-    )
+    if project_id:
+        project = await ProjectRepository(db).get_for_user(project_id, str(current_uid))
+        if project is None or project.selection_status != "selectable":
+            raise HTTPException(status_code=404, detail="Project không tồn tại")
+        try:
+            Workdir.open_existing(str(current_uid), project.workdir_path)
+        except (FileNotFoundError, NotADirectoryError, PermissionError, OSError, ValueError) as exc:
+            raise HTTPException(status_code=409, detail="Thư mục dự án không tồn tại") from exc
+    else:
+        try:
+            project = await create_implicit_project(
+                uid=str(current_uid),
+                db=db,
+                idempotency_key=f"thread:{normalized_request_id}" if normalized_request_id else None,
+            )
+        except IntegrityError:
+            await db.rollback()
+            if not normalized_request_id:
+                raise
+            project = await ProjectRepository(db).get_by_idempotency_key(
+                f"thread:{normalized_request_id}", str(current_uid)
+            )
+            if project is None or project.selection_status != "implicit":
+                raise HTTPException(status_code=409, detail="request_id đã được dùng cho Conversation khác")
+
+    try:
+        conversation = await conv_repo.add_conversation(
+            uid=str(current_uid),
+            agent_id=agent_item.slug,
+            title=title or "new conversation",
+            thread_id=thread_id,
+            metadata=thread_metadata,
+            project_id=project.id,
+            creation_request_id=normalized_request_id,
+        )
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        if not normalized_request_id:
+            raise
+        conversation = await conv_repo.get_conversation_by_creation_request_id(str(current_uid), normalized_request_id)
+        if conversation is None:
+            implicit_project = await ProjectRepository(db).get_by_idempotency_key(
+                f"thread:{normalized_request_id}", str(current_uid)
+            )
+            if implicit_project is None or project_id:
+                raise
+            project = implicit_project
+            conversation = await conv_repo.add_conversation(
+                uid=str(current_uid),
+                agent_id=agent_item.slug,
+                title=title or "new conversation",
+                thread_id=thread_id,
+                metadata=thread_metadata,
+                project_id=project.id,
+                creation_request_id=normalized_request_id,
+            )
+            await db.commit()
+        existing_project = await ProjectRepository(db).get_for_user(conversation.project_id, str(current_uid))
+        if not _matches_thread_creation_intent(
+            conversation,
+            existing_project,
+            agent_slug=agent_item.slug,
+            project_id=project_id,
+        ):
+            raise HTTPException(status_code=409, detail="request_id đã được dùng cho Conversation khác")
+        project = existing_project
+
+    # Ensure managed workdir directory exists for the bound project
+    try:
+        if project.directory_mode == "managed":
+            Workdir.open_or_create(str(current_uid), project.workdir_path)
+    except (OSError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return _serialize_thread(conversation, thread_status="done")
 

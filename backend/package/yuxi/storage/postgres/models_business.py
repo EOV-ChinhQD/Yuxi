@@ -11,6 +11,7 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    ForeignKeyConstraint,
     Index,
     Integer,
     String,
@@ -317,6 +318,8 @@ class Project(Base):
         DateTime, default=utc_now_naive, onupdate=utc_now_naive, server_default=func.now(), nullable=False
     )
 
+    conversations = relationship("Conversation", back_populates="project")
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
@@ -338,6 +341,7 @@ class Conversation(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True, comment="Primary key")
     thread_id = Column(String(64), unique=True, index=True, nullable=False, comment="Thread ID (UUID)")
+    creation_request_id = Column(String(64), nullable=True, comment="Creation idempotency key")
     uid = Column(String(64), index=True, nullable=False, comment="UID")
     # Tên cột lịch sử, thực tế lưu Agent.slug.
     agent_id = Column(String(64), index=True, nullable=False, comment="Agent slug (legacy column name: agent_id)")
@@ -345,6 +349,7 @@ class Conversation(Base):
     status = Column(String(20), default="active", comment="Status: active/archived/deleted")
     is_pinned = Column(Boolean, default=False, nullable=False, index=True, comment="Is pinned to top")
     last_viewed_run_id = Column(String(64), nullable=True, comment="Latest top-level run id viewed by user")
+    project_id = Column(String(64), nullable=True, index=True, comment="Bound Project ID")
     created_at = Column(DateTime, default=utc_now_naive, comment="Creation time")
     updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive, comment="Update time")
     extra_metadata = Column(JSON, nullable=True, comment="Additional metadata")
@@ -354,17 +359,29 @@ class Conversation(Base):
     stats = relationship(
         "ConversationStats", back_populates="conversation", uselist=False, cascade="all, delete-orphan"
     )
+    project = relationship("Project", back_populates="conversations")
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id", "uid"],
+            ["projects.id", "projects.uid"],
+            name="fk_conversations_project_uid",
+        ),
+        UniqueConstraint("uid", "creation_request_id", name="uq_conversations_uid_creation_request_id"),
+    )
 
     def to_dict(self) -> dict[str, Any]:
         metadata = self.extra_metadata or {}
         return {
             "id": self.id,
             "thread_id": self.thread_id,
+            "creation_request_id": self.creation_request_id,
             "uid": self.uid,
             "agent_id": self.agent_id,
             "title": self.title,
             "status": self.status,
             "is_pinned": bool(self.is_pinned),
+            "project_id": self.project_id,
             "created_at": format_utc_datetime(self.created_at),
             "updated_at": format_utc_datetime(self.updated_at),
             "metadata": metadata,

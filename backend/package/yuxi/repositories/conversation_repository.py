@@ -94,6 +94,8 @@ class ConversationRepository:
         title: str | None = None,
         thread_id: str | None = None,
         metadata: dict | None = None,
+        project_id: str | None = None,
+        creation_request_id: str | None = None,
     ) -> Conversation:
         """Tạo bản ghi cuộc hội thoại và thống kê nhưng chỉ flush, dành cho transaction bên ngoài tiếp tục liên kết quan hệ."""
         if not thread_id:
@@ -106,12 +108,14 @@ class ConversationRepository:
 
         conversation = Conversation(
             thread_id=thread_id,
+            creation_request_id=creation_request_id,
             uid=str(uid),
             agent_id=agent_id,
             title=normalized_title or "New Conversation",
             status="active",
             extra_metadata=metadata,
             last_viewed_run_id=UNVIEWED_RUN_MARKER,
+            project_id=project_id,
         )
 
         self.db.add(conversation)
@@ -128,9 +132,11 @@ class ConversationRepository:
         self,
         uid: str,
         agent_id: str,
+        project_id: str | None = None,
         title: str | None = None,
         thread_id: str | None = None,
         metadata: dict | None = None,
+        creation_request_id: str | None = None,
     ) -> Conversation:
         """Tạo và commit một cuộc hội thoại hoàn chỉnh, phù hợp cho các điểm gọi không cần sắp xếp transaction bên ngoài."""
         conversation = await self.add_conversation(
@@ -139,10 +145,22 @@ class ConversationRepository:
             title=title,
             thread_id=thread_id,
             metadata=metadata,
+            project_id=project_id,
+            creation_request_id=creation_request_id,
         )
         await self.db.commit()
         await self.db.refresh(conversation)
         return conversation
+
+    async def get_conversation_by_creation_request_id(self, uid: str, request_id: str) -> Conversation | None:
+        """Tra cứu Conversation theo creation_request_id idempotent."""
+        result = await self.db.execute(
+            select(Conversation).where(
+                Conversation.uid == str(uid),
+                Conversation.creation_request_id == request_id,
+            )
+        )
+        return result.scalar_one_or_none()
 
     async def get_conversation_by_thread_id(self, thread_id: str) -> Conversation | None:
         result = await self.db.execute(select(Conversation).where(Conversation.thread_id == thread_id))
