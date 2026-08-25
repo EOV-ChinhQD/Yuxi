@@ -107,11 +107,11 @@ export const useChatThreadsStore = defineStore('chatThreads', () => {
     }
   }
 
-  const createThread = async (agentId, title = 'cuộc trò chuyện mới', metadata = {}) => {
+  const createThread = async (agentId, title = 'cuộc trò chuyện mới', metadata = {}, options = {}) => {
     if (!agentId) return null
 
     try {
-      const thread = await threadApi.createThread(agentId, title, metadata)
+      const thread = await threadApi.createThread(agentId, title, metadata, options)
       if (thread) {
         threads.value = [thread, ...threads.value.filter((item) => item.id !== thread.id)]
       }

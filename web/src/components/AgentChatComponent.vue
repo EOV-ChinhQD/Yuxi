@@ -222,6 +222,12 @@
                   :inert="currentToolApprovalVisible"
                   :aria-hidden="currentToolApprovalVisible ? 'true' : undefined"
                 >
+                  <div v-if="!currentChatId" class="project-selection-wrapper" style="margin-bottom: 8px">
+                    <ProjectSelectionSection
+                      v-model="selectedProjectId"
+                      :disabled="threadCreationInFlight"
+                    />
+                  </div>
                   <AgentInputArea
                     ref="agentInputAreaRef"
                     v-model="userInput"
@@ -757,6 +763,8 @@ import {
 } from '@ant-design/icons-vue'
 import AgentInputArea from '@/components/AgentInputArea.vue'
 import ToolApprovalModeSelector from '@/components/ToolApprovalModeSelector.vue'
+import ProjectSelectionSection from '@/components/ProjectSelectionSection.vue'
+import { AUTO_PROJECT_ID } from '@/utils/projectSelection'
 import ModelSelectorComponent from '@/components/ModelSelectorComponent.vue'
 import AgentMessageComponent from '@/components/AgentMessageComponent.vue'
 import RefsComponent from '@/components/RefsComponent.vue'
@@ -820,6 +828,8 @@ const sendCooldownActive = ref(false)
 const cancellingRequestIds = reactive(new Set())
 const steeringRequestIds = reactive(new Set())
 let sendCooldownTimer = null
+const selectedProjectId = ref(AUTO_PROJECT_ID)
+const threadCreationInFlight = ref(false)
 // Predefined greeting texts
 const greetingMessages = [
   '👋 Hello, how can I help you today?',
@@ -2485,14 +2495,31 @@ const fetchThreads = async (agentId = null) => {
   await chatThreadsStore.loadThreads(targetAgentId)
 }
 
-// Tạo luồng mới
-const createThread = async (agentId, title = 'Cuộc trò chuyện mới') => {
+// Tạo luồng mới (hỗ trợ Project binding)
+const createThread = async (agentId, title = 'Cuộc trò chuyện mới', projectId = '', requestId = '') => {
   if (!agentId) return null
 
+  const effectiveProjectId = projectId || selectedProjectId.value
+  const normalizedProjectId =
+    effectiveProjectId && effectiveProjectId !== AUTO_PROJECT_ID ? effectiveProjectId : undefined
+  const effectiveRequestId =
+    requestId ||
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `req-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`)
+  threadCreationInFlight.value = true
   try {
-    const thread = await chatThreadsStore.createThread(agentId, title, {
-      tool_approval_mode: currentToolApprovalMode.value
-    })
+    const thread = await chatThreadsStore.createThread(
+      agentId,
+      title,
+      {
+        tool_approval_mode: currentToolApprovalMode.value
+      },
+      {
+        projectId: normalizedProjectId,
+        requestId: effectiveRequestId
+      }
+    )
     if (thread) {
       threadMessages.value[thread.id] = []
       threadFilesMap.value[thread.id] = []
@@ -2503,6 +2530,8 @@ const createThread = async (agentId, title = 'Cuộc trò chuyện mới') => {
     console.error('Failed to create thread:', error)
     handleChatError(error, 'create')
     throw error
+  } finally {
+    threadCreationInFlight.value = false
   }
 }
 

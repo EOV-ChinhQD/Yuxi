@@ -288,13 +288,16 @@ export const threadApi = {
    * @param {string} agentId - đại lýID
    * @param {string} title - Tiêu đề cuộc trò chuyện
    * @param {Object} metadata - Siêu dữ liệu
+   * @param {Object} options - requestId/projectId cho Project binding
    * @returns {Promise} - Tạo kết quả
    */
-  createThread: (agentId, title, metadata) =>
+  createThread: (agentId, title, metadata, { requestId, projectId } = {}) =>
     apiPost('/api/chat/thread', {
+      request_id: requestId,
       agent_id: agentId,
       title: title || 'cuộc trò chuyện mới',
-      metadata: metadata || {}
+      metadata: metadata || {},
+      ...(projectId ? { project_id: projectId } : {})
     }),
 
   /**
