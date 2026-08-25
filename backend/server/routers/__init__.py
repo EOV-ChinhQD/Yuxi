@@ -14,6 +14,7 @@ from server.routers.filesystem_router import filesystem_router
 from server.routers.mcp_router import mcp
 from server.routers.mention_router import mention_router
 from server.routers.model_provider_router import model_providers
+from server.routers.project_router import projects
 from server.routers.skill_router import skills, user_skills
 from server.routers.system_router import system
 from server.routers.system_task_router import tasks
@@ -45,6 +46,7 @@ router.include_router(skills)  # /api/system/skills/* Skills management
 router.include_router(user_skills)  # /api/skills/* User-available Skills
 router.include_router(tools)  # /api/system/tools/* Tool list and configuration
 router.include_router(user_router)  # /api/user/* User-level configuration and credentials
+router.include_router(projects)  # /api/projects/* User project & workdir binding
 router.include_router(filesystem_router)  # /api/viewer/filesystem/* Workbench file system view
 router.include_router(workspace)  # /api/workspace/* User personal workspace
 router.include_router(mention_router)  # /api/mention/* Mention file search interface

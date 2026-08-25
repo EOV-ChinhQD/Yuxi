@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     Float,
@@ -14,6 +15,8 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
@@ -280,6 +283,49 @@ class Skill(Base):
             "enabled": bool(self.enabled),
             "created_by": self.created_by,
             "updated_by": self.updated_by,
+            "created_at": format_utc_datetime(self.created_at),
+            "updated_at": format_utc_datetime(self.updated_at),
+        }
+
+
+class Project(Base):
+    """User project and its Workdir binding."""
+
+    __tablename__ = "projects"
+    __table_args__ = (
+        UniqueConstraint("id", "uid", name="uq_projects_id_uid"),
+        UniqueConstraint("uid", "idempotency_key", name="uq_projects_uid_idempotency_key"),
+        CheckConstraint("selection_status IN ('implicit', 'selectable')", name="ck_projects_selection_status"),
+        CheckConstraint("directory_mode IN ('managed', 'linked')", name="ck_projects_directory_mode"),
+    )
+
+    id = Column(String(64), primary_key=True, comment="Project UUID")
+    uid = Column(
+        String(64),
+        ForeignKey("users.uid", ondelete="CASCADE", name="fk_projects_uid_users"),
+        nullable=False,
+        index=True,
+        comment="UID",
+    )
+    name = Column(String(255), nullable=True, comment="Project name; implicit Project may be empty")
+    selection_status = Column(String(20), nullable=False, index=True, comment="implicit/selectable")
+    workdir_path = Column(String(512), nullable=False, comment="UserWorkspace-relative Workdir path")
+    directory_mode = Column(String(20), nullable=False, comment="managed/linked")
+    idempotency_key = Column(String(128), nullable=True, comment="Idempotent creation key")
+    created_at = Column(DateTime, default=utc_now_naive, server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime, default=utc_now_naive, onupdate=utc_now_naive, server_default=func.now(), nullable=False
+    )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "uid": self.uid,
+            "name": self.name,
+            "selection_status": self.selection_status,
+            "workdir_path": self.workdir_path,
+            "directory_mode": self.directory_mode,
+            "idempotency_key": self.idempotency_key,
             "created_at": format_utc_datetime(self.created_at),
             "updated_at": format_utc_datetime(self.updated_at),
         }
