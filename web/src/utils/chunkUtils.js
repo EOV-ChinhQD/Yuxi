@@ -81,7 +81,7 @@ export function mergeChunks(chunks) {
     return { content: '', chunks: [] }
   }
 
-  // Nhấnorder排序
+  // Sắp xếp theo thứ tự
   const sorted = [...chunks].sort((a, b) => a.chunk_order_index - b.chunk_order_index)
   const merged = []
   let currentContent = ''

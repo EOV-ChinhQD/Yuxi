@@ -61,7 +61,7 @@ const loadingMessageChunk = (chunk) => {
 }
 
 // Kết quả công cụ không đi qua messages Dòng, mà là method=tools của stream_event Sự kiện trả về（tool-started/tool-finished）。
-// Lấy ra tool-finished của output（Một dòng ToolMessage Từ điển), giao cho msgChunks 与 AI Tin nhắn theo tool_call_id Liên kết。
+// Lấy output của tool-finished (một dòng ToolMessage dạng từ điển), rồi gán vào msgChunks và liên kết với tin nhắn AI theo tool_call_id.
 const toolFinishedMessage = (chunk) => {
   const streamEvent = chunk?.event
   if (!streamEvent || streamEvent.method !== 'tools') return null
@@ -271,7 +271,7 @@ export function useAgentStreamHandler({
             threadState.pendingInterrupt = pendingInterrupt
           }
         }
-        // 如果有 message Cột, hiển thị thông báo (ví dụ: phát hiện nội dung dễ gây khó chịu)）
+        // Nếu có cột message thì hiển thị thông báo (ví dụ: phát hiện nội dung dễ gây khó chịu)
         if (chunkMessage) {
           message.info(chunkMessage)
         }

@@ -1319,7 +1319,7 @@ const chunkData = async () => {
     // Lọc ra các mục thành công
     const successfulItems = urlList.value.filter((item) => item.status === 'success' && item.data)
     if (successfulItems.length === 0) {
-      message.error('Vui lòng thêm và chờ ít nhất một URL phân tíchThành công')
+      message.error('Vui lòng thêm và đợi ít nhất một URL phân tích thành công')
       return
     }
 
