@@ -65,6 +65,12 @@ async def create_project_record(
             normalized_path = normalize_linked_workdir_path(workdir_path)
             await _lock_project_workdir_changes(db=db, uid=str(uid))
             Workdir.open_existing(str(uid), normalized_path)
+            # Prevent duplicate linked workdir per user (specialized: linked-only duplication check)
+            existing = await ProjectRepository(db).get_by_workdir_path(str(uid), normalized_path)
+            if existing is not None:
+                raise HTTPException(status_code=409, detail="Thư mục đã được liên kết với Project khác")
+        except HTTPException:
+            raise
         except FileNotFoundError as exc:
             raise HTTPException(status_code=404, detail="Thư mục không tồn tại") from exc
         except (NotADirectoryError, PermissionError, OSError, ValueError) as exc:
@@ -142,20 +148,52 @@ async def list_projects_view(*, uid: str, db) -> list[dict]:
     return [project.to_dict() for project in projects]
 
 
+async def get_project_view(*, uid: str, project_id: str, db) -> dict:
+    """Get a single Project owned by user."""
+    project = await ProjectRepository(db).get_for_user(project_id, str(uid))
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project không tồn tại")
+    return project.to_dict()
+
+
+async def update_project_view(*, uid: str, project_id: str, name: str, db) -> dict:
+    """Rename a selectable Project."""
+    project = await ProjectRepository(db).get_for_user(project_id, str(uid))
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project không tồn tại")
+    if project.selection_status != "selectable":
+        raise HTTPException(status_code=400, detail="Chỉ Project selectable mới được đổi tên")
+    project.name = _normalize_project_name(name, required=True)
+    await db.flush()
+    await db.commit()
+    return project.to_dict()
+
+
+async def delete_project_view(*, uid: str, project_id: str, db) -> dict:
+    """Delete a selectable Project if no conversations are bound."""
+    project = await ProjectRepository(db).get_for_user(project_id, str(uid))
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project không tồn tại")
+    if project.selection_status != "selectable":
+        raise HTTPException(status_code=400, detail="Chỉ Project selectable mới được xóa")
+    repo = ProjectRepository(db)
+    count = await repo.count_bound_conversations(project_id, str(uid))
+    if count > 0:
+        raise HTTPException(status_code=409, detail="Project còn chứa hội thoại, không thể xóa")
+    await repo.delete(project)
+    await db.commit()
+    return {"message": "Project đã xóa"}
+
+
 async def list_history_candidates_view(*, uid: str, db, query: str = "", limit: int = 20, offset: int = 0) -> dict:
     """List historical Conversations usable as directory shortcuts for a new Project."""
-    conversations = await ProjectRepository(db).list_history_candidates(str(uid))
-    normalized_query = (query or "").strip().lower()
-    items = []
+    rows, has_more = await ProjectRepository(db).list_history_candidates(
+        str(uid), query=query, limit=limit, offset=offset
+    )
     seen_workdirs = set()
-    for item, workdir_path in conversations:
+    items = []
+    for item, workdir_path in rows:
         if workdir_path in seen_workdirs:
-            continue
-        if (
-            normalized_query
-            and normalized_query not in (item.title or "").lower()
-            and normalized_query not in (item.agent_id or "").lower()
-        ):
             continue
         seen_workdirs.add(workdir_path)
         items.append(
@@ -167,4 +205,4 @@ async def list_history_candidates_view(*, uid: str, db, query: str = "", limit: 
                 "updated_at": item.updated_at.isoformat(),
             }
         )
-    return {"items": items[offset : offset + limit], "has_more": len(items) > offset + limit}
+    return {"items": items, "has_more": has_more}

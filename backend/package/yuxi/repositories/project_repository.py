@@ -49,9 +49,30 @@ class ProjectRepository:
         )
         return list(result.scalars().all())
 
-    async def list_history_candidates(self, uid: str) -> list[tuple[Conversation, str]]:
-        """List ordinary historical conversations that resolve to a real Workdir path."""
+    async def get_by_workdir_path(self, uid: str, workdir_path: str) -> Project | None:
+        """Check duplicate linked workdir per user."""
+        return await self.db.scalar(
+            select(Project).where(Project.uid == str(uid), Project.workdir_path == workdir_path)
+        )
+
+    async def delete(self, project: Project) -> None:
+        """Delete a Project."""
+        await self.db.delete(project)
+        await self.db.flush()
+
+    async def count_bound_conversations(self, project_id: str, uid: str) -> int:
+        """Count conversations bound to a project."""
         result = await self.db.execute(
+            select(Conversation.id).where(Conversation.project_id == project_id, Conversation.uid == str(uid))
+        )
+        return len(result.scalars().all())
+
+    async def list_history_candidates(
+        self, uid: str, query: str | None = None, limit: int = 20, offset: int = 0
+    ) -> tuple[list[tuple[Conversation, str]], bool]:
+        """List historical conversations with DB-side filtering and pagination."""
+        normalized = (query or "").strip().lower()
+        stmt = (
             select(Conversation, Project.workdir_path)
             .join(Project, (Project.uid == Conversation.uid) & (Project.id == Conversation.project_id))
             .where(
@@ -63,6 +84,13 @@ class ProjectRepository:
                     | Conversation.extra_metadata["source"].as_string().notin_(INVOCATION_CONVERSATION_SOURCES)
                 ),
             )
-            .order_by(Conversation.updated_at.desc(), Conversation.id.desc())
         )
-        return list(result.all())
+        if normalized:
+            stmt = stmt.where(
+                (Conversation.title.ilike(f"%{normalized}%")) | (Conversation.agent_id.ilike(f"%{normalized}%"))
+            )
+        stmt = stmt.order_by(Conversation.updated_at.desc(), Conversation.id.desc()).limit(limit + 1).offset(offset)
+        result = await self.db.execute(stmt)
+        rows = list(result.all())
+        has_more = len(rows) > limit
+        return rows[:limit], has_more

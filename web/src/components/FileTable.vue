@@ -624,7 +624,7 @@ const isBatchIndexOperation = ref(false)
 const isPendingIndexOperation = ref(false)
 const pendingIndexTotal = ref(0)
 const pendingIndexTotalText = computed(() =>
-  Number(pendingIndexTotal.value || 0).toLocaleString('zh-CN')
+  Number(pendingIndexTotal.value || 0).toLocaleString('vi-VN')
 )
 
 const pageSizeOptions = ['100', '300', '500']

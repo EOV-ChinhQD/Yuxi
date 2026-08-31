@@ -1,5 +1,5 @@
 <script setup>
-import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import viVN from 'ant-design-vue/es/locale/vi_VN'
 import { useAgentStore } from '@/stores/agent'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
@@ -16,7 +16,7 @@ onMounted(async () => {
 })
 </script>
 <template>
-  <a-config-provider :theme="themeStore.currentTheme" :locale="zhCN">
+  <a-config-provider :theme="themeStore.currentTheme" :locale="viVN">
     <router-view />
   </a-config-provider>
 </template>

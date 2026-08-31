@@ -296,6 +296,7 @@ class Project(Base):
     __table_args__ = (
         UniqueConstraint("id", "uid", name="uq_projects_id_uid"),
         UniqueConstraint("uid", "idempotency_key", name="uq_projects_uid_idempotency_key"),
+        UniqueConstraint("uid", "workdir_path", name="uq_projects_uid_workdir_path"),
         CheckConstraint("selection_status IN ('implicit', 'selectable')", name="ck_projects_selection_status"),
         CheckConstraint("directory_mode IN ('managed', 'linked')", name="ck_projects_directory_mode"),
     )

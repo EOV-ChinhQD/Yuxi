@@ -170,12 +170,46 @@
 
       <div class="project-form-field">
         <span>Project directory (workspace-relative, e.g., my-project/docs)</span>
-        <a-input
-          v-model:value="linkedPath"
-          placeholder="my-project/docs"
-          :disabled="creatingProject"
-        />
-        <span class="project-form-hint">Free space on C: is ~21 GB — keep workdir paths concise to save capacity.</span>
+        <div class="project-path-input-row">
+          <a-input
+            v-model:value="linkedPath"
+            placeholder="my-project/docs"
+            :disabled="creatingProject"
+          />
+          <a-button size="small" :disabled="creatingProject" @click="toggleBrowser">Browse</a-button>
+        </div>
+        <span class="project-form-hint">Keep workdir paths concise — linked to existing workspace directory.</span>
+        <div v-if="showBrowser" class="project-browser">
+          <div class="project-browser-header">
+            <span class="project-browser-path">{{ browsingPath }}</span>
+            <a-spin v-if="browsingLoading" size="small" />
+            <a-button v-else size="small" type="text" @click="loadBrowse(browsingPath)">Refresh</a-button>
+          </div>
+          <div v-if="browsingError" class="project-browser-error">{{ browsingError }}</div>
+          <div class="project-browser-list">
+            <button
+              v-if="browsingPath !== '/'"
+              type="button"
+              class="project-browser-item"
+              @click="navigateUp"
+            >
+              .. (up)
+            </button>
+            <button
+              v-for="entry in browsingDirs"
+              :key="entry.path"
+              type="button"
+              class="project-browser-item"
+              :class="{ selected: linkedPath === entry.path.replace(/^\//, '') }"
+              @click="selectBrowseEntry(entry)"
+              @dblclick="enterBrowseEntry(entry)"
+            >
+              <FolderClosed :size="13" />
+              <span :title="entry.path">{{ entry.name || entry.path }}</span>
+            </button>
+            <div v-if="!browsingDirs.length && !browsingLoading" class="project-browser-empty">No directories</div>
+          </div>
+        </div>
       </div>
     </div>
   </a-modal>
@@ -196,6 +230,7 @@ import {
   Search
 } from 'lucide-vue-next'
 import { projectApi } from '@/apis/project'
+import { getWorkspaceTree } from '@/apis/workspace_api'
 import { AUTO_PROJECT_ID, filterProjects, formatRelativeTime } from '@/utils/projectSelection'
 
 const props = defineProps({
@@ -224,6 +259,12 @@ const historyError = ref('')
 let historySearchTimer = null
 let projectSearchFocusTimer = null
 let historyRequestVersion = 0
+
+const showBrowser = ref(false)
+const browsingPath = ref('/')
+const browsingDirs = ref([])
+const browsingLoading = ref(false)
+const browsingError = ref('')
 
 const requestId = () =>
   typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -277,6 +318,10 @@ const openCreateModal = (selectedPath = '') => {
   projectName.value = ''
   projectCreationRequestId.value = requestId()
   linkedPath.value = selectedPath ? String(selectedPath).replace(/^\/+/, '') : ''
+  showBrowser.value = false
+  browsingPath.value = '/'
+  browsingDirs.value = []
+  browsingError.value = ''
   createModalOpen.value = true
 }
 
@@ -334,6 +379,40 @@ const handleHistorySearchChange = () => {
   loadingHistory.value = false
   if (historySearchTimer) clearTimeout(historySearchTimer)
   historySearchTimer = setTimeout(() => void loadHistoryCandidates(), 250)
+}
+
+const loadBrowse = async (path = '/') => {
+  browsingLoading.value = true
+  browsingError.value = ''
+  try {
+    const res = await getWorkspaceTree(path, false, false)
+    const entries = res.entries || res || []
+    browsingDirs.value = entries.filter((e) => e.is_dir)
+    browsingPath.value = path
+  } catch (e) {
+    browsingError.value = e?.response?.data?.detail || e?.message || 'Failed to load workspace'
+  } finally {
+    browsingLoading.value = false
+  }
+}
+
+const toggleBrowser = () => {
+  showBrowser.value = !showBrowser.value
+  if (showBrowser.value) void loadBrowse(browsingPath.value)
+}
+
+const navigateUp = () => {
+  const parts = browsingPath.value.replace(/\/$/, '').split('/').filter(Boolean)
+  parts.pop()
+  void loadBrowse('/' + parts.join('/') || '/')
+}
+
+const selectBrowseEntry = (entry) => {
+  linkedPath.value = String(entry.path || '').replace(/^\/+/, '')
+}
+
+const enterBrowseEntry = (entry) => {
+  if (entry.is_dir || entry.isDir) void loadBrowse(entry.path)
 }
 
 const selectHistoryDirectory = (candidate) => {
@@ -736,6 +815,81 @@ onUnmounted(() => {
   margin: auto;
   padding: 16px;
   color: var(--color-text-secondary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.project-path-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.project-path-input-row :deep(.ant-input) {
+  flex: 1;
+}
+
+.project-browser {
+  margin-top: 8px;
+  border: 1px solid var(--gray-150);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.project-browser-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--gray-50);
+  font-size: 12px;
+}
+
+.project-browser-path {
+  font-family: monospace;
+  color: var(--color-text-secondary);
+}
+
+.project-browser-error {
+  padding: 4px 8px;
+  color: var(--color-error-700);
+  font-size: 12px;
+}
+
+.project-browser-list {
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.project-browser-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+
+.project-browser-item:hover {
+  background: var(--gray-50);
+}
+
+.project-browser-item.selected {
+  background: var(--gray-100);
+  color: var(--main-color);
+}
+
+.project-browser-empty {
+  padding: 8px;
+  color: var(--color-text-tertiary);
   font-size: 12px;
   text-align: center;
 }

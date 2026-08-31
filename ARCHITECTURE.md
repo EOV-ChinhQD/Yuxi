@@ -39,7 +39,8 @@ Yuxi 是一个面向 RAG、知识图谱和多智能体工作流的知识库平�
 ### `backend/package/yuxi`
 
 - `agents` 定义 LangGraph 智能体体系。`BaseAgent` 是智能体基类，`BaseContext` 是运行上下文；`buildin/chatbot` 和 `buildin/subagent` 放内置智能体；`middlewares` 组合文件系统、Skills、SubAgent、摘要、审批、模型兼容和用量统计；`toolkits` 管理本地工具；`backends` 对接沙盒、知识库和 Skills 文件系统；`skills` 与 `mcp` 管理扩展能力及其运行时加载。
-- `services` 是用例层。智能体主链路重点分为请求接入与排队、Run 生命周期、运行时配置、worker 执行和 SubAgent 调用；聊天历史、附件、工作区、文件预览、评估、认证和观测等跨模块流程也从这里找入口。
+- `workspace` (`workspace/workdir.py`, `workspace/paths.py`) là Project Workdir chuyên biệt: `linked-only`, `normalize_linked_workdir_path` + symlink guard, `projects/{uuid}` cho implicit, `uid+workdir_path` unique.
+- `services` 是用例层。智能体主链路重点分为请求接入与排队、Run 生命周期、运行时配置、worker 执行和 SubAgent 调用；`project_service` + `conversation_service` quản lý Project binding, `agent_request_queue_service` quản FIFO + Steer + advisory lock; 聊天历史、附件、工作区、文件预览、评估、认证和观测等跨模块流程也从这里找入口。
 - `repositories` 是 PostgreSQL 访问边界，封装业务对象、知识库元数据、AgentRun、请求队列、Task 和扩展配置查询。路由不应绕过 repository 直接拼装持久化逻辑。
 - `storage/postgres` 管理 SQLAlchemy 模型、业务连接池和 LangGraph checkpoint 连接池。
 - `storage/redis` 管理同步/异步 Redis 客户端和 ARQ 连接参数；业务 key、事件格式和缓存语义留在各自服务中。

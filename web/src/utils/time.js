@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
+import 'dayjs/locale/vi'
 import utc from 'dayjs/plugin/utc'
 import timezone from 'dayjs/plugin/timezone'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -7,7 +7,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 dayjs.extend(relativeTime)
-dayjs.locale('zh-cn')
+dayjs.locale('vi')
 
 const DEFAULT_TZ = 'Asia/Shanghai'
 dayjs.tz.setDefault(DEFAULT_TZ)

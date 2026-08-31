@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from './base'
+import { apiDelete, apiGet, apiPatch, apiPost } from './base'
 
 const buildQuery = (params) => {
   const query = new URLSearchParams()
@@ -22,6 +22,12 @@ export const projectApi = {
         ...(mode === 'linked' && path ? { path: String(path).replace(/^\/+/, '') } : {})
       }
     }),
+
+  getProject: (id) => apiGet(`/api/projects/${id}`),
+
+  updateProject: (id, { name }) => apiPatch(`/api/projects/${id}`, { name }),
+
+  deleteProject: (id) => apiDelete(`/api/projects/${id}`),
 
   getHistoryCandidates: ({ query = '', limit = 20, offset = 0 } = {}) =>
     apiGet(`/api/projects/history-candidates?${buildQuery({ q: query, limit, offset })}`)

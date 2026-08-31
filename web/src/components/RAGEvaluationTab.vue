@@ -1065,7 +1065,7 @@ const deleteEvaluationRecord = async (runId) => {
 const formatTime = (timeStr) => {
   if (!timeStr) return '-'
   const date = new Date(timeStr)
-  return date.toLocaleString('zh-CN')
+  return date.toLocaleString('vi-VN')
 }
 
 const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value)

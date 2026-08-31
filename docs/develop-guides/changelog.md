@@ -4,11 +4,16 @@
 
 同一版本的多次功能更新时，应以功能为单位进行更新，比如之前添加了 A 功能的更新，在后续的更新中修复了因 A 功能引入的 bug，那么这个修复说明应该和 A 功能描述放在一起（重新修改表达，而不仅仅是补充），而不是新增一条修复记录，功能更新同理。必须遵守：每一个修改不应超过 200 字，注意高度凝练。
 
-## v0.7.2 (current)
+## v0.7.2 (current) — Specialized fork
 
-::: warning 升级提醒
-1. 升级到 v0.7.2 后，管理员此前创建的 stdio MCP 会被禁用，也无法重新启用。请在详情页迁移为 SSE 或 Streamable HTTP，或直接删除；代码内置的系统 stdio MCP 不受影响。
+::: warning 升级提醒 (chuyên biệt)
+1. Fork này chuyên biệt `Project-centric` trên nền v0.7.2: `linked-only` Project, `uid+workdir_path` unique, `queue` advisory lock, `vi` i18n (zh-CN→vi). Không đồng bộ `memory/audit` nặng của upstream.
+2. Gốc: 升级到 v0.7.2 后，管理员此前创建的 stdio MCP 会被禁用，也无法重新启用。请在详情页迁移为 SSE 或 Streamable HTTP，或直接删除；代码内置的系统 stdio MCP 不受影响。
 :::
+
+- **Project & Workdir chuyên biệt**: Thêm `Project` CRUD `GET/PATCH/DELETE /api/projects/{id}` với `linked-only`, `UniqueConstraint(uid, workdir_path)` `a1b2c3d4e5f6`, `Workdir` symlink guard, history-candidates DB-side `ILIKE + limit/offset`, frontend `ProjectSelectionSection` thêm Browse qua `workspace/tree`.
+- **Queue hardening**: `recover_pending_dispatches` thêm `pg_try_advisory_xact_lock` tránh duplicate dispatch đa worker, SSE giữ COUNT O(1) chỉ emit khi đổi position.
+- **i18n**: `App.vue` `zhCN→viVN`, `time.js` `zh-cn→vi`, `toLocaleString zh-CN→vi-VN`, `docs/.vitepress/config.mts` `zh-CN→vi`.
 
 - 完善 Agent Token 用量统计：state 同时保留近似上下文与主 Agent 模型返回的 Provider `usage_metadata`，实际用量拆分为最近调用、当前 Run 和线程累计；前端只读取 state，终态 chunk 不传递用量，worker 在 Run 终态时将父线程中 Run ID 匹配的 state 快照写入 AgentRun。支持 OpenAI priority/flex 缓存明细；L2 摘要内部调用暂未计入完整账单口径。
 - 修复公开图片上传的存储型 XSS 风险：头像与用户图片不再信任客户端 MIME 或文件名后缀，服务端校验真实图片内容且仅接受 PNG、JPEG、WebP、GIF，对象名使用识别出的固定安全后缀，拒绝伪装成图片的 SVG。

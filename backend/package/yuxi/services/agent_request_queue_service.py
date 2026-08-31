@@ -426,7 +426,21 @@ async def dispatch_next_request(
 
 async def recover_pending_dispatches() -> None:
     """恢复 pending 投递及 completed hook 留下的 ready 队列。"""
+    # Specialized optimization: use advisory lock to prevent duplicate dispatch on multi-worker deploys.
     async with pg_manager.get_async_session_context() as db:
+        try:
+            await db.execute(
+                select(1).where(False)
+            )  # dummy to ensure session
+            # Use pg_try_advisory_xact_lock to avoid blocking concurrent recoveries
+            locked = await db.execute(
+                __import__("sqlalchemy").text("SELECT pg_try_advisory_xact_lock(hashtextextended('queue-recover', 0))")
+            )
+            if not locked.scalar():
+                logger.info("Queue recovery skipped: another worker holds advisory lock")
+                return
+        except Exception:
+            pass
         pending_result = await db.execute(
             select(AgentRun.uid, AgentRun.agent_slug, AgentRun.conversation_thread_id).where(
                 AgentRun.status == "pending"
