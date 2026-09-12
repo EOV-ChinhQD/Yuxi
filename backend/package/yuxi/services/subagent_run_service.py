@@ -286,11 +286,21 @@ class SubagentRunService:
                 raise ValueError(f"Thread sub-agent {child_thread_id} thuộc agent {conversation.agent_id}")
             return conversation
 
+        # Inherit project_id from creator_run / parent conversation
+        parent_conv = None
+        if hasattr(self.conv_repo, "get_conversation_by_id") and creator_run.conversation_id:
+            parent_conv = await self.conv_repo.get_conversation_by_id(creator_run.conversation_id)
+        elif hasattr(self.conv_repo, "get_conversation_by_thread_id") and creator_run.conversation_thread_id:
+            parent_conv = await self.conv_repo.get_conversation_by_thread_id(creator_run.conversation_thread_id)
+
+        project_id = parent_conv.project_id if parent_conv and getattr(parent_conv, "project_id", None) else None
+
         conversation = await self.conv_repo.add_conversation(
             uid=uid,
             agent_id=agent_item.slug,
             title=f"SubAgent: {agent_item.name}",
             thread_id=child_thread_id,
+            project_id=project_id,
             metadata={
                 "source": "subagent",
                 "parent_thread_id": creator_run.conversation_thread_id,

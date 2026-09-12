@@ -156,6 +156,9 @@ def _patch_repos(
         async def lock_conversation_by_thread_id(self, thread_id: str):
             return await self.get_conversation_by_thread_id(thread_id)
 
+        async def get_conversation_by_id(self, conversation_id: int):
+            return SimpleNamespace(id=conversation_id, project_id="proj-123")
+
         async def add_conversation(
             self,
             *,
@@ -164,12 +167,15 @@ def _patch_repos(
             title: str,
             thread_id: str,
             metadata: dict,
+            project_id: str | None = None,
+            **kwargs,
         ):
             captured["conversation"] = {
                 "uid": uid,
                 "agent_id": agent_id,
                 "title": title,
                 "thread_id": thread_id,
+                "project_id": project_id,
                 "metadata": metadata,
             }
             child_conversation.thread_id = thread_id
@@ -347,6 +353,7 @@ async def test_subagent_run_service_creates_child_relation_run_and_enqueue(monke
     assert result.relation.child_thread_id == child_thread_id
     assert result.relation is relation
     assert child_conversation.status == "subagent"
+    assert captured["conversation"]["project_id"] == "proj-123"
     assert captured["conversation"]["metadata"]["parent_conversation_id"] == 10
     assert captured["relation"] == {
         "uid": "user-1",

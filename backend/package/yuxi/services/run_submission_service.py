@@ -123,11 +123,15 @@ async def submit_run_command(
             raise HTTPException(status_code=404, detail="对话线程不存在")
         try:
             async with db.begin_nested():
+                from yuxi.services.project_service import create_implicit_project
+
+                implicit_project = await create_implicit_project(uid=str(current_user.uid), db=db)
                 conversation = await conversation_repo.add_conversation(
                     uid=str(current_user.uid),
                     agent_id=agent_item.slug,
                     title=command.conversation_title,
                     thread_id=command.thread_id,
+                    project_id=implicit_project.id,
                     metadata={
                         **origin_metadata,
                         "source": origin.source,

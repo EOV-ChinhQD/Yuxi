@@ -106,6 +106,15 @@ class ConversationRepository:
 
         normalized_title = self._normalize_title(title)
 
+        if not project_id:
+            try:
+                from yuxi.services.project_service import create_implicit_project
+
+                implicit_project = await create_implicit_project(uid=str(uid), db=self.db)
+                project_id = implicit_project.id
+            except Exception as e:
+                logger.warning(f"Could not auto-create implicit project for user {uid}: {e}")
+
         conversation = Conversation(
             thread_id=thread_id,
             creation_request_id=creation_request_id,
