@@ -1,7 +1,7 @@
-"""Agent Call HTTP 协议适配。
+"""Agent Call HTTP protocol adapter.
 
-本模块只处理 Agent Call 的请求/响应格式、同步等待和 OpenAI-compatible
-响应装配；Conversation、Request、Run 的创建统一交给 ``submit_run_command``。
+This module handles request/response format, synchronous waiting, and OpenAI-compatible
+response assembly for Agent Calls; Conversation, Request, and Run creation are handled by ``submit_run_command``.
 """
 
 from __future__ import annotations
@@ -34,28 +34,28 @@ MAX_REQUEST_ID_LENGTH = 64
 
 
 class AgentCallRunCreate(BaseModel):
-    """Agent Call 创建请求，兼容 OpenAI 风格消息输入。"""
+    """Agent Call creation request, compatible with OpenAI-style message input."""
 
-    agent_slug: str = Field(..., description="要调用的智能体 slug")
-    messages: list[dict[str, Any]] = Field(..., description="消息列表，取最后一条 user 消息作为输入")
-    stream: bool = Field(False, description="暂不支持流式，传 true 会返回 422")
+    agent_slug: str = Field(..., description="Agent slug to invoke")
+    messages: list[dict[str, Any]] = Field(..., description="List of messages, last user message used as input")
+    stream: bool = Field(False, description="Streaming not yet supported, passing true returns 422")
     agent_call_meta: dict[str, Any] = Field(
         default_factory=dict,
-        description="Agent Call 元数据；不允许通过 context 覆盖 Agent 运行上下文",
+        description="Agent Call metadata; cannot override Agent runtime context via context",
     )
-    thread_id: str | None = Field(None, description="可选会话线程 ID，不传则自动创建临时线程")
-    request_id: str | None = Field(None, description="可选请求幂等 ID，不传则自动生成")
-    model_spec: str | None = Field(None, description="可选模型覆盖")
-    tool_approval_mode: str | None = Field(None, description="可选工具审批模式覆盖")
-    async_mode: bool = Field(False, description="是否只创建运行并立即返回 run_id")
-    queue_policy: str | None = Field(None, description="排队策略；异步调用默认 enqueue，同步调用固定 reject")
+    thread_id: str | None = Field(None, description="Optional conversation thread ID; auto-generated if omitted")
+    request_id: str | None = Field(None, description="Optional request idempotency ID; auto-generated if omitted")
+    model_spec: str | None = Field(None, description="Optional model spec override")
+    tool_approval_mode: str | None = Field(None, description="Optional tool approval mode override")
+    async_mode: bool = Field(False, description="Whether to create run and immediately return run_id")
+    queue_policy: str | None = Field(None, description="Queue policy; defaults to enqueue for async, reject for sync")
 
 
 class AgentCallRunResultRequest(BaseModel):
-    """Agent Call 结果读取请求。"""
+    """Agent Call result query request."""
 
     run_id: str = Field(..., description="AgentRun ID")
-    agent_slug: str | None = Field(None, description="可选，传入时校验 run 归属")
+    agent_slug: str | None = Field(None, description="Optional agent slug to verify run ownership")
 
 
 @agent_invocation_call_router.post("/runs")
@@ -64,17 +64,17 @@ async def create_agent_call_run(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """创建 Agent Call，并按 async_mode 决定是否等待最终结果。"""
+    """Create Agent Call, optionally waiting for final result based on async_mode."""
     agent_slug = _normalize_required_text(payload.agent_slug, field_name="agent_slug")
     if payload.stream:
-        raise HTTPException(status_code=422, detail="agent-call 暂不支持 stream=true")
+        raise HTTPException(status_code=422, detail="agent-call does not support stream=true yet")
 
     input_message = _extract_input_message(payload.messages)
     request_id = _normalize_request_id(payload.request_id)
     _validate_agent_call_meta(payload.agent_call_meta)
     queue_policy = str(payload.queue_policy or ("enqueue" if payload.async_mode else "reject")).strip()
     if not payload.async_mode and queue_policy != "reject":
-        raise HTTPException(status_code=422, detail="同步 agent-call 仅支持 queue_policy=reject")
+        raise HTTPException(status_code=422, detail="Synchronous agent-call only supports queue_policy=reject")
 
     run_response = await submit_run_command(
         command=RunSubmissionCommand(
@@ -123,7 +123,7 @@ async def create_agent_call_run(
     except AgentRunWaitTimeout as exc:
         raise HTTPException(
             status_code=504,
-            detail={"message": "运行仍在进行中，等待最终结果超时", "run": exc.result},
+            detail={"message": "Run is still in progress, waiting for final result timed out", "run": exc.result},
         ) from exc
     return _build_agent_call_response(result)
 
@@ -134,55 +134,55 @@ async def get_agent_call_run_result(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """读取 Agent Call Run 的 OpenAI-compatible 结果。"""
+    """Retrieve OpenAI-compatible result of an Agent Call Run."""
     run_id = str(payload.run_id or "").strip()
     if not run_id:
-        raise HTTPException(status_code=422, detail="run_id 不能为空")
+        raise HTTPException(status_code=422, detail="run_id cannot be empty")
     run_view = await get_agent_run_view(run_id=run_id, current_uid=str(current_user.uid), db=db)
     run = run_view["run"]
     expected_agent_slug = str(payload.agent_slug or "").strip()
     if expected_agent_slug and run.get("agent_slug") != expected_agent_slug:
-        raise HTTPException(status_code=409, detail="run_id 与 agent_slug 不匹配")
+        raise HTTPException(status_code=409, detail="run_id does not match agent_slug")
     result = await get_agent_run_result(run_id=run_id, current_uid=str(current_user.uid), db=db)
     return _build_agent_call_response(result)
 
 
 def _invocation_thread_id(uid: object, agent_slug: str, request_id: str) -> str:
-    """为没有显式 Thread 的 Agent Call 生成稳定线程 ID。"""
+    """Generate deterministic thread ID for Agent Calls without explicit thread."""
     return hash_id("invocation_", f"{uid}:{agent_slug}:{request_id}", length=64)
 
 
 def _normalize_required_text(value: str | None, *, field_name: str) -> str:
-    """清理必填文本字段，空值返回 422。"""
+    """Validate required text field, returning 422 if empty."""
     normalized = str(value or "").strip()
     if not normalized:
-        raise HTTPException(status_code=422, detail=f"{field_name} 不能为空")
+        raise HTTPException(status_code=422, detail=f"{field_name} cannot be empty")
     return normalized
 
 
 def _normalize_request_id(value: str | None) -> str:
-    """生成或校验 Agent Call 请求幂等 ID。"""
+    """Generate or validate request idempotency ID."""
     if value is None or not str(value).strip():
         return str(uuid.uuid4())
     normalized = str(value).strip()
     if len(normalized) > MAX_REQUEST_ID_LENGTH:
-        raise HTTPException(status_code=422, detail=f"request_id 不能超过 {MAX_REQUEST_ID_LENGTH} 个字符")
+        raise HTTPException(status_code=422, detail=f"request_id cannot exceed {MAX_REQUEST_ID_LENGTH} characters")
     return normalized
 
 
 def _validate_agent_call_meta(meta: dict[str, Any]) -> None:
-    """拒绝通过元数据绕过显式运行上下文字段。"""
+    """Reject metadata attempts to override explicit runtime context fields."""
     if isinstance(meta, dict) and "context" in meta:
         raise HTTPException(
             status_code=422,
-            detail="agent_call_meta.context 不允许覆盖 Agent context，请使用 model_spec 覆盖模型",
+            detail="agent_call_meta.context is not allowed to override Agent context; use model_spec to override model",
         )
 
 
 def _extract_input_message(messages: list[dict[str, Any]]) -> AgentRunInputMessage:
-    """从消息列表中提取最后一条 user 消息作为运行输入。"""
+    """Extract last user message from message list as run input."""
     if not messages:
-        raise HTTPException(status_code=422, detail="messages 不能为空")
+        raise HTTPException(status_code=422, detail="messages cannot be empty")
     for message in reversed(messages):
         if not isinstance(message, dict) or message.get("role") != "user":
             continue
@@ -190,11 +190,11 @@ def _extract_input_message(messages: list[dict[str, Any]]) -> AgentRunInputMessa
             return build_chat_input_message_from_openai_content(message.get("content"))
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
-    raise HTTPException(status_code=422, detail="messages 必须包含 user 消息")
+    raise HTTPException(status_code=422, detail="messages must contain at least one user message")
 
 
 def _normalize_usage(usage: object) -> dict[str, int] | None:
-    """把不同来源的 usage 字段归一为 OpenAI-compatible 计数字段。"""
+    """Normalize usage fields from various sources to OpenAI-compatible counts."""
     if not isinstance(usage, dict):
         return None
     prompt = usage.get("prompt_tokens", usage.get("input_tokens", 0))
@@ -207,7 +207,7 @@ def _normalize_usage(usage: object) -> dict[str, int] | None:
 
 
 def _build_agent_call_response(result: dict[str, Any]) -> dict[str, Any]:
-    """将 AgentRun 结果装配为 Agent Call 响应。"""
+    """Assemble AgentRun result into Agent Call response format."""
     raw_status = str(result.get("status") or "unknown")
     status = "pending" if raw_status == "dispatched" else raw_status
     output = result.get("output") if isinstance(result.get("output"), str) else ""
@@ -237,7 +237,7 @@ def _build_agent_call_response(result: dict[str, Any]) -> dict[str, Any]:
 
 
 def _finish_reason(status: str) -> str | None:
-    """根据运行终态生成 OpenAI choices.finish_reason。"""
+    """Determine OpenAI choices.finish_reason from run termination status."""
     if status == "completed":
         return "stop"
     if status in {"failed", "cancelled", "interrupted"}:

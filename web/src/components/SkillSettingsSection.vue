@@ -1,17 +1,17 @@
 <template>
   <div class="skill-settings-section">
-    <div class="section-title">Skill 配置</div>
+    <div class="section-title">Skill Configuration</div>
 
     <section class="source-panel">
       <template v-if="sourceOption">
         <div class="source-header">
           <div class="source-copy">
-            <h4>远程来源白名单</h4>
-            <p>只有列表中的域名可以远程加载和安装 Skill。</p>
+            <h4>Remote Source Whitelist</h4>
+            <p>Only domain names on the list can load and install skills remotely.</p>
           </div>
           <a-button v-if="!isEditing" type="text" size="small" @click="startEditing">
             <Pencil :size="14" />
-            编辑
+            Edit
           </a-button>
         </div>
 
@@ -23,15 +23,15 @@
               mode="tags"
               :aria-label="field.label"
               :token-separators="[',', ' ', '\n']"
-              placeholder="输入域名后按回车，例如 github.com"
+              placeholder="Enter domain name and press Enter, e.g. github.com"
               :options="[]"
             />
             <div class="edit-footer">
-              <span>精确匹配域名；清空并保存会关闭远程安装。</span>
+              <span>Exact domain match; clearing and saving will disable remote installation.</span>
               <div class="edit-actions">
-                <a-button size="small" :disabled="isSaving" @click="cancelEditing"> 取消 </a-button>
+                <a-button size="small" :disabled="isSaving" @click="cancelEditing"> Cancel </a-button>
                 <a-button type="primary" size="small" :loading="isSaving" @click="saveOption">
-                  保存
+                  Save
                 </a-button>
               </div>
             </div>
@@ -39,18 +39,18 @@
           <div
             v-else-if="getFieldValue(field).length"
             class="host-list"
-            aria-label="允许的来源域名"
+            aria-label="Allowed source domains"
           >
             <a-tag v-for="host in getFieldValue(field)" :key="host" class="host-tag">
               {{ host }}
             </a-tag>
           </div>
-          <div v-else class="empty-value">未配置域名，远程安装已关闭</div>
+          <div v-else class="empty-value">No domains configured; remote installation is disabled</div>
         </div>
       </template>
 
       <div v-else class="panel-state">
-        {{ isLoading ? '正在加载配置…' : '远程 Skill 来源配置尚未初始化' }}
+        {{ isLoading ? 'Loading configuration...' : 'Remote Skill source configuration not yet initialized' }}
       </div>
     </section>
   </div>
@@ -72,26 +72,26 @@ const draftValue = ref({})
 
 const sourceFields = computed(() => sourceOption.value?.params?.fields || [])
 
-/** 返回已保存值；尚未保存时展示后端定义的默认值。 */
+/** Return saved value; display backend default if not yet saved. */
 const getFieldValue = (field) => {
   const value = sourceOption.value?.value || {}
   if (Object.prototype.hasOwnProperty.call(value, field.key)) return value[field.key]
   return field.default || []
 }
 
-/** 加载远程 Skill 来源配置。 */
+/** Load remote skill source configuration. */
 const loadOption = async () => {
   try {
     const data = await configOptionsApi.getOptions()
     sourceOption.value = (data.options || []).find((option) => option.key === SOURCE_OPTION_KEY)
   } catch (error) {
-    message.error(error.message || '加载 Skill 配置失败')
+    message.error(error.message || 'Failed to load Skill configuration')
   } finally {
     isLoading.value = false
   }
 }
 
-/** 进入编辑状态并复制当前有效域名，避免直接修改接口数据。 */
+/** Enter editing mode and clone current domains to avoid modifying API data directly. */
 const startEditing = () => {
   draftValue.value = Object.fromEntries(
     sourceFields.value.map((field) => [field.key, [...getFieldValue(field)]])
@@ -99,22 +99,22 @@ const startEditing = () => {
   isEditing.value = true
 }
 
-/** 放弃本次编辑。 */
+/** Cancel editing. */
 const cancelEditing = () => {
   isEditing.value = false
   draftValue.value = {}
 }
 
-/** 保存来源域名，并用服务端规范化后的值刷新页面。 */
+/** Save source domains and refresh with server-normalized values. */
 const saveOption = async () => {
   isSaving.value = true
   try {
     const data = await configOptionsApi.updateOption(SOURCE_OPTION_KEY, draftValue.value)
     sourceOption.value = data.option
     cancelEditing()
-    message.success('Skill 来源配置已保存')
+    message.success('Skill source configuration saved')
   } catch (error) {
-    message.error(error.message || '保存 Skill 配置失败')
+    message.error(error.message || 'Failed to save Skill configuration')
   } finally {
     isSaving.value = false
   }

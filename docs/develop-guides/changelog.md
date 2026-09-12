@@ -12,7 +12,8 @@
 :::
 
 - **Project & Workdir chuyên biệt**: Thêm `Project` CRUD `GET/PATCH/DELETE /api/projects/{id}` với `linked-only`, `UniqueConstraint(uid, workdir_path)` `a1b2c3d4e5f6`, `Workdir` symlink guard, history-candidates DB-side `ILIKE + limit/offset`, frontend `ProjectSelectionSection` thêm Browse qua `workspace/tree`.
-- **Queue hardening**: `recover_pending_dispatches` thêm `pg_try_advisory_xact_lock` tránh duplicate dispatch đa worker, SSE giữ COUNT O(1) chỉ emit khi đổi position.
+- **Queue hardening & Reliability**: `recover_pending_dispatches` thêm `pg_try_advisory_xact_lock` tránh duplicate dispatch đa worker, SSE giữ COUNT O(1) chỉ emit khi đổi position; bổ sung APScheduler định kỳ 30s giải phóng run bị ngắt quá 30 phút (`TOOL_APPROVAL_TIMEOUT_SECONDS = 1800`), nạp `project_id` và `workdir_path` vào agent runtime context.
+- **Language & Localization Enforcement (Rule 5)**: Chuẩn hóa 100% tiếng Anh cho giao diện UI, hệ thống prompt, thông báo lỗi API và log, chatbot mặc định tên `Yuxi`, loại bỏ hoàn toàn các ký tự tiếng Trung trong backend và frontend. Đồng bộ hóa toàn bộ các bài unit test và fixtures tương ứng.
 - **i18n**: `App.vue` `zhCN→viVN`, `time.js` `zh-cn→vi`, `toLocaleString zh-CN→vi-VN`, `docs/.vitepress/config.mts` `zh-CN→vi`.
 
 - 完善 Agent Token 用量统计：state 同时保留近似上下文与主 Agent 模型返回的 Provider `usage_metadata`，实际用量拆分为最近调用、当前 Run 和线程累计；前端只读取 state，终态 chunk 不传递用量，worker 在 Run 终态时将父线程中 Run ID 匹配的 state 快照写入 AgentRun。支持 OpenAI priority/flex 缓存明细；L2 摘要内部调用暂未计入完整账单口径。

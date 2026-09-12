@@ -1,4 +1,4 @@
-"""将知识库内部读取模型转换为现有 HTTP 响应。"""
+"""Convert internal knowledge base read models into HTTP responses."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from yuxi.utils.datetime_utils import utc_isoformat
 
 
 def _knowledge_base_stats(database: KnowledgeBaseSummary) -> dict[str, int]:
-    """组装兼容现有接口的嵌套统计字段。"""
+    """Assemble nested statistics fields compatible with existing API."""
     return {
         "file_count": database.file_count,
         "folder_count": database.folder_count,
@@ -32,7 +32,7 @@ def serialize_knowledge_base(
     redact_secrets: bool = False,
     row_count_fallback: bool = False,
 ) -> dict[str, Any]:
-    """转换单个知识库读取模型，并保留现有 HTTP 字段兼容性。"""
+    """Serialize a single knowledge base read model to HTTP response dict."""
     stats = _knowledge_base_stats(database)
     additional_params = dict(database.additional_params)
     if redact_secrets:
@@ -50,7 +50,7 @@ def serialize_knowledge_base(
         "metadata": dict(additional_params),
         "created_by": database.created_by,
         "created_at": utc_isoformat(database.created_at) if database.created_at else None,
-        "status": "已连接",
+        "status": "connected",
         "stats": stats,
         "row_count": (database.row_count or database.file_count) if row_count_fallback else database.row_count,
         "share_config": database.share_config,
@@ -74,5 +74,5 @@ def serialize_knowledge_base(
 
 
 def serialize_knowledge_base_list(databases: list[KnowledgeBaseSummary]) -> dict[str, list[dict[str, Any]]]:
-    """转换知识库摘要列表为现有列表接口响应。"""
+    """Convert knowledge base summary list to existing list API response."""
     return {"databases": [serialize_knowledge_base(database, row_count_fallback=True) for database in databases]}

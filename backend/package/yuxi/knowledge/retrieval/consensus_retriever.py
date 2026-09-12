@@ -101,12 +101,12 @@ class ConsensusRetriever:
             logger.info(f"[Consensus] Keyword cache HIT: '{cached[:60]}'")
             return cached
 
-        keywords_template = """Bạn là một công cụ trích xuất thực thể. Nhiệm vụ duy nhất của bạn là xuất ra danh sách các danh từ/thực thể/chủ đề cốt lõi từ câu hỏi.
-Yêu cầu:
-- Chỉ output các từ khóa, mỗi từ khóa cách nhau bằng dấu phẩy.
-- KHÔNG giải thích. KHÔNG viết lại câu hỏi hoặc lập luận.
-Câu hỏi: '{query}'
-Từ khóa:"""
+        keywords_template = """You are an entity and keyword extractor. Your sole task is to output a comma-separated list of core nouns, entities, and key concepts from the given query.
+Requirements:
+- Output keywords only, separated by commas.
+- Do NOT explain. Do NOT rewrite the query or add reasoning.
+Query: '{query}'
+Keywords:"""
 
         try:
             t0 = time.perf_counter()

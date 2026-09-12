@@ -352,7 +352,7 @@ def test_prepare_skill_from_sandbox_preserves_download_error_message(monkeypatch
 
     monkeypatch.setattr(sandbox_backend_module, "ProvisionerSandboxBackend", FakeProvisionerSandboxBackend)
 
-    with pytest.raises(ValueError, match="下载沙盒文件失败"):
+    with pytest.raises(ValueError, match="Failed to download sandbox file"):
         install_skill_module._prepare_skill_from_sandbox(
             remote_dir,
             "thread-1",

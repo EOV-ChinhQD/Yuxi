@@ -163,8 +163,8 @@ const handleImageRemoved = () => {
   currentImage.value = null
 }
 
-// 发送被后端拒绝时把旧图片恢复到输入区，覆盖等待期间可能新选的图片，
-// 避免旧图片被悄悄丢弃；用户可重新选择新图片。
+// When sending is rejected by the backend, restore old image to input area,
+// avoiding silent loss of image while allowing the user to re-select.
 const restoreImage = (image) => {
   currentImage.value = image || null
 }

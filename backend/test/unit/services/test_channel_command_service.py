@@ -16,5 +16,5 @@ def test_parse_supported_command_and_arguments():
 
 
 def test_parse_malformed_command_raises():
-    with pytest.raises(ValueError, match="格式无效"):
+    with pytest.raises(ValueError, match="Invalid slash command format"):
         parse_slash_command('/approve "unterminated')

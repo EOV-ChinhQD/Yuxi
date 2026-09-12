@@ -46,11 +46,11 @@ class RunEvaluationRequest(BaseModel):
 
 
 async def _get_evaluation_dataset_or_raise(dataset_id: str) -> Any:
-    """加载评估数据集，不存在时返回统一的 404。"""
+    """Load evaluation dataset, returning 404 if not found."""
 
     dataset = await EvaluationRepository().get_dataset(dataset_id)
     if dataset is None:
-        raise HTTPException(status_code=404, detail="评估数据集不存在")
+        raise HTTPException(status_code=404, detail="Evaluation dataset does not exist")
     return dataset
 
 
@@ -58,7 +58,7 @@ async def require_evaluation_dataset_read(
     dataset_id: str,
     current_user: User = Depends(get_admin_user),
 ) -> User:
-    """校验管理员对评估数据集所属知识库的读取权限。"""
+    """Verify admin read permission on knowledge base associated with evaluation dataset."""
 
     dataset = await _get_evaluation_dataset_or_raise(dataset_id)
     await ensure_knowledge_base_permission(str(dataset.kb_id), current_user, ResourcePermission.READ)
@@ -69,7 +69,7 @@ async def require_evaluation_dataset_manage(
     dataset_id: str,
     current_user: User = Depends(get_admin_user),
 ) -> User:
-    """校验管理员对评估数据集所属知识库的管理权限。"""
+    """Verify admin management permission on knowledge base associated with evaluation dataset."""
 
     dataset = await _get_evaluation_dataset_or_raise(dataset_id)
     await ensure_knowledge_base_permission(str(dataset.kb_id), current_user, ResourcePermission.MANAGE)
@@ -231,7 +231,7 @@ async def resume_evaluation_dataset(
     dataset_id: str,
     current_user: User = Depends(require_knowledge_base_manage),
 ):
-    """恢复自动生成评估数据集"""
+    """Resume automatic evaluation dataset generation"""
     try:
         service = EvaluationService()
         result = await service.resume_dataset_generation(
@@ -241,8 +241,8 @@ async def resume_evaluation_dataset(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"恢复评估数据集生成失败: {e}")
-        raise HTTPException(status_code=500, detail=f"恢复评估数据集生成失败: {str(e)}")
+        logger.exception(f"Failed to resume evaluation dataset generation: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to resume evaluation dataset generation: {str(e)}")
 
 
 @evaluation.post("/databases/{kb_id}/runs")

@@ -42,21 +42,20 @@ async def detect_and_decompose(question: str, llm_model_spec: str) -> tuple[bool
 
     logger.info("[MultiHop] Heuristic triggered, calling LLM decomposer...")
 
-    prompt = f"""Phân tích câu hỏi sau và trả về JSON. Không giải thích thêm.
+    prompt = f"""Analyze the following question and return JSON only. No extra explanation.
+Multi-hop = question comparing or asking about AT LEAST 2 distinct entities, devices, or procedures.
+Single-hop = question about a single topic or entity.
 
-Multi-hop = câu hỏi SO SÁNH hoặc hỏi về ÍT NHẤT 2 thực thể/thiết bị/quy trình khác nhau.
-Single-hop = câu hỏi về 1 chủ đề duy nhất.
+Question: {question}
 
-Câu hỏi: {question}
-
-Trả về JSON:
+Return JSON:
 {{
   "is_multi_hop": true/false,
-  "reason": "lý do ngắn",
-  "sub_queries": ["câu hỏi con 1 tự lập đầy đủ", "câu hỏi con 2 tự lập đầy đủ"]
+  "reason": "short rationale",
+  "sub_queries": ["standalone self-contained sub-query 1", "standalone self-contained sub-query 2"]
 }}
 
-Lưu ý: nếu is_multi_hop=false thì sub_queries=[]. Tối đa 3 sub_queries.
+Note: If is_multi_hop is false, sub_queries should be []. Max 3 sub_queries.
 """
 
     try:

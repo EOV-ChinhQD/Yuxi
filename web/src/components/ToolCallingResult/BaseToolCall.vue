@@ -32,7 +32,7 @@
             :tool-name="toolName"
             :result-content="resultContent"
           >
-            Công cụ&nbsp; <span class="tool-name">{{ toolName }}</span> &nbsp; Hoàn thành thực thi
+            Tool&nbsp; <span class="tool-name">{{ toolName }}</span> &nbsp; completed
           </slot>
 
           <slot
@@ -41,12 +41,12 @@
             :tool-name="toolName"
             :error-message="toolCall.error_message"
           >
-            Công cụ&nbsp; <span class="tool-name">{{ toolName }}</span> &nbsp; Thực thi thất bại
-            <span v-if="toolCall.error_message">（{{ toolCall.error_message }}）</span>
+            Tool&nbsp; <span class="tool-name">{{ toolName }}</span> &nbsp; failed
+            <span v-if="toolCall.error_message">({{ toolCall.error_message }})</span>
           </slot>
 
           <slot name="header-running" v-else :tool-name="toolName">
-            Đang gọi công cụ: &nbsp; <span class="tool-name">{{ toolName }}</span>
+            Calling tool: &nbsp; <span class="tool-name">{{ toolName }}</span>
           </slot>
         </template>
       </div>
@@ -64,7 +64,7 @@
       <div class="tool-params" v-if="hasParams && !hideParams">
         <slot name="params" :tool-call="toolCall" :args="formattedArgs">
           <div class="tool-params-content">
-            <strong>Tham số: </strong>
+            <strong>Parameters: </strong>
             <span>{{ formattedArgs }}</span>
           </div>
         </slot>
@@ -144,7 +144,7 @@ const effectiveStatus = computed(() => {
 })
 
 // Tool Name Logic
-// 展示优先级：完整工具元数据中的 display name > 前端兜底名称映射 > 工具 id
+// Display priority: display name in full tool metadata > frontend fallback name mapping > tool id
 const toolId = computed(() => getToolCallId(props.toolCall))
 
 const toolName = computed(() => {

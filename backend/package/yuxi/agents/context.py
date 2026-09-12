@@ -200,6 +200,17 @@ class BaseContext:
         metadata={"name": "Test Mode", "configurable": False, "hide": True},
     )
 
+    # ponytail: Project Workdir binding for linked-only & implicit project workspace isolation
+    project_id: str | None = field(
+        default=None,
+        metadata={"name": "Project ID", "configurable": False, "hide": True},
+    )
+
+    workdir_path: str | None = field(
+        default=None,
+        metadata={"name": "Workdir Path", "configurable": False, "hide": True},
+    )
+
     system_prompt: str = field(
         default="You are a helpful assistant.",
         metadata={"name": "System Prompt", "description": "Mô tả vai trò và hành vi của Agent", "kind": "prompt"},
@@ -218,11 +229,11 @@ class BaseContext:
     tool_approval_mode: str = field(
         default=DEFAULT_TOOL_APPROVAL_MODE,
         metadata={
-            "name": "工具审批模式",
-            "description": "默认审批会在写文件、编辑文件或执行命令前询问；完全信任会自动执行这些工具。",
+            "name": "Tool Approval Mode",
+            "description": "Default approval prompts before writing files, editing files, or executing commands; always trust automatically executes these tools.",
             "options": [
-                {"key": "default", "name": "默认审批", "description": "敏感工具执行前请求确认"},
-                {"key": "always_trust", "name": "完全信任", "description": "敏感工具无需确认，自动执行"},
+                {"key": "default", "name": "Default Approval", "description": "Ask for confirmation before executing sensitive tools"},
+                {"key": "always_trust", "name": "Always Trust", "description": "Execute sensitive tools automatically without confirmation"},
             ],
             "type": "string",
             "auth": "admin",

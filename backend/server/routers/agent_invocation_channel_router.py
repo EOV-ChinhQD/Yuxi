@@ -1,7 +1,8 @@
-"""纯文本 Channel 消息入口。
+"""Plain-text Channel message entrypoint.
 
-Channel 只负责把消息信封转换为统一 Run 提交命令；少量控制命令在普通
-消息提交之前处理，避免状态查询或审批决议被错误排进 Agent Request 队列。
+Channel is responsible only for transforming message envelopes into unified Run submission commands;
+a few control commands are processed before standard message submission to prevent status queries
+or approval decisions from being incorrectly queued into the Agent Request queue.
 """
 
 from __future__ import annotations
@@ -27,23 +28,23 @@ agent_invocation_channel_router = APIRouter(prefix="/agent-invocation/channel", 
 
 
 class ChannelTextMessage(BaseModel):
-    """Channel 普通文本消息体。"""
+    """Channel plain-text message body."""
 
     type: Literal["text"] = "text"
-    text: str = Field(..., min_length=1, description="纯文本消息")
+    text: str = Field(..., min_length=1, description="Plain text message")
 
 
 class ChannelMessageRequest(BaseModel):
-    """Channel 消息信封，承载来源账号、线程与幂等标识。"""
+    """Channel message envelope carrying source account, thread, and idempotency identifiers."""
 
-    channel: str = Field("cli", max_length=32, description="通道名称")
-    account_id: str = Field("default", description="通道账号标识")
-    chat_id: str | None = Field(None, description="通道侧会话标识")
-    thread_id: str | None = Field(None, description="可选 Yuxi Thread ID")
-    sender_id: str | None = Field(None, description="通道侧发送者标识")
-    message_id: str | None = Field(None, max_length=128, description="通道侧消息 ID")
-    request_id: str | None = Field(None, description="请求幂等 ID")
-    agent_slug: str = Field(..., description="目标 Agent slug")
+    channel: str = Field("cli", max_length=32, description="Channel name")
+    account_id: str = Field("default", description="Channel account identifier")
+    chat_id: str | None = Field(None, description="Channel-side chat identifier")
+    thread_id: str | None = Field(None, description="Optional Yuxi Thread ID")
+    sender_id: str | None = Field(None, description="Channel-side sender identifier")
+    message_id: str | None = Field(None, max_length=128, description="Channel-side message ID")
+    request_id: str | None = Field(None, description="Request idempotency ID")
+    agent_slug: str = Field(..., description="Target agent slug")
     message: ChannelTextMessage
     queue_policy: Literal["enqueue", "reject", "steer"] = "steer"
 
@@ -54,7 +55,7 @@ async def receive_channel_message(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """处理纯文本 Channel 消息或最小 slash command。"""
+    """Handle plain-text Channel message or minimal slash command."""
     channel = _normalize_required(payload.channel, "channel")
     account_id = _normalize_required(payload.account_id, "account_id")
     agent_slug = _normalize_required(payload.agent_slug, "agent_slug")
@@ -67,7 +68,7 @@ async def receive_channel_message(
     )
     message_text = payload.message.text.strip()
     if not message_text:
-        raise HTTPException(status_code=422, detail="text 不能为空")
+        raise HTTPException(status_code=422, detail="text cannot be empty")
     raw_request_id = str(payload.request_id or "").strip()
     external_id = str(payload.message_id or "").strip() or raw_request_id or str(uuid.uuid4())
     request_id = raw_request_id or hash_id(
@@ -76,7 +77,7 @@ async def receive_channel_message(
         length=64,
     )
     if len(request_id) > 64:
-        raise HTTPException(status_code=422, detail="request_id 不能超过 64 个字符")
+        raise HTTPException(status_code=422, detail="request_id cannot exceed 64 characters")
     origin_metadata = {
         key: value
         for key, value in {
@@ -114,7 +115,7 @@ async def receive_channel_message(
                 current_user=current_user,
                 db=db,
             )
-        raise HTTPException(status_code=422, detail=f"不支持的 slash command: /{command.name}")
+        raise HTTPException(status_code=422, detail=f"Unsupported slash command: /{command.name}")
 
     latest_run = await AgentRunRepository(db).get_latest_chat_or_resume_run(
         uid=str(current_user.uid),
@@ -126,7 +127,7 @@ async def receive_channel_message(
             status_code=409,
             detail={
                 "code": "ask_user_question_unsupported",
-                "message": "当前线程等待用户回答，Channel 暂不支持 ask_user_question",
+                "message": "Current thread is waiting for user response; Channel does not currently support ask_user_question",
             },
         )
 
@@ -166,7 +167,7 @@ async def _approve_latest_run(
     current_user: User,
     db: AsyncSession,
 ) -> dict:
-    """审批当前等待中的工具调用，并优先复用同 request_id 的恢复 run。"""
+    """Approve currently pending tool calls, reusing resume run with same request_id if available."""
     run_repo = AgentRunRepository(db)
     existing_run = await run_repo.get_run_by_request_id(request_id)
     latest_run = await run_repo.get_latest_chat_or_resume_run(
@@ -184,18 +185,18 @@ async def _approve_latest_run(
             or latest_run is None
             or latest_run.id != existing_run.id
         ):
-            raise HTTPException(status_code=409, detail="request_id 冲突")
+            raise HTTPException(status_code=409, detail="request_id conflict")
         parent_run_id = existing_run.created_by_run_id
     else:
         if not latest_run or latest_run.status != "interrupted":
             raise HTTPException(
                 status_code=409,
-                detail={"code": "no_pending_approval", "message": "没有待审批的运行"},
+                detail={"code": "no_pending_approval", "message": "No runs pending approval"},
             )
         if latest_run.error_type != "human_approval_required":
             raise HTTPException(
                 status_code=409,
-                detail={"code": "ask_user_question_unsupported", "message": "当前中断不是工具审批，暂不支持处理"},
+                detail={"code": "ask_user_question_unsupported", "message": "Current interrupt is not a tool approval and is not supported"},
             )
         parent_run_id = latest_run.id
 
@@ -224,23 +225,23 @@ def _resolve_thread_id(
     chat_id: str | None,
     requested_thread_id: str | None,
 ) -> str:
-    """根据显式 thread 或通道会话信息解析稳定 Yuxi Thread ID。"""
+    """Resolve stable Yuxi Thread ID from explicit thread or channel session information."""
     if requested_thread_id and requested_thread_id.strip():
         return requested_thread_id.strip()
     if not chat_id or not chat_id.strip():
-        raise HTTPException(status_code=422, detail="thread_id 或 chat_id 至少提供一个")
+        raise HTTPException(status_code=422, detail="At least one of thread_id or chat_id must be provided")
     return hash_id("channel_", f"{uid}:{channel}:{account_id}:{chat_id.strip()}", length=64)
 
 
 def _normalize_required(value: str | None, field_name: str) -> str:
-    """校验并清理必填字符串字段。"""
+    """Validate and normalize required string field."""
     normalized = str(value or "").strip()
     if not normalized:
-        raise HTTPException(status_code=422, detail=f"{field_name} 不能为空")
+        raise HTTPException(status_code=422, detail=f"{field_name} cannot be empty")
     return normalized
 
 
 def _require_no_args(name: str, args: tuple[str, ...]) -> None:
-    """拒绝当前不支持参数的 slash command 变体。"""
+    """Reject slash commands with unexpected arguments."""
     if args:
-        raise HTTPException(status_code=422, detail=f"/{name} 不接受参数")
+        raise HTTPException(status_code=422, detail=f"/{name} does not accept arguments")

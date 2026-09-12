@@ -65,5 +65,15 @@ async def resolve_thread_agent_runtime_context(
     )
     runtime_context.thread_id = thread_id
     runtime_context.uid = str(user.uid)
+
+    # ponytail: Bind project and workdir_path to thread runtime context
+    if getattr(conversation, "project_id", None):
+        from yuxi.repositories.project_repository import ProjectRepository
+
+        project = await ProjectRepository(db).get_for_user(conversation.project_id, str(user.uid))
+        if project:
+            runtime_context.project_id = project.id
+            runtime_context.workdir_path = project.workdir_path
+
     await prepare_agent_runtime_context(runtime_context)
     return runtime_context

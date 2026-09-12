@@ -136,7 +136,7 @@ def _serialize_skill_for_user(item, user: User) -> dict:
 
 @user_skills.get("")
 async def list_skill_cards_route(
-    refresh_personal: bool = Query(False, description="是否强制重新扫描个人 Skill"),
+    refresh_personal: bool = Query(False, description="Whether to force rescan personal skills"),
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -157,7 +157,7 @@ async def list_skill_cards_route(
         }
     except Exception as e:
         logger.error(f"Failed to list Skill cards: {e}")
-        raise HTTPException(status_code=500, detail="获取 Skill 列表失败")
+        raise HTTPException(status_code=500, detail="Failed to list skills")
 
 
 @user_skills.get("/accessible")
@@ -282,13 +282,13 @@ async def confirm_personal_skill_install_draft_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to confirm personal Skill draft '{draft_id}': {e}")
-        raise HTTPException(status_code=500, detail="确认安装个人 Skill 失败")
+        raise HTTPException(status_code=500, detail="Failed to confirm personal skill installation")
 
 
 @user_skills.get("/personal/{slug}/file")
 async def read_personal_skill_file_route(
     slug: str,
-    path: str = Query(..., description="相对 Skill 根目录的文件路径"),
+    path: str = Query(..., description="File path relative to skill root directory"),
     current_user: User = Depends(get_required_user),
 ):
     try:
@@ -300,7 +300,7 @@ async def read_personal_skill_file_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to read personal Skill file '{slug}/{path}': {e}")
-        raise HTTPException(status_code=500, detail="读取个人 Skill 文件失败")
+        raise HTTPException(status_code=500, detail="Failed to read personal skill file")
 
 
 @user_skills.delete("/personal/{slug}")
@@ -321,7 +321,7 @@ async def delete_personal_skill_route(
         _raise_from_value_error(e)
     except Exception as e:
         logger.error(f"Failed to delete personal Skill '{slug}': {e}")
-        raise HTTPException(status_code=500, detail="删除个人 Skill 失败")
+        raise HTTPException(status_code=500, detail="Failed to delete personal skill")
 
 
 @user_skills.delete("/install-drafts/{draft_id}")

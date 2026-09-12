@@ -364,7 +364,7 @@ async def mark_thread_viewed(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """记录用户已查看该线程的最新顶层 run，清除侧边栏未读状态。"""
+    """Mark the latest top-level run of this thread as viewed by the user, clearing sidebar unread status."""
     return await mark_thread_viewed_view(
         thread_id=thread_id,
         db=db,

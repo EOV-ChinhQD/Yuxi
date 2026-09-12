@@ -39,7 +39,7 @@ async def get_graphs(current_user: User = Depends(get_admin_user)):
                     "name": db.name,
                     "type": "milvus",
                     "description": db.description,
-                    "status": "已连接",
+                    "status": "connected",
                     "created_at": serialized["created_at"],
                     "metadata": serialized,
                 }
@@ -52,13 +52,12 @@ async def get_graphs(current_user: User = Depends(get_admin_user)):
 
 @graph.get("/subgraph")
 async def get_subgraph(
-    kb_id: str = Query(..., description="ID kho kiến thức Milvus"),
-    node_label: str = Query("*", description="Nhãn nút hoặc từ khóa truy vấn"),
-    max_depth: int = Query(2, description="Độ sâu tối đa", ge=1, le=5),
-    max_nodes: int = Query(100, description="Số lượng nút tối đa", ge=1, le=1000),
-    exclude_chunk: bool = Query(False, description="Có loại trừ nút Chunk hay không"),
+    kb_id: str = Query(..., description="Milvus knowledge base ID"),
+    node_label: str = Query("*", description="Node label or query keyword"),
+    max_depth: int = Query(2, description="Maximum depth", ge=1, le=5),
+    max_nodes: int = Query(100, description="Maximum number of nodes", ge=1, le=1000),
+    exclude_chunk: bool = Query(False, description="Whether to exclude Chunk nodes"),
     current_user: User = Depends(require_knowledge_base_read),
-
 ):
     """Query Milvus knowledge base graph subgraph"""
     try:

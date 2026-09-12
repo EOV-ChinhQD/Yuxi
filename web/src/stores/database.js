@@ -8,8 +8,9 @@ import { useRouter } from 'vue-router'
 import { parseToShanghai } from '@/utils/time'
 import { canSelectFile, isProcessingFile } from '@/utils/knowledge_file_policy'
 
-// 自动轮询参数：链式调度（等上一轮请求全部返回后再排下一轮），处理中文件长时间无进展时按 2 倍退避并最终自动停止；
-// 基础间隔与后端文件统计缓存节奏（10s）对齐，避免高频请求重复全表聚合
+// Auto-refresh parameters: chained scheduling (wait for previous round before scheduling next),
+// 2x exponential backoff and eventual auto-stop when files make no progress;
+// baseline interval aligned with backend stats cache cadence (10s) to prevent redundant table scans.
 const AUTO_REFRESH_POLL_INTERVAL_MS = 10000
 const AUTO_REFRESH_MAX_INTERVAL_MS = 30000
 const AUTO_REFRESH_STALE_POLLS_LIMIT = 6
@@ -59,7 +60,7 @@ export const useDatabaseStore = defineStore('database', () => {
 
   let autoRefreshSource = null // Tracks whether auto-refresh was user-triggered or automatic
   let autoRefreshManualOverride = false // Indicates user explicitly disabled auto-refresh
-  // 自动轮询状态：refreshTimer 保存链式调度的定时器；refreshGeneration 用于废弃过期轮询轮次
+  // Auto-refresh state: refreshTimer holds chained timeout; refreshGeneration invalidates stale cycles
   let refreshTimer = null
   let refreshGeneration = 0
   let refreshStablePolls = 0
@@ -703,7 +704,7 @@ export const useDatabaseStore = defineStore('database', () => {
     }
   }
 
-  // 链式调度：等上一轮请求全部返回后再排下一轮，避免慢接口下请求堆积重叠
+  // Chained scheduling: wait for previous response before scheduling next, preventing slow interface congestion
   function scheduleAutoRefresh() {
     refreshTimer = setTimeout(runAutoRefreshTick, refreshIntervalMs)
   }
@@ -718,11 +719,11 @@ export const useDatabaseStore = defineStore('database', () => {
       loadDocumentFiles({ isBackground: true })
     ])
 
-    // 期间被重新 start/stop，本轮的退避结论作废
+    // If start/stop was called during the request, invalidate this cycle
     if (generation !== refreshGeneration) return
     if (!state.autoRefresh) return
 
-    // 处理中文件数量持续不变则按 2 倍退避，达到上限仍无进展即自动停止（覆盖僵尸状态）
+    // If processing file count remains unchanged, apply 2x backoff; stop if limit reached
     const processingCount = Number(database.value?.stats?.processing_count || 0)
     if (processingCount === refreshLastProcessingCount) {
       refreshStablePolls += 1

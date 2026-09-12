@@ -1025,7 +1025,7 @@ async def test_intake_rejects_message_while_run_is_interrupted(
     assert exc_info.value.status_code == 409
     assert exc_info.value.detail == {
         "code": "run_interrupted",
-        "message": "线程正在等待用户回答或审批",
+        "message": "Thread is currently waiting for user response or approval",
     }
     assert (await repo.get_by_request_id("request-b")).status == "queued"
     assert await repo.get_by_request_id("request-c") is None

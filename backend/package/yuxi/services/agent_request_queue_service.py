@@ -41,6 +41,9 @@ from yuxi.utils.sse_utils import (
 SUPPORTED_QUEUE_POLICIES = ("enqueue", "reject", "steer")
 NOT_IMPLEMENTED_QUEUE_POLICIES = ("guided", "bridge")
 
+# ponytail: Tool approval timeout (30 mins) to prevent thread queue deadlocks
+TOOL_APPROVAL_TIMEOUT_SECONDS = 1800
+
 # Request lifecycle states.
 REQUEST_STATUS_QUEUED = "queued"
 REQUEST_STATUS_DISPATCHED = "dispatched"
@@ -177,9 +180,9 @@ async def intake_request(
         conversation_thread_id=thread_id,
     )
     if latest_run is not None and latest_run.status == "interrupted":
-        raise _queue_conflict("run_interrupted", "线程正在等待用户回答或审批")
+        raise _queue_conflict("run_interrupted", "Thread is currently waiting for user response or approval")
     if policy == "steer" and active_run is not None and not await _is_steerable_message_run(db=db, run=active_run):
-        raise _queue_conflict("run_not_steerable", "当前运行不支持引导")
+        raise _queue_conflict("run_not_steerable", "Current run does not support steering")
     if policy == "steer" and await repo.get_pending_steer(
         uid=uid_str,
         agent_slug=agent_slug,
@@ -425,7 +428,7 @@ async def dispatch_next_request(
 
 
 async def recover_pending_dispatches() -> None:
-    """恢复 pending 投递及 completed hook 留下的 ready 队列。"""
+    """Khôi phục pending dispatch và tự động hủy các run interrupted quá hạn (30 phút)."""
     # Specialized optimization: use advisory lock to prevent duplicate dispatch on multi-worker deploys.
     async with pg_manager.get_async_session_context() as db:
         try:
@@ -441,6 +444,28 @@ async def recover_pending_dispatches() -> None:
                 return
         except Exception:
             pass
+
+        # 1. Auto-expire interrupted runs older than TOOL_APPROVAL_TIMEOUT_SECONDS
+        now = utc_now_naive()
+        interrupted_result = await db.execute(
+            select(AgentRun).where(AgentRun.status == "interrupted")
+        )
+        interrupted_runs = interrupted_result.scalars().all()
+        for expired_run in interrupted_runs:
+            run_time = expired_run.updated_at or expired_run.created_at
+            if run_time and (now - run_time).total_seconds() >= TOOL_APPROVAL_TIMEOUT_SECONDS:
+                logger.warning(
+                    f"Auto-expiring interrupted run {expired_run.id} on thread {expired_run.conversation_thread_id} "
+                    f"after {TOOL_APPROVAL_TIMEOUT_SECONDS}s timeout"
+                )
+                expired_run.status = "cancelled"
+                expired_run.error_type = "approval_timeout"
+                expired_run.error_message = "Tool approval timed out after 30 minutes"
+                expired_run.finished_at = now
+                db.add(expired_run)
+        await db.commit()
+
+        # 2. Collect scopes to dispatch
         pending_result = await db.execute(
             select(AgentRun.uid, AgentRun.agent_slug, AgentRun.conversation_thread_id).where(
                 AgentRun.status == "pending"

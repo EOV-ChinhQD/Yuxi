@@ -102,7 +102,8 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Run queue redis unavailable on startup: {e}")
 
-    # Start the runtime configuration synchronization thread (which periodically pulls configuration snapshots saved by the administrator from Redis)
+    # Start the runtime configuration synchronization thread
+    # (periodically pulls configuration snapshots saved by the administrator from Redis)
     config.start_runtime_sync()
 
     try:
@@ -118,7 +119,7 @@ async def lifespan(app: FastAPI):
     print("LangGraph Checkpoint tables verified/created!")
 
     await tasker.start()
-    
+
     # Start APScheduler for Episodic Decay Job (TTL)
     # NOTE: In a multi-worker deployment, this in-memory scheduler will run on each process.
     # To scale properly, configure a Redis or SQLAlchemy job store for APScheduler, or use a distributed lock.
@@ -133,13 +134,24 @@ async def lifespan(app: FastAPI):
             run_episodic_decay_job,
             "interval",
             hours=24,
-            next_run_time=datetime.datetime.now(datetime.timezone.utc)
+            next_run_time=datetime.datetime.now(datetime.UTC)
         )
+
+        # ponytail: Periodic queue recovery & approval timeout reconciler every 30s to prevent dual-write drop
+        from yuxi.services.agent_request_queue_service import recover_pending_dispatches
+
+        scheduler.add_job(
+            recover_pending_dispatches,
+            "interval",
+            seconds=30,
+            next_run_time=datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=5)
+        )
+
         scheduler.start()
         app.state.scheduler = scheduler
-        logger.info("APScheduler started: scheduled episodic memory decay job every 24 hours.")
+        logger.info("APScheduler started: episodic decay (24h) and queue reconciler (30s) registered.")
     except Exception as e:
-        logger.error(f"Failed to start APScheduler for episodic memory decay: {e}", exc_info=True)
+        logger.error(f"Failed to start APScheduler: {e}", exc_info=True)
 
     logger.info(f"""
 

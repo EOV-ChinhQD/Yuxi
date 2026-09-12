@@ -275,10 +275,10 @@ async def create_agent_run(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # resume 路径：恢复已有 LangGraph 状态，跳过 request 入队与派发，直接新建 run。
+    # Resume path: resume existing LangGraph state, skipping request enqueue/dispatch to create run directly.
     if payload.resume is not None:
         if payload.queue_policy != "enqueue":
-            raise HTTPException(status_code=422, detail="queue_policy 仅支持普通 Chat 请求")
+            raise HTTPException(status_code=422, detail="queue_policy is only supported for standard chat requests")
         input_message = None
         if payload.query:
             input_message = build_chat_input_message(payload.query, payload.image_content)
@@ -295,7 +295,7 @@ async def create_agent_run(
             created_by_run_id=payload.created_by_run_id,
         )
 
-    # 普通 chat 路径：写入 request + message，立即派发或入队等待。
+    # Standard chat path: record request + message, dispatch immediately or enqueue.
     meta = dict(payload.meta or {})
     request_id = meta.get("request_id") or str(uuid.uuid4())
     meta["request_id"] = request_id
@@ -327,7 +327,7 @@ async def get_request(
 ):
     result = await get_request_svc(db=db, request_id=request_id, uid=str(current_user.uid))
     if not result:
-        raise HTTPException(status_code=404, detail="请求不存在")
+        raise HTTPException(status_code=404, detail="Request not found")
     return {"request": result}
 
 
@@ -335,7 +335,7 @@ async def get_request(
 async def list_thread_requests(
     thread_id: str,
     current_user: User = Depends(get_required_user),
-    agent_slug: str = Query(..., description="智能体 slug"),
+    agent_slug: str = Query(..., description="Agent slug"),
     db: AsyncSession = Depends(get_db),
 ):
     return await get_thread_queue_snapshot(
@@ -350,7 +350,7 @@ async def list_thread_requests(
 async def continue_thread_requests(
     thread_id: str,
     current_user: User = Depends(get_required_user),
-    agent_slug: str = Query(..., description="智能体 slug"),
+    agent_slug: str = Query(..., description="Agent slug"),
     db: AsyncSession = Depends(get_db),
 ):
     dispatch = await continue_thread_queue(

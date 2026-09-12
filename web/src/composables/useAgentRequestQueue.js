@@ -82,7 +82,7 @@ export function useAgentRequestQueue({
       }
 
       const handleEvent = (event, data) => {
-        // 一次性取 ts/entry，避免每个分支重复 getThreadState 触发响应式追踪。
+        // Fetch ts/entry once to avoid repeated getThreadState reactive tracking in every branch.
         const tsInner = getThreadState(threadId)
         const innerEntry = tsInner?.requestStreams?.[requestId]
         if (!tsInner || innerEntry?.controller !== controller) return
@@ -97,8 +97,8 @@ export function useAgentRequestQueue({
             removeRequestFromQueue(tsInner, requestId)
             stopRequestStream(threadId, requestId)
 
-            // 旧 Run 尚未 finalize 时保留已渲染内容；startRunStream 会 flush 并中止旧订阅。
-            // 若旧 Run 已 finalize，则其 history 刷新已在途，可以清理残留的 ongoing 状态。
+            // Retain rendered content if old run is not yet finalized; startRunStream will flush and abort old subscription.
+            // If old run is finalized, history refresh is on the way; clean up ongoing state.
             if (!tsInner.activeRunId) {
               resetOnGoingConv(threadId, { preserveRequestStreams: true })
             }

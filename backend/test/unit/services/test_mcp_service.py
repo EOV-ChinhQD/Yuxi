@@ -183,7 +183,7 @@ async def test_runtime_configs_exclude_user_created_stdio_servers(mcp_session):
 
 
 async def test_create_mcp_server_rejects_user_created_stdio(mcp_session):
-    with pytest.raises(ValueError, match="stdio"):
+    with pytest.raises(ValueError, match="transports"):
         await mcp_service.create_mcp_server(
             mcp_session,
             slug="unsafe-mcp",
@@ -201,7 +201,7 @@ async def test_create_mcp_server_rejects_builtin_slug(mcp_session):
         await mcp_service.create_mcp_server(
             mcp_session,
             slug="mcp-server-chart",
-            name="伪造内置 MCP",
+            name="Fake MCP",
             transport="streamable_http",
             url="https://example.com/mcp",
             created_by="admin",
@@ -211,7 +211,7 @@ async def test_create_mcp_server_rejects_builtin_slug(mcp_session):
 async def test_update_builtin_mcp_server_rejects_connection_changes(mcp_session):
     server = MCPServer(
         slug="mcp-server-chart",
-        name="内置 stdio",
+        name="Builtin stdio",
         transport="stdio",
         command="trusted-command",
         enabled=1,
@@ -221,7 +221,7 @@ async def test_update_builtin_mcp_server_rejects_connection_changes(mcp_session)
     mcp_session.add(server)
     await mcp_session.commit()
 
-    with pytest.raises(PermissionError, match="系统内置"):
+    with pytest.raises(PermissionError, match="Built-in MCP server"):
         await mcp_service.update_mcp_server(
             mcp_session,
             slug="mcp-server-chart",
@@ -238,7 +238,7 @@ async def test_update_builtin_mcp_server_rejects_connection_changes(mcp_session)
 async def test_update_legacy_stdio_requires_remote_url(mcp_session):
     legacy_server = MCPServer(
         slug="legacy-stdio",
-        name="历史 stdio",
+        name="Legacy stdio",
         transport="stdio",
         command="python3",
         enabled=0,
@@ -248,7 +248,7 @@ async def test_update_legacy_stdio_requires_remote_url(mcp_session):
     mcp_session.add(legacy_server)
     await mcp_session.commit()
 
-    with pytest.raises(ValueError, match="url 必填"):
+    with pytest.raises(ValueError, match="URL is required"):
         await mcp_service.update_mcp_server(
             mcp_session,
             slug="legacy-stdio",

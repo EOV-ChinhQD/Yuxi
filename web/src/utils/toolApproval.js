@@ -40,7 +40,7 @@ export const buildToolApprovalDecisions = (selectedDecisions, actionCount) =>
   Array.from({ length: actionCount }, (_, index) =>
     selectedDecisions[index] === 'approve'
       ? { type: 'approve' }
-      : { type: 'reject', message: '用户拒绝执行该操作' }
+      : { type: 'reject', message: 'User rejected this tool execution' }
   )
 
 export const formatToolApprovalArgs = (args) =>

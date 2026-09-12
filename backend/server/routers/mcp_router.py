@@ -72,12 +72,12 @@ async def get_server_or_404(db: AsyncSession, slug: str):
     """Helper to get server or raise 404."""
     server = await get_mcp_server(db, slug)
     if not server:
-        raise HTTPException(status_code=404, detail=f"Máy chủ '{slug}' không tồn tại")
+        raise HTTPException(status_code=404, detail=f"MCP server '{slug}' not found")
     return server
 
 
 def serialize_mcp_server(server) -> dict:
-    """序列化 MCP，并补充代码内置与迁移状态。"""
+    """Serialize MCP server and supplement builtin and migration status."""
     data = server.to_dict()
     data["is_builtin"] = is_builtin_mcp_server(server)
     data["requires_migration"] = requires_mcp_stdio_migration(server)
@@ -87,9 +87,9 @@ def serialize_mcp_server(server) -> dict:
 
 
 def ensure_mcp_server_runnable(server) -> None:
-    """拒绝连接尚未迁移的历史用户 stdio MCP。"""
+    """Reject connection to legacy unmigrated user stdio MCP."""
     if requires_mcp_stdio_migration(server):
-        raise HTTPException(status_code=400, detail="历史 stdio MCP 已被禁用，请先迁移为远程 MCP")
+        raise HTTPException(status_code=400, detail="Legacy stdio MCP is disabled; please migrate to a remote MCP")
 
 
 # =============================================================================

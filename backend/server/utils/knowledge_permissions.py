@@ -1,4 +1,4 @@
-"""将知识库领域权限校验适配为 FastAPI 依赖。"""
+"""FastAPI dependency adapter for knowledge base resource permissions."""
 
 from fastapi import Depends, HTTPException
 
@@ -18,16 +18,16 @@ async def ensure_knowledge_base_permission(
     current_user: User,
     required: ResourcePermission,
 ) -> KnowledgeBaseDetail:
-    """加载知识库并校验当前用户的有效资源权限。"""
+    """Load knowledge base and verify effective resource permission for current user."""
 
     db_info = await knowledge_base.get_database_info(kb_id)
     if not db_info:
-        raise HTTPException(status_code=404, detail=f"知识库 {kb_id} 不存在")
+        raise HTTPException(status_code=404, detail=f"Knowledge base {kb_id} does not exist")
 
     try:
         require_knowledge_base_permission(current_user, db_info, required)
     except ResourcePermissionDenied as error:
-        raise HTTPException(status_code=403, detail="无权操作该知识库") from error
+        raise HTTPException(status_code=403, detail="Permission denied for this knowledge base") from error
     return db_info
 
 
@@ -35,7 +35,7 @@ async def require_knowledge_base_read(
     kb_id: str,
     current_user: User = Depends(get_admin_user),
 ) -> User:
-    """校验管理员对指定知识库的读取权限。"""
+    """Verify administrator read permission for specified knowledge base."""
 
     await ensure_knowledge_base_permission(kb_id, current_user, ResourcePermission.READ)
     return current_user
@@ -45,7 +45,7 @@ async def require_knowledge_base_manage(
     kb_id: str,
     current_user: User = Depends(get_admin_user),
 ) -> User:
-    """校验管理员对指定知识库的管理权限。"""
+    """Verify administrator management permission for specified knowledge base."""
 
     await ensure_knowledge_base_permission(kb_id, current_user, ResourcePermission.MANAGE)
     return current_user

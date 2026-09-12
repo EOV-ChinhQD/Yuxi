@@ -1,0 +1,3 @@
+[submodule "packages/agentkit"]
+	path = packages/agentkit
+	url = https://github.com/ChinhQuach303/agentkit.git

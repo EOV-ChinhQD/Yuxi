@@ -8,12 +8,12 @@
         @click="$emit('select-personal')"
       >
         <FileTypeIcon is-dir folder-variant="personal" :size="18" />
-        <span>không gian làm việc cá nhân</span>
+        <span>Personal Workspace</span>
       </button>
     </section>
 
     <section class="sidebar-section">
-      <div class="section-title">truy cập nhanh</div>
+      <div class="section-title">Quick Access</div>
       <button
         type="button"
         class="workspace-nav-item secondary"
@@ -23,7 +23,7 @@
         @click="$emit('select-path', savedArtifactsPath)"
       >
         <FileTypeIcon is-dir folder-variant="favorite" :size="18" />
-        <span>保存的交付物</span>
+        <span>Saved Artifacts</span>
       </button>
       <button
         type="button"
@@ -32,7 +32,7 @@
         @click="$emit('select-path', agentsPath)"
       >
         <FileTypeIcon is-dir folder-variant="agent" :size="18" />
-        <span>智能体文件</span>
+        <span>Agent Files</span>
       </button>
       <button
         type="button"
@@ -41,12 +41,12 @@
         @click="$emit('select-path', chatsPath)"
       >
         <FileTypeIcon is-dir :size="18" />
-        <span>历史对话</span>
+        <span>Chat History</span>
       </button>
     </section>
 
     <section v-if="myDatabases.length" class="sidebar-section">
-      <div class="section-title">Cơ sở kiến thức của tôi</div>
+      <div class="section-title">My Knowledge Bases</div>
       <button
         v-for="database in myDatabases"
         :key="database.kb_id || database.id || database.name"
@@ -61,7 +61,7 @@
     </section>
 
     <section v-if="sharedDatabases.length" class="sidebar-section">
-      <div class="section-title">cơ sở tri thức được chia sẻ</div>
+      <div class="section-title">Shared Knowledge Bases</div>
       <button
         v-for="database in sharedDatabases"
         :key="database.kb_id || database.id || database.name"
@@ -76,10 +76,10 @@
     </section>
 
     <section v-if="loadingDatabases" class="sidebar-section">
-      <div class="sidebar-muted">Đang tải cơ sở kiến thức...</div>
+      <div class="sidebar-muted">Loading knowledge bases...</div>
     </section>
     <section v-else-if="!databases.length" class="sidebar-section">
-      <div class="sidebar-muted">Chưa có quyền truy cập vào cơ sở kiến thức</div>
+      <div class="sidebar-muted">No knowledge base access</div>
     </section>
   </aside>
 </template>

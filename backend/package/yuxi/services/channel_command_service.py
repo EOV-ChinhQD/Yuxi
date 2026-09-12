@@ -23,11 +23,11 @@ def parse_slash_command(text: str) -> SlashCommand | None:
     try:
         parts = shlex.split(normalized)
     except ValueError as exc:
-        raise ValueError("slash command 格式无效") from exc
+        raise ValueError("Invalid slash command format") from exc
     if not parts or not parts[0].startswith("/"):
         return None
 
     name = parts[0][1:].strip().lower()
     if not name:
-        raise ValueError("slash command 不能为空")
+        raise ValueError("Slash command cannot be empty")
     return SlashCommand(name=name, args=tuple(parts[1:]))

@@ -1,17 +1,17 @@
 <template>
   <div class="ocr-settings-section">
-    <div class="section-title">默认 OCR 方法</div>
+    <div class="section-title">Default OCR Method</div>
     <div class="settings-panel">
-      <div class="setting-label">{{ items?.default_ocr_engine?.des || '默认 OCR 方法' }}</div>
+      <div class="setting-label">{{ items?.default_ocr_engine?.des || 'Default OCR Method' }}</div>
       <OCRSelector
         :model-value="configStore.config?.default_ocr_engine"
         @update:model-value="configStore.setConfigValue('default_ocr_engine', $event)"
       />
     </div>
 
-    <div class="section-title">OCR 服务配置</div>
+    <div class="section-title">OCR Service Configuration</div>
     <p class="section-description">
-      仅展示需要配置的服务。保存空值会清除数据库配置，并读取对应环境变量。
+      Only services requiring configuration are displayed. Saving an empty value clears the database configuration and falls back to environment variables.
     </p>
     <div class="option-list">
       <section v-for="option in configOptions" :key="option.key" class="option-card">
@@ -23,7 +23,7 @@
           <div class="option-actions" :class="{ editing: editingKey === option.key }">
             <template v-if="editingKey === option.key">
               <a-button size="small" :disabled="savingOption === option.key" @click="cancelEditing">
-                取消
+                Cancel
               </a-button>
               <a-button
                 type="primary"
@@ -32,7 +32,7 @@
                 :loading="savingOption === option.key"
                 @click="saveOption(option)"
               >
-                保存
+                Save
               </a-button>
             </template>
             <a-button
@@ -41,7 +41,7 @@
               :disabled="Boolean(editingKey)"
               @click="startEditing(option)"
             >
-              编辑
+              Edit
             </a-button>
           </div>
         </header>
@@ -61,7 +61,7 @@
               allow-clear
             />
             <small>
-              {{ field.sensitive ? '留空并保存会清除数据库中的值。' : field.help }}
+              {{ field.sensitive ? 'Leaving empty and saving will clear database value.' : field.help }}
             </small>
           </label>
         </div>
@@ -111,7 +111,7 @@ const loadConfigOptions = async () => {
         sensitive_state: { ...(option.sensitive_state || {}) }
       }))
   } catch (error) {
-    message.error(error.message || '加载 OCR 服务配置失败')
+    message.error(error.message || 'Failed to load OCR service configuration')
   }
 }
 
@@ -127,12 +127,12 @@ const cancelEditing = () => {
 
 const getFieldDisplay = (option, field) => {
   if (!field.sensitive) {
-    return option.value?.[field.key] || `读取 ${field.environment}`
+    return option.value?.[field.key] || `Read from ${field.environment}`
   }
   const state = option.sensitive_state?.[field.key]
   if (state?.source === 'database') return state.preview
-  if (state?.source === 'environment') return `已通过 ${field.environment} 配置`
-  return '未配置'
+  if (state?.source === 'environment') return `Configured via ${field.environment}`
+  return 'Not configured'
 }
 
 const saveOption = async (option) => {
@@ -144,9 +144,9 @@ const saveOption = async (option) => {
       sensitive_state: { ...(data.option.sensitive_state || {}) }
     })
     cancelEditing()
-    message.success('配置已保存')
+    message.success('Configuration saved')
   } catch (error) {
-    message.error(error.message || '保存配置失败')
+    message.error(error.message || 'Failed to save configuration')
   } finally {
     savingOption.value = ''
   }

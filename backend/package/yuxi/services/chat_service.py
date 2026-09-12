@@ -1018,6 +1018,17 @@ async def stream_agent_chat(
         run_id=meta.get("run_id"),
         request_id=meta.get("request_id"),
     )
+
+    # ponytail: Bind project and workdir_path from conversation if present
+    conv_for_project = await ConversationRepository(db).get_conversation_by_thread_id(thread_id)
+    if conv_for_project and getattr(conv_for_project, "project_id", None):
+        from yuxi.repositories.project_repository import ProjectRepository
+
+        project_obj = await ProjectRepository(db).get_for_user(conv_for_project.project_id, uid)
+        if project_obj:
+            input_context["project_id"] = project_obj.id
+            input_context["workdir_path"] = project_obj.workdir_path
+
     _apply_model_override(input_context, meta)
     _apply_input_context_field(input_context, meta, "tool_approval_mode")
     _apply_subagent_runtime_context(input_context, meta)

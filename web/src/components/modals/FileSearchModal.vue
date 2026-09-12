@@ -5,7 +5,7 @@
         class="file-search-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="搜索文件"
+        aria-label="Search files"
         @keydown.esc.prevent="close"
       >
         <div class="file-search-input-row">
@@ -15,12 +15,12 @@
             v-model="keyword"
             class="file-search-input"
             type="text"
-            placeholder="输入文件名搜索（仅匹配文件名，不搜索文件内容）"
+            placeholder="Search files by name (matches filename only, does not search content)"
             autocomplete="off"
-            aria-label="搜索文件"
+            aria-label="Search files"
             @keydown.enter.prevent="handleSearch"
           />
-          <button type="button" class="file-search-close" aria-label="关闭" @click="close">
+          <button type="button" class="file-search-close" aria-label="Close" @click="close">
             <X :size="20" />
           </button>
         </div>
@@ -66,15 +66,15 @@
                 </span>
               </button>
               <div v-if="hasMore" class="file-search-loading-more">
-                仅展示前 {{ results.length }} 条，请细化关键词
+                Only showing first {{ results.length }} results; please refine keyword
               </div>
             </div>
 
-            <div v-else class="file-search-empty">未找到匹配的文件</div>
+            <div v-else class="file-search-empty">No matching files found</div>
           </template>
 
           <div v-else class="file-search-hint">
-            输入文件名关键词进行搜索，仅匹配文件名，不搜索文件内容。
+            Enter filename keywords to search. Matches filename only, does not search content.
           </div>
         </div>
       </section>
@@ -141,7 +141,7 @@ const handleSearch = async () => {
     hasMore.value = Boolean(response?.has_more)
   } catch (error) {
     if (token !== searchToken) return
-    console.warn('搜索文件失败:', error)
+    console.warn('File search failed:', error)
     results.value = []
     hasMore.value = false
   } finally {
@@ -167,7 +167,7 @@ const formatDirname = (dir) => {
 const formatResultDate = (value) => {
   const parsed = parseToShanghai(value)
   if (!parsed) return ''
-  if (parsed.year() === dayjs().year()) return parsed.format('M月D日 HH:mm')
+  if (parsed.year() === dayjs().year()) return parsed.format('MMM D, HH:mm')
   return parsed.format('YYYY-MM-DD HH:mm')
 }
 

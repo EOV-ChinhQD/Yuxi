@@ -1,4 +1,4 @@
-"""Agent Evaluation HTTP 协议适配与轻量轨迹摘要。"""
+"""Agent Evaluation HTTP protocol adapter and lightweight trajectory summary."""
 
 from __future__ import annotations
 
@@ -26,24 +26,24 @@ INTERRUPT_STATUSES = {"ask_user_question_required", "human_approval_required", "
 
 
 class AgentEvaluationContext(BaseModel):
-    """评估运行关联的 Langfuse 数据集上下文。"""
+    """Langfuse dataset context associated with evaluation run."""
 
-    dataset_name: str | None = Field(None, description="Langfuse dataset 名称")
+    dataset_name: str | None = Field(None, description="Langfuse dataset name")
     dataset_item_id: str | None = Field(None, description="Langfuse dataset item ID")
-    experiment_name: str | None = Field(None, description="Langfuse experiment/run 名称")
+    experiment_name: str | None = Field(None, description="Langfuse experiment/run name")
 
 
 class AgentEvalRunCreate(BaseModel):
-    """Agent Eval 创建请求。"""
+    """Agent Eval creation request."""
 
-    query: str = Field(..., description="评估样例输入")
-    agent_slug: str = Field(..., description="要运行的智能体 slug")
-    evaluation: AgentEvaluationContext = Field(default_factory=AgentEvaluationContext, description="评估上下文")
-    meta: dict = Field(default_factory=dict, description="可选请求追踪信息")
-    image_content: str | None = Field(None, description="可选，base64 图片内容")
-    model_spec: str | None = Field(None, description="可选模型覆盖")
-    tool_approval_mode: str | None = Field(None, description="可选工具审批模式覆盖")
-    include_trajectory_summary: bool = Field(False, description="是否返回轻量工具调用轨迹摘要")
+    query: str = Field(..., description="Evaluation sample input query")
+    agent_slug: str = Field(..., description="Agent slug to run")
+    evaluation: AgentEvaluationContext = Field(default_factory=AgentEvaluationContext, description="Evaluation context")
+    meta: dict = Field(default_factory=dict, description="Optional request tracking metadata")
+    image_content: str | None = Field(None, description="Optional base64 image content")
+    model_spec: str | None = Field(None, description="Optional model spec override")
+    tool_approval_mode: str | None = Field(None, description="Optional tool approval mode override")
+    include_trajectory_summary: bool = Field(False, description="Whether to return lightweight tool invocation trajectory summary")
 
 
 @agent_invocation_eval_router.post("/runs")
@@ -52,12 +52,12 @@ async def create_agent_eval_run(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """运行一次评估样例，并阻塞等待最终 AgentRun 结果。"""
+    """Run an evaluation sample and block until final AgentRun result is available."""
     agent_slug = str(payload.agent_slug or "").strip()
     if not agent_slug:
-        raise HTTPException(status_code=422, detail="agent_slug 不能为空")
+        raise HTTPException(status_code=422, detail="agent_slug cannot be empty")
     if not payload.query:
-        raise HTTPException(status_code=422, detail="query 不能为空")
+        raise HTTPException(status_code=422, detail="query cannot be empty")
 
     meta = dict(payload.meta or {})
     request_id = _normalize_request_id(meta)
@@ -90,7 +90,7 @@ async def create_agent_eval_run(
     except AgentRunWaitTimeout as exc:
         raise HTTPException(
             status_code=504,
-            detail={"message": "运行仍在进行中，等待最终结果超时", "run": exc.result},
+            detail={"message": "Run is still in progress, waiting for final result timed out", "run": exc.result},
         ) from exc
     if payload.include_trajectory_summary:
         try:
@@ -104,11 +104,11 @@ async def create_agent_eval_run(
 
 
 def _normalize_request_id(meta: dict[str, Any]) -> str:
-    """从评估元数据中提取或生成请求幂等 ID。"""
+    """Extract or generate request idempotency ID from evaluation metadata."""
     request_id = str(meta.get("request_id") or "").strip()
     if request_id:
         if len(request_id) > 64:
-            raise HTTPException(status_code=422, detail="request_id 不能超过 64 个字符")
+            raise HTTPException(status_code=422, detail="request_id cannot exceed 64 characters")
         return request_id
     import uuid
 
@@ -116,7 +116,7 @@ def _normalize_request_id(meta: dict[str, Any]) -> str:
 
 
 def _normalize_evaluation(evaluation: dict[str, Any]) -> dict[str, str]:
-    """只保留非空的评估上下文字段。"""
+    """Retain only non-empty evaluation context fields."""
     normalized: dict[str, str] = {}
     for key in EVALUATION_FIELDS:
         value = evaluation.get(key)
@@ -126,13 +126,13 @@ def _normalize_evaluation(evaluation: dict[str, Any]) -> dict[str, str]:
 
 
 async def _load_trajectory_summary(run_id: str) -> dict[str, Any]:
-    """读取运行事件并生成轻量轨迹摘要。"""
+    """Read run events and build lightweight trajectory summary."""
     events = await list_run_stream_events(run_id, after_seq="0-0", limit=TRAJECTORY_SUMMARY_EVENT_LIMIT)
     return _build_trajectory_summary(events)
 
 
 def _build_trajectory_summary(events: list[dict[str, Any]]) -> dict[str, Any]:
-    """从运行事件中统计工具调用、错误和中断概览。"""
+    """Aggregate tool calls, errors, and interrupts from run events."""
     summary = {
         "schema_version": 1,
         "source": "run_events",
@@ -206,7 +206,7 @@ def _build_trajectory_summary(events: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _iter_event_chunks(event: dict[str, Any]):
-    """遍历单个运行事件里的有效 chunk。"""
+    """Iterate over valid chunks within a single run event."""
     envelope = event.get("payload")
     payload = envelope.get("payload") if isinstance(envelope, dict) else None
     if not isinstance(payload, dict):

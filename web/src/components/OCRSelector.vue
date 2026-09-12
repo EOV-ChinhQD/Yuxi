@@ -14,22 +14,22 @@
       @click.prevent.stop
     >
       <span class="ocr-selector-trigger-text">{{ selectedEngineLabel }}</span>
-      <RefreshCw v-if="healthLoading" :size="13" class="spin" aria-label="正在检测 OCR 状态" />
+      <RefreshCw v-if="healthLoading" :size="13" class="spin" aria-label="Checking OCR status" />
       <ChevronDown v-else :size="14" />
     </button>
 
     <template #overlay>
       <div class="ocr-selector-dropdown" @click.stop>
         <div class="ocr-selector-header">
-          <span>OCR 方法</span>
+          <span>OCR Method</span>
           <button v-if="userStore.isAdmin" type="button" class="config-link" @click="goToConfig">
-            去配置
+            Configure
           </button>
         </div>
         <div class="ocr-selector-options">
-          <div v-if="optionsLoading" class="ocr-selector-empty">加载中...</div>
+          <div v-if="optionsLoading" class="ocr-selector-empty">Loading...</div>
           <div v-else-if="visibleEngines.length === 0" class="ocr-selector-empty">
-            暂无可用 OCR 方法
+            No OCR methods available
           </div>
           <template v-else>
             <button
@@ -54,7 +54,7 @@
               :aria-expanded="unavailableExpanded"
               @click="unavailableExpanded = !unavailableExpanded"
             >
-              <span>不可用（{{ unavailableEngines.length }}）</span>
+              <span>Unavailable ({{ unavailableEngines.length }})</span>
               <ChevronDown v-if="unavailableExpanded" :size="13" />
               <ChevronRight v-else :size="13" />
             </button>
@@ -69,10 +69,10 @@
               >
                 <span class="ocr-option-main">
                   <span class="ocr-option-name">{{ engine.display_name }}</span>
-                  <span class="ocr-health-label unhealthy">不可用</span>
+                  <span class="ocr-health-label unhealthy">Unavailable</span>
                 </span>
                 <span class="ocr-unavailable-reason">
-                  {{ health[engine.engine_id]?.message || '健康检测未通过' }}
+                  {{ health[engine.engine_id]?.message || 'Health check failed' }}
                 </span>
               </button>
             </template>
@@ -94,7 +94,7 @@ const props = defineProps({
   allowedEngines: { type: Array, default: () => [] },
   includeDisable: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
-  placeholder: { type: String, default: '请选择 OCR 方法' }
+  placeholder: { type: String, default: 'Select OCR method' }
 })
 
 const emit = defineEmits(['update:modelValue', 'change', 'options-loaded'])
@@ -113,7 +113,7 @@ const selectableEngines = computed(() => {
   if (!props.includeDisable || engines.value.some((engine) => engine.engine_id === 'disable')) {
     return engines.value
   }
-  return [{ engine_id: 'disable', display_name: '禁用 OCR' }, ...engines.value]
+  return [{ engine_id: 'disable', display_name: 'Disable OCR' }, ...engines.value]
 })
 const visibleEngines = computed(() =>
   selectableEngines.value.filter((engine) => {
@@ -123,7 +123,7 @@ const visibleEngines = computed(() =>
 )
 
 const selectedEngineLabel = computed(() => {
-  if (props.modelValue === 'disable') return '已禁用 OCR'
+  if (props.modelValue === 'disable') return 'OCR Disabled'
   return (
     visibleEngines.value.find((engine) => engine.engine_id === props.modelValue)?.display_name ||
     props.placeholder
@@ -148,7 +148,7 @@ const loadOptions = async () => {
     engines.value = Array.isArray(data?.engines) ? data.engines : []
     emit('options-loaded', data)
   } catch (error) {
-    console.error('获取 OCR 方法失败:', error)
+    console.error('Failed to get OCR options:', error)
   } finally {
     optionsLoading.value = false
   }
@@ -160,7 +160,7 @@ const refreshHealth = async () => {
     const data = await ocrApi.getHealth()
     health.value = data?.health || {}
   } catch (error) {
-    console.error('获取 OCR 健康状态失败:', error)
+    console.error('Failed to get OCR health status:', error)
   } finally {
     healthLoading.value = false
   }
@@ -200,10 +200,10 @@ const healthClass = (engineId) => {
 }
 
 const healthLabel = (engineId) => {
-  if (engineId === 'disable') return '无需检测'
-  if (healthLoading.value && !healthStatus(engineId)) return '检测中'
-  if (!healthStatus(engineId)) return '未检测'
-  return isHealthy(engineId) ? '可用' : '不可用'
+  if (engineId === 'disable') return 'No check required'
+  if (healthLoading.value && !healthStatus(engineId)) return 'Checking'
+  if (!healthStatus(engineId)) return 'Not checked'
+  return isHealthy(engineId) ? 'Available' : 'Unavailable'
 }
 
 onMounted(() => {

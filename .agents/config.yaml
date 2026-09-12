@@ -1,0 +1,7 @@
+version: "2.1"
+project_role: "engineer"
+contracts:
+  api_contract: ".agents/contracts/api_contract.json"
+runtime:
+  test_runner: "pytest"
+  linter: "ruff check"

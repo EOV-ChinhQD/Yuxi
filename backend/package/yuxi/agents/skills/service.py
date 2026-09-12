@@ -308,15 +308,15 @@ def _load_and_select_draft_items(
     """加载安装草稿，校验权限与来源类型，并按需筛选选中的条目。"""
     draft_dir, data = _load_skill_draft(draft_id)
     if data.get("created_by") != operator.uid and operator.role not in ADMIN_ROLES:
-        raise ValueError("无权确认该安装草稿")
+        raise ValueError("Unauthorized to confirm this skill install draft")
     if data.get("source_type") not in {"upload", "remote"}:
-        raise ValueError("无效的安装草稿来源")
+        raise ValueError("Invalid install draft source")
 
     draft_items = data.get("items") or []
     if slugs is not None:
         selected_slugs = set(slugs)
         if not selected_slugs:
-            raise ValueError("至少选择一个 Skill")
+            raise ValueError("Select at least one Skill")
         available_slugs = {str(item.get("slug") or "").strip() for item in draft_items}
         if selected_slugs - available_slugs:
             raise ValueError("确认安装包含草稿外的 Skill")

@@ -25,7 +25,7 @@
     </button>
 
     <template #overlay>
-      <div ref="panelRef" class="config-dropdown-panel" role="menu" aria-label="工具审批模式">
+      <div ref="panelRef" class="config-dropdown-panel" role="menu" aria-label="Tool Approval Mode">
         <button
           v-for="option in options"
           :key="option.value"
@@ -63,12 +63,12 @@ const emit = defineEmits(['update:modelValue'])
 const options = [
   {
     value: 'default',
-    label: '请求审批',
+    label: 'Request Approval',
     icon: Hand
   },
   {
     value: 'always_trust',
-    label: '完全信任',
+    label: 'Always Trust',
     icon: ShieldAlert
   }
 ]

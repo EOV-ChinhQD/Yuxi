@@ -82,7 +82,7 @@ async def test_channel_rejects_whitespace_text_before_submission(monkeypatch: py
         )
 
     assert exc.value.status_code == 422
-    assert exc.value.detail == "text 不能为空"
+    assert exc.value.detail == "text cannot be empty"
 
 
 @pytest.mark.asyncio
@@ -267,7 +267,7 @@ async def test_approve_command_rejects_request_id_from_older_resume(monkeypatch:
         )
 
     assert exc.value.status_code == 409
-    assert exc.value.detail == "request_id 冲突"
+    assert exc.value.detail == "request_id conflict"
 
 
 @pytest.mark.asyncio

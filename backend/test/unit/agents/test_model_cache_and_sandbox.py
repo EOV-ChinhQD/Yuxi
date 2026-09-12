@@ -8,13 +8,15 @@ from deepagents.backends.protocol import ExecuteResponse
 
 
 class DummyModelInfo:
-    def __init__(self, spec, provider_type, model_id, api_key="test-key", base_url="http://test.ai"):
+    def __init__(self, spec, provider_type, model_id, api_key="test-key", base_url="http://test.ai", provider_id="test-provider"):
         self.spec = spec
         self.provider_type = provider_type
+        self.provider_id = provider_id
         self.model_id = model_id
         self.api_key = api_key
         self.base_url = base_url
         self.model_type = "chat"
+        self.request_body_overrides = None
 
 
 @pytest.fixture(autouse=True)
@@ -139,13 +141,14 @@ def test_sandbox_execute_timeout(monkeypatch):
     assert sandbox_metrics.crashes == 0
 
 
-def test_sandbox_execute_crash():
+def test_sandbox_execute_crash(monkeypatch):
+    monkeypatch.setenv("SANDBOX_PROVISIONER_TOKEN", "unit-test-token-0123456789abcdefXYZ")
     backend = ProvisionerSandboxBackend(thread_id="test-thread", uid="test-uid")
     mock_client = MagicMock()
     backend._get_client = MagicMock(return_value=mock_client)
 
-    # Mock connection refused/fatal crash exception raising
-    mock_client.shell.exec_command.side_effect = Exception("Connection refused")
+    # Mock fatal crash exception raising
+    mock_client.shell.exec_command.side_effect = Exception("Kernel panic")
 
     response = backend.execute("some-invalid-command")
     assert response.exit_code == 1
@@ -216,12 +219,13 @@ def test_system_prompt_builder():
         workspace_path="/prefix/workspace"
     )
 
-    assert "Bạn BẮT BUỘC phải SUY NGHĨ" in prompt
     assert "Yuxi" in prompt
     assert "/prefix/outputs" in prompt
     assert "/prefix/uploads" in prompt
     assert "/prefix/workspace" in prompt
-    assert "<| RÀNG BUỘC BẢO MẬT VÀ PHẢN HỒI CHO NGƯỜI DÙNG |>" in prompt
+    assert "NGUYÊN TẮC BẢO MẬT" in prompt
+    assert "VAI TRÒ" in prompt
+    assert "QUY TẮC DÙNG KHO TRI THỨC" in prompt
 
 
 @pytest.mark.asyncio

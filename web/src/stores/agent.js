@@ -44,7 +44,7 @@ export const useAgentStore = defineStore(
     const availableKnowledgeBases = ref([])
     const availableMcps = ref([])
     const availableSkills = ref([])
-    // 完整工具元数据（含 buildin / knowledge 等全部分类的 display_name），用于工具名称展示映射
+    // Complete tool metadata (including display_name for builtin, knowledge, etc.), used for tool display mapping
     const toolMetadata = ref([])
 
     const agentConfig = ref({})

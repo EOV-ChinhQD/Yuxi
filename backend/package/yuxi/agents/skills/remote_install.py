@@ -77,22 +77,22 @@ class _RemoteSkillSandbox:
         if result.exit_code != 0:
             cleaned_lines = _clean_cli_output(output)
             error_msg = "\n".join(line for line in cleaned_lines if line)[:500]
-            raise ValueError(error_msg or "skills CLI 执行失败")
+            raise ValueError(error_msg or "skills CLI execution failed")
         return output
 
     async def download_skill(self, name: str, target_dir: Path) -> None:
-        """将 Sandbox 内的一个 Skill 下载到宿主临时目录。"""
+        """Download one Skill from Sandbox into temporary host directory."""
         remote_dir = f"{self.home}/.agents/skills/{name}"
         await asyncio.to_thread(
             download_sandbox_directory,
             self.backend,
             remote_dir,
             target_dir,
-            empty_message="skills CLI 未生成预期的技能目录",
+            empty_message="skills CLI did not generate the expected skill directory",
         )
 
     async def cleanup(self) -> None:
-        """删除一次性 Sandbox 及其线程目录。"""
+        """Clean up ephemeral Sandbox and its thread directory."""
         try:
             await asyncio.to_thread(
                 get_sandbox_provider().release,
@@ -101,7 +101,7 @@ class _RemoteSkillSandbox:
                 clear_cache_on_delete_failure=True,
             )
         except Exception as exc:
-            logger.error(f"销毁远程 Skill Sandbox 失败: {exc}")
+            logger.error(f"Failed to destroy remote skill sandbox: {exc}")
             raise
         finally:
             thread_dir = sandbox_user_data_dir(self.thread_id).parent

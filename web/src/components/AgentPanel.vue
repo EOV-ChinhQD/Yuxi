@@ -473,10 +473,10 @@ const loadActivePreview = async () => {
       if (requestSeq === previewRequestSeq) {
         currentFile.value = {
           ...baseFile,
-          content: '文件预览失败',
+          content: 'Failed to preview file',
           supported: false,
           previewType: 'unsupported',
-          message: '文件预览失败',
+          message: 'Failed to preview file',
           previewUrl: ''
         }
       }

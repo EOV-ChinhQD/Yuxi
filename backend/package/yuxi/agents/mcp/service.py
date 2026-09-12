@@ -429,9 +429,9 @@ async def create_mcp_server(
 ) -> MCPServer:
     """Create server."""
     if slug in _BUILTIN_MCP_SERVER_SLUGS:
-        raise ValueError("系统内置 MCP 的 slug 由代码保留，无法通过接口创建")
+        raise ValueError("Built-in MCP server slugs are reserved and cannot be created via API")
     if transport not in _USER_CONFIGURABLE_TRANSPORTS:
-        raise ValueError("用户创建的 MCP 仅支持 sse 或 streamable_http，不允许启动 stdio 本地进程")
+        raise ValueError("User-created MCP servers only support sse or streamable_http transports")
 
     existing = await get_mcp_server(db, slug)
     if existing:
@@ -481,15 +481,15 @@ async def update_mcp_server(
     if not server:
         raise MCPServerNotFoundError(f"Server '{slug}' does not exist")
     if is_builtin_mcp_server(server):
-        raise PermissionError("系统内置 MCP 的连接配置由代码管理，无法通过接口修改")
+        raise PermissionError("Built-in MCP server connection configuration is managed by code and cannot be modified via API")
 
     next_transport = transport or server.transport
     if next_transport not in _USER_CONFIGURABLE_TRANSPORTS:
-        raise ValueError("用户创建的 MCP 仅支持 sse 或 streamable_http，不允许启动 stdio 本地进程")
+        raise ValueError("User-created MCP servers only support sse or streamable_http transports")
 
     next_url = url if url is not None else server.url
     if not next_url or not next_url.strip():
-        raise ValueError(f"传输类型为 {next_transport} 时，url 必填")
+        raise ValueError(f"URL is required when transport type is {next_transport}")
 
     if name is not None:
         server.name = name
@@ -552,7 +552,7 @@ async def set_server_enabled(
     if not server:
         raise MCPServerNotFoundError(f"Server '{slug}' does not exist")
     if enabled and requires_mcp_stdio_migration(server):
-        raise ValueError("历史 stdio MCP 已被禁用，请改为 sse 或 streamable_http 后再启用")
+        raise ValueError("Legacy stdio MCP is disabled; please change transport to sse or streamable_http before enabling")
 
     server.enabled = 1 if enabled else 0
     if updated_by is not None:

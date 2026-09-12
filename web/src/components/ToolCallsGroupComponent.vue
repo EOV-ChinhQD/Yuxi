@@ -107,7 +107,7 @@ watch(
   { immediate: true }
 )
 
-// 工具名称展示优先级：display_label > 完整工具元数据中的 display name > 前端兜底名称映射 > 工具 id
+// Tool display name priority: display_label > full tool metadata display name > fallback mapping > tool id
 const getToolCallLabel = (toolCall) => {
   const displayLabel = String(toolCall?.display_label || '').trim()
   if (displayLabel) return displayLabel
@@ -124,9 +124,9 @@ const getToolCallLabel = (toolCall) => {
 
 const toolCallsSummaryTitle = computed(() => {
   if (normalizedToolCalls.value.length === 1) {
-    return `gọi: ${getToolCallLabel(normalizedToolCalls.value[0])}`
+    return `called: ${getToolCallLabel(normalizedToolCalls.value[0])}`
   }
-  return `đã được gọi ${normalizedToolCalls.value.length} công cụ`
+  return `called ${normalizedToolCalls.value.length} tools`
 })
 
 const toolCallsNamesMeta = computed(() => {
@@ -147,10 +147,10 @@ const statusSummary = computed(() => {
 
   const parts = []
   if (successCount > 0 && successCount === normalizedToolCalls.value.length) {
-    return 'Đã hoàn thành'
+    return 'Completed'
   }
-  if (errorCount > 0) parts.push(`${errorCount} thất bại`)
-  if (runningCount > 0) parts.push(`${runningCount} Đang tiến hành`)
+  if (errorCount > 0) parts.push(`${errorCount} failed`)
+  if (runningCount > 0) parts.push(`${runningCount} running`)
 
   return parts.join(' · ')
 })

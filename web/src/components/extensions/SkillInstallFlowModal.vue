@@ -19,7 +19,7 @@
         </div>
       </header>
 
-      <ol class="install-flow-steps" aria-label="安装进度">
+      <ol class="install-flow-steps" aria-label="Installation Progress">
         <li
           v-for="(label, index) in stepLabels"
           :key="label"
@@ -39,10 +39,10 @@
           <slot v-if="flow?.kind === 'remote'" name="selection" />
           <template v-else>
             <div class="selection-toolbar">
-              <span>选择要加载的 Skill</span>
+              <span>Select skills to load</span>
               <div>
-                <a-button type="link" size="small" @click="selectAllAvailable">全选</a-button>
-                <a-button type="link" size="small" @click="selectedSlugs = []">清空</a-button>
+                <a-button type="link" size="small" @click="selectAllAvailable">Select all</a-button>
+                <a-button type="link" size="small" @click="selectedSlugs = []">Clear</a-button>
               </div>
             </div>
             <div class="flow-item-list selection-list">
@@ -61,7 +61,7 @@
                   <strong>{{ skill.name }}</strong>
                   <small>{{ skill.description || skill.slug }}</small>
                 </span>
-                <span v-if="isInstalled(skill.slug)" class="status-badge neutral">已安装</span>
+                <span v-if="isInstalled(skill.slug)" class="status-badge neutral">Installed</span>
               </label>
             </div>
           </template>
@@ -74,18 +74,18 @@
               <LoaderCircle v-else :size="20" class="spin" />
             </div>
             <strong>
-              {{ flowError ? 'Skill 加载失败' : `正在加载 ${progressItems.length} 个 Skill` }}
+              {{ flowError ? 'Failed to load skills' : `Loading ${progressItems.length} skills` }}
             </strong>
             <span>
-              {{ flowError || `从 ${loadingSourceCount} 个来源拉取并解析，通常只需片刻` }}
+              {{ flowError || `Fetching and parsing from ${loadingSourceCount} source(s), usually takes a moment` }}
             </span>
           </div>
         </section>
 
         <section v-else-if="phase === 'reviewing'" class="flow-section">
           <div class="review-heading">
-            <strong>确认安装内容</strong>
-            <span>{{ readyItems.length }} 个 Skill，共用下方安装设置</span>
+            <strong>Confirm Installation</strong>
+            <span>{{ readyItems.length }} skills sharing settings below</span>
           </div>
           <div class="review-list">
             <div
@@ -96,13 +96,13 @@
             >
               <span class="review-title">
                 <strong>{{ item.name || item.slug }}</strong>
-                <small>{{ item.description || item.error || '暂无描述' }}</small>
+                <small>{{ item.description || item.error || 'No description' }}</small>
               </span>
-              <span v-if="item.success === false" class="status-badge error">解析失败</span>
+              <span v-if="item.success === false" class="status-badge error">Failed to parse</span>
               <button
                 type="button"
                 class="review-remove-button"
-                :aria-label="`移除 ${item.name || item.slug}`"
+                :aria-label="`Remove ${item.name || item.slug}`"
                 @click="removeReviewItem(item)"
               >
                 <XIcon :size="15" />
@@ -112,12 +112,12 @@
                 class="review-warning"
                 role="alert"
               >
-                {{ item.warnings.join('；') }}
+                {{ item.warnings.join('; ') }}
               </div>
             </div>
           </div>
           <div class="install-target-section">
-            <h3>安装位置</h3>
+            <h3>Installation Target</h3>
             <div class="install-target-options">
               <button
                 type="button"
@@ -126,8 +126,8 @@
                 :aria-pressed="installTarget === 'personal'"
                 @click="installTarget = 'personal'"
               >
-                <span class="install-target-title">个人工作区 <b>推荐</b></span>
-                <span>仅自己可用，保存在个人 workspace，不进入平台数据库。</span>
+                <span class="install-target-title">Personal Workspace <b>Recommended</b></span>
+                <span>Only available to you, stored in personal workspace, not saved to platform database.</span>
               </button>
               <button
                 v-if="userStore.isAdmin"
@@ -137,16 +137,16 @@
                 :aria-pressed="installTarget === 'shared'"
                 @click="installTarget = 'shared'"
               >
-                <span class="install-target-title">共享 Skill</span>
-                <span>进入平台 Skill 库，并继续配置指定人、部门或全局范围。</span>
+                <span class="install-target-title">Shared Skill</span>
+                <span>Saved to platform skill library with customizable scope (users, departments, or global).</span>
               </button>
             </div>
             <div v-if="installTarget === 'personal'" class="personal-install-note">
-              个人 Skill 不加载工具、MCP 或其他 Skill 依赖；与共享 Skill 同名时完整覆盖共享版本。
+              Personal skills do not load tool, MCP, or other skill dependencies; identical slug will override the shared version.
             </div>
           </div>
           <div v-if="installTarget === 'shared'" class="share-config-section">
-            <h3>生效范围</h3>
+            <h3>Effective Scope</h3>
             <ShareConfigForm
               ref="shareConfigFormRef"
               v-model="shareConfig"
@@ -161,8 +161,8 @@
             <div class="loading-state-icon">
               <LoaderCircle :size="20" class="spin" />
             </div>
-            <strong>正在安装 {{ installItems.length }} 个 Skill</strong>
-            <span>正在安装到：{{ installTargetLabel }}</span>
+            <strong>Installing {{ installItems.length }} skills</strong>
+            <span>Installing to: {{ installTargetLabel }}</span>
           </div>
         </section>
 
@@ -170,7 +170,7 @@
           <div class="result-heading">
             <strong>{{ resultTitle }}</strong>
             <span
-              >成功 {{ successfulInstallCount }} 个，失败 {{ failedInstallItems.length }} 个</span
+              >{{ successfulInstallCount }} succeeded, {{ failedInstallItems.length }} failed</span
             >
           </div>
           <StatusItemList :items="installItems" />
@@ -184,29 +184,29 @@
           <span class="footer-summary">{{ footerSummary }}</span>
           <div class="footer-actions">
             <template v-if="phase === 'selecting'">
-              <a-button @click="handleClose">取消</a-button>
+              <a-button @click="handleClose">Cancel</a-button>
               <a-button type="primary" :disabled="selectedSlugs.length === 0" @click="prepareSuite">
-                加载所选 Skill
+                Load Selected Skills
               </a-button>
             </template>
             <template v-else-if="phase === 'preparing'">
-              <a-button v-if="flowError" @click="handleClose">关闭</a-button>
-              <a-button v-else loading disabled>正在加载</a-button>
+              <a-button v-if="flowError" @click="handleClose">Close</a-button>
+              <a-button v-else loading disabled>Loading</a-button>
             </template>
             <template v-else-if="phase === 'reviewing'">
-              <a-button @click="handleClose">取消</a-button>
+              <a-button @click="handleClose">Cancel</a-button>
               <a-button type="primary" :disabled="readyItems.length === 0" @click="installDrafts">
-                确认安装 {{ readyItems.length }} 个 Skill · {{ installTargetLabel }}
+                Install {{ readyItems.length }} Skills · {{ installTargetLabel }}
               </a-button>
             </template>
             <template v-else-if="phase === 'installing'">
-              <a-button type="primary" loading disabled>正在安装</a-button>
+              <a-button type="primary" loading disabled>Installing</a-button>
             </template>
             <template v-else>
               <a-button v-if="failedInstallItems.length" @click="retryFailedItems">
-                重新加载失败项
+                Retry Failed Items
               </a-button>
-              <a-button type="primary" @click="finishFlow">完成</a-button>
+              <a-button type="primary" @click="finishFlow">Done</a-button>
             </template>
           </div>
         </template>
@@ -237,7 +237,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'completed'])
 const userStore = useUserStore()
 
-const stepLabels = ['选择', '加载', '位置', '完成']
+const stepLabels = ['Select', 'Load', 'Target', 'Done']
 const phase = ref('selecting')
 const selectedSlugs = ref([])
 const progressItems = ref([])
@@ -264,7 +264,7 @@ const StatusItemList = defineComponent({
       return Circle
     }
     const labelFor = (status) =>
-      ({ waiting: '等待', active: '处理中', success: '完成', failed: '失败' })[status] || status
+      ({ waiting: 'Waiting', active: 'Processing', success: 'Done', failed: 'Failed' })[status] || status
     return () =>
       h(
         'div',
@@ -304,11 +304,11 @@ const loadingSourceCount = computed(
 const shareScopeLabel = computed(() => {
   const scope = shareConfig.value.read_scope || shareConfig.value.manage_scope || shareConfig.value
   return (
-    { global: '全局共享', department: '部门共享', user: '指定人' }[scope.access_level] || '指定人'
+    { global: 'Global', department: 'Department', user: 'Specific Users' }[scope.access_level] || 'Specific Users'
   )
 })
 const installTargetLabel = computed(() =>
-  installTarget.value === 'personal' ? '个人工作区' : shareScopeLabel.value
+  installTarget.value === 'personal' ? 'Personal Workspace' : shareScopeLabel.value
 )
 const failedInstallItems = computed(() =>
   installItems.value.filter((item) => item.status === 'failed')
@@ -317,26 +317,26 @@ const successfulInstallCount = computed(
   () => installItems.value.filter((item) => item.status === 'success').length
 )
 const resultTitle = computed(() => {
-  if (!failedInstallItems.value.length) return '全部 Skill 安装完成'
-  if (successfulInstallCount.value) return '部分 Skill 安装完成'
-  return 'Skill 安装失败'
+  if (!failedInstallItems.value.length) return 'All skills installed successfully'
+  if (successfulInstallCount.value) return 'Partially installed'
+  return 'Failed to install skills'
 })
 const modalTitle = computed(() =>
-  props.flow?.kind === 'suite' ? `安装 ${props.flow.suite.name}` : props.flow?.title || '安装 Skill'
+  props.flow?.kind === 'suite' ? `Install ${props.flow.suite.name}` : props.flow?.title || 'Install Skills'
 )
 const modalDescription = computed(() => {
   if (props.flow?.kind === 'suite')
     return `${props.flow.suite.provider} · ${props.flow.suite.description}`
-  return props.flow?.description || '加载 Skill，确认安装内容与生效范围。'
+  return props.flow?.description || 'Load skills, configure installation target and scope.'
 })
 const footerSummary = computed(() => {
-  if (phase.value === 'selecting') return `将加载 ${selectedSlugs.value.length} 个 Skill`
+  if (phase.value === 'selecting') return `Loading ${selectedSlugs.value.length} skills`
   if (phase.value === 'preparing')
-    return flowError.value ? '已清理本次生成的临时草稿' : '正在完成短时加载请求'
+    return flowError.value ? 'Cleaned up temporary drafts' : 'Completing load request'
   if (phase.value === 'reviewing')
-    return `${readyItems.value.length} 个可安装 · ${installTargetLabel.value}`
-  if (phase.value === 'installing') return '已成功的 Skill 不会因其他项失败而回滚'
-  return `成功 ${successfulInstallCount.value} 个，失败 ${failedInstallItems.value.length} 个`
+    return `${readyItems.value.length} ready · ${installTargetLabel.value}`
+  if (phase.value === 'installing') return 'Successful skills will not roll back if other items fail'
+  return `${successfulInstallCount.value} succeeded, ${failedInstallItems.value.length} failed`
 })
 
 const cloneShareConfig = (config) => ({
@@ -409,11 +409,11 @@ const prepareRequests = async (requests) => {
       })
       if (result?.data?.draft_id) drafts.value.push(result.data)
     }
-    if (!drafts.value.length) throw new Error('没有可安装的 Skill')
+    if (!drafts.value.length) throw new Error('No installable skills found')
 
     openReview(drafts.value)
   } catch (error) {
-    const message = error?.response?.data?.detail || error.message || '加载 Skill 失败'
+    const message = error?.response?.data?.detail || error.message || 'Failed to load skills'
     await discardDrafts()
     flowError.value = message
   }
@@ -446,7 +446,7 @@ const installDrafts = async () => {
   if (installTarget.value === 'shared') {
     const validation = shareConfigFormRef.value?.validate?.()
     if (validation && !validation.valid) {
-      flowError.value = validation.message || '请完善 Skill 生效范围'
+      flowError.value = validation.message || 'Please complete skill effective scope'
       return
     }
   }
@@ -478,7 +478,7 @@ const installDrafts = async () => {
     }
   } catch (error) {
     await discardDrafts()
-    flowError.value = error?.response?.data?.detail || error.message || '安装 Skill 失败'
+    flowError.value = error?.response?.data?.detail || error.message || 'Failed to install skills'
     installItems.value
       .filter((item) => item.status === 'waiting')
       .forEach((item) => Object.assign(item, { status: 'failed', error: flowError.value }))
@@ -530,7 +530,7 @@ const retryFailedItems = () => {
   })
   const requests = [...requestsBySource].map(([source, skills]) => ({ source, skills }))
   if (!requests.length) {
-    flowError.value = '该失败项需要从原入口重新上传'
+    flowError.value = 'This failed item must be re-uploaded from the original source'
     return
   }
   prepareRequests(requests)

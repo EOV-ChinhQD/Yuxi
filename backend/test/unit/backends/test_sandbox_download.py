@@ -28,7 +28,7 @@ def test_download_sandbox_directory_rejects_outside_path_before_download(tmp_pat
 
     backend = FakeBackend()
 
-    with pytest.raises(ValueError, match="越界"):
+    with pytest.raises(ValueError, match="out-of-bounds"):
         download_sandbox_directory(backend, REMOTE_DIR, tmp_path / "skill", empty_message="empty")
 
     assert backend.downloaded is False
@@ -42,7 +42,7 @@ def test_download_sandbox_directory_rejects_parent_path_escape(tmp_path: Path):
                 entries=[{"path": f"{REMOTE_DIR}/../escape.txt", "is_dir": False, "size": 1}],
             )
 
-    with pytest.raises(ValueError, match="越界"):
+    with pytest.raises(ValueError, match="out-of-bounds"):
         download_sandbox_directory(FakeBackend(), REMOTE_DIR, tmp_path / "skill", empty_message="empty")
 
     assert not (tmp_path / "escape.txt").exists()
@@ -56,7 +56,7 @@ def test_download_sandbox_directory_rejects_more_than_1000_files(tmp_path: Path)
                 entries=[{"path": f"{REMOTE_DIR}/file-{idx}.txt", "is_dir": False, "size": 1} for idx in range(1001)],
             )
 
-    with pytest.raises(ValueError, match="最多 1000 个文件"):
+    with pytest.raises(ValueError, match="file count exceeds limit"):
         download_sandbox_directory(FakeBackend(), REMOTE_DIR, tmp_path / "skill", empty_message="empty")
 
 
@@ -73,7 +73,7 @@ def test_download_sandbox_directory_limits_empty_directory_entries(tmp_path: Pat
                 )
             return SimpleNamespace(error=None, entries=[])
 
-    with pytest.raises(ValueError, match="条目数超过限制"):
+    with pytest.raises(ValueError, match="entry count exceeds limit"):
         download_sandbox_directory(FakeBackend(), REMOTE_DIR, tmp_path / "skill", empty_message="empty")
 
 
@@ -86,7 +86,7 @@ def test_download_sandbox_directory_limits_directory_depth(tmp_path: Path):
                 entries=[{"path": f"{remote_dir}/dir-{depth}", "is_dir": True}],
             )
 
-    with pytest.raises(ValueError, match=f"最多 {MAX_SANDBOX_TREE_DEPTH} 层"):
+    with pytest.raises(ValueError, match="nesting depth exceeds limit"):
         download_sandbox_directory(FakeBackend(), REMOTE_DIR, tmp_path / "skill", empty_message="empty")
 
 
@@ -98,7 +98,7 @@ def test_download_sandbox_directory_rejects_repeated_directory_path(tmp_path: Pa
                 entries=[{"path": f"{REMOTE_DIR}/loop", "is_dir": True}],
             )
 
-    with pytest.raises(ValueError, match="重复目录路径"):
+    with pytest.raises(ValueError, match="duplicate directory path"):
         download_sandbox_directory(FakeBackend(), REMOTE_DIR, tmp_path / "skill", empty_message="empty")
 
 
@@ -124,7 +124,7 @@ def test_download_sandbox_directory_rejects_oversized_tree_before_download(tmp_p
 
     backend = FakeBackend()
 
-    with pytest.raises(ValueError, match="总大小超过限制"):
+    with pytest.raises(ValueError, match="total size exceeds limit"):
         download_sandbox_directory(backend, REMOTE_DIR, tmp_path / "skill", empty_message="empty")
 
     assert backend.downloaded is False
@@ -149,7 +149,7 @@ def test_download_sandbox_directory_removes_partial_target_on_failure(tmp_path: 
 
     target = tmp_path / "skill"
 
-    with pytest.raises(ValueError, match="下载沙盒文件失败"):
+    with pytest.raises(ValueError, match="Failed to download sandbox file"):
         download_sandbox_directory(FakeBackend(), REMOTE_DIR, target, empty_message="empty")
 
     assert not target.exists()
@@ -169,7 +169,7 @@ def test_download_sandbox_directory_rejects_actual_size_over_limit(monkeypatch, 
     monkeypatch.setattr("yuxi.agents.backends.sandbox.download.MAX_SANDBOX_TREE_BYTES", 5)
     target = tmp_path / "skill"
 
-    with pytest.raises(ValueError, match="总大小超过限制"):
+    with pytest.raises(ValueError, match="total size exceeds limit"):
         download_sandbox_directory(FakeBackend(), REMOTE_DIR, target, empty_message="empty")
 
     assert not target.exists()

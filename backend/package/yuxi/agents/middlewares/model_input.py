@@ -139,7 +139,7 @@ def _read_file_image_paths(messages: list[Any]) -> list[str]:
 
 def _ocr_fallback_response(image_paths: list[str]) -> ModelResponse:
     if not image_paths:
-        return ModelResponse(result=[AIMessage(content="当前模型无法读取图片，且没有可供 OCR 工具解析的文件路径。")])
+        return ModelResponse(result=[AIMessage(content="The current model cannot read images, and no valid file path is available for OCR parsing.")])
 
     tool_calls = [
         {
@@ -152,7 +152,7 @@ def _ocr_fallback_response(image_paths: list[str]) -> ModelResponse:
     return ModelResponse(
         result=[
             AIMessage(
-                content="当前模型不支持图片输入，正在改用 OCR 工具提取图片文字。",
+                content="The current model does not support direct image input. Switching to OCR tool to extract text.",
                 tool_calls=tool_calls,
             )
         ]

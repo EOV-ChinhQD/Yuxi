@@ -69,14 +69,15 @@ async def test_multihop_strategy():
     mock_kb = MagicMock()
     mock_kb.databases_meta = {"kb_123": {"llm_model_spec": "gemini", "embedding_model_spec": "embed"}}
 
-    mock_retrieve = AsyncMock(return_value=[{"chunk_id": "chunk_multihop"}])
+    mock_retriever = MagicMock()
+    mock_retriever.retrieve = AsyncMock(return_value=[{"chunk_id": "chunk_multihop"}])
 
-    with patch("yuxi.knowledge.retrieval.multi_hop_retriever.MultiHopRetriever.retrieve", mock_retrieve):
+    with patch("yuxi.knowledge.retrieval.multi_hop_retriever.MultiHopRetriever", return_value=mock_retriever):
         res = await strategy.retrieve("query", mock_kb, "kb_123", final_top_k=5)
 
     assert len(res) == 1
     assert res[0]["chunk_id"] == "chunk_multihop"
-    mock_retrieve.assert_called_once_with("query", search_mode="normal", max_hops=2, rerank_top_k=5)
+    mock_retriever.retrieve.assert_called_once_with("query", search_mode="normal", max_hops=2, rerank_top_k=5)
 
 @pytest.mark.asyncio
 async def test_retrieval_dispatcher_routing():
@@ -107,8 +108,16 @@ async def test_retrieval_dispatcher_routing():
         assert res[0]["chunk_id"] == "system_routing_header"
         assert res[1]["strategy"] == "compare"
 
-    # 4. MULTI_HOP without compare words -> MultiHopStrategy
-    with patch("yuxi.knowledge.retrieval.router.SemanticRouter.route", AsyncMock(return_value=(RouteType.MULTI_HOP, {}))):
+    # 4. MULTI_HOP without compare words (graph ready) -> MultiHopStrategy
+    with patch("yuxi.knowledge.retrieval.router.SemanticRouter.route", AsyncMock(return_value=(RouteType.MULTI_HOP, {}))), \
+         patch("yuxi.knowledge.retrieval.dispatcher.CapabilityManager.is_graph_ready", AsyncMock(return_value=True)):
         res = await dispatcher.dispatch("quan hệ A và B là gì", mock_kb, "kb_123")
         assert res[0]["chunk_id"] == "system_routing_header"
         assert res[1]["strategy"] == "multihop"
+
+    # 5. MULTI_HOP without compare words (graph not ready) -> FactStrategy
+    with patch("yuxi.knowledge.retrieval.router.SemanticRouter.route", AsyncMock(return_value=(RouteType.MULTI_HOP, {}))), \
+         patch("yuxi.knowledge.retrieval.dispatcher.CapabilityManager.is_graph_ready", AsyncMock(return_value=False)):
+        res = await dispatcher.dispatch("quan hệ A và B là gì", mock_kb, "kb_123")
+        assert res[0]["chunk_id"] == "system_routing_header"
+        assert res[1]["strategy"] == "fact"

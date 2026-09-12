@@ -23,7 +23,7 @@ const SKILL_ICON_RULES = [
   { keywords: ['test'], icon: FlaskConical }
 ]
 
-/** 根据 slug 关键词返回 Skill 的 Lucide 图标。 */
+/** Return Lucide icon for Skill based on slug keywords. */
 export const getSkillIcon = (slug) => {
   const normalizedSlug = String(slug || '').toLowerCase()
   return (

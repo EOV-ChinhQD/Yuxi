@@ -23,7 +23,7 @@ const extractToolApprovalPayload = (chunk) => {
   const approval = chunk?.approval || chunk?.interrupt_info?.approval || {}
   const actionRequests = Array.isArray(approval.action_requests) ? approval.action_requests : []
   const reviewConfigs = Array.isArray(approval.review_configs) ? approval.review_configs : []
-  // action_requests 与 review_configs 一一对应，前端只消费 action_requests
+  // action_requests and review_configs have 1:1 correspondence, frontend only consumes action_requests
   if (!actionRequests.length || actionRequests.length !== reviewConfigs.length) return null
   return { actionRequests }
 }

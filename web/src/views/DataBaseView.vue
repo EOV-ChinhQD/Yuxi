@@ -166,7 +166,7 @@
             :require-read-scope="true"
           >
             <template #manage-description>
-              知识库<strong>仅管理员</strong>可以管理知识库；普通用户无法管理。
+              Only <strong>administrators</strong> can manage knowledge bases; standard users cannot.
             </template>
           </ShareConfigForm>
         </div>
@@ -232,20 +232,20 @@
             <a-menu-item key="copy">
               <span class="lucide-menu-item">
                 <Copy :size="15" />
-                <span>复制 ID</span>
+                <span>Copy ID</span>
               </span>
             </a-menu-item>
             <a-menu-item v-if="database.can_manage" key="edit">
               <span class="lucide-menu-item">
                 <Pencil :size="15" />
-                <span>编辑知识库</span>
+                <span>Edit Knowledge Base</span>
               </span>
             </a-menu-item>
             <a-menu-divider />
             <a-menu-item v-if="database.can_manage" key="delete" danger>
               <span class="lucide-menu-item">
                 <Trash2 :size="15" />
-                <span>删除知识库</span>
+                <span>Delete Knowledge Base</span>
               </span>
             </a-menu-item>
           </a-menu>
@@ -556,23 +556,23 @@ const copyDatabaseId = async (database) => {
     document.execCommand('copy')
     document.body.removeChild(textArea)
   }
-  message.success('知识库 ID 已复制')
+  message.success('Knowledge base ID copied')
 }
 
 const deleteDatabase = (database) => {
   Modal.confirm({
-    title: '删除知识库',
-    content: `确定要删除知识库“${database.name}”吗？此操作不可撤销。`,
-    okText: '删除',
+    title: 'Delete Knowledge Base',
+    content: `Are you sure you want to delete knowledge base "${database.name}"? This action cannot be undone.`,
+    okText: 'Delete',
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: 'Cancel',
     onOk: async () => {
       try {
         await databaseApi.deleteDatabase(database.kb_id)
-        message.success('知识库已删除')
+        message.success('Knowledge base deleted')
         await databaseStore.loadDatabases()
       } catch (error) {
-        message.error(error.message || '删除失败')
+        message.error(error.message || 'Failed to delete')
         throw error
       }
     }

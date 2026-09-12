@@ -13,7 +13,7 @@
     <div class="suite-card-footer">
       <span class="suite-card-status">{{ statusText }}</span>
       <span class="suite-card-action">
-        {{ installedCount === suite.skills.length ? '查看套件' : '查看并安装' }}
+        {{ installedCount === suite.skills.length ? 'View suite' : 'View & install' }}
         <ChevronRight :size="15" />
       </span>
     </div>
@@ -39,9 +39,9 @@ const installedCount = computed(
     props.suite.skills.filter((skill) => installedSet.value.has(skill.slug.toLowerCase())).length
 )
 const statusText = computed(() => {
-  if (installedCount.value === props.suite.skills.length) return '已全部安装'
-  if (installedCount.value > 0) return `已安装 ${installedCount.value}/${props.suite.skills.length}`
-  return `${props.suite.skills.length} 个可安装`
+  if (installedCount.value === props.suite.skills.length) return 'All installed'
+  if (installedCount.value > 0) return `Installed ${installedCount.value}/${props.suite.skills.length}`
+  return `${props.suite.skills.length} available`
 })
 </script>
 
