@@ -348,6 +348,20 @@ const handleDeletedProvider = (providerId) => {
   loadProviders()
 }
 
+const handleSavedProvider = async (eventData = {}) => {
+  await loadProviders()
+  const providerId = eventData?.providerId
+  if (providerId) {
+    const provider = providers.value.find((p) => p.provider_id === providerId)
+    if (provider && (!provider.enabled_models || provider.enabled_models.length === 0)) {
+      message.info(
+        `Nhà cung cấp ${provider.display_name} đã sẵn sàng. Hãy bấm kích hoạt mô hình để sử dụng.`
+      )
+      openModelsModal(provider)
+    }
+  }
+}
+
 // ============ Models Modal Operations ============
 const openModelsModal = (provider) => {
   currentProviderForModels.value = provider
@@ -699,7 +713,7 @@ defineExpose({
       :initial-data="selectedProviderForConfig"
       :provider-contains-default-model="providerContainsDefaultModel"
       :warn-default-model-protected="warnDefaultModelProtected"
-      @saved="loadProviders"
+      @saved="handleSavedProvider"
       @deleted="handleDeletedProvider"
     />
     <a-modal

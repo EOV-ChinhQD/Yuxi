@@ -365,7 +365,12 @@ async def ensure_builtin_model_providers_in_db(db: AsyncSession) -> None:
 async def create_provider_config(db: AsyncSession, data: dict[str, Any], username: str) -> ModelProvider:
     """Create a standalone model supplier configuration."""
     payload = _normalize_payload(data)
-    if await get_model_provider(db, payload["provider_id"]):
+    existing = await get_model_provider(db, payload["provider_id"])
+    if existing:
+        if existing.is_builtin:
+            payload["is_enabled"] = payload.get("is_enabled", True)
+            payload["updated_by"] = username
+            return await update_model_provider(db, existing, payload)
         raise ValueError(f"Nhà cung cấp {payload['provider_id']} đã tồn tại")
     payload["created_by"] = username
     payload["updated_by"] = username

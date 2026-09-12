@@ -124,7 +124,7 @@ const initForm = (data) => {
     api_key_env: data.api_key_env || '',
     api_key: data.api_key || '',
     capabilities: data.capabilities?.length ? data.capabilities : ['chat'],
-    is_enabled: data.is_enabled !== false,
+    is_enabled: props.mode === 'quick' ? true : data.is_enabled !== false,
     headers_text: formatJsonText(data.headers_json),
     extra_text: formatJsonText(data.extra_json)
   })
@@ -165,13 +165,25 @@ const buildProviderPayload = () => {
 const saveAndFetch = async () => {
   saving.value = true
   fetchError.value = null
-  let providerId = providerForm.provider_id
+  const providerId = providerForm.provider_id
 
   try {
     const payload = buildProviderPayload()
     if (props.mode === 'quick' || props.mode === 'full') {
-      await modelProviderApi.createProvider(payload)
-      message.success('Nhà cung cấp đã được tạo')
+      try {
+        await modelProviderApi.createProvider(payload)
+        message.success('Nhà cung cấp đã được lưu')
+      } catch (createErr) {
+        if (
+          createErr?.message?.includes('đã tồn tại') ||
+          createErr?.message?.includes('already exists')
+        ) {
+          await modelProviderApi.updateProvider(providerForm.provider_id, payload)
+          message.success('Đã lưu cấu hình nhà cung cấp')
+        } else {
+          throw createErr
+        }
+      }
     } else {
       // mode === 'edit'
       if (
@@ -187,14 +199,22 @@ const saveAndFetch = async () => {
     }
     saving.value = false
 
-    // Lập tức fetch models
-    fetching.value = true
-    const fetchResult = await modelProviderApi.fetchRemoteModels(providerId)
-    const modelsCount = fetchResult.data?.length || 0
-    message.success(`Đã đồng bộ thành công ${modelsCount} mô hình`)
-    fetching.value = false
+    // Fetch models in a non-blocking try-catch so failing to fetch models does not fail the save
+    try {
+      fetching.value = true
+      const fetchResult = await modelProviderApi.fetchRemoteModels(providerId)
+      const modelsCount = fetchResult.data?.length || 0
+      message.success(`Đã đồng bộ thành công ${modelsCount} mô hình`)
+    } catch (fetchErr) {
+      console.warn('Không thể tự động đồng bộ mô hình:', fetchErr)
+      message.warning(
+        `Lưu nhà cung cấp thành công, nhưng chưa thể lấy danh sách mô hình từ xa: ${fetchErr.message || 'Lỗi kết nối'}`
+      )
+    } finally {
+      fetching.value = false
+    }
 
-    emit('saved')
+    emit('saved', { providerId, isNew: props.mode !== 'edit' })
     emit('update:open', false)
   } catch (error) {
     saving.value = false
@@ -353,8 +373,8 @@ const deleteProvider = () => {
         </a-select>
       </label>
 
-      <div class="form-switch" v-show="!isQuickLayout">
-        <span>Trạng thái</span>
+      <div class="form-switch">
+        <span>Trạng thái kích hoạt</span>
         <a-switch
           v-model:checked="providerForm.is_enabled"
           checked-children="kích hoạt"
