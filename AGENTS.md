@@ -67,6 +67,10 @@ Dự án này được quản lý hoàn toàn thông qua Docker Compose. Mọi h
 4. Cực kỳ quan trọng! Tuyệt đối không sử dụng cơ chế phòng thủ/fallback quá mức để che đậy các khuyết điểm trong thiết kế. Phần mềm tốt nên chạy dưới các điều kiện định sẵn, các tình huống khác đều phải kịp thời phát hiện vấn đề/lỗi và sửa chữa, thay vì che đậy vấn đề bằng cách thêm mã nguồn dư thừa.
 5. Phát triển hoàn thành bắt buộc phải kiểm thử trong docker, có thể đọc .env để lấy tài khoản và mật khẩu quản trị viên; các giá trị nhạy cảm chỉ được sử dụng cho các lệnh kiểm thử cục bộ, không xuất ra phản hồi, trích xuất nhật ký, tệp kiểm thử hoặc tài liệu.
 6. Tuân theo quy tắc hạ tầng (The Stepdown Rule): các phương thức công khai và cấp cao được đặt ở đầu tệp, các chi tiết kỹ thuật chìm dần theo từng lớp. Người đọc khi đọc từ trên xuống dưới, mỗi lớp chỉ gọi triển khai của lớp ngay tiếp theo, mở rộng chi tiết theo từng cấp giống như đọc tiêu đề báo, không cần nhảy cóc.
+7. Bất biến kiểm thử và an toàn hệ thống (Live Verification & Path Invariants):
+   - **Parity Invariant**: Không bao giờ kết luận tính năng hoàn tất chỉ dựa trên `pytest` chạy với mock hoặc `tmp_path`. Bắt buộc phải có kịch bản Live Smoke Test gọi trực tiếp qua API container và các volume thực tế của Docker Compose trước khi nghiệm thu (`/ship`).
+   - **Path Containment Invariant**: Khi kiểm tra an toàn thư mục (Sandbox / Workdir containment), bắt buộc phải chuẩn hóa và `.resolve()` cả thư mục gốc (root) và thư mục đích (target) về đường dẫn tuyệt đối trước khi thực hiện phép so sánh `target.relative_to(root)`. Tuyệt đối không so sánh lửng giữa relative path và absolute path.
+   - **Alembic Migration Idempotency**: Mọi script migration của Alembic phải được thiết kế mang tính lũy thoái (idempotent), sử dụng `sa.inspect(bind)` để kiểm tra sự tồn tại của bảng (`has_table`) hoặc constraint trước khi tạo mới, nhằm tương thích an toàn với các volume database đã có sẵn dữ liệu.
 
 ### Quy chuẩn trao đổi yêu cầu
 
