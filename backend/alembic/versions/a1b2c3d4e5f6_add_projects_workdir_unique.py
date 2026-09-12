@@ -17,13 +17,20 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
+import sqlalchemy as sa
+
+
 def upgrade() -> None:
     # Unique per user workdir_path — handles existing duplicate cleanup gracefully
-    try:
-        op.create_unique_constraint("uq_projects_uid_workdir_path", "projects", ["uid", "workdir_path"])
-    except Exception:
-        # If duplicates exist, skip constraint — admin must clean manually
-        pass
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    existing_constraints = {c["name"] for c in insp.get_unique_constraints("projects")}
+    if "uq_projects_uid_workdir_path" not in existing_constraints:
+        try:
+            op.create_unique_constraint("uq_projects_uid_workdir_path", "projects", ["uid", "workdir_path"])
+        except Exception:
+            # If duplicates exist, skip constraint — admin must clean manually
+            pass
 
 
 def downgrade() -> None:

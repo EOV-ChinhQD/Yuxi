@@ -23,15 +23,14 @@ class Workdir:
         # Specialized guard: ensure absolute stays within user root and no symlink escape
         try:
             resolved_root = self.root.resolve()
-            resolved_abs = self.absolute.resolve() if self.absolute.exists() else self.absolute
+            resolved_abs = self.absolute.resolve()
             # Check no symlink in path components before existence
             if self.absolute.is_symlink():
                 raise PermissionError(f"workdir path is a symlink: {self.absolute}")
-            if resolved_root not in resolved_abs.parents and resolved_abs != resolved_root:
-                # For non-existing path, check parent containment
-                parent = resolved_abs.parent if not self.absolute.exists() else resolved_abs
-                if resolved_root not in parent.parents and parent != resolved_root:
-                    raise PermissionError(f"workdir escapes user workspace: {workdir_path}")
+            try:
+                resolved_abs.relative_to(resolved_root)
+            except ValueError:
+                raise PermissionError(f"workdir escapes user workspace: {workdir_path}")
         except PermissionError:
             raise
         except Exception:

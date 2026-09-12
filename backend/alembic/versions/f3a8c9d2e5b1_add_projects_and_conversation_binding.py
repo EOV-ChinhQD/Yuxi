@@ -33,35 +33,41 @@ def upgrade() -> None:
     bind = op.get_bind()
     dialect = bind.dialect.name if bind is not None else "postgresql"
 
+    insp = sa.inspect(bind)
+
     # 1) Create projects table (if not exists for idempotency in tests)
-    op.create_table(
-        "projects",
-        sa.Column("id", sa.String(length=64), nullable=False, comment="Project UUID"),
-        sa.Column("uid", sa.String(length=64), nullable=False, comment="UID"),
-        sa.Column("name", sa.String(length=255), nullable=True, comment="Project name; implicit Project may be empty"),
-        sa.Column("selection_status", sa.String(length=20), nullable=False, comment="implicit/selectable"),
-        sa.Column("workdir_path", sa.String(length=512), nullable=False, comment="UserWorkspace-relative Workdir path"),
-        sa.Column("directory_mode", sa.String(length=20), nullable=False, comment="managed/linked"),
-        sa.Column("idempotency_key", sa.String(length=128), nullable=True, comment="Idempotent creation key"),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
-        sa.ForeignKeyConstraint(["uid"], ["users.uid"], name="fk_projects_uid_users", ondelete="CASCADE"),
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_projects")),
-        sa.UniqueConstraint("id", "uid", name="uq_projects_id_uid"),
-        sa.UniqueConstraint("uid", "idempotency_key", name="uq_projects_uid_idempotency_key"),
-        sa.CheckConstraint("selection_status IN ('implicit', 'selectable')", name="ck_projects_selection_status"),
-        sa.CheckConstraint("directory_mode IN ('managed', 'linked')", name="ck_projects_directory_mode"),
-    )
-    op.create_index(op.f("ix_projects_uid"), "projects", ["uid"], unique=False)
-    op.create_index(op.f("ix_projects_selection_status"), "projects", ["selection_status"], unique=False)
+    if not insp.has_table("projects"):
+        op.create_table(
+            "projects",
+            sa.Column("id", sa.String(length=64), nullable=False, comment="Project UUID"),
+            sa.Column("uid", sa.String(length=64), nullable=False, comment="UID"),
+            sa.Column("name", sa.String(length=255), nullable=True, comment="Project name; implicit Project may be empty"),
+            sa.Column("selection_status", sa.String(length=20), nullable=False, comment="implicit/selectable"),
+            sa.Column("workdir_path", sa.String(length=512), nullable=False, comment="UserWorkspace-relative Workdir path"),
+            sa.Column("directory_mode", sa.String(length=20), nullable=False, comment="managed/linked"),
+            sa.Column("idempotency_key", sa.String(length=128), nullable=True, comment="Idempotent creation key"),
+            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+            sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+            sa.ForeignKeyConstraint(["uid"], ["users.uid"], name="fk_projects_uid_users", ondelete="CASCADE"),
+            sa.PrimaryKeyConstraint("id", name=op.f("pk_projects")),
+            sa.UniqueConstraint("id", "uid", name="uq_projects_id_uid"),
+            sa.UniqueConstraint("uid", "idempotency_key", name="uq_projects_uid_idempotency_key"),
+            sa.CheckConstraint("selection_status IN ('implicit', 'selectable')", name="ck_projects_selection_status"),
+            sa.CheckConstraint("directory_mode IN ('managed', 'linked')", name="ck_projects_directory_mode"),
+        )
+        op.create_index(op.f("ix_projects_uid"), "projects", ["uid"], unique=False)
+        op.create_index(op.f("ix_projects_selection_status"), "projects", ["selection_status"], unique=False)
 
     # 2) Add columns to conversations
+    existing_cols = {c["name"] for c in insp.get_columns("conversations")}
     with op.batch_alter_table("conversations", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("creation_request_id", sa.String(length=64), nullable=True, comment="Creation idempotency key"))
+        if "creation_request_id" not in existing_cols:
+            batch_op.add_column(sa.Column("creation_request_id", sa.String(length=64), nullable=True, comment="Creation idempotency key"))
+            batch_op.create_unique_constraint("uq_conversations_uid_creation_request_id", ["uid", "creation_request_id"])
         # Temporarily nullable for backfill
-        batch_op.add_column(sa.Column("project_id", sa.String(length=64), nullable=True, comment="Bound Project ID"))
-        batch_op.create_index(batch_op.f("ix_conversations_project_id"), ["project_id"], unique=False)
-        batch_op.create_unique_constraint("uq_conversations_uid_creation_request_id", ["uid", "creation_request_id"])
+        if "project_id" not in existing_cols:
+            batch_op.add_column(sa.Column("project_id", sa.String(length=64), nullable=True, comment="Bound Project ID"))
+            batch_op.create_index(batch_op.f("ix_conversations_project_id"), ["project_id"], unique=False)
 
     # 3) Backfill existing conversations: one implicit project per distinct uid
     #    Use Python loop to generate UUIDs and insert projects, then update conversations.
