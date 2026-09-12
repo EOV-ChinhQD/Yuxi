@@ -424,7 +424,7 @@ const retryLoad = () => {
 
 const goToChat = async () => {
   if (!userStore.isLoggedIn) {
-    sessionStorage.setItem('redirect', '/')
+    sessionStorage.setItem('redirect', '/agent')
     router.push('/login')
     return
   }

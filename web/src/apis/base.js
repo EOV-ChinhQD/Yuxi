@@ -235,6 +235,38 @@ export function apiSuperAdminPut(url, data = {}, options = {}, responseType = 'j
 }
 
 /**
+ * Gửi PATCH yêu cầu
+ * @param {string} url - API điểm cuối
+ * @param {Object} data - Yêu cầu dữ liệu cơ thể
+ * @param {Object} options - Tùy chọn yêu cầu khác
+ * @param {boolean} requiresAuth - Có cần chứng nhận hay không
+ * @param {string} responseType - kiểu phản hồi: 'json' | 'text' | 'blob'
+ * @returns {Promise} - Yêu cầu kết quả
+ */
+export function apiPatch(url, data = {}, options = {}, requiresAuth = true, responseType = 'json') {
+  return apiRequest(
+    url,
+    {
+      method: 'PATCH',
+      body: data instanceof FormData ? data : JSON.stringify(data),
+      ...options
+    },
+    requiresAuth,
+    responseType
+  )
+}
+
+export function apiAdminPatch(url, data = {}, options = {}, responseType = 'json') {
+  checkAdminPermission()
+  return apiPatch(url, data, options, true, responseType)
+}
+
+export function apiSuperAdminPatch(url, data = {}, options = {}, responseType = 'json') {
+  checkSuperAdminPermission()
+  return apiPatch(url, data, options, true, responseType)
+}
+
+/**
  * gửiDELETEYêu cầu
  * @param {string} url - APIđiểm cuối
  * @param {Object} options - Tùy chọn yêu cầu

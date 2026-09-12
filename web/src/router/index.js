@@ -216,7 +216,8 @@ router.beforeEach(async (to) => {
 
   // Nếu người dùng đã đăng nhập nhưng truy cập vào trang đăng nhập，nhấn redirect Nhảy tham số
   if (to.path === '/login' && isLoggedIn) {
-    return sanitizeRedirect(to.query.redirect)
+    const redirectTarget = sanitizeRedirect(to.query.redirect)
+    return redirectTarget === '/' ? '/agent' : redirectTarget
   }
 
   // Điều hướng bình thường trong các trường hợp khác

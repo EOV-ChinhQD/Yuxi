@@ -463,19 +463,21 @@ const handleLogin = async () => {
     message.success('Đăng nhập thành công')
 
     // Nhận đường dẫn chuyển hướng
-    const redirectPath = sessionStorage.getItem('redirect') || '/'
+    const redirectPath =
+      sessionStorage.getItem('redirect') ||
+      (route.query.redirect ? sanitizeRedirect(route.query.redirect) : '/agent')
     sessionStorage.removeItem('redirect') // Xóa thông tin chuyển hướng
 
-    // Xác định mục tiêu chuyển hướng dựa trên vai trò của người dùng
-    if (redirectPath === '/') {
-      // Chuyển đến trang trò chuyện một cách thống nhất（Quản trị viên chia sẻ cùng giao diện trò chuyện với người dùng thông thường）
+    // Xác định mục tiêu chuyển hướng: mặc định vào giao diện chat (/agent)
+    if (redirectPath === '/' || redirectPath === '/agent') {
       try {
-        await agentStore.initialize()
-        router.push('/agent')
+        if (!agentStore.isInitialized) {
+          await agentStore.initialize()
+        }
       } catch (error) {
         console.error('Không thể lấy được thông tin đại lý:', error)
-        router.push('/agent')
       }
+      router.push('/agent')
     } else {
       // Chuyển đến các đường dẫn đặt trước khác
       router.push(redirectPath)
