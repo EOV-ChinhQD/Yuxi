@@ -67,7 +67,7 @@ async def _list_skills_from_db(db: AsyncSession | None = None, user=None) -> lis
 
 
 def build_prompt_metadata(skills: list) -> dict[str, SkillPromptMetadata]:
-    """构建 Skill 提示词元数据，并为个人 Skill 使用工作区真实路径。"""
+    """Build skill prompt metadata, using the real workspace path for personal skills."""
     result: dict[str, SkillPromptMetadata] = {}
     for item in skills:
         if not item.slug:
@@ -122,7 +122,7 @@ async def _get_cached_skills_data(db: AsyncSession | None = None, user=None) -> 
     return metadata, dep_map
 
 def build_source_map(skills: list) -> dict[str, str]:
-    """构建需要复制到线程只读目录的 Skill 来源映射。"""
+    """Build the skill source map to copy into the thread read-only directory."""
     return {
         item.slug: str(item.source_dir)
         for item in skills
@@ -258,9 +258,9 @@ class SkillsMiddleware(AgentMiddleware):
         """initializationmiddleware
 
         Args:
-            skills_context_name: skills list field name in context (default "skills"）
+            skills_context_name: skills list field name in context (default "skills")
             enable_skills_prompt: Whether to enable skills prompt segment injection (default True)
-            skills_sources_for_prompt: skills Source path (used for prompt word display, default ["/home/gem/skills/"]）
+            skills_sources_for_prompt: skills Source path (used for prompt word display, default ["/home/gem/skills/"])
         """
         super().__init__()
         self.skills_context_name = skills_context_name

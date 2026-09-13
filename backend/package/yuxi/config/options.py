@@ -1,7 +1,8 @@
-"""通用配置项定义、持久化、校验和运行时解析。
+"""Generic option definitions, persistence, validation, and runtime resolution.
 
-系统代码维护 `params`，管理员只修改 `value`。本模块只支持受控的基础字段，
-不提供任意动态组件或可执行协议；OCR 只是第一批消费者。
+System code maintains `params`; administrators only edit `value`. This module
+only supports controlled primitive fields — no arbitrary dynamic components or
+executable protocols; OCR is just the first consumer.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from yuxi.storage.postgres.models_business import ConfigOption
 
 @dataclass(frozen=True, slots=True)
 class Option:
-    """由代码定义、每次读取都查询数据库的通用配置项。"""
+    """A generic option defined by code and read from the database on every access."""
 
     key: str
     name: str
@@ -35,7 +36,7 @@ class Option:
 
         record = await get_option(db, self.key)
         if record is None:
-            raise ValueError(f"配置项不存在: {self.key}")
+            raise ValueError(f"Option does not exist: {self.key}")
         stored = dict(record.value or {})
         resolved = {}
         for field in _fields(record):
@@ -52,17 +53,17 @@ class Option:
 
 mineru_ocr_host_opts = Option(
     key="mineru_ocr_host_opts",
-    name="MinerU 服务",
-    description="配置自托管 MinerU 服务地址。",
+    name="MinerU Service",
+    description="Configure the self-hosted MinerU service address.",
     params={
         "fields": [
             {
                 "key": "server_url",
-                "label": "服务地址",
+                "label": "Service address",
                 "type": "url",
                 "environment": "MINERU_API_URI",
                 "placeholder": "http://mineru-api:30001",
-                "help": "留空时读取 MINERU_API_URI。",
+                "help": "Reads MINERU_API_URI when left empty.",
             }
         ]
     },
@@ -71,7 +72,7 @@ mineru_ocr_host_opts = Option(
 mineru_official_api_opts = Option(
     key="mineru_official_api_opts",
     name="MinerU Official",
-    description="配置 MinerU 官方云服务凭证。",
+    description="Configure the MinerU official cloud service credentials.",
     params={
         "fields": [
             {
@@ -80,7 +81,7 @@ mineru_official_api_opts = Option(
                 "type": "password",
                 "environment": "MINERU_API_KEY",
                 "sensitive": True,
-                "help": "留空时读取 MINERU_API_KEY，建议优先使用环境变量。",
+                "help": "Reads MINERU_API_KEY when left empty; prefer environment variables.",
             }
         ]
     },
@@ -88,17 +89,17 @@ mineru_official_api_opts = Option(
 
 pp_structure_v3_ocr_host_opts = Option(
     key="pp_structure_v3_ocr_host_opts",
-    name="PP-Structure-V3 服务",
-    description="配置自托管 PaddleX 服务地址。",
+    name="PP-Structure-V3 Service",
+    description="Configure the self-hosted PaddleX service address.",
     params={
         "fields": [
             {
                 "key": "server_url",
-                "label": "服务地址",
+                "label": "Service address",
                 "type": "url",
                 "environment": "PADDLEX_URI",
                 "placeholder": "http://paddlex:8080",
-                "help": "留空时读取 PADDLEX_URI。",
+                "help": "Reads PADDLEX_URI when left empty.",
             }
         ]
     },
@@ -107,16 +108,16 @@ pp_structure_v3_ocr_host_opts = Option(
 paddleocr_api_opts = Option(
     key="paddleocr_api_opts",
     name="PaddleOCR API",
-    description="PaddleOCR-VL 和 PP-OCRv6 共用此配置。",
+    description="Shared configuration for PaddleOCR-VL and PP-OCRv6.",
     params={
         "fields": [
             {
                 "key": "api_url",
-                "label": "API 地址",
+                "label": "API address",
                 "type": "url",
                 "environment": "PADDLEOCR_API_URL",
                 "placeholder": "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs",
-                "help": "留空时读取 PADDLEOCR_API_URL。",
+                "help": "Reads PADDLEOCR_API_URL when left empty.",
             },
             {
                 "key": "api_token",
@@ -124,7 +125,7 @@ paddleocr_api_opts = Option(
                 "type": "password",
                 "environment": "PADDLEOCR_API_TOKEN",
                 "sensitive": True,
-                "help": "留空时读取 PADDLEOCR_API_TOKEN，建议优先使用环境变量。",
+                "help": "Reads PADDLEOCR_API_TOKEN when left empty; prefer environment variables.",
             },
         ]
     },
@@ -132,16 +133,16 @@ paddleocr_api_opts = Option(
 
 remote_skill_source_policy = Option(
     key="remote_skill_source_policy",
-    name="远程 Skill 来源",
-    description="配置允许远程安装 Skill 的来源域名。",
+    name="Remote Skill Sources",
+    description="Configure the source domains allowed for remote Skill installation.",
     params={
         "fields": [
             {
                 "key": "allowed_hosts",
-                "label": "允许的来源域名",
+                "label": "Allowed source domains",
                 "type": "list[str]",
                 "default": ["github.com", "modelscope.cn"],
-                "help": "仅精确匹配域名；保存空列表会关闭远程安装。",
+                "help": "Exact domain match only; saving an empty list disables remote installation.",
             }
         ]
     },
@@ -162,7 +163,7 @@ _URL_ADAPTER = TypeAdapter(HttpUrl)
 
 
 async def ensure_options_in_db(db: AsyncSession) -> list[ConfigOption]:
-    """幂等同步系统定义，保留管理员已经保存的值。"""
+    """Idempotently sync system definitions while preserving administrator-saved values."""
 
     existing = {record.key: record for record in await list_options(db)}
     synced = []
@@ -200,7 +201,7 @@ async def get_option(db: AsyncSession, key: str) -> ConfigOption | None:
 
 
 def serialize_option(record: ConfigOption) -> dict[str, Any]:
-    """返回表单定义和值；密钥只返回来源和脱敏预览。"""
+    """Return the form definition and values; secrets only expose source and masked preview."""
 
     value = dict(record.value or {})
     sensitive_configured = {}
@@ -248,7 +249,7 @@ async def update_option_value(
     fields = {field["key"]: field for field in _fields(record)}
     unknown = set(value) - set(fields)
     if unknown:
-        raise ValueError(f"未知配置字段: {', '.join(sorted(unknown))}")
+        raise ValueError(f"Unknown option fields: {', '.join(sorted(unknown))}")
 
     updated = dict(record.value or {})
     for field_key, raw_value in value.items():
@@ -267,9 +268,9 @@ def _fields(record: ConfigOption) -> list[dict[str, Any]]:
 def _normalize_value(field: dict[str, Any], value: Any) -> Any:
     if field.get("type") == "list[str]":
         if not isinstance(value, list):
-            raise ValueError("配置值必须是列表")
+            raise ValueError("Option value must be a list")
         if not all(isinstance(item, str) for item in value):
-            raise ValueError("配置值必须是字符串列表")
+            raise ValueError("Option value must be a string list")
         return value
 
     normalized = str(value or "").strip()

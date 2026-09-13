@@ -45,7 +45,7 @@ class RemoteSkillsBatchPreparation:
 
 @dataclass(slots=True)
 class _RemoteSkillSandbox:
-    """在一次性 Sandbox 中执行不可信的远程 Skill CLI。"""
+    """Run the untrusted remote Skill CLI in a disposable Sandbox."""
 
     thread_id: str
     home: str
@@ -58,12 +58,12 @@ class _RemoteSkillSandbox:
         return cls(
             thread_id=thread_id,
             home=home,
-            # 远程仓库不可信，不能接触全局或用户级 Sandbox 凭据。
+            # Remote repos are untrusted and must not touch global or user-level Sandbox credentials.
             backend=ProvisionerSandboxBackend(thread_id=thread_id, uid=thread_id, inherit_env=False),
         )
 
     async def run(self, args: list[str]) -> str:
-        """执行 Skills CLI，并返回原始命令输出。"""
+        """Run the Skills CLI and return the raw command output."""
         workspace = f"{self.home}/workspace"
         command = " && ".join(
             [
@@ -267,7 +267,7 @@ async def install_remote_skills_batch(
 
     Args:
         db: database session.
-        source: Remote warehouse source, such as ``owner/repo`` or GitHub URL。
+        source: Remote repository source, such as ``owner/repo`` or a GitHub URL.
         skills: Need to install the skill name column surface.
         created_by: operator ID.
 
@@ -364,7 +364,11 @@ async def prepare_remote_skills_batch(
                         downloaded_dirs[name] = None
                 installed_dir = downloaded_dirs[name]
                 if installed_dir is None:
-                    error_msg = "Cài đặt qua CLI thất bại" if cli_failed else "skills CLI không tạo ra thư mục skill như mong đợi"
+                    error_msg = (
+                        "Cài đặt qua CLI thất bại"
+                        if cli_failed
+                        else "skills CLI không tạo ra thư mục skill như mong đợi"
+                    )
                     results[original_index] = {"slug": name, "success": False, "error": error_msg}
                     continue
                 results[original_index] = {"slug": name, "success": True, "source_dir": installed_dir}

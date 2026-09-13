@@ -60,8 +60,10 @@ const loadingMessageChunk = (chunk) => {
   return msg || null
 }
 
-// Kết quả công cụ không đi qua messages Dòng, mà là method=tools của stream_event Sự kiện trả về（tool-started/tool-finished）。
-// Lấy output của tool-finished (một dòng ToolMessage dạng từ điển), rồi gán vào msgChunks và liên kết với tin nhắn AI theo tool_call_id.
+// Tool results do not flow through the messages line; they arrive as stream_event
+// events with method=tools (tool-started/tool-finished).
+// Take the tool-finished output (a dict-shaped ToolMessage line), store it in msgChunks,
+// and link it to the AI message by tool_call_id.
 const toolFinishedMessage = (chunk) => {
   const streamEvent = chunk?.event
   if (!streamEvent || streamEvent.method !== 'tools') return null
@@ -153,8 +155,9 @@ export function useAgentStreamHandler({
 
       case 'stream_event':
         {
-          // Kết quả công cụ cần được ghi lại ngay lập tức (không qua lớp làm mượt), ghi vào msgChunks Sau đó do convertToolResultToMessages
-          // Nhấn tool_call_id Liên kết với tương ứng AI Của tin nhắn tool_call，Điều khiển trạng thái hoàn thành của nó。
+          // Tool results must be recorded immediately (bypassing the smoother) into msgChunks;
+          // convertToolResultToMessages later links them by tool_call_id to the matching AI
+          // message tool_call and drives its completion state.
           const toolMessage = toolFinishedMessage(chunk)
           if (toolMessage) {
             if (!threadState.onGoingConv.msgChunks[toolMessage.id]) {
@@ -186,7 +189,7 @@ export function useAgentStreamHandler({
           threadId,
           currentAgentId: unref(currentAgentId)
         })
-        // Sử dụng phê duyệt composable Xử lý yêu cầu phê duyệt
+        // Handle the approval request via the approval composable
         return processApprovalInStream(chunk, threadId, unref(currentAgentId))
 
       case 'agent_state':
@@ -227,7 +230,7 @@ export function useAgentStreamHandler({
 
       case 'finished':
         streamSmoother?.flushThread(threadId)
-        // Trước tiên đánh dấu kết thúc streaming, nhưng giữ tin hiển thị cho đến khi tải lịch sử hoàn thành
+        // Mark streaming as ended first; history reload completes the visible update
         if (threadState) {
           threadState.isStreaming = false
           threadState.replyLoadingVisible = false
@@ -255,7 +258,7 @@ export function useAgentStreamHandler({
 
       case 'interrupted':
         streamSmoother?.flushThread(threadId)
-        // Ngắt trạng thái, làm mới lịch sử tin nhắn
+        // Interrupted state, refresh message history
         console.warn(`${debugPrefix}[interrupted]`, {
           threadId,
           message: chunkMessage,
@@ -271,7 +274,7 @@ export function useAgentStreamHandler({
             threadState.pendingInterrupt = pendingInterrupt
           }
         }
-        // Nếu có cột message thì hiển thị thông báo (ví dụ: phát hiện nội dung dễ gây khó chịu)
+        // If a message field exists, display it (e.g., sensitive content detected)
         if (chunkMessage) {
           message.info(chunkMessage)
         }

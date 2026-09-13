@@ -50,7 +50,7 @@ def test_invalid_v2_scope_does_not_expand_read_access_when_reading():
 def test_strict_config_rejects_manage_scope_outside_read_scope():
     from yuxi.permissions import normalize_permission_config
 
-    with pytest.raises(ValueError, match="管理范围"):
+    with pytest.raises(ValueError, match="Manage scope"):
         normalize_permission_config(
             {
                 "version": 2,
@@ -64,7 +64,7 @@ def test_strict_config_rejects_manage_scope_outside_read_scope():
 def test_strict_config_rejects_user_manage_scope_under_department_read_scope():
     from yuxi.permissions import normalize_permission_config
 
-    with pytest.raises(ValueError, match="管理范围"):
+    with pytest.raises(ValueError, match="Manage scope"):
         normalize_permission_config(
             {
                 "version": 2,
@@ -178,7 +178,7 @@ def test_require_knowledge_base_permission_uses_resolved_resource_permission():
 def test_v2_scope_validation_rejects_disallowed_access_level():
     from yuxi.permissions import normalize_permission_config
 
-    with pytest.raises(ValueError, match="共享范围"):
+    with pytest.raises(ValueError, match="share scope"):
         normalize_permission_config(
             {
                 "version": 2,

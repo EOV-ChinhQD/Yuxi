@@ -8,9 +8,9 @@ if not VIRTUAL_PATH_PREFIX.startswith("/"):
 WORKSPACE_DIR_NAME = "workspace"
 WORKSPACE_AGENTS_DIR_NAME = "agents"
 WORKSPACE_AGENT_CONTEXT_FILES = {
-    "AGENTS.md": "# AGENTS\n\n以下是约束 Agent 行为的一些要求\n",
-    "USER.md": "# USER\n\n以下是有关用户的一些信息\n",
-    "MEMORY.md": "# MEMORY\n\n以下是 Agent 需要记住的一些信息\n",
+    "AGENTS.md": "# AGENTS\n\nDưới đây là các yêu cầu và quy định ràng buộc hành vi của Agent\n",
+    "USER.md": "# USER\n\nDưới đây là thông tin và ngữ cảnh liên quan về người dùng\n",
+    "MEMORY.md": "# MEMORY\n\nDưới đây là các thông tin và bài học Agent cần ghi nhớ lâu dài\n",
 }
 UPLOADS_DIR_NAME = "uploads"
 OUTPUTS_DIR_NAME = "outputs"
@@ -27,9 +27,9 @@ VIRTUAL_PATH_CONVERSATION_HISTORY = (Path(VIRTUAL_PATH_OUTPUTS) / CONVERSATION_H
 
 
 def ensure_within_root(path: Path, root: Path, *, error_message: str) -> Path:
-    """确认真实路径位于指定根目录内，否则拒绝越界访问。"""
+    """Ensure the resolved path is within the root directory, otherwise reject out-of-bounds access."""
     try:
-        path.relative_to(root)
+        path.resolve().relative_to(root.resolve())
     except ValueError:
         raise ValueError(error_message) from None
     return path

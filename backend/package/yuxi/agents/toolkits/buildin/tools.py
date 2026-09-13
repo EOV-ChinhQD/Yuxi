@@ -34,43 +34,47 @@ _SAFE_OUTPUT_STEM_RE = re.compile(r"[^A-Za-z0-9._\-\u4e00-\u9fff]+")
 
 _DOUBAO_SEARCH_URL = "https://open.feedcoopapi.com/search_api/web_search"
 
-DOUBAO_SEARCH_DESCRIPTION = """执行网络网页搜索，通过豆包联网搜索获取实时高质量互联网网页内容、新闻和站点资料。
+DOUBAO_SEARCH_DESCRIPTION = """Perform web page search to retrieve real-time, high-quality internet content, news, and site information.
 
-适用场景：
-1. 获取最新的时事新闻、即时信息或最新科技动态
-2. 检索特定网站的内容（通过 sites 参数指定）
-3. 查找指定时间范围内发布的新闻或文章（通过 time_range 参数过滤）
+Use cases:
+1. Get the latest news, real-time information, or recent technology trends
+2. Search content from specific websites (via the sites parameter)
+3. Find news or articles published within a specific time range (via the time_range parameter)
 
-参数使用建议：
-- query: 输入简短清晰的搜索关键词或简短提问
-- count: 默认 10 条，深度调研可适当调大（最多 50 条）
-- time_range: 需要最新消息或时效性强的资讯时建议传入 'OneDay'、'OneWeek' 或 'OneMonth'
-- sites: 仅需特定站点（如官媒、平台）时传入站点域名
+Parameter usage guide:
+- query: Enter short, clear search keywords or a brief question
+- count: Default 10 results; increase for in-depth research (max 50)
+- time_range: Use 'OneDay', 'OneWeek', or 'OneMonth' when you need the latest or time-sensitive information
+- sites: Specify site domains when only specific sites are needed (e.g., official media, platforms)
 """
 
 
 class DoubaoSearchInput(BaseModel):
-    query: str = Field(description="搜索查询词，1-100字符，必须精准描述检索需求")
-    count: int = Field(default=10, ge=1, le=50, description="返回搜索结果数量，支持 1-50 条，默认 10 条")
+    query: str = Field(description="Search query, 1-100 characters, must precisely describe the search intent")
+    count: int = Field(
+        default=10, ge=1, le=50, description="Number of search results to return, supports 1-50, default 10"
+    )
     time_range: str | None = Field(
         default=None,
         description=(
-            "按发文时间筛选结果。可选枚举值:\n"
-            "- 'OneDay': 近24小时内\n"
-            "- 'OneWeek': 近1周内\n"
-            "- 'OneMonth': 近1个月内\n"
-            "- 'OneYear': 近1年内\n"
-            "- 'YYYY-MM-DD..YYYY-MM-DD': 自定义日期范围区间 (如 '2025-01-01..2025-12-31')"
+            "Filter results by publication time. Available values:\n"
+            "- 'OneDay': Within the last 24 hours\n"
+            "- 'OneWeek': Within the last week\n"
+            "- 'OneMonth': Within the last month\n"
+            "- 'OneYear': Within the last year\n"
+            "- 'YYYY-MM-DD..YYYY-MM-DD': Custom date range (e.g., '2025-01-01..2025-12-31')"
         ),
     )
     sites: list[str] | None = Field(
-        default=None, description="指定限定搜索的完整域名列表 (如 ['sohu.com', '163.com'])，最多支持 20 个站点"
+        default=None,
+        description="List of domain names to restrict search to (e.g., ['sohu.com', '163.com']), max 20 sites",
     )
     block_hosts: list[str] | None = Field(
-        default=None, description="指定屏蔽的搜索域名列表 (如 ['example.com'])，最多支持 5 个站点"
+        default=None, description="List of domain names to exclude from search (e.g., ['example.com']), max 5 sites"
     )
     content_format: str = Field(
-        default="text", description="正文返回格式，支持 'text' (纯文本) 或 'markdown' (Markdown 格式)，默认 'text'"
+        default="text",
+        description="Content return format, supports 'text' (plain text) or 'markdown' (Markdown format), default 'text'",
     )
 
 
@@ -139,7 +143,7 @@ def _doubao_search(
 ) -> dict:
     api_key = os.getenv("DOUBAO_SEARCH_API_KEY")
     if not api_key:
-        return {"query": query, "results": [], "error": "DOUBAO_SEARCH_API_KEY 未配置"}
+        return {"query": query, "results": [], "error": "DOUBAO_SEARCH_API_KEY not configured"}
 
     payload = _build_doubao_search_payload(query, count, time_range, sites, block_hosts, content_format)
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
@@ -170,8 +174,8 @@ def _create_tavily_search():
 
 # provider -> (required env var, factory, display name)
 _WEB_SEARCH_PROVIDERS = {
-    "doubao": ("DOUBAO_SEARCH_API_KEY", _create_doubao_search, "豆包 网页搜索"),
-    "tavily": ("TAVILY_API_KEY", _create_tavily_search, "Tavily 网页搜索"),
+    "doubao": ("DOUBAO_SEARCH_API_KEY", _create_doubao_search, "Doubao Web Search"),
+    "tavily": ("TAVILY_API_KEY", _create_tavily_search, "Tavily Web Search"),
 }
 
 
@@ -201,11 +205,11 @@ def _register_web_search_tool() -> None:
         return
 
     _, create_tool, display_name = _WEB_SEARCH_PROVIDERS[provider]
-    _extra_registry["web_search"] = ToolExtraMetadata(category="buildin", tags=["搜索"], display_name=display_name)
+    _extra_registry["web_search"] = ToolExtraMetadata(category="buildin", tags=["search"], display_name=display_name)
     _all_tool_instances.append(create_tool())
 
 
-# 模块加载时注册网络搜索工具
+# Register web search tool at module load time
 try:
     _register_web_search_tool()
 except Exception as e:
@@ -216,7 +220,7 @@ class PresentArtifactsInput(BaseModel):
     """Expose artifact files to the frontend after the agent finishes."""
 
     filepaths: list[str] = Field(
-        description=f"Danh sách đường dẫn tuyệt đối của các tệp cần hiển thị cho người dùng, chỉ được nằm dưới {VIRTUAL_PATH_OUTPUTS} và không được là tệp chạy nội bộ"
+        description=f"Absolute paths of files to present to the user, must be under {VIRTUAL_PATH_OUTPUTS} and must not be internal runtime files"
     )
 
 
@@ -232,16 +236,16 @@ def _normalize_presented_artifact_path(filepath: str, runtime: ToolRuntime) -> s
     runtime_context = runtime.context
     thread_id = getattr(runtime_context, "file_thread_id", None) or getattr(runtime_context, "thread_id", None)
     if not thread_id:
-        raise ValueError("Thiếu thread_id trong runtime hiện tại")
+        raise ValueError("Missing thread_id in current runtime")
     uid = getattr(runtime_context, "uid", None)
     if not uid:
-        raise ValueError("Thiếu uid trong runtime hiện tại")
+        raise ValueError("Missing uid in current runtime")
 
     ensure_thread_dirs(thread_id, str(uid))
     outputs_dir = sandbox_outputs_dir(thread_id).resolve()
     normalized_input = str(filepath or "").strip()
     if not normalized_input:
-        raise ValueError("Đường dẫn tệp không được để trống")
+        raise ValueError("File path must not be empty")
 
     stripped = normalized_input.lstrip("/")
     virtual_prefix = VIRTUAL_PATH_PREFIX.lstrip("/")
@@ -251,43 +255,43 @@ def _normalize_presented_artifact_path(filepath: str, runtime: ToolRuntime) -> s
         actual_path = Path(normalized_input).expanduser().resolve()
 
     if not actual_path.exists() or not actual_path.is_file():
-        raise ValueError(f"Tệp không tồn tại hoặc không phải là tệp thông thường: {normalized_input}")
+        raise ValueError(f"File does not exist or is not a regular file: {normalized_input}")
 
     try:
         relative_path = actual_path.relative_to(outputs_dir)
     except ValueError as exc:
-        raise ValueError(f"Chỉ cho phép hiển thị các tệp dưới {outputs_virtual_prefix}/: {normalized_input}") from exc
+        raise ValueError(f"Only files under {outputs_virtual_prefix}/ can be presented: {normalized_input}") from exc
 
     if relative_path.parts and relative_path.parts[0] in _PRESENT_ARTIFACTS_INTERNAL_DIR_NAMES:
         raise ValueError(
-            f"Không cho phép hiển thị tệp giai đoạn gọi công cụ: {outputs_virtual_prefix}/{relative_path.as_posix()}"
+            f"Tool-stage intermediate files cannot be presented: {outputs_virtual_prefix}/{relative_path.as_posix()}"
         )
 
     return f"{outputs_virtual_prefix}/{relative_path.as_posix()}"
 
 
 PRESENT_ARTIFACTS_DESCRIPTION = f"""
-Hiển thị tệp kết quả đã được tạo cho người dùng.
+Present generated result files to the user.
 
-Trường hợp sử dụng:
-1. Bạn đã ghi tệp kết quả cuối cùng dưới `{VIRTUAL_PATH_OUTPUTS}`
-2. Bạn muốn frontend hiển thị thẻ tệp kết quả này sau khi kết thúc cuộc trò chuyện
-3. Các tệp này cần hỗ trợ tải xuống hoặc xem trước
+Use cases:
+1. You have written the final result files under `{VIRTUAL_PATH_OUTPUTS}`
+2. You want the frontend to display these result file cards after the conversation ends
+3. These files need download or preview support
 
-Lưu ý:
-1. Chỉ có thể truyền vào các tệp dưới `{VIRTUAL_PATH_OUTPUTS}`
-2. Không truyền vào các tệp quá trình trung gian, chỉ gọi cho các tệp kết quả thực sự cần cho người dùng xem
-3. Không truyền các tệp giai đoạn gọi công cụ, ví dụ:
+Notes:
+1. Only files under `{VIRTUAL_PATH_OUTPUTS}` can be passed
+2. Do not pass intermediate files, only call for final result files the user actually needs to see
+3. Do not pass tool-stage intermediate files, for example:
    - `{VIRTUAL_PATH_OUTPUTS}/{LARGE_TOOL_RESULTS_DIR_NAME}`
    - `{VIRTUAL_PATH_OUTPUTS}/{CONVERSATION_HISTORY_DIR_NAME}`
-4. Có thể truyền nhiều tệp cùng lúc
+4. Multiple files can be passed at once
 """
 
 
 @tool(
     category="buildin",
     tags=["file", "deliverable"],
-    display_name="Hiển thị sản phẩm giao nộp",
+    display_name="Present deliverables",
     description=PRESENT_ARTIFACTS_DESCRIPTION,
     args_schema=PresentArtifactsInput,
 )
@@ -296,7 +300,7 @@ def present_artifacts(
     runtime: ToolRuntime,
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> Command:
-    """Đăng ký tệp sản phẩm giao nộp trong thư mục outputs của luồng hiện tại để hiển thị cho người dùng khi kết thúc hội thoại."""
+    """Register deliverable files in the current thread outputs directory for display when the conversation ends."""
     try:
         normalized_paths = [_normalize_presented_artifact_path(filepath, runtime) for filepath in filepaths]
     except ValueError as exc:
@@ -305,9 +309,7 @@ def present_artifacts(
     return Command(
         update={
             "artifacts": normalized_paths,
-            "messages": [
-                ToolMessage(content="Đã hiển thị sản phẩm giao nộp cho người dùng", tool_call_id=tool_call_id)
-            ],
+            "messages": [ToolMessage(content="Deliverables presented to the user", tool_call_id=tool_call_id)],
         }
     )
 
@@ -315,32 +317,34 @@ def present_artifacts(
 class OcrParseFileInput(BaseModel):
     """Parse a sandbox file with OCR and save the Markdown result."""
 
-    file_path: str = Field(description="Đường dẫn ảo sandbox cần OCR phân tích, phải nằm trong /home/gem/user-data")
-    ocr_engine: str | None = Field(default=None, description="Engine OCR tùy chọn; nếu bỏ qua sẽ dùng OCR mặc định của hệ thống")
+    file_path: str = Field(description="Sandbox virtual path to parse with OCR, must be under /home/gem/user-data")
+    ocr_engine: str | None = Field(
+        default=None, description="Optional OCR engine; uses the system default when omitted"
+    )
 
 
 OCR_PARSE_FILE_DESCRIPTION = f"""
-Phân tích tệp PDF, tài liệu Office hoặc hình ảnh trong sandbox thành văn bản Markdown và lưu kết quả thành tệp.
+Parse a PDF, Office document, or image in the sandbox into Markdown text and save the result as a file.
 
-Trường hợp sử dụng:
-1. Người dùng tải lên tệp đính kèm PDF, tài liệu Office hoặc hình ảnh và cần trích xuất nội dung văn bản
-2. Đã có tệp trong thư mục workspace, uploads hoặc outputs và cần chuyển thành Markdown có thể đọc được
-3. Kết quả phân tích dài, sau đó nên dùng read_file để đọc tệp Markdown đã lưu
+Use cases:
+1. The user uploaded a PDF, Office document, or image attachment and needs text content extracted
+2. A file already exists in workspace, uploads, or outputs and needs conversion into readable Markdown
+3. The parsed result is long, afterwards use read_file to read the saved Markdown file
 
 
-Lưu ý:
-1. file_path phải là đường dẫn ảo trong /home/gem/user-data
-2. Chỉ cho phép đọc các tệp thông thường trong workspace, uploads, outputs
-3. Kết quả phân tích sẽ được ghi vào {VIRTUAL_PATH_OUTPUTS}/{_OCR_OUTPUT_DIR_NAME}/
-4. Công cụ chỉ trả về đường dẫn tệp kết quả và bản xem trước ngắn, không trả về toàn bộ văn bản OCR trực tiếp
-5. Nếu cần hiển thị tệp kết quả trên giao diện người dùng, vui lòng gọi tiếp present_artifacts
+Notes:
+1. file_path must be a virtual path under /home/gem/user-data
+2. Only regular files in workspace, uploads, outputs are allowed
+3. The parsed result is written to {VIRTUAL_PATH_OUTPUTS}/{_OCR_OUTPUT_DIR_NAME}/
+4. The tool only returns the result file path and a short preview, not the full OCR text directly
+5. To display the result file in the user interface, call present_artifacts next
 """
 
 
 @tool(
     category="buildin",
-    tags=["Tệp tin", "OCR"],
-    display_name="Trích xuất OCR tệp tin",
+    tags=["file", "ocr"],
+    display_name="Parse file with OCR",
     description=OCR_PARSE_FILE_DESCRIPTION,
     args_schema=OcrParseFileInput,
 )
@@ -377,27 +381,27 @@ def _resolve_ocr_source_path(file_path: str, runtime: ToolRuntime) -> tuple[str,
 
     normalized_input = str(file_path or "").strip()
     if not normalized_input:
-        raise ValueError("Đường dẫn tệp không được để trống")
+        raise ValueError("File path must not be empty")
 
     virtual_prefix = get_virtual_path_prefix().rstrip("/")
     clean_virtual_path = "/" + normalized_input.lstrip("/")
     if clean_virtual_path != virtual_prefix and not clean_virtual_path.startswith(f"{virtual_prefix}/"):
-        raise ValueError(f"Chỉ cho phép phân tích đường dẫn ảo sandbox trong {virtual_prefix}")
+        raise ValueError(f"Only sandbox virtual paths under {virtual_prefix} can be parsed")
 
     relative_path = clean_virtual_path[len(virtual_prefix) :].lstrip("/")
     namespace = Path(relative_path).parts[0] if relative_path else ""
     if namespace not in _OCR_PARSE_ALLOWED_DIRS:
         allowed = ", ".join(f"{virtual_prefix}/{item}" for item in sorted(_OCR_PARSE_ALLOWED_DIRS))
-        raise ValueError(f"Chỉ cho phép phân tích tệp trong {allowed}")
+        raise ValueError(f"Only files in {allowed} can be parsed")
 
     try:
         actual_path = resolve_virtual_path(file_thread_id, clean_virtual_path, uid=uid)
     except ValueError as exc:
-        raise ValueError(f"Chỉ cho phép phân tích đường dẫn ảo sandbox trong {virtual_prefix}") from exc
+        raise ValueError(f"Only sandbox virtual paths under {virtual_prefix} can be parsed") from exc
     if not actual_path.exists():
-        raise ValueError(f"Tệp không tồn tại: {clean_virtual_path}")
+        raise ValueError(f"File does not exist: {clean_virtual_path}")
     if not actual_path.is_file():
-        raise ValueError(f"Đường dẫn không phải là tệp thông thường: {clean_virtual_path}")
+        raise ValueError(f"Path is not a regular file: {clean_virtual_path}")
 
     return file_thread_id, uid, actual_path
 
@@ -407,9 +411,9 @@ def _resolve_runtime_file_scope(runtime: ToolRuntime) -> tuple[str, str]:
     thread_id = _runtime_scope_value(runtime, "file_thread_id") or _runtime_scope_value(runtime, "thread_id")
     uid = _runtime_scope_value(runtime, "uid")
     if not thread_id:
-        raise ValueError("Runtime hiện tại thiếu thread_id")
+        raise ValueError("Current runtime is missing thread_id")
     if not uid:
-        raise ValueError("Runtime hiện tại thiếu uid")
+        raise ValueError("Current runtime is missing uid")
     return thread_id, uid
 
 
@@ -437,7 +441,7 @@ def _resolve_ocr_engine(ocr_engine: str | None) -> str:
     engine = resolve_ocr_engine_id(ocr_engine)
     allowed = {"disable", *DocumentProcessorFactory.get_available_processors()}
     if engine not in allowed:
-        raise ValueError(f"Engine OCR không được hỗ trợ: {engine}")
+        raise ValueError(f"Unsupported OCR engine: {engine}")
     return engine
 
 
@@ -472,45 +476,45 @@ def _ocr_preview(markdown: str) -> tuple[str, bool]:
 
 
 ASK_USER_QUESTION_DESCRIPTION = """
-Trong quá trình thực thi, khi bạn cần người dùng đưa ra quyết định hoặc bổ sung yêu cầu, hãy sử dụng công cụ này để hỏi người dùng.
+During execution, when you need the user to make a decision or provide additional requirements, use this tool to ask the user.
 
-Kịch bản áp dụng:
-1. Thu thập sở thích hoặc yêu cầu của người dùng (ví dụ: phong cách, phạm vi, mức độ ưu tiên)
-2. Làm rõ các chỉ thị mơ hồ (khi có nhiều cách hiểu hợp lý)
-3. Cho phép người dùng chọn hướng giải pháp trong quá trình triển khai
-4. Cho phép người dùng thực hiện đánh đổi khi có sự cân nhắc rõ ràng
+Applicable scenarios:
+1. Collect user preferences or requirements (e.g., style, scope, priority)
+2. Clarify ambiguous instructions (when multiple reasonable interpretations exist)
+3. Let the user choose a solution direction during implementation
+4. Let the user make trade-offs when there are explicit considerations
 
-Quy chuẩn sử dụng:
-1. questions cung cấp từ 1-5 câu hỏi, mỗi mục bao gồm: question, options, multi_select, allow_other
-2. options của mỗi câu hỏi cung cấp từ 2-5 tùy chọn có tính phân biệt, mỗi mục bao gồm label và value
-3. Nếu có tùy chọn được đề xuất: đặt tùy chọn đề xuất ở vị trí đầu tiên và thêm "(Recommended)" vào cuối label
-4. Nếu cần chọn nhiều: đặt multi_select của câu hỏi đó thành true
-5. allow_other thường giữ là true, người dùng có thể nhập câu trả lời tùy chỉnh qua Other
+Usage rules:
+1. questions provides 1-5 questions, each item includes: question, options, multi_select, allow_other
+2. options for each question provides 2-5 distinct choices, each item includes label and value
+3. If there is a recommended option: put the recommended option first and append "(Recommended)" to the label
+4. If multiple selection is needed: set multi_select of that question to true
+5. allow_other is usually true, the user can enter a custom answer via Other
 
-Lưu ý:
-1. Không sử dụng công cụ này để hỏi các câu hỏi kiểm soát luồng như "có tiếp tục thực thi không" hoặc "kế hoạch đã sẵn sàng chưa"
-2. Không lạm dụng công cụ này khi thông tin đã đầy đủ và người dùng không cần đưa ra quyết định
-3. Tự đưa ra quyết định dựa trên ngữ cảnh hiện tại trước, chỉ hỏi khi có sự không chắc chắn quan trọng
+Notes:
+1. Do not use this tool for flow-control questions like "should execution continue" or "is the plan ready"
+2. Do not overuse this tool when the information is already complete and the user needs no decision
+3. Decide based on the current context first, only ask when there is significant uncertainty
 
-Kết quả trả về:
-answer là object, có định dạng {question_id: answer}.
-Trong đó answer có thể là string (chọn một), list (chọn nhiều) hoặc object (văn bản nhập ở Other).
+Return value:
+answer is an object with format {question_id: answer}.
+Where answer can be a string (single choice), list (multiple choices), or object (text entered via Other).
 """
 
 
 @tool(
     category="buildin",
     tags=["interaction"],
-    display_name="Hỏi người dùng",
+    display_name="Ask user",
     description=ASK_USER_QUESTION_DESCRIPTION,
 )
 def ask_user_question(
     questions: Annotated[
         list[dict] | str | None,
-        "Danh sách câu hỏi, định dạng mỗi mục {question, options, multi_select, allow_other, question_id(optional)}",
+        "Question list, each item format {question, options, multi_select, allow_other, question_id(optional)}",
     ] = None,
 ) -> dict:
-    """Gửi câu hỏi tới người dùng và đợi câu trả lời."""
+    """Send questions to the user and wait for answers."""
     # Parse the questions parameter: if it is a string, try to parse it as JSON
     if isinstance(questions, str):
         try:
@@ -525,7 +529,7 @@ def ask_user_question(
     normalized_questions = normalize_questions(questions or [])
 
     if not normalized_questions:
-        raise ValueError("questions phải chứa ít nhất một câu hỏi hợp lệ")
+        raise ValueError("questions must contain at least one valid question")
 
     interrupt_payload = {
         "questions": normalized_questions,

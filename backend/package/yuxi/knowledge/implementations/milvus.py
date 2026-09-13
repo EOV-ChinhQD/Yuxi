@@ -585,7 +585,7 @@ class MilvusKB(KnowledgeBase):
             return None
 
     def _get_existing_milvus_collection(self, kb_id: str) -> Collection | None:
-        """获取已存在的集合，不因删除操作创建新集合。"""
+        """Get the existing collection without creating a new one for delete operations."""
         collection = self.collections.get(kb_id)
         if collection is not None:
             return collection
@@ -965,31 +965,29 @@ class MilvusKB(KnowledgeBase):
             )
 
             chunk_stats = self._calculate_chunk_stats(chunks)
-            
+
             # Set status for all chunks to index_pending
             for chunk in chunks:
                 chunk["status"] = FileStatus.INDEX_PENDING
-                
+
             from yuxi.repositories.knowledge_chunk_repository import KnowledgeChunkRepository
             from yuxi.storage.postgres.manager import pg_manager
             from sqlalchemy import delete
             from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
             from yuxi.core.queue import QueueClient
-            
+
             chunk_repo = KnowledgeChunkRepository()
             pg_records = self._build_chunk_pg_records(kb_id, chunks)
-            
+
             # Use a transaction to delete old chunks and insert new ones
             async with pg_manager.get_async_session_context() as session:
                 await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.file_id == file_id))
                 await chunk_repo.batch_upsert(pg_records, session=session)
-            
+
             # Publish event to queue
-            await QueueClient.publish("SYNC_MILVUS_CHUNKS", {
-                "kb_id": kb_id,
-                "file_id": file_id,
-                "operator_id": operator_id
-            })
+            await QueueClient.publish(
+                "SYNC_MILVUS_CHUNKS", {"kb_id": kb_id, "file_id": file_id, "operator_id": operator_id}
+            )
 
             logger.info(f"Prepared chunks for file {file_id} and pushed to queue for embedding/indexing")
 
@@ -1025,15 +1023,15 @@ class MilvusKB(KnowledgeBase):
         # 1. Update file status to INDEXING
         from yuxi.repositories.knowledge_file_repository import KnowledgeFileRepository
         from yuxi.repositories.knowledge_chunk_repository import KnowledgeChunkRepository
-        
+
         file_repo = KnowledgeFileRepository()
-        
+
         # Ensure we can transition from INDEX_PENDING to INDEXING
         claimed_record = await file_repo.update_fields_if_status(
             kb_id=kb_id,
             file_id=file_id,
             allowed_statuses={FileStatus.INDEX_PENDING, FileStatus.RETRY_PENDING},
-            data={"status": FileStatus.INDEXING, "updated_by": operator_id}
+            data={"status": FileStatus.INDEXING, "updated_by": operator_id},
         )
         if not claimed_record:
             logger.warning(f"File {file_id} is not in INDEX_PENDING state. Skipping sync.")
@@ -1044,7 +1042,7 @@ class MilvusKB(KnowledgeBase):
             chunk_repo = KnowledgeChunkRepository()
             chunks = await chunk_repo.list_by_file_id(file_id)
             chunks_to_process = [c for c in chunks if c.status == FileStatus.INDEX_PENDING]
-            
+
             if not chunks_to_process:
                 logger.info(f"No pending chunks found for {file_id}. Marking as INDEXED.")
                 await file_repo.update_fields(kb_id=kb_id, file_id=file_id, data={"status": FileStatus.INDEXED})
@@ -1054,23 +1052,25 @@ class MilvusKB(KnowledgeBase):
             collection = await self._get_milvus_collection(kb_id)
             if not collection:
                 raise ValueError(f"Failed to get Milvus collection for {kb_id}")
-                
+
             embedding_model_spec = self.databases_meta[kb_id].get("embedding_model_spec")
             embedding_function = self._get_embedding_function(embedding_model_spec)
-            
+
             # Convert SQLAlchemy models to dicts for embedding
             chunks_dict = []
             for c in chunks_to_process:
-                chunks_dict.append({
-                    "chunk_id": c.chunk_id,
-                    "file_id": c.file_id,
-                    "content": c.content,
-                    "chunk_index": c.chunk_index,
-                    "start_char_pos": getattr(c, "start_char_pos", None),
-                    "end_char_pos": getattr(c, "end_char_pos", None),
-                    "heading_path": getattr(c, "heading_path", None),
-                    "section_type": getattr(c, "section_type", None)
-                })
+                chunks_dict.append(
+                    {
+                        "chunk_id": c.chunk_id,
+                        "file_id": c.file_id,
+                        "content": c.content,
+                        "chunk_index": c.chunk_index,
+                        "start_char_pos": getattr(c, "start_char_pos", None),
+                        "end_char_pos": getattr(c, "end_char_pos", None),
+                        "heading_path": getattr(c, "heading_path", None),
+                        "section_type": getattr(c, "section_type", None),
+                    }
+                )
 
             # Delete old chunks from Milvus (all of them)
             await self._delete_file_chunks_from_milvus(collection, file_id)
@@ -1079,47 +1079,48 @@ class MilvusKB(KnowledgeBase):
             # Wait, _embed_and_store_chunks writes to Postgres!
             # Since we already wrote them to Postgres as index_pending, _embed_and_store_chunks will duplicate them if it does insert!
             # Let's write a custom embed and milvus insert to avoid duplicate PG inserts.
-            
+
             from yuxi.core.embedding import split_into_batches
             from yuxi.core.embedding_cache import EmbeddingCache
-            
+
             batch_size = int(os.getenv("MILVUS_CHUNK_EMBED_BATCH_SIZE", "200"))
             chunk_batches = split_into_batches(chunks_dict, batch_size)
-            
+
             for batch_chunks in chunk_batches:
                 texts = [chunk["content"] for chunk in batch_chunks]
-                
+
                 # Check cache first
                 cached_embeddings = await EmbeddingCache.get_embeddings(texts, embedding_model_spec)
                 embeddings = []
-                
+
                 # Texts that need to be embedded
                 texts_to_embed = []
                 indices_to_embed = []
-                
+
                 for i, emb in enumerate(cached_embeddings):
                     if emb is None:
                         texts_to_embed.append(texts[i])
                         indices_to_embed.append(i)
-                        embeddings.append(None) # placeholder
+                        embeddings.append(None)  # placeholder
                     else:
                         embeddings.append(emb)
-                        
+
                 if texts_to_embed:
                     # Embed missing ones
                     from yuxi.core.gpu_throttle import GpuThrottle
                     import os
+
                     max_concurrent = int(os.getenv("GPU_MAX_CONCURRENT_EMBEDDINGS", "5"))
-                    
+
                     async with GpuThrottle(max_concurrent=max_concurrent):
                         new_embeddings = await embedding_function(texts_to_embed)
-                        
+
                     # Cache them
                     await EmbeddingCache.set_embeddings(texts_to_embed, new_embeddings, embedding_model_spec)
                     # Fill back
                     for idx, new_emb in zip(indices_to_embed, new_embeddings):
                         embeddings[idx] = new_emb
-                
+
                 # Insert directly to Milvus
                 entities = [
                     [chunk["chunk_id"] for chunk in batch_chunks],
@@ -1131,25 +1132,28 @@ class MilvusKB(KnowledgeBase):
                     [chunk.get("heading_path", "") or "" for chunk in batch_chunks],
                     [chunk.get("section_type", "") or "" for chunk in batch_chunks],
                 ]
+
                 def _insert_milvus_records():
                     collection.insert(entities)
+
                 await asyncio.to_thread(_insert_milvus_records)
-            
+
             # 4. Update chunk statuses to 'ready'
             from yuxi.storage.postgres.manager import pg_manager
             from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
             from sqlalchemy import update
-            
+
             async with pg_manager.get_async_session_context() as session:
                 await session.execute(
                     update(KnowledgeChunk)
                     .where(KnowledgeChunk.file_id == file_id)
                     .where(KnowledgeChunk.status == FileStatus.INDEX_PENDING)
-                    .values(status='ready')
+                    .values(status="ready")
                 )
-                
+
                 # Also we can create IndexManifest here
                 from yuxi.repositories.index_manifest_repository import IndexManifestRepository
+
                 manifest_repo = IndexManifestRepository()
                 await manifest_repo.create(
                     kb_id=kb_id,
@@ -1159,15 +1163,15 @@ class MilvusKB(KnowledgeBase):
                     chunk_count=len(chunks_to_process),
                     embedding_model=embedding_model_spec,
                     operator_id=operator_id,
-                    session=session
+                    session=session,
                 )
-            
+
             # 5. Update file status to INDEXED
             update_data = {"status": FileStatus.INDEXED, "error_message": None}
             if operator_id:
                 update_data["updated_by"] = operator_id
             await file_repo.update_fields(file_id=file_id, kb_id=kb_id, data=update_data)
-            
+
             await self.refresh_database_stats(kb_id)
             logger.info(f"Successfully synced {len(chunks_to_process)} chunks to Milvus for file {file_id}")
 
@@ -1195,7 +1199,7 @@ class MilvusKB(KnowledgeBase):
         embedding_model_spec: str | None,
         additional_params: dict[str, Any],
     ) -> list[dict]:
-        """更新内容 - 根据file_ids重新解析文件并更新向量库"""
+        """Update content - re-parse files by file_ids and update the vector store"""
         collection = await self._get_or_create_milvus_collection(kb_id, embedding_model_spec)
         if not collection:
             raise ValueError(f"Failed to get Milvus collection for {kb_id}")
@@ -1257,31 +1261,29 @@ class MilvusKB(KnowledgeBase):
                 chunks = self._split_text_into_chunks(markdown_content, file_id, filename, resolved_params)
                 logger.info(f"Split {filename} into {len(chunks)} chunks")
                 chunk_stats = self._calculate_chunk_stats(chunks)
-                
+
                 # Set status for all chunks to index_pending
                 for chunk in chunks:
                     chunk["status"] = FileStatus.INDEX_PENDING
-                    
+
                 from yuxi.repositories.knowledge_chunk_repository import KnowledgeChunkRepository
                 from yuxi.storage.postgres.manager import pg_manager
                 from sqlalchemy import delete
                 from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
                 from yuxi.core.queue import QueueClient
-                
+
                 chunk_repo = KnowledgeChunkRepository()
                 pg_records = self._build_chunk_pg_records(kb_id, chunks)
-                
+
                 # Delete existing chunks first and insert new ones
                 async with pg_manager.get_async_session_context() as session:
                     await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.file_id == file_id))
                     await chunk_repo.batch_upsert(pg_records, session=session)
 
                 # Publish event to queue
-                await QueueClient.publish("SYNC_MILVUS_CHUNKS", {
-                    "kb_id": kb_id,
-                    "file_id": file_id,
-                    "operator_id": None
-                })
+                await QueueClient.publish(
+                    "SYNC_MILVUS_CHUNKS", {"kb_id": kb_id, "file_id": file_id, "operator_id": None}
+                )
 
                 logger.info(f"Updated file {file_path} chunks in Postgres and pushed to queue. Done.")
 
@@ -1921,7 +1923,7 @@ class MilvusKB(KnowledgeBase):
         return {"meta": file_meta, **content_info}
 
     async def cleanup_database_resources(self, kb_id: str) -> dict:
-        """清理知识库资源，同时删除 Milvus 集合。"""
+        """Clean up knowledge base resources and drop the Milvus collection."""
 
         def delete_milvus_collections() -> None:
             try:
@@ -1946,7 +1948,7 @@ class MilvusKB(KnowledgeBase):
         known_kb_ids: set[str],
         managed_kb_ids: set[str],
     ) -> dict[str, list[dict]]:
-        """检测 Milvus 集合与知识库元数据之间的不一致。"""
+        """Detect inconsistencies between Milvus collections and knowledge base metadata."""
         inconsistencies: dict[str, list[dict]] = {"missing_collections": [], "missing_files": []}
         try:
             collection_names = set(utility.list_collections(using=self.connection_alias))
@@ -1960,7 +1962,7 @@ class MilvusKB(KnowledgeBase):
                     collection_info["count"] = collection.num_entities
                     collection_info["description"] = collection.description
                 except Exception as exc:
-                    logger.warning(f"无法获取集合 {collection_name} 的详细信息: {exc}")
+                    logger.warning(f"Failed to get details of collection {collection_name}: {exc}")
                     collection_info["count"] = "unknown"
                 inconsistencies["missing_collections"].append(collection_info)
 
@@ -1981,9 +1983,9 @@ class MilvusKB(KnowledgeBase):
                             }
                         )
                 except Exception as exc:
-                    logger.debug(f"检查数据库 {kb_id} 的文件一致性时出错: {exc}")
+                    logger.debug(f"Error checking file consistency of database {kb_id}: {exc}")
         except Exception as exc:
-            logger.error(f"检测 Milvus 数据不一致时出错: {exc}")
+            logger.error(f"Error detecting Milvus data inconsistencies: {exc}")
 
         return inconsistencies
 

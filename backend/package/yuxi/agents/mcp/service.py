@@ -67,21 +67,21 @@ _SYNCED_MCP_FIELDS = (
 
 
 class MCPServerNotFoundError(ValueError):
-    """表示指定的 MCP 服务器不存在。"""
+    """The specified MCP server does not exist."""
 
 
 def is_builtin_mcp_server(server: MCPServer) -> bool:
-    """判断 MCP 是否由代码中的内置定义管理。"""
+    """Check whether the MCP server is managed by the built-in definition in code."""
     return server.slug in _BUILTIN_MCP_SERVER_SLUGS
 
 
 def requires_mcp_stdio_migration(server: MCPServer) -> bool:
-    """判断 MCP 是否为升级后需要迁移的用户 stdio 配置。"""
+    """Check whether the MCP server is a user stdio config requiring migration after upgrade."""
     return server.transport == "stdio" and not is_builtin_mcp_server(server)
 
 
 def _to_runtime_mcp_config(server: MCPServer) -> dict[str, Any]:
-    """生成运行时 MCP 配置，内置连接字段始终以代码定义为准。"""
+    """Build the runtime MCP config; built-in connection fields always follow the code definition."""
     if not is_builtin_mcp_server(server):
         return server.to_mcp_config()
 
@@ -481,7 +481,9 @@ async def update_mcp_server(
     if not server:
         raise MCPServerNotFoundError(f"Server '{slug}' does not exist")
     if is_builtin_mcp_server(server):
-        raise PermissionError("Built-in MCP server connection configuration is managed by code and cannot be modified via API")
+        raise PermissionError(
+            "Built-in MCP server connection configuration is managed by code and cannot be modified via API"
+        )
 
     next_transport = transport or server.transport
     if next_transport not in _USER_CONFIGURABLE_TRANSPORTS:
@@ -552,7 +554,9 @@ async def set_server_enabled(
     if not server:
         raise MCPServerNotFoundError(f"Server '{slug}' does not exist")
     if enabled and requires_mcp_stdio_migration(server):
-        raise ValueError("Legacy stdio MCP is disabled; please change transport to sse or streamable_http before enabling")
+        raise ValueError(
+            "Legacy stdio MCP is disabled; please change transport to sse or streamable_http before enabling"
+        )
 
     server.enabled = 1 if enabled else 0
     if updated_by is not None:

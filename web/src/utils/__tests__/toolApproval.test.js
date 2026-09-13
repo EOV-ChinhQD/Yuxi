@@ -47,7 +47,7 @@ assert.equal(
 
 assert.deepEqual(buildToolApprovalDecisions({ 0: 'approve', 1: 'reject' }, 2), [
   { type: 'approve' },
-  { type: 'reject', message: '用户拒绝执行该操作' }
+  { type: 'reject', message: 'User rejected this tool execution' }
 ])
 assert.equal(hasPendingInterruptPayload({ kind: 'question', questions: [{}] }), true)
 assert.equal(hasPendingInterruptPayload({ kind: 'tool_approval', actionRequests: [{}] }), true)
@@ -72,6 +72,6 @@ assert.equal(
   }),
   true
 )
-assert.equal(isRunInterruptedConflict(new Error('线程正在等待用户回答或审批')), false)
+assert.equal(isRunInterruptedConflict(new Error('Thread is waiting for user response or approval')), false)
 
 console.log('toolApproval: all assertions passed')

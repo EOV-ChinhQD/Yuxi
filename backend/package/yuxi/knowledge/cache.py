@@ -1,4 +1,4 @@
-"""知识库运行配置的 Redis 缓存。"""
+"""Redis cache for knowledge base runtime config."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def _cache_lock_key(kb_id: str) -> str:
 
 @asynccontextmanager
 async def kb_config_cache_lock(kb_id: str) -> AsyncIterator[None]:
-    """串行化单个知识库的缓存回填与持久化更新。"""
+    """Serialize cache backfill and persistence updates for a single knowledge base."""
     redis = await get_async_redis_client()
     lock = redis.lock(
         _cache_lock_key(kb_id),
@@ -38,7 +38,7 @@ async def kb_config_cache_lock(kb_id: str) -> AsyncIterator[None]:
 
 
 def serialize_kb_config(row: Any) -> dict[str, Any]:
-    """将知识库记录转换为最小运行配置快照。"""
+    """Convert a knowledge base record into a minimal runtime config snapshot."""
     additional_params = dict(row.additional_params or {})
     additional_params.pop("stats", None)
     return {
@@ -51,7 +51,7 @@ def serialize_kb_config(row: Any) -> dict[str, Any]:
 
 
 async def get_cached_kb_config(kb_id: str) -> dict[str, Any] | None:
-    """读取单个知识库缓存；Redis 不可用或缓存非法时返回未命中。"""
+    """Read the cache for a single knowledge base; return a miss when Redis is down or the cache is invalid."""
     try:
         redis = await get_async_redis_client()
         raw = await redis.get(_cache_key(kb_id))
@@ -68,7 +68,7 @@ async def get_cached_kb_config(kb_id: str) -> dict[str, Any] | None:
 
 
 async def cache_kb_config(row: Any) -> None:
-    """写入单个知识库运行时快照；失败时由读取路径回源 PostgreSQL。"""
+    """Write a single knowledge base runtime snapshot; the read path falls back to PostgreSQL on failure."""
     try:
         redis = await get_async_redis_client()
         snapshot = serialize_kb_config(row)
@@ -82,6 +82,6 @@ async def cache_kb_config(row: Any) -> None:
 
 
 async def delete_cached_kb_config(kb_id: str) -> None:
-    """删除单个知识库运行时快照，失败时由调用方中止写操作。"""
+    """Delete a single knowledge base runtime snapshot; the caller aborts the write on failure."""
     redis = await get_async_redis_client()
     await redis.delete(_cache_key(kb_id))

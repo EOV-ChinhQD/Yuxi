@@ -1,40 +1,42 @@
 ---
 name: html-preview
-description: "使用 Markdown `html:preview` 围栏输出轻量静态 HTML/CSS 可视化。当普通 Markdown 难以清晰表达数值对比、层级关系、流程、时间线、关键指标或布局示意，或用户明确要求可视化 HTML 预览时使用。询问 HTML 源码、教程示例或可复制代码时不要使用。"
+description: "Use Markdown `html:preview` fences to output lightweight static HTML/CSS visualizations. Use when plain Markdown cannot clearly express numeric comparisons, hierarchies, processes, timelines, key metrics, or layout sketches, or when the user explicitly asks for an HTML preview visualization. Do not use when asking for HTML source code, tutorial examples, or copyable code."
 ---
 
 # HTML Preview
 
-将 Markdown 作为回答主体。只有可视化能明显降低理解成本时，才补充一个
-`html:preview` 静态组件；标题、列表、表格或代码块已经足够清楚时，继续使用普通 Markdown。
+Use Markdown as the main body of the answer. Only add a static
+`html:preview` component when visualization clearly lowers comprehension cost;
+when headings, lists, tables, or code blocks are already clear enough, keep
+using plain Markdown.
 
-按以下顺序输出：
+Output in the following order:
 
-1. 先用普通 Markdown 写结论和必要解释。
-2. 顶格写开始围栏 ```` ```html:preview ````。围栏最多只能有 3 个前导空格，否则前端会把它当作源码。
-3. 在围栏内写自包含的静态 `<style>` 和语义化 HTML。
-4. 顶格写结束围栏 ```` ``` ````。
-5. 在围栏后用普通 Markdown 补充背景、风险、完整明细和来源。
+1. Write conclusions and necessary explanations in plain Markdown first.
+2. Write the opening fence ```` ```html:preview ```` flush left. The fence may have at most 3 leading spaces, otherwise the frontend treats it as source code.
+3. Inside the fence, write self-contained static `<style>` and semantic HTML.
+4. Write the closing fence ```` ``` ```` flush left.
+5. After the fence, supplement background, risks, full details, and sources in plain Markdown.
 
-## 内容边界
+## Content boundaries
 
-- 只输出静态 HTML/CSS，不编写 JavaScript，不使用表单、iframe、object 或 embed。
-- 可以引用公开、稳定、无需登录的 HTTPS 图片或字体，但核心信息必须在外链失败时仍然可读。
-- 不引用内网、临时地址、鉴权资源或包含用户凭证的链接。
-- 不把组件当成完整网页或正文容器；不要制作导航栏、页脚、登录态、复杂按钮、营销页 Hero 或多屏页面。
-- 不在组件中放长段叙事、完整报告、长表格或长列表。背景、推理、风险、明细和来源放在普通 Markdown 中。
-- 用户询问 HTML 源码、教程示例或需要复制代码时，使用普通 `html` 代码块，不使用 `html:preview`。
+- Output only static HTML/CSS. Do not write JavaScript, and do not use forms, iframes, objects, or embeds.
+- You may reference public, stable, login-free HTTPS images or fonts, but core information must remain readable when external links fail.
+- Do not reference intranet URLs, temporary addresses, authenticated resources, or links containing user credentials.
+- Do not treat the component as a full page or body container; do not build navbars, footers, login states, complex buttons, marketing heroes, or multi-screen pages.
+- Do not put long narratives, full reports, long tables, or long lists inside the component. Put background, reasoning, risks, details, and sources in plain Markdown.
+- When the user asks for HTML source code, tutorial examples, or copyable code, use a plain `html` code block, not `html:preview`.
 
-## 布局约束
+## Layout constraints
 
-- 面向默认 `800px × 360px` 尺寸设计，并允许容器宽度变化；前端最高显示到 `700px`，超出后在预览内部滚动。
-- 使用 `max-width: 100%`、`box-sizing: border-box`、弹性网格、换行和适度间距保持响应式。
-- 不写死整体画布高度。核心信息应在默认尺寸内无需滚动即可读；放不下时减少内容。
-- 最多展示 1 个短标题、3–5 个关键指标或一组简短对比。数据超过 6 项时，汇总为趋势、区间、异常点或 Top 3。
-- 文字以短标签、数字、单位、状态词和极短备注为主；单条说明尽量不超过 20 个中文字符。
-- 外层已经提供圆角、边框和裁切。不要再给最外层添加卡片壳、页面背景、大圆角、阴影、厚边框或额外外边距。
-- 保持克制和可读，优先使用紧凑指标组、摘要表、对比条、状态标签、时间轴或简单关系图。
+- Design for the default `800px × 360px` size and allow the container width to vary; the frontend displays up to `700px` high, scrolling inside the preview beyond that.
+- Stay responsive with `max-width: 100%`, `box-sizing: border-box`, flexible grids, wrapping, and moderate spacing.
+- Do not hardcode the overall canvas height. Core information should be readable at the default size without scrolling; reduce content when it does not fit.
+- Show at most 1 short title, 3–5 key metrics, or one short comparison set. With more than 6 data items, summarize as trends, ranges, outliers, or Top 3.
+- Use short labels, numbers, units, status words, and very short notes; keep each note under ~20 characters.
+- The outer layer already provides rounded corners, borders, and clipping. Do not add another card shell, page background, large radius, shadow, thick border, or extra margin to the outermost layer.
+- Stay restrained and readable, preferring compact metric groups, summary tables, comparison bars, status tags, timelines, or simple relationship diagrams.
 
-## 失败处理
+## Failure handling
 
-如果内容无法在上述静态、安全和篇幅边界内表达，改用普通 Markdown，并明确说明限制。不要输出残缺围栏、不可访问资源或依赖脚本才能理解的预览。
+If the content cannot be expressed within the static, safety, and length boundaries above, fall back to plain Markdown and state the limitation explicitly. Do not output broken fences, inaccessible resources, or previews that require scripts to understand.

@@ -93,7 +93,7 @@ class ProvisionerSandboxProvider:
 
         self._client = ProvisionerClient(provisioner_url, token=sandbox_provisioner_token())
         self._lock = threading.Lock()
-        # 活跃或等待中的调用者持有强引用；空闲作用域的锁自动回收。
+        # Active or waiting callers hold strong references; locks for idle scopes are collected automatically.
         self._thread_locks: weakref.WeakValueDictionary[str, threading.Lock] = weakref.WeakValueDictionary()
         self._connections: dict[str, SandboxConnection] = {}
         self._last_touch_at: dict[str, float] = {}
@@ -256,7 +256,7 @@ class ProvisionerSandboxProvider:
         skills_thread_id: str | None = None,
         clear_cache_on_delete_failure: bool = False,
     ) -> None:
-        """释放一个指定作用域的 Sandbox，并清理本地连接缓存。"""
+        """Release the sandbox for a given scope and clear the local connection cache."""
         file_id = str(file_thread_id or thread_id).strip()
         skills_id = str(skills_thread_id or thread_id).strip()
         cache_key = _sandbox_key(uid, file_id, skills_id)

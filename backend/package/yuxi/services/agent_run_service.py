@@ -153,10 +153,10 @@ def _validate_resume_input(resume: object) -> None:
         return
     decisions = resume.get("decisions")
     if not isinstance(decisions, list) or not decisions:
-        raise HTTPException(status_code=422, detail="decisions 必须是非空数组")
+        raise HTTPException(status_code=422, detail="decisions phải là một mảng không rỗng")
     for decision in decisions:
         if not isinstance(decision, dict) or decision.get("type") not in {"approve", "reject"}:
-            raise HTTPException(status_code=422, detail="decision.type 只支持 approve 或 reject")
+            raise HTTPException(status_code=422, detail="decision.type chỉ hỗ trợ approve hoặc reject")
 
 
 def _compact_message_dict(message: dict) -> dict:
@@ -916,32 +916,37 @@ async def stream_agent_run_events(
     """Phát luồng sự kiện run theo định dạng SSE; bổ sung sự kiện kết thúc dựa theo DB khi thiếu sự kiện terminal."""
     started_at = utc_now_naive()
     last_heartbeat_ts = started_at
+    last_db_check_ts = started_at
 
     last_seq = normalize_after_seq(after_seq)
 
+    # Check run existence and ownership once at connection start
+    try:
+        async with pg_manager.get_async_session_context() as db:
+            repo = AgentRunRepository(db)
+            run = await repo.get_run_for_user(run_id, str(current_uid))
+            if not run:
+                yield format_sse({"run_id": run_id, "message": "Lượt chạy không tồn tại"}, event="error")
+                return
+            last_run_status = getattr(run, "status", None)
+            last_run_request_id = getattr(run, "request_id", None)
+            last_conv_thread_id = getattr(run, "conversation_thread_id", None)
+    except asyncio.CancelledError:
+        raise
+    except Exception as e:
+        logger.warning(f"Run SSE DB init error for run {run_id}: {e}")
+        yield format_sse(
+            {
+                "run_id": run_id,
+                "message": "Dòng sự kiện chạy tạm thời không khả dụng, vui lòng kết nối lại",
+                "reason": "db_error",
+            },
+            event="error",
+        )
+        return
+
     try:
         while True:
-            try:
-                async with pg_manager.get_async_session_context() as db:
-                    repo = AgentRunRepository(db)
-                    run = await repo.get_run_for_user(run_id, str(current_uid))
-                    if not run:
-                        yield format_sse({"run_id": run_id, "message": "Lượt chạy không tồn tại"}, event="error")
-                        return
-            except asyncio.CancelledError:
-                raise
-            except Exception as e:
-                logger.warning(f"Run SSE DB error for run {run_id}: {e}")
-                yield format_sse(
-                    {
-                        "run_id": run_id,
-                        "message": "Dòng sự kiện chạy tạm thời không khả dụng, vui lòng kết nối lại",
-                        "reason": "db_error",
-                    },
-                    event="error",
-                )
-                return
-
             try:
                 events = await list_run_stream_events(run_id, after_seq=last_seq, limit=200)
             except Exception as e:
@@ -973,29 +978,44 @@ async def stream_agent_run_events(
             if emitted_terminal:
                 return
 
-            if run.status in TERMINAL_RUN_STATUSES and not events:
-                terminal_seq = last_seq
-                if terminal_seq in {"", "0-0"}:
-                    terminal_seq = await get_last_run_stream_seq(run_id)
-                if terminal_seq in {"", "0-0"}:
-                    terminal_seq = None
-                terminal_envelope = build_run_event_envelope(
-                    run_id=run_id,
-                    thread_id=run.conversation_thread_id,
-                    event_type="end",
-                    payload={"status": run.status, "request_id": run.request_id},
-                    created_at=utc_now_naive().isoformat(),
-                )
-                if not verbose:
-                    terminal_envelope = _compact_run_event_envelope(terminal_envelope)
-                yield format_sse(
-                    terminal_envelope,
-                    event="end",
-                    event_id=terminal_seq,
-                )
-                return
-
             now = utc_now_naive()
+
+            # Check DB status periodically as fallback when no events arrive
+            if not events and (now - last_db_check_ts).total_seconds() >= 1.5:
+                last_db_check_ts = now
+                try:
+                    async with pg_manager.get_async_session_context() as db:
+                        repo = AgentRunRepository(db)
+                        run_check = await repo.get_run_for_user(run_id, str(current_uid))
+                        if run_check:
+                            last_run_status = getattr(run_check, "status", None)
+                            last_run_request_id = getattr(run_check, "request_id", None)
+                            last_conv_thread_id = getattr(run_check, "conversation_thread_id", None)
+                except Exception as e:
+                    logger.debug(f"Periodic run status check failed for run {run_id}: {e}")
+
+                if last_run_status in TERMINAL_RUN_STATUSES:
+                    terminal_seq = last_seq
+                    if terminal_seq in {"", "0-0"}:
+                        terminal_seq = await get_last_run_stream_seq(run_id)
+                    if terminal_seq in {"", "0-0"}:
+                        terminal_seq = None
+                    terminal_envelope = build_run_event_envelope(
+                        run_id=run_id,
+                        thread_id=last_conv_thread_id,
+                        event_type="end",
+                        payload={"status": last_run_status, "request_id": last_run_request_id},
+                        created_at=utc_now_naive().isoformat(),
+                    )
+                    if not verbose:
+                        terminal_envelope = _compact_run_event_envelope(terminal_envelope)
+                    yield format_sse(
+                        terminal_envelope,
+                        event="end",
+                        event_id=terminal_seq,
+                    )
+                    return
+
             elapsed_seconds = (now - started_at).total_seconds()
             heartbeat_elapsed = (now - last_heartbeat_ts).total_seconds()
             if heartbeat_elapsed >= SSE_HEARTBEAT_SECONDS:
@@ -1005,7 +1025,10 @@ async def stream_agent_run_events(
             if elapsed_seconds >= SSE_MAX_CONNECTION_MINUTES * 60:
                 return
 
-            await asyncio.sleep(SSE_POLL_INTERVAL_SECONDS)
+            if not events:
+                await asyncio.sleep(SSE_POLL_INTERVAL_SECONDS)
+            else:
+                await asyncio.sleep(0.01)
     except asyncio.CancelledError:
         return
 

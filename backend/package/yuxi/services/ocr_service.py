@@ -1,4 +1,4 @@
-"""OCR 方法选择、运行时配置和健康检测。"""
+"""OCR engine selection, runtime configuration, and health checks."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def resolve_ocr_engine_id(engine_id: str | None = None) -> str:
     if resolved == "disable":
         return resolved
     if resolved not in PROCESSOR_TYPES:
-        raise ValueError(f"不支持的 OCR 引擎: {resolved}")
+        raise ValueError(f"Unsupported OCR engine: {resolved}")
     return resolved
 
 
@@ -67,32 +67,37 @@ async def parse_document(
     params: dict[str, Any] | None = None,
     db: AsyncSession | None = None,
 ) -> str:
-    """使用当前运行时配置将文件解析为 Markdown。
+    """Parse a file into Markdown with the current runtime configuration.
 
-    这是业务代码唯一应调用的文档解析入口。函数负责区分应用层配置解析和
-    底层文件转换：对于 PDF 与图片等 OCR 文件，先确定最终 OCR 引擎，再从
-    数据库 Options、环境变量或模型供应商中解析该引擎的构造参数；对于普通
-    文本、Office、表格等文件，参数保持原样并直接交给统一解析器。
+    This is the only document-parsing entry point business code should call. The
+    function separates application-level config resolution from low-level file
+    conversion: for OCR files such as PDFs and images, it first settles the final
+    OCR engine, then resolves that engine's constructor params from the database
+    Options, environment variables, or model providers; for plain text, Office,
+    and table files, params pass through untouched to the unified parser.
 
-    底层 parser 只接收已经准备好的 ``ocr_engine`` 和
-    ``_ocr_processor_kwargs``，不查询数据库，也不关心配置值来自何处。调用方
-    不应直接调用 ``yuxi.knowledge.parser.unified`` 中的内部解析入口，否则会
-    绕过数据库配置、环境变量回退和默认 OCR 引擎解析。
+    The low-level parser only receives a prepared ``ocr_engine`` and
+    ``_ocr_processor_kwargs`` — it never queries the database nor cares where a
+    config value came from. Callers must not invoke the internal parsing entry
+    points in ``yuxi.knowledge.parser.unified`` directly, or they bypass database
+    config, environment-variable fallback, and default OCR engine resolution.
 
     Args:
-        source: 本地文件路径或系统支持的 MinIO 文件地址。
-        params: 文件解析参数。可以包含 ``ocr_engine``、图片存储位置和各解析器
-            支持的业务参数；未指定 OCR 引擎时使用系统默认值。
-        db: 可选的异步数据库会话。已有事务的调用方可以传入以复用会话；未传入
-            时仅在 OCR 配置解析需要查询数据库时创建独立会话。
+        source: Local file path or a system-supported MinIO file address.
+        params: File parsing params. May include ``ocr_engine``, image storage
+            location, and per-parser business params; the system default OCR
+            engine applies when none is specified.
+        db: Optional async database session. Callers with an existing transaction
+            may pass one in for reuse; when omitted, a dedicated session is only
+            created if OCR config resolution needs a database lookup.
 
     Returns:
-        解析后的 Markdown 文本。
+        The parsed Markdown text.
 
     Raises:
-        ValueError: OCR 引擎无效、图片禁用 OCR 或文件类型不受支持。
-        DocumentProcessorException: OCR 或文档解析器执行失败。
-        StorageError: MinIO 文件读取失败。
+        ValueError: Invalid OCR engine, OCR disabled for images, or unsupported file type.
+        DocumentProcessorException: OCR or document parser execution failed.
+        StorageError: MinIO file read failed.
     """
 
     resolved_params = params
@@ -105,7 +110,7 @@ async def parse_document(
 
 
 async def check_all_ocr_health(db: AsyncSession) -> dict[str, Any]:
-    """使用当前有效配置并行检查所有 OCR 方法。"""
+    """Check all OCR engines in parallel with the current effective config."""
 
     configured = []
     results = {}
@@ -142,7 +147,7 @@ async def _build_processor_kwargs(db: AsyncSession, engine_id: str) -> dict[str,
         provider = await get_model_provider_by_id(db, "siliconflow-cn")
         api_key = resolve_api_key(provider) if provider and provider.is_enabled else None
         if not api_key:
-            raise ValueError("siliconflow-cn 模型供应商凭证不可用")
+            raise ValueError("siliconflow-cn model provider credentials unavailable")
         return {
             "api_key": api_key,
             "api_url": f"{provider.base_url.rstrip('/')}/chat/completions",

@@ -53,9 +53,10 @@ def test_knowledge_graph_event_new_fields():
     assert event.event_embedding == [0.1, 0.2, 0.3]
 
 def test_milvus_pg_record_mapping():
+    from unittest.mock import patch
     from yuxi.knowledge.implementations.milvus import MilvusKB
-    # Mock databases_meta or instantiate a minimal MilvusKB
-    kb = MilvusKB(work_dir="/tmp")
+    with patch.object(MilvusKB, "_init_connection", return_value=None):
+        kb = MilvusKB(work_dir="/tmp")
     chunks = [
         {
             "chunk_id": "c1",
@@ -85,7 +86,8 @@ async def test_incremental_indexing_logic():
     from unittest.mock import AsyncMock, MagicMock, patch
     from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
 
-    kb = MilvusKB(work_dir="/tmp")
+    with patch.object(MilvusKB, "_init_connection", return_value=None):
+        kb = MilvusKB(work_dir="/tmp")
 
     # Mock existing chunks in Postgres
     old_chunk = KnowledgeChunk(

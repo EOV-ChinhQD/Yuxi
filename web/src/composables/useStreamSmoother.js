@@ -60,18 +60,18 @@ const DEFAULT_OPTIONS = {
   minChunkSize: 1,
   maxChunkSize: 64,
   defaultIntervalMs: 1000,
-  minDrainWindowMs: 400,
-  maxDrainWindowMs: 1400,
-  targetLagMs: 900,
-  minReserveChars: 48,
-  maxReserveChars: 240,
+  minDrainWindowMs: 200,
+  maxDrainWindowMs: 800,
+  targetLagMs: 250,
+  minReserveChars: 12,
+  maxReserveChars: 64,
   maxBufferedChars: 3000,
   emaAlpha: 0.2,
-  basePaceMultiplier: 0.92,
-  overflowDivisor: 180,
-  maxBurstFactor: 2.6,
-  reserveReleaseDelayMs: 1200,
-  reserveDecayWindowMs: 2200
+  basePaceMultiplier: 0.95,
+  overflowDivisor: 150,
+  maxBurstFactor: 2.8,
+  reserveReleaseDelayMs: 200,
+  reserveDecayWindowMs: 400
 }
 
 const getIncomingSize = (chunk) => {

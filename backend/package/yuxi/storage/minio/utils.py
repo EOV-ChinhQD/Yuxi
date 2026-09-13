@@ -49,7 +49,7 @@ async def upload_image_to_minio(
             with Image.open(BytesIO(file_content)) as image:
                 file_extension = allowed_formats.get(image.format or "")
                 if file_extension is None:
-                    raise ValueError("只能上传 PNG、JPEG、WebP 或 GIF 图片")
+                    raise ValueError("Chỉ có thể tải lên hình ảnh định dạng PNG, JPEG, WebP hoặc GIF")
 
                 for frame_index in range(getattr(image, "n_frames", 1)):
                     image.seek(frame_index)
@@ -61,7 +61,7 @@ async def upload_image_to_minio(
         OSError,
         SyntaxError,
     ) as exc:
-        raise ValueError("只能上传 PNG、JPEG、WebP 或 GIF 图片") from exc
+        raise ValueError("Chỉ có thể tải lên hình ảnh định dạng PNG, JPEG, WebP hoặc GIF") from exc
 
     object_name = f"{object_prefix.strip('/')}/{uuid.uuid4()}.{file_extension}"
     return await aupload_file_to_minio("public", object_name, file_content)

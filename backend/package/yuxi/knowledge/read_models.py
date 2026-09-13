@@ -1,4 +1,4 @@
-"""知识库 Manager、调用方与类型执行器共用的内部读取模型。"""
+"""Internal read models shared by the knowledge base manager, callers, and type executors."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from yuxi.permissions import ResourcePermission
 
 @dataclass(frozen=True, slots=True)
 class KnowledgeBaseConfig:
-    """知识库类型实现执行一次操作所需的最小配置。"""
+    """Minimal config a knowledge base type implementation needs to run one operation."""
 
     kb_id: str
     kb_type: str
@@ -21,14 +21,14 @@ class KnowledgeBaseConfig:
 
     @property
     def query_options(self) -> dict[str, Any]:
-        """返回持久化查询参数中的 options。"""
+        """Return the options from the persisted query params."""
         options = self.query_params.get("options")
         return options if isinstance(options, dict) else {}
 
 
 @dataclass(frozen=True, slots=True)
 class KnowledgeBaseSummary:
-    """知识库列表、权限过滤与资源选择共用的内部摘要。"""
+    """Internal summary shared by knowledge base listing, permission filtering, and resource selection."""
 
     kb_id: str
     name: str
@@ -54,13 +54,13 @@ class KnowledgeBaseSummary:
 
     @property
     def can_manage(self) -> bool:
-        """返回当前调用者是否拥有管理权限。"""
+        """Return whether the current caller has manage permission."""
         return self.effective_permission == ResourcePermission.MANAGE
 
 
 @dataclass(frozen=True, slots=True)
 class KnowledgeBaseDetail(KnowledgeBaseSummary):
-    """知识库详情读取模型，在摘要基础上增加详情页字段。"""
+    """Knowledge base detail read model, adding detail-page fields on top of the summary."""
 
     mindmap: dict[str, Any] | None = None
     sample_questions: tuple[str, ...] = ()

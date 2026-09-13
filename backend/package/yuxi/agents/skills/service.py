@@ -82,7 +82,7 @@ _THREAD_SKILLS_LOCKS: dict[str, threading.Lock] = {}
 
 @dataclass(frozen=True, slots=True)
 class ResolvedSkill:
-    """描述当前用户最终可用的 Skill 及其真实来源。"""
+    """Describe the Skills effectively available to the current user and their true origin."""
 
     id: Any
     slug: str
@@ -101,7 +101,7 @@ class ResolvedSkill:
     shadowed_by_personal: bool = False
 
     def to_dict(self) -> dict[str, Any]:
-        """返回可安全提供给前端的 Skill 元数据。"""
+        """Return Skill metadata safe to expose to the frontend."""
         data = {
             "id": self.id,
             "slug": self.slug,
@@ -124,7 +124,7 @@ class ResolvedSkill:
 
 @dataclass(frozen=True, slots=True)
 class PersonalSkillSnapshot:
-    """承载一次个人 Skill 元数据快照。"""
+    """Hold one personal Skill metadata snapshot."""
 
     items: list[ResolvedSkill]
     scanned_at: str
@@ -230,7 +230,7 @@ def can_skill_depend_on(parent: Skill, dependency: Skill) -> bool:
 
 
 def _scope_contains(container: dict, target: dict) -> bool:
-    """判断一个共享范围是否完整覆盖另一个范围。"""
+    """Check whether one share scope fully covers another."""
 
     container_level = container.get("access_level")
     target_level = target.get("access_level")
@@ -305,7 +305,7 @@ def _load_skill_draft(draft_id: str) -> tuple[Path, dict]:
 def _load_and_select_draft_items(
     draft_id: str, slugs: list[str] | None, operator: User
 ) -> tuple[Path, dict, list[dict]]:
-    """加载安装草稿，校验权限与来源类型，并按需筛选选中的条目。"""
+    """Load an install draft, validate permission and source type, and filter selected items."""
     draft_dir, data = _load_skill_draft(draft_id)
     if data.get("created_by") != operator.uid and operator.role not in ADMIN_ROLES:
         raise ValueError("Unauthorized to confirm this skill install draft")
@@ -319,7 +319,7 @@ def _load_and_select_draft_items(
             raise ValueError("Select at least one Skill")
         available_slugs = {str(item.get("slug") or "").strip() for item in draft_items}
         if selected_slugs - available_slugs:
-            raise ValueError("确认安装包含草稿外的 Skill")
+            raise ValueError("Confirmed install contains Skills outside the draft")
         draft_items = [item for item in draft_items if str(item.get("slug") or "").strip() in selected_slugs]
 
     return draft_dir, data, draft_items
@@ -342,7 +342,7 @@ async def sync_thread_readable_skills_async(
     selected_slugs: list[str] | None,
     source_dirs: dict[str, str | Path] | None = None,
 ) -> Path:
-    """在线程池同步共享 Skill 投影，避免阻塞 Agent 事件循环。"""
+    """Sync the shared Skill projection in a thread pool to avoid blocking the agent event loop."""
     return await asyncio.to_thread(
         sync_thread_readable_skills,
         thread_id,
@@ -356,7 +356,7 @@ def sync_thread_readable_skills(
     selected_slugs: list[str] | None,
     source_dirs: dict[str, str | Path] | None = None,
 ) -> Path:
-    """将最终生效的 Skill 来源同步到线程只读目录。"""
+    """Sync the effective Skill sources to the thread read-only directory."""
     skills_root = get_skills_root_dir().resolve()
     thread_skills_root = get_thread_skills_root_dir(thread_id)
     normalized_slugs = [slug for slug in normalize_string_list(selected_slugs) if is_valid_skill_slug(slug)]
@@ -380,7 +380,7 @@ def sync_thread_readable_skills(
             target_dir = thread_skills_root / slug
 
             if source_dir.is_symlink() or not source_dir.is_dir() or _dir_contains_symlink(source_dir):
-                logger.warning(f"跳过不存在或包含符号链接的 Skill 来源: slug={slug}")
+                logger.warning(f"Skip missing Skill source or one containing symlinks: slug={slug}")
                 if target_dir.exists() or target_dir.is_symlink():
                     if target_dir.is_dir() and not target_dir.is_symlink():
                         shutil.rmtree(target_dir)
@@ -420,7 +420,7 @@ def _build_builtin_skill_dir_path(slug: str) -> str:
 
 
 def _dir_contains_symlink(path: Path) -> bool:
-    """检查目录内是否包含任意符号链接子路径。"""
+    """Check whether a directory contains any symlinked sub-path."""
     return any(child.is_symlink() for child in path.rglob("*"))
 
 
@@ -451,7 +451,7 @@ def _replace_skill_target(
     *,
     validate: Callable[[Path], None] | None = None,
 ) -> None:
-    """将 source_dir 原子地复制为 target_dir：先复制到临时目录，可选校验后再替换。"""
+    """Atomically copy source_dir to target_dir: copy to a temp dir first, then validate and replace."""
     temp_target = target_dir.with_name(f".{target_dir.name}.tmp-{uuid.uuid4().hex[:8]}")
     trash_dir: Path | None = None
     if temp_target.exists():
@@ -482,7 +482,7 @@ async def list_accessible_skills(
     require_enabled: bool = True,
     refresh_personal: bool = False,
 ) -> list[ResolvedSkill]:
-    """返回当前用户最终生效的共享与个人 Skill。"""
+    """Return the effective shared and personal Skills for the current user."""
     shared_items, personal_snapshot = await asyncio.gather(
         _list_accessible_shared_skills(db, user, require_enabled=require_enabled),
         list_personal_skills(str(user.uid), refresh=refresh_personal),
@@ -506,7 +506,7 @@ async def list_skill_cards_for_user(
     *,
     refresh_personal: bool = False,
 ) -> tuple[list[ResolvedSkill], PersonalSkillSnapshot]:
-    """返回管理页所需的共享与个人 Skill 卡片。"""
+    """Return the shared and personal Skill cards needed by the management page."""
     shared_items, personal_snapshot = await asyncio.gather(
         list_visible_skills_for_management(db, user),
         list_personal_skills(str(user.uid), refresh=refresh_personal),
@@ -583,14 +583,14 @@ async def _list_accessible_shared_skills(
     *,
     require_enabled: bool = True,
 ) -> list[Skill]:
-    """按现有共享范围返回用户可访问的数据库 Skill。"""
+    """Return the database Skills accessible to the user under current share scopes."""
     repo = SkillRepository(db)
     items = await repo.list_enabled() if require_enabled else await repo.list_all()
     return [item for item in items if user_can_access_skill(user, item, require_enabled=require_enabled)]
 
 
 async def _list_shared_skill_slugs(db: AsyncSession, user: User) -> list[str]:
-    """返回依赖配置可引用的共享 Skill slug。"""
+    """Return the shared Skill slugs available for dependency configuration."""
     return [item.slug for item in await _list_accessible_shared_skills(db, user) if isinstance(item.slug, str)]
 
 
@@ -793,7 +793,7 @@ def _parse_skill_dir_metadata(source_skill_dir: Path) -> dict[str, Any]:
 
 
 def get_personal_skills_root_dir(uid: str) -> Path:
-    """返回认证用户的个人 Skill 根目录。"""
+    """Return the personal Skill root directory of the authenticated user."""
     from yuxi.agents.backends.sandbox.paths import sandbox_workspace_dir
     from yuxi.services.mention_search_service import WORKSPACE_THREAD_PLACEHOLDER
 
@@ -803,7 +803,7 @@ def get_personal_skills_root_dir(uid: str) -> Path:
 
 
 async def list_personal_skills(uid: str, *, refresh: bool = False) -> PersonalSkillSnapshot:
-    """读取个人 Skill Redis 快照，必要时重新扫描工作区。"""
+    """Read the personal Skill Redis snapshot, rescanning the workspace when needed."""
     redis = await get_async_redis_client()
     root = get_personal_skills_root_dir(uid)
 
@@ -826,7 +826,7 @@ async def install_personal_skill_dir(
     *,
     refresh_cache: bool = True,
 ) -> ResolvedSkill:
-    """将一个 Skill 原子安装到当前用户个人工作区。"""
+    """Atomically install a Skill into the current user personal workspace."""
     redis = await get_async_redis_client()
     async with _personal_skill_scan_lock(redis, uid):
         item = await asyncio.to_thread(_install_personal_skill_dir_sync, uid, Path(source_dir))
@@ -834,41 +834,45 @@ async def install_personal_skill_dir(
             try:
                 await _scan_and_cache_personal_skills(redis, uid)
             except Exception as exc:
-                logger.exception(f"个人 Skill 已安装但缓存刷新失败: uid={uid}, slug={item.slug}")
-                raise RuntimeError("个人 Skill 已安装，但列表缓存刷新失败，请手动刷新") from exc
+                logger.exception(f"Personal Skill installed but cache refresh failed: uid={uid}, slug={item.slug}")
+                raise RuntimeError(
+                    "Personal Skill installed, but list cache refresh failed; please refresh manually"
+                ) from exc
         return item
 
 
 async def read_personal_skill_file(uid: str, slug: str, relative_path: str) -> dict[str, Any]:
-    """读取个人 Skill 中的文本文件。"""
+    """Read a text file inside a personal Skill."""
     skill_dir = _resolve_personal_skill_dir(uid, slug)
     if not skill_dir.is_dir():
-        raise ValueError("个人 Skill 不存在")
+        raise ValueError("Personal Skill does not exist")
     target, normalized_path = _resolve_relative_path(skill_dir, relative_path)
     if not target.is_file():
-        raise ValueError("文件不存在")
+        raise ValueError("File does not exist")
     if not _is_text_path(target):
-        raise ValueError("仅支持读取文本文件")
+        raise ValueError("Only text files can be read")
     return {"path": normalized_path, "content": target.read_text(encoding="utf-8")}
 
 
 async def delete_personal_skill(uid: str, slug: str) -> PersonalSkillSnapshot:
-    """删除当前用户个人 Skill，并立即刷新缓存。"""
+    """Delete the current user personal Skill and refresh the cache immediately."""
     redis = await get_async_redis_client()
     async with _personal_skill_scan_lock(redis, uid):
         skill_dir = _resolve_personal_skill_dir(uid, slug)
         if not skill_dir.is_dir():
-            raise ValueError("个人 Skill 不存在")
+            raise ValueError("Personal Skill does not exist")
         await asyncio.to_thread(shutil.rmtree, skill_dir)
         try:
             return await _scan_and_cache_personal_skills(redis, uid)
         except Exception as exc:
-            logger.exception(f"个人 Skill 已删除但缓存刷新失败: uid={uid}, slug={slug}")
-            raise RuntimeError("个人 Skill 已删除，但列表缓存刷新失败，请手动刷新") from exc
+            logger.exception(f"Personal Skill deleted but cache refresh failed: uid={uid}, slug={slug}")
+            raise RuntimeError(
+                "Personal Skill deleted, but list cache refresh failed; please refresh manually"
+            ) from exc
 
 
 def _resolved_shared_skill(item: Skill, *, shadowed_by_personal: bool = False) -> ResolvedSkill:
-    """将数据库 Skill 适配为统一的有效 Skill 描述。"""
+    """Adapt a database Skill to a unified effective Skill description."""
     source_scope = "builtin" if is_builtin_skill(item) else "shared"
     return ResolvedSkill(
         id=item.id,
@@ -891,11 +895,11 @@ def _resolved_shared_skill(item: Skill, *, shadowed_by_personal: bool = False) -
 
 
 def _resolved_personal_skill(uid: str, root: Path, metadata: dict[str, Any]) -> ResolvedSkill:
-    """将个人目录元数据适配为不含共享语义的有效 Skill 描述。"""
+    """Adapt personal directory metadata to an effective Skill description without sharing semantics."""
     slug = str(metadata["slug"])
     if not is_valid_skill_slug(slug):
-        raise ValueError("个人 Skill 缓存包含非法 slug")
-    source_dir = ensure_within_root((root / slug).resolve(), root, error_message="个人 Skill 路径越界")
+        raise ValueError("Personal Skill cache contains an invalid slug")
+    source_dir = ensure_within_root((root / slug).resolve(), root, error_message="Personal Skill path out of bounds")
 
     return ResolvedSkill(
         id=f"personal:{slug}",
@@ -916,7 +920,7 @@ def _resolved_personal_skill(uid: str, root: Path, metadata: dict[str, Any]) -> 
 
 @asynccontextmanager
 async def _personal_skill_scan_lock(redis: Any, uid: str) -> AsyncIterator[None]:
-    """串行化同一用户的个人 Skill 扫描与文件变更。"""
+    """Serialize personal Skill scans and file changes for the same user."""
     lock = redis.lock(
         _personal_skill_scan_lock_key(uid),
         timeout=PERSONAL_SKILL_SCAN_LOCK_TIMEOUT_SECONDS,
@@ -931,7 +935,7 @@ async def _read_personal_skill_cache(
     uid: str,
     root: Path,
 ) -> PersonalSkillSnapshot | None:
-    """读取并校验一个用户的个人 Skill 缓存。"""
+    """Read and validate one user personal Skill cache."""
     cache_key = _personal_skill_cache_key(uid)
     cached = await redis.get(cache_key)
     if not cached:
@@ -940,7 +944,7 @@ async def _read_personal_skill_cache(
     try:
         payload = json.loads(cached)
         if payload.get("schema_version") != 1:
-            raise ValueError("个人 Skill 缓存版本不匹配")
+            raise ValueError("Personal Skill cache version mismatch")
         items = [_resolved_personal_skill(uid, root, item) for item in payload["items"]]
         return PersonalSkillSnapshot(
             items=items,
@@ -948,7 +952,7 @@ async def _read_personal_skill_cache(
             from_cache=True,
         )
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
-        logger.warning(f"个人 Skill 缓存无效，将重新扫描: uid={uid}, error={exc}")
+        logger.warning(f"Personal Skill cache invalid, rescanning: uid={uid}, error={exc}")
         await redis.delete(cache_key)
         return None
 
@@ -957,7 +961,7 @@ async def _scan_and_cache_personal_skills(
     redis: Any,
     uid: str,
 ) -> PersonalSkillSnapshot:
-    """扫描个人 Skill 并写入五分钟 Redis 快照。"""
+    """Scan personal Skills and write a five-minute Redis snapshot."""
     items = await asyncio.to_thread(_scan_personal_skills, uid)
     scanned_at = datetime.now(UTC).isoformat()
     payload = {
@@ -974,67 +978,67 @@ async def _scan_and_cache_personal_skills(
 
 
 def _scan_personal_skills(uid: str) -> list[ResolvedSkill]:
-    """扫描并校验当前用户个人 Skill 的直接子目录。"""
+    """Scan and validate the direct subdirectories of the current user personal Skills."""
     root = get_personal_skills_root_dir(uid)
     items: list[ResolvedSkill] = []
     for entry in sorted(root.iterdir(), key=lambda path: path.name):
         if entry.is_symlink() or not entry.is_dir() or not is_valid_skill_slug(entry.name):
-            logger.warning(f"跳过非法个人 Skill 目录: uid={uid}, name={entry.name}")
+            logger.warning(f"Skip invalid personal Skill directory: uid={uid}, name={entry.name}")
             continue
         if _dir_contains_symlink(entry):
-            logger.warning(f"跳过包含符号链接的个人 Skill: uid={uid}, slug={entry.name}")
+            logger.warning(f"Skip personal Skill containing symlinks: uid={uid}, slug={entry.name}")
             continue
 
         try:
             metadata = _parse_skill_dir_metadata(entry)
             if metadata["slug"] != entry.name:
-                raise ValueError("目录名必须与 SKILL.md slug 一致")
+                raise ValueError("Directory name must match the SKILL.md slug")
             items.append(_resolved_personal_skill(uid, root, metadata))
         except Exception as exc:
-            logger.warning(f"跳过无法解析的个人 Skill: uid={uid}, slug={entry.name}, error={exc}")
+            logger.warning(f"Skip unparsable personal Skill: uid={uid}, slug={entry.name}, error={exc}")
     return items
 
 
 def _install_personal_skill_dir_sync(uid: str, source_dir: Path) -> ResolvedSkill:
-    """在持有用户级锁时将一个 Skill 原子复制到个人目录。"""
+    """Atomically copy a Skill into the personal directory while holding the user-level lock."""
     root = get_personal_skills_root_dir(uid)
     source_dir = source_dir.resolve()
     if source_dir.is_symlink() or _dir_contains_symlink(source_dir):
-        raise ValueError("个人 Skill 不允许包含符号链接")
+        raise ValueError("Personal Skills must not contain symlinks")
 
     metadata = _parse_skill_dir_metadata(source_dir)
     slug = metadata["slug"]
     target_dir = root / slug
     if target_dir.exists() or target_dir.is_symlink():
-        raise ValueError(f"个人工作区已存在同名 Skill: {slug}")
+        raise ValueError(f"Personal workspace already has a Skill with the same name: {slug}")
 
     def _validate_slug_unchanged(copied_dir: Path) -> None:
         copied_metadata = _parse_skill_dir_metadata(copied_dir)
         if copied_metadata["slug"] != slug:
-            raise ValueError("个人 Skill slug 在复制过程中发生变化")
+            raise ValueError("Personal Skill slug changed during copy")
 
     _replace_skill_target(target_dir, source_dir, validate=_validate_slug_unchanged)
     return _resolved_personal_skill(uid, root, metadata)
 
 
 def _resolve_personal_skill_dir(uid: str, slug: str) -> Path:
-    """安全解析当前用户的个人 Skill 目录。"""
+    """Safely resolve the current user personal Skill directory."""
     if not is_valid_skill_slug(slug):
-        raise ValueError("无效 skill slug")
+        raise ValueError("Invalid skill slug")
     root = get_personal_skills_root_dir(uid)
-    target = ensure_within_root((root / slug).resolve(), root, error_message="个人 Skill 路径越界")
+    target = ensure_within_root((root / slug).resolve(), root, error_message="Personal Skill path out of bounds")
     if target.is_symlink():
-        raise ValueError("个人 Skill 路径非法")
+        raise ValueError("Invalid personal Skill path")
     return target
 
 
 def _personal_skill_cache_key(uid: str) -> str:
-    """返回当前用户的个人 Skill 缓存 key。"""
+    """Return the personal Skill cache key for the current user."""
     return f"{PERSONAL_SKILL_CACHE_PREFIX}{uid}"
 
 
 def _personal_skill_scan_lock_key(uid: str) -> str:
-    """返回当前用户的个人 Skill 扫描锁 key。"""
+    """Return the personal Skill scan lock key for the current user."""
     return f"{PERSONAL_SKILL_SCAN_LOCK_PREFIX}{uid}"
 
 
@@ -1146,7 +1150,11 @@ def _resolve_relative_path(skill_dir: Path, relative_path: str, *, allow_root: b
     if ".." in pure.parts:
         raise ValueError("Đường dẫn không hợp lệ: Không cho phép tham chiếu đường dẫn cấp trên")
 
-    target = ensure_within_root((skill_dir / pure).resolve(), skill_dir, error_message="Đường dẫn không hợp lệ: Từ chối truy cập vượt quá giới hạn")
+    target = ensure_within_root(
+        (skill_dir / pure).resolve(),
+        skill_dir,
+        error_message="Đường dẫn không hợp lệ: Từ chối truy cập vượt quá giới hạn",
+    )
 
     return target, rel
 
@@ -1331,7 +1339,11 @@ async def confirm_skill_install_draft(
             results.append(result)
             continue
         if await repo.exists_slug(slug) or (skills_root / slug).exists():
-            result = {"slug": slug, "success": False, "error": "Skill slug đã bị chiếm dụng, vui lòng phân tích và cài đặt lại"}
+            result = {
+                "slug": slug,
+                "success": False,
+                "error": "Skill slug đã bị chiếm dụng, vui lòng phân tích và cài đặt lại",
+            }
             results.append(result)
             continue
 
@@ -1357,7 +1369,11 @@ async def confirm_skill_install_draft(
                 final_dir = skills_root / slug
                 if final_dir.exists():
                     shutil.rmtree(temp_target, ignore_errors=True)
-                    result = {"slug": slug, "success": False, "error": "Skill slug đã bị chiếm dụng, vui lòng phân tích và cài đặt lại"}
+                    result = {
+                        "slug": slug,
+                        "success": False,
+                        "error": "Skill slug đã bị chiếm dụng, vui lòng phân tích và cài đặt lại",
+                    }
                     results.append(result)
                     continue
                 temp_target.rename(final_dir)
@@ -1398,7 +1414,7 @@ async def confirm_personal_skill_install_draft(
     slugs: list[str] | None,
     operator: User,
 ) -> list[dict[str, Any]]:
-    """确认草稿并将选中 Skill 安装到当前用户个人工作区。"""
+    """Confirm the draft and install the selected Skills into the current user personal workspace."""
     draft_dir, _data, draft_items = _load_and_select_draft_items(draft_id, slugs, operator)
 
     results: list[dict[str, Any]] = []
@@ -1411,7 +1427,7 @@ async def confirm_personal_skill_install_draft(
                     "slug": personal_slug,
                     "requested_slug": requested_slug,
                     "success": False,
-                    "error": draft_item.get("error", "安装失败"),
+                    "error": draft_item.get("error", "Install failed"),
                 }
             )
             continue
@@ -1421,7 +1437,7 @@ async def confirm_personal_skill_install_draft(
                     "slug": personal_slug,
                     "requested_slug": requested_slug,
                     "success": False,
-                    "error": "无效 skill slug",
+                    "error": "Invalid skill slug",
                 }
             )
             continue
@@ -1431,7 +1447,7 @@ async def confirm_personal_skill_install_draft(
             source_dir.relative_to(draft_dir.resolve())
             parsed = _parse_skill_dir_metadata(source_dir)
             if parsed["slug"] != personal_slug:
-                raise ValueError("安装草稿中的个人 Skill slug 不一致")
+                raise ValueError("Personal Skill slug in the install draft is inconsistent")
             item = await install_personal_skill_dir(
                 str(operator.uid),
                 source_dir,

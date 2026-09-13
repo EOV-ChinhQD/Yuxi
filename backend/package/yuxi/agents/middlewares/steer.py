@@ -1,10 +1,10 @@
-"""主会话 Steer Middleware。"""
+"""Steer middleware for the main session."""
 
 from langchain.agents.middleware import AgentMiddleware, hook_config
 
 
 class SteerMiddleware(AgentMiddleware):
-    """在安全生命周期边界结束当前 Run，让队列优先执行 Steer。"""
+    """End the current Run at the safe lifecycle boundary so the queue can run Steer first."""
 
     @hook_config(can_jump_to=["end"])
     async def abefore_model(self, state, runtime):  # noqa: ARG002
@@ -12,7 +12,7 @@ class SteerMiddleware(AgentMiddleware):
 
     @hook_config(can_jump_to=["end"])
     async def aafter_model(self, state, runtime):
-        """兜底处理无工具模型轮次，避免 Steer 落在最后一次检查之后。"""
+        """Fallback for tool-free model turns so Steer is not missed after the last check."""
         if _last_message_has_tool_calls(state):
             return None
         return await self._jump_if_steer_requested(runtime)
@@ -27,7 +27,7 @@ class SteerMiddleware(AgentMiddleware):
 
 
 def _last_message_has_tool_calls(state) -> bool:
-    """判断模型最后一条消息是否仍需执行工具，避免跳过工具批次。"""
+    """Check whether the last model message still needs tool execution to avoid skipping a tool batch."""
     messages = state.get("messages") if isinstance(state, dict) else None
     if not messages:
         return False

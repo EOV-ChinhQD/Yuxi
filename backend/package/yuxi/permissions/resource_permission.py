@@ -1,4 +1,4 @@
-"""统一解析 Agent、Skill 与知识库的共享权限。"""
+"""Resolve shared permissions for Agents, Skills, and knowledge bases."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from typing import Any, Protocol
 
 
 class ResourcePermission(StrEnum):
-    """资源权限等级，数值顺序用于判断权限是否足够。"""
+    """Resource permission levels; numeric order decides whether permission suffices."""
 
     NONE = "none"
     READ = "read"
@@ -17,11 +17,11 @@ class ResourcePermission(StrEnum):
 
 
 class ResourcePermissionDenied(PermissionError):
-    """当前用户的资源权限不足。"""
+    """The current user lacks sufficient resource permission."""
 
 
 class ShareableResource(Protocol):
-    """声明可通过共享配置进行权限解析的资源字段。"""
+    """Resource fields subject to permission resolution via share config."""
 
     created_by: str | None
     share_config: dict | None
@@ -29,7 +29,7 @@ class ShareableResource(Protocol):
 
 @dataclass(frozen=True)
 class ResourcePermissionPolicy:
-    """声明资源类型允许的角色上限，不包含共享范围匹配逻辑。"""
+    """Role ceilings allowed per resource type; excludes scope-matching logic."""
 
     role_ceiling: dict[str, ResourcePermission]
 
@@ -59,33 +59,33 @@ SKILL_PERMISSION_POLICY = AGENT_PERMISSION_POLICY
 
 
 def _normalize_scope(scope: dict | None) -> dict | None:
-    """规范化共享范围并校验其访问级别与成员列表。"""
+    """Normalize a share scope and validate its access level and member lists."""
 
     if scope is None:
         return None
     if not isinstance(scope, dict):
-        raise ValueError("权限范围必须是对象")
+        raise ValueError("Permission scope must be an object")
 
     access_level = scope.get("access_level") or "global"
     if access_level not in {"global", "department", "user"}:
-        raise ValueError("无效的资源权限范围")
+        raise ValueError("Invalid resource permission scope")
 
     if access_level == "global":
         return DEFAULT_SCOPE.copy()
     if access_level == "department":
         department_ids = sorted({int(value) for value in scope.get("department_ids") or []})
         if not department_ids:
-            raise ValueError("部门权限至少需要选择一个部门")
+            raise ValueError("Department permission requires at least one department")
         return {"access_level": access_level, "department_ids": department_ids, "user_uids": []}
 
     user_uids = sorted({str(value).strip() for value in scope.get("user_uids") or [] if str(value).strip()})
     if not user_uids:
-        raise ValueError("指定用户权限至少需要选择一个用户")
+        raise ValueError("User permission requires at least one user")
     return {"access_level": access_level, "department_ids": [], "user_uids": user_uids}
 
 
 def _validate_manage_scope(read_scope: dict | None, manage_scope: dict | None) -> None:
-    """确保管理范围不会超出读取范围。"""
+    """Ensure the manage scope never exceeds the read scope."""
 
     if not read_scope or not manage_scope or read_scope["access_level"] == "global":
         return
@@ -93,23 +93,23 @@ def _validate_manage_scope(read_scope: dict | None, manage_scope: dict | None) -
     read_level = read_scope["access_level"]
     manage_level = manage_scope["access_level"]
     if manage_level != read_level:
-        raise ValueError("管理范围必须包含在读取范围内")
+        raise ValueError("Manage scope must be contained within read scope")
     if read_level == manage_level == "department":
         if not set(manage_scope["department_ids"]).issubset(read_scope["department_ids"]):
-            raise ValueError("管理范围必须包含在读取范围内")
+            raise ValueError("Manage scope must be contained within read scope")
     elif read_level == manage_level == "user":
         if not set(manage_scope["user_uids"]).issubset(read_scope["user_uids"]):
-            raise ValueError("管理范围必须包含在读取范围内")
+            raise ValueError("Manage scope must be contained within read scope")
 
 
 def normalize_permission_config(
     share_config: dict | None,
     *,
     allowed_access_levels: Collection[str] | None = None,
-    unauthorized_access_level_message: str = "当前用户无权使用该资源共享范围",
+    unauthorized_access_level_message: str = "Current user may not use this resource share scope",
     strict: bool = False,
 ) -> dict:
-    """规范化并校验 v2 共享配置。"""
+    """Normalize and validate a v2 share config."""
 
     config = share_config if isinstance(share_config, dict) else {}
     if config.get("version") == 2:
@@ -120,7 +120,8 @@ def normalize_permission_config(
         except ValueError:
             if strict:
                 raise
-            # 读取历史配置时保持原值；保存时由 strict 校验拒绝越界配置。
+            # Keep historical values when reading legacy configs; strict
+            # validation rejects out-of-range configs on save.
         normalized = {
             "version": 2,
             "read_scope": read_scope,
@@ -131,11 +132,11 @@ def normalize_permission_config(
                 if scope and scope["access_level"] not in allowed_access_levels:
                     raise ValueError(unauthorized_access_level_message)
         return normalized
-    raise ValueError("资源共享配置必须使用 version 2")
+    raise ValueError("Share config must use version 2")
 
 
 def scope_matches(user: Any, scope: dict | None) -> bool:
-    """判断用户是否命中一个共享范围。"""
+    """Decide whether a user falls inside a share scope."""
 
     if not scope:
         return False
@@ -154,7 +155,7 @@ def scope_matches(user: Any, scope: dict | None) -> bool:
 
 
 def _value(source: Any, key: str, default: Any = None) -> Any:
-    """从字典或对象读取属性，统一权限解析的输入访问方式。"""
+    """Read an attribute from a dict or object; unifies permission-resolution inputs."""
 
     if isinstance(source, Mapping):
         return source.get(key, default)
@@ -162,7 +163,7 @@ def _value(source: Any, key: str, default: Any = None) -> Any:
 
 
 def _minimum_permission(left: ResourcePermission, right: ResourcePermission) -> ResourcePermission:
-    """按权限等级顺序返回两者中更低的权限。"""
+    """Return the lower of two permissions by permission-level order."""
 
     return left if RESOURCE_PERMISSION_ORDER[left] <= RESOURCE_PERMISSION_ORDER[right] else right
 
@@ -172,7 +173,7 @@ def resolve_resource_permission(
     resource: ShareableResource,
     policy: ResourcePermissionPolicy,
 ) -> ResourcePermission:
-    """解析资源所有权、共享范围和角色上限后的有效权限。"""
+    """Resolve the effective permission from ownership, share scopes, and role ceiling."""
 
     if _value(user, "role") == "superadmin":
         return ResourcePermission.MANAGE
@@ -200,14 +201,14 @@ def require_resource_permission(
     actual: ResourcePermission,
     required: ResourcePermission,
 ) -> None:
-    """在权限不足时显式失败。"""
+    """Fail explicitly on insufficient permission."""
 
     if RESOURCE_PERMISSION_ORDER[actual] < RESOURCE_PERMISSION_ORDER[required]:
-        raise ResourcePermissionDenied(f"需要 {required.value} 权限，当前为 {actual.value}")
+        raise ResourcePermissionDenied(f"Requires {required.value} permission, current is {actual.value}")
 
 
 def resolve_knowledge_base_permission(user: Any, resource: ShareableResource) -> ResourcePermission:
-    """解析知识库权限，普通用户最多只能获得只读权限。"""
+    """Resolve knowledge base permission; regular users get at most read permission."""
 
     return resolve_resource_permission(
         user,
@@ -221,7 +222,7 @@ def require_knowledge_base_permission(
     resource: ShareableResource,
     required: ResourcePermission,
 ) -> ResourcePermission:
-    """校验用户是否具备知识库所需权限，并返回实际权限。"""
+    """Validate that the user holds the required knowledge base permission; return actual."""
 
     actual = resolve_knowledge_base_permission(user, resource)
     require_resource_permission(actual, required)
@@ -229,7 +230,7 @@ def require_knowledge_base_permission(
 
 
 def resolve_agent_permission(user: Any, resource: ShareableResource) -> ResourcePermission:
-    """解析 Agent 权限。"""
+    """Resolve Agent permission."""
 
     return resolve_resource_permission(
         user,
@@ -239,7 +240,7 @@ def resolve_agent_permission(user: Any, resource: ShareableResource) -> Resource
 
 
 def resolve_skill_permission(user: Any, resource: ShareableResource) -> ResourcePermission:
-    """解析 Skill 权限。"""
+    """Resolve Skill permission."""
 
     return resolve_resource_permission(
         user,

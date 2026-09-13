@@ -514,6 +514,8 @@ class YuxiSubAgentMiddleware(AgentMiddleware[Any, ContextT, ResponseT]):
             return None, _json_tool_command(exc.to_payload(), runtime.tool_call_id)
         except ValueError as exc:
             return None, str(exc)
+        except Exception as exc:
+            return None, f"Lỗi khởi chạy sub-agent: {exc}"
         return _StartedSubagent(result=result, parent_runtime=parent_runtime, agent_item=agent_item), None
 
     def _subagent_model_override(self, agent_item: Agent) -> str | None:

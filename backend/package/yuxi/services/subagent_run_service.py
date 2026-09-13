@@ -294,6 +294,25 @@ class SubagentRunService:
             parent_conv = await self.conv_repo.get_conversation_by_thread_id(creator_run.conversation_thread_id)
 
         project_id = parent_conv.project_id if parent_conv and getattr(parent_conv, "project_id", None) else None
+        if not project_id:
+            from yuxi.storage.postgres.models_business import Project
+            from sqlalchemy import select
+
+            project_id = await self.db.scalar(
+                select(Project.id).where(Project.uid == str(uid)).order_by(Project.created_at.desc())
+            )
+            if not project_id:
+                from yuxi.services.project_service import create_implicit_project
+
+                implicit_project = await create_implicit_project(
+                    uid=str(uid),
+                    db=self.db,
+                    idempotency_key=f"subagent_thread:{child_thread_id}",
+                )
+                project_id = implicit_project.id
+
+        if parent_conv and getattr(parent_conv, "project_id", None) is None:
+            parent_conv.project_id = project_id
 
         conversation = await self.conv_repo.add_conversation(
             uid=uid,

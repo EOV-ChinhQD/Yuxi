@@ -603,9 +603,9 @@ async def process_agent_run(ctx, run_id: str):
                 chunk=interrupt_chunk,
                 error_type=interrupt_status,
                 error_message=(
-                    "需要用户审批工具操作"
+                    "Cần người dùng phê duyệt thao tác công cụ"
                     if interrupt_status == "human_approval_required"
-                    else first_question or "需要用户回答问题"
+                    else first_question or "Cần người dùng trả lời câu hỏi"
                 ),
                 current_user=user,
             )

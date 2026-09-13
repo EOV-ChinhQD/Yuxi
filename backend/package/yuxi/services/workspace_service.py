@@ -102,7 +102,7 @@ async def list_workspace_tree(
                 _virtual_entry(
                     chats_path,
                     name=WORKSPACE_CHATS_DIR_NAME,
-                    title="历史对话",
+                    title="Lịch sử hội thoại",
                     is_dir=True,
                 )
             )
@@ -269,7 +269,7 @@ async def upload_workspace_files(*, parent_path: str, files: list[UploadFile], c
     upload_targets: list[tuple[UploadFile, Path]] = []
 
     for file in files:
-        file_name = _validate_child_name(Path(file.filename or "").name, field_name="文件名")
+        file_name = _validate_child_name(Path(file.filename or "").name, field_name="Tên tệp")
         if file_name in seen_names:
             raise HTTPException(status_code=400, detail=f"Có tên tệp trùng lặp trong các tệp đã chọn: {file_name}")
         seen_names.add(file_name)

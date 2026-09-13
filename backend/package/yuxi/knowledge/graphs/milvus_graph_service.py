@@ -33,11 +33,13 @@ from yuxi.utils.datetime_utils import utc_isoformat
 GRAPH_CONFIG_KEY = "graph_build_config"
 GRAPH_TASK_TYPE = "knowledge_graph_index"
 NEO4J_QUERY_OFFLOAD_LIMIT = 8
-# 数据库游标每次预取的 chunk 数量边界，只控制查询频率和单页内存，不限制 LLM 并发。
-# 实际 LLM 并发只由 extractor_options.concurrency_count 决定；预取量会按其两倍动态计算后落在此范围内。
+# Prefetch chunk-count bounds per DB cursor page; only controls query frequency and single-page
+# memory, not LLM concurrency.
+# Effective LLM concurrency comes only from extractor_options.concurrency_count; the prefetch size is
+# dynamically set to twice that value and clamped to this range.
 GRAPH_BUILD_FETCH_MIN_SIZE = 100
 GRAPH_BUILD_FETCH_MAX_SIZE = 1000
-# 构建任务 INFO 汇总日志与前端进度更新间隔；单个 chunk 的耗时明细使用 DEBUG 日志。
+# Interval for build-task INFO summary logs and frontend progress updates; per-chunk timings use DEBUG logs.
 GRAPH_BUILD_LOG_INTERVAL_SECONDS = 5.0
 GRAPH_VECTOR_BATCH_SIZE = 100
 GRAPH_VECTOR_LEASE_SECONDS = 300
@@ -254,7 +256,7 @@ class MilvusGraphService:
         started_at = time.monotonic()
 
         logger.info(
-            f"图谱构建开始 kb_id={kb_id} pending={total_pending} "
+            f"Graph build started kb_id={kb_id} pending={total_pending} "
             f"extraction_concurrency={worker_count} fetch_size={fetch_size}"
         )
 
@@ -288,13 +290,14 @@ class MilvusGraphService:
                     except Exception as exc:
                         extraction_failed += 1
                         logger.error(
-                            f"Chunk 图谱抽取失败 kb_id={kb_id} chunk_id={chunk.chunk_id} worker={worker_index}: {exc}"
+                            f"Chunk graph extraction failed kb_id={kb_id} "
+                            f"chunk_id={chunk.chunk_id} worker={worker_index}: {exc}"
                         )
                     finally:
                         active_extractions -= 1
                         extraction_completed += 1
                         logger.debug(
-                            f"Chunk 图谱抽取结束 kb_id={kb_id} chunk_id={chunk.chunk_id} "
+                            f"Chunk graph extraction finished kb_id={kb_id} chunk_id={chunk.chunk_id} "
                             f"worker={worker_index} duration={time.monotonic() - extraction_started_at:.2f}s"
                         )
                 finally:
@@ -311,7 +314,7 @@ class MilvusGraphService:
                         await context.raise_if_cancelled()
                     chunk = await self.chunk_repo.get_by_chunk_id(chunk_id)
                     if chunk is None:
-                        raise ValueError(f"图谱写入找不到 chunk: {chunk_id}")
+                        raise ValueError(f"Graph write chunk not found: {chunk_id}")
                     extraction_result = await self._get_chunk_extraction_result(kb_id, chunk, extractor)
                     write_started_at = time.monotonic()
                     entities, triples = await asyncio.to_thread(
@@ -334,13 +337,13 @@ class MilvusGraphService:
                     vector_wakeup.set()
                     processed += 1
                     logger.debug(
-                        f"Chunk 图谱写入结束 kb_id={kb_id} chunk_id={chunk.chunk_id} "
+                        f"Chunk graph write finished kb_id={kb_id} chunk_id={chunk.chunk_id} "
                         f"entities={len(entities)} triples={len(triples)} "
                         f"duration={time.monotonic() - write_started_at:.2f}s"
                     )
                 except Exception as exc:
                     write_failed += 1
-                    logger.error(f"Chunk 图谱写入失败 kb_id={kb_id} chunk_id={chunk_id}: {exc}")
+                    logger.error(f"Chunk graph write failed kb_id={kb_id} chunk_id={chunk_id}: {exc}")
                 finally:
                     if chunk_id is not None:
                         write_completed += 1
@@ -384,7 +387,9 @@ class MilvusGraphService:
                     lock_token=lock_token,
                     error=str(exc),
                 )
-                logger.error(f"图谱向量索引失败 kb_id={kb_id} type={record_type} count={len(records)}: {exc}")
+                logger.error(
+                    f"Graph vector indexing failed kb_id={kb_id} type={record_type} count={len(records)}: {exc}"
+                )
             return len(records)
 
         async def vector_worker() -> None:
@@ -422,11 +427,12 @@ class MilvusGraphService:
                 extraction_rate = extraction_completed / elapsed
                 vector_counts = await self.graph_repo.count_vector_statuses_by_kb_id(kb_id)
                 message = (
-                    f"图谱构建：抽取 {extraction_completed}/{total_pending} "
-                    f"(活跃 {active_extractions}/{worker_count})，写入 {write_completed}/{total_pending}，"
-                    f"向量待处理 {vector_counts['pending'] + vector_counts['processing']}，"
-                    f"向量失败 {vector_counts['failed']}，抽取失败 {extraction_failed}，"
-                    f"写入失败 {write_failed}，抽取吞吐 {extraction_rate:.2f} chunk/s"
+                    f"Graph build: extracted {extraction_completed}/{total_pending} "
+                    f"(active {active_extractions}/{worker_count}), "
+                    f"written {write_completed}/{total_pending}, "
+                    f"vectors pending {vector_counts['pending'] + vector_counts['processing']}, "
+                    f"vectors failed {vector_counts['failed']}, extraction failed {extraction_failed}, "
+                    f"write failed {write_failed}, extraction throughput {extraction_rate:.2f} chunk/s"
                 )
                 logger.info(f"kb_id={kb_id} {message}")
                 if context is not None:
@@ -494,7 +500,7 @@ class MilvusGraphService:
         extraction_counts = await self.chunk_repo.count_graph_extraction_statuses_by_kb_id(kb_id)
         vector_counts = await self.graph_repo.count_vector_statuses_by_kb_id(kb_id)
         logger.info(
-            f"图谱构建结束 kb_id={kb_id} success={processed} extraction_failed={extraction_failed} "
+            f"Graph build finished kb_id={kb_id} success={processed} extraction_failed={extraction_failed} "
             f"write_failed={write_failed} remaining={remaining} "
             f"duration={time.monotonic() - started_at:.2f}s"
         )
@@ -510,7 +516,7 @@ class MilvusGraphService:
         }
         if incomplete or write_failed or vector_counts["failed"]:
             raise RuntimeError(
-                f"图谱构建执行异常：chunk_incomplete={incomplete}, "
+                f"Graph build execution failed: chunk_incomplete={incomplete}, "
                 f"write_failed={write_failed}, vector_failed={vector_counts['failed']}"
             )
         return result
@@ -573,12 +579,12 @@ class MilvusGraphService:
                     raise
                 delay = GRAPH_EXTRACTION_RETRY_DELAYS_SECONDS[attempt - 1]
                 logger.warning(
-                    f"Chunk 图谱抽取重试 kb_id={kb_id} chunk_id={chunk.chunk_id} "
+                    f"Chunk graph extraction retry kb_id={kb_id} chunk_id={chunk.chunk_id} "
                     f"attempt={attempt}/{GRAPH_EXTRACTION_MAX_ATTEMPTS} delay={delay:.1f}s: {exc}"
                 )
                 await asyncio.sleep(delay)
 
-        raise RuntimeError(f"Chunk 图谱抽取未返回结果: {chunk.chunk_id}")
+        raise RuntimeError(f"Chunk graph extraction returned no result: {chunk.chunk_id}")
 
     def write_chunk_graph(
         self,

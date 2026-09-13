@@ -197,6 +197,16 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
             **kwargs,
         )
     else:
+        if (
+            str(info.provider_id).startswith("openrouter")
+            or info.provider_type == "openrouter"
+            or "openrouter.ai" in (base_url or "")
+        ):
+            default_headers = dict(kwargs.pop("default_headers", {}) or {})
+            default_headers.setdefault("HTTP-Referer", "https://yuxi.local")
+            default_headers.setdefault("X-Title", "Yuxi")
+            kwargs["default_headers"] = default_headers
+
         llm = _ToolCallChunkFixChatOpenAI(
             model=info.model_id,
             api_key=SecretStr(api_key),
@@ -211,28 +221,27 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
 
 
 class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
-    """Chuẩn hóa name/id rỗng trong tool_call streaming chunks để tránh lỗi tích lũy stream v3."""
+    """Normalize empty name/id in tool_call streaming chunks to prevent LangGraph v3 stream accumulation bugs."""
 
     async def _astream(self, *args, **kwargs):
         async for chunk in super()._astream(*args, **kwargs):
-            _normalize_tool_call_chunks(chunk.message)
+            if hasattr(chunk, "message"):
+                _normalize_tool_call_chunks(chunk.message)
             yield chunk
 
     def _stream(self, *args, **kwargs):
         for chunk in super()._stream(*args, **kwargs):
-            _normalize_tool_call_chunks(chunk.message)
+            if hasattr(chunk, "message"):
+                _normalize_tool_call_chunks(chunk.message)
             yield chunk
 
 
 def _normalize_tool_call_chunks(message) -> None:
-    """Chuẩn hóa name/id rỗng trong tool_call chunks thành None.
-
-    Cơ chế tích lũy stream LangGraph v3 ghi đè giá trị sau lên giá trị trước: một số nhà cung cấp tương thích
-    OpenAI trả về chuỗi rỗng "" cho name/id ở các chunk tiếp theo, dẫn đến mất name/id gốc của chunk đầu.
-    Hàm này chuẩn hóa chuỗi rỗng thành None để giữ lại định danh tool_call_id chính xác.
-    """
-    for chunk in message.tool_call_chunks:
-        if chunk.get("name") == "":
-            chunk["name"] = None
-        if chunk.get("id") == "":
-            chunk["id"] = None
+    """Normalize empty name/id strings to None in tool_call chunks to preserve original tool identifiers."""
+    chunks = getattr(message, "tool_call_chunks", None) or []
+    for chunk in chunks:
+        if isinstance(chunk, dict):
+            if chunk.get("name") == "":
+                chunk["name"] = None
+            if chunk.get("id") == "":
+                chunk["id"] = None

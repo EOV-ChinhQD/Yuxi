@@ -278,10 +278,10 @@ class EvaluationService:
             raise ValueError("Dataset not found")
         metadata = dict(row.build_metadata or {})
         if metadata.get("source") != "generated":
-            raise ValueError("只能恢复自动生成的数据集")
+            raise ValueError("Chỉ có thể khôi phục tập dữ liệu được tạo tự động")
         params = metadata.get("params") or {}
         if not params:
-            raise ValueError("数据集缺少生成参数")
+            raise ValueError("Tập dữ liệu thiếu tham số tạo")
 
         existing_count = await self.eval_repo.count_dataset_items(dataset_id)
         total_count = int(params.get("count", 0))
@@ -292,9 +292,9 @@ class EvaluationService:
                 metadata,
                 status="completed",
                 progress=100,
-                message="完成",
+                message="Hoàn thành",
             )
-            return {"dataset_id": dataset_id, "message": "数据集已完成生成"}
+            return {"dataset_id": dataset_id, "message": "Tập dữ liệu đã hoàn thành tạo"}
 
         payload = {
             "dataset_id": dataset_id,
@@ -310,7 +310,7 @@ class EvaluationService:
             "graph_expand_top_k": int(params.get("graph_expand_top_k", 1)),
         }
         task, created = await tasker.enqueue_unique_by_payload(
-            name="继续生成评估数据集",
+            name="Tiếp tục tạo tập dữ liệu đánh giá",
             task_type="dataset_generation",
             payload=payload,
             coroutine=self._generate_dataset_task,
@@ -321,17 +321,17 @@ class EvaluationService:
             return {
                 "dataset_id": dataset_id,
                 "task_id": task.id,
-                "message": "已有进行中的生成任务",
+                "message": "Đã có tác vụ tạo đang chạy",
             }
         metadata["status"] = "pending"
         metadata["task_id"] = task.id
         metadata["progress"] = int(99 * existing_count / max(total_count, 1))
-        metadata["message"] = "恢复生成中"
+        metadata["message"] = "Đang khôi phục quá trình tạo"
         await self._update_dataset_build_metadata(dataset_id, metadata)
         return {
             "dataset_id": dataset_id,
             "task_id": task.id,
-            "message": "评估数据集生成任务已恢复",
+            "message": "Tác vụ tạo tập dữ liệu đánh giá đã được khôi phục",
         }
 
     async def generate_dataset(
@@ -450,7 +450,7 @@ class EvaluationService:
             }
             await self._update_dataset_build_metadata(dataset_id, completed_metadata)
             await self.eval_repo.update_dataset(dataset_id, {"item_count": existing_count})
-            await context.set_progress(100, "完成")
+            await context.set_progress(100, "Hoàn thành")
             return
 
         remaining_count = total_count - existing_count
@@ -497,7 +497,7 @@ class EvaluationService:
             try:
                 await flush_items()
             except Exception:
-                logger.exception(f"保存残余题目失败: {dataset_id}")
+                logger.exception(f"Lưu các câu hỏi còn sót thất bại: {dataset_id}")
 
         try:
             kb_config = await kb_manager.get_kb_config(kb_id)

@@ -32,7 +32,7 @@ def _coerce_glob_result(result) -> GlobResult:
 
 class CustomCompositeBackend(CompositeBackend):
     """
-    CompositeBackend đã sửa lỗi logic định tuyến glob。
+    CompositeBackend đã sửa lỗi logic định tuyến glob.
     """
 
     def glob(self, pattern: str, path: str = "/") -> GlobResult:
@@ -195,7 +195,7 @@ class _BackendScope:
 
 
 async def sync_agent_context_skills(context) -> None:
-    """在 Agent Run 初始化时同步当前上下文的共享 Skill 投影。"""
+    """Sync the shared skill projection of the current context during agent run initialization."""
     scope = _BackendScope.from_sources(
         context,
         readable_skills_source=context,
@@ -221,7 +221,7 @@ def create_agent_filesystem_middleware(
     if context is not None:
 
         def build_context_backend(_runtime):
-            """按可变运行上下文重建文件作用域，读取已同步的 Skill 投影。"""
+            """Rebuild the file scope from the mutable runtime context, reading the synced skill projection."""
             return _BackendScope.from_sources(
                 context,
                 readable_skills_source=context,

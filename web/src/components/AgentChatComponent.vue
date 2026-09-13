@@ -110,8 +110,8 @@
               </div>
             </template>
 
-            <!-- Trạng thái tải trong khi tạo - Hỗ trợ chính thức cho trò chuyện chính vàresumeQuy trình -->
-            <div class="generating-status" v-if="isReplyLoading && conversations.length > 0">
+            <!-- Loading status while generating - for main chat and resume flow -->
+            <div class="generating-status" v-if="shouldShowGeneratingStatus">
               <div class="generating-indicator">
                 <div class="loading-dots">
                   <div></div>
@@ -2155,6 +2155,35 @@ const isProcessing = computed(
 const isReplyLoading = computed(() => {
   const threadState = currentThreadState.value
   return Boolean(threadState?.replyLoadingVisible) && currentQueueSnapshot.value.status !== 'paused'
+})
+const shouldShowGeneratingStatus = computed(() => {
+  if (!isReplyLoading.value) return false
+  if (!conversations.value || conversations.value.length === 0) return false
+
+  const threadState = currentThreadState.value
+  if (threadState?.contextCompressing || hasQueuedRequests.value) {
+    return true
+  }
+
+  // Nếu tin nhắn trợ lý cuối cùng đã có nội dung văn bản/suy luận/công cụ hiển thị,
+  // ẩn thanh trạng thái loading ở đáy để không gây cảm giác delay sau khi đã trả lời xong
+  const lastConv = conversations.value[conversations.value.length - 1]
+  if (!lastConv || !lastConv.messages || lastConv.messages.length === 0) return true
+
+  const lastMsg = lastConv.messages[lastConv.messages.length - 1]
+  if (lastMsg && (lastMsg.type === 'ai' || lastMsg.role === 'assistant')) {
+    const hasVisibleContent = Boolean(
+      (lastMsg.content && String(lastMsg.content).trim()) ||
+      (lastMsg.reasoning_content && String(lastMsg.reasoning_content).trim()) ||
+      (lastMsg.additional_kwargs?.reasoning_content && String(lastMsg.additional_kwargs.reasoning_content).trim()) ||
+      (lastMsg.tool_calls && lastMsg.tool_calls.length > 0)
+    )
+    if (hasVisibleContent) {
+      return false
+    }
+  }
+
+  return true
 })
 const replyLoadingText = computed(() => {
   const threadState = currentThreadState.value

@@ -281,7 +281,7 @@ async def test_generate_dataset_task_fails_when_generated_count_is_below_target(
         }
     )
 
-    with pytest.raises(ValueError, match="仅生成 1/5 道有效评估题目"):
+    with pytest.raises(ValueError, match=r"(Chỉ tạo được|仅生成) 1/5"):
         await service._generate_dataset_task(context)
 
     assert len(added_items) == 1
@@ -331,7 +331,7 @@ async def test_resume_dataset_generation_enqueues_new_task(monkeypatch):
     result = await service.resume_dataset_generation("kb_1", "ds_1", "user_1")
 
     assert result["task_id"] == "task_2"
-    assert result["message"] == "评估数据集生成任务已恢复"
+    assert result["message"] in {"Tác vụ tạo tập dữ liệu đánh giá đã được khôi phục", "评估数据集生成任务已恢复"}
     assert captured["payload_match"] == {"dataset_id": "ds_1"}
     assert captured["statuses"] == {"pending", "running"}
     assert captured["payload"]["dataset_id"] == "ds_1"
@@ -369,7 +369,7 @@ async def test_resume_dataset_generation_returns_existing_task(monkeypatch):
     result = await service.resume_dataset_generation("kb_1", "ds_1", "user_1")
 
     assert result["task_id"] == "task_1"
-    assert "已有" in result["message"]
+    assert any(k in result["message"] for k in ("Đã có", "已有"))
 
 
 @pytest.mark.asyncio
@@ -394,8 +394,7 @@ async def test_resume_dataset_generation_when_already_complete():
     service.eval_repo = FakeRepo()
 
     result = await service.resume_dataset_generation("kb_1", "ds_1", "user_1")
-
-    assert result["message"] == "数据集已完成生成"
+    assert result["message"] in {"Tập dữ liệu đã hoàn thành tạo", "数据集已完成生成"}
 
 
 class FlakyQueryKB:

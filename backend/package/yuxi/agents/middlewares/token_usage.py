@@ -1,8 +1,9 @@
-"""Yuxi Agent 的 Token 用量观测中间件。
+"""Token usage observability middleware for Yuxi Agent.
 
-在每次主模型调用后估算近似上下文占用，并持久化 Provider 返回的实际
-usage_metadata，按配置模型分桶累计到 Run 与 Thread 两级；快照写入
-LangGraph state 供状态面板读取，便于展示与核对真实账单。
+Estimate approximate context usage after each primary model call and persist the
+actual usage_metadata returned by the provider, accumulating per configured-model
+buckets at both Run and Thread levels; snapshots are written to LangGraph state
+for the status panel to display and reconcile against real billing.
 """
 
 from __future__ import annotations
@@ -57,7 +58,7 @@ TOKEN_USAGE_CONTEXT_FIELDS = frozenset(
 
 
 class TokenUsagePayload(TypedDict, total=False):
-    """可序列化的 Token 用量快照，存入 LangGraph state。"""
+    """Serializable token usage snapshot stored in LangGraph state."""
 
     state_message_count: int
     state_message_count_before_call: int
@@ -89,18 +90,19 @@ class TokenUsagePayload(TypedDict, total=False):
 
 
 class TokenUsageState(AgentState):
-    """扩展 Agent state，携带最新的 Token 用量快照。"""
+    """Extended Agent state carrying the latest token usage snapshot."""
 
     token_usage: NotRequired[TokenUsagePayload]
 
 
 class TokenUsageMiddleware(AgentMiddleware[TokenUsageState]):
-    """观测主模型调用并记录近似上下文与实际 Token 用量。
+    """Observe primary model calls and record approximate context and actual token usage.
 
-    ``wrap_model_call`` 在每次模型调用后构建用量快照写入 state；快照同时
-    保留上下文估算字段（``TOKEN_USAGE_CONTEXT_FIELDS``）与按模型分桶的
-    Run/Thread 累计聚合。``before_agent`` 在 Run 入口重置 Run 级累计，
-    并剔除已禁用 Provider 的历史用量桶。
+    ``wrap_model_call`` builds a usage snapshot after each model call and writes it
+    to state; the snapshot keeps both context-estimate fields
+    (``TOKEN_USAGE_CONTEXT_FIELDS``) and per-model bucketed Run/Thread aggregate
+    totals. ``before_agent`` resets Run-level totals at the Run entry and drops
+    historical usage buckets from disabled providers.
     """
 
     state_schema = TokenUsageState
@@ -110,7 +112,7 @@ class TokenUsageMiddleware(AgentMiddleware[TokenUsageState]):
         self.token_counter = token_counter
 
     def before_agent(self, state: TokenUsageState, runtime: Any) -> dict[str, Any] | None:
-        """在 Run 入口重置 Run 级用量，同时保留 v2 线程累计。"""
+        """Reset Run-level usage at the Run entry while keeping v2 thread totals."""
         run_id = str(getattr(runtime.context, "run_id", None) or "")
         previous = state.get("token_usage")
         previous = previous if isinstance(previous, Mapping) else {}
@@ -137,7 +139,7 @@ class TokenUsageMiddleware(AgentMiddleware[TokenUsageState]):
         }
 
     async def abefore_agent(self, state: TokenUsageState, runtime: Any) -> dict[str, Any] | None:
-        """异步入口复用同步 Run 初始化逻辑。"""
+        """Async entry reusing the sync Run initialization logic."""
         return self.before_agent(state, runtime)
 
     def wrap_model_call(
@@ -163,7 +165,7 @@ class TokenUsageMiddleware(AgentMiddleware[TokenUsageState]):
         )
 
     def _build_snapshot(self, request: ModelRequest, response: ModelResponse) -> TokenUsagePayload:
-        """根据单次模型请求与响应构建完整用量快照。"""
+        """Build a full usage snapshot from a single model request and response."""
         state_messages = list(request.state.get("messages") or [])
         llm_messages = list(request.messages or [])
         system_messages = [request.system_message] if request.system_message is not None else []
@@ -275,7 +277,7 @@ class TokenUsageMiddleware(AgentMiddleware[TokenUsageState]):
 
 
 def _safe_int(value: Any) -> int | None:
-    """将数值安全转换为 int，bool 与非整数值返回 None。"""
+    """Safely convert a numeric value to int; return None for bool and non-integral values."""
     if isinstance(value, bool):
         return None
     if isinstance(value, int):
@@ -286,12 +288,12 @@ def _safe_int(value: Any) -> int | None:
 
 
 def _ratio(numerator: int, denominator: int) -> float | None:
-    """计算比例，分母为 0 时返回 None 而非抛出除零异常。"""
+    """Compute a ratio; return None when the denominator is 0 instead of raising."""
     return round(numerator / denominator, 4) if denominator > 0 else None
 
 
 def _empty_aggregate() -> dict[str, Any]:
-    """构造一个空的 v2 聚合结构，作为 Run/Thread 用量的初始状态。"""
+    """Build an empty v2 aggregate structure as the initial Run/Thread usage state."""
     return {
         "schema_version": 2,
         "model_call_count": 0,
@@ -304,7 +306,7 @@ def _empty_aggregate() -> dict[str, Any]:
 
 
 def _aggregate_from_state(value: Any) -> dict[str, Any]:
-    """校验并规整从 state 读取的聚合结构，schema_version 不匹配时回退为空聚合。"""
+    """Validate and normalize an aggregate read from state; fall back to empty on version mismatch."""
     if not isinstance(value, Mapping) or value.get("schema_version") != 2:
         return _empty_aggregate()
     models = value.get("models")
@@ -323,7 +325,7 @@ def _aggregate_from_state(value: Any) -> dict[str, Any]:
 
 
 def _recompute_aggregate_totals(aggregate: dict[str, Any]) -> None:
-    """根据当前 models 重算聚合级计数和 total。"""
+    """Recompute aggregate-level counts and total from the current models."""
     models = aggregate["models"]
     model_call_count = sum(
         _safe_int(bucket.get("model_call_count")) or 0 for bucket in models.values() if isinstance(bucket, Mapping)
@@ -352,7 +354,7 @@ def _recompute_aggregate_totals(aggregate: dict[str, Any]) -> None:
 
 
 def _add_unavailable_call(aggregate: Mapping[str, Any]) -> dict[str, Any]:
-    """记录一次无法获得可信 Provider usage 的模型调用。"""
+    """Record one model call with no trustworthy provider usage."""
     result = _aggregate_from_state(aggregate)
     result["usage_unavailable_call_count"] += 1
     _recompute_aggregate_totals(result)
@@ -360,7 +362,7 @@ def _add_unavailable_call(aggregate: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _without_blacklisted_providers(aggregate: Mapping[str, Any]) -> dict[str, Any]:
-    """移除历史 checkpoint 中已禁用 Provider 的错误用量桶。"""
+    """Drop stale usage buckets from disabled providers in historical checkpoints."""
     result = _aggregate_from_state(aggregate)
     result["models"] = {
         key: bucket
@@ -375,7 +377,7 @@ def _without_blacklisted_providers(aggregate: Mapping[str, Any]) -> dict[str, An
 
 
 def _bucket_key(identity: Mapping[str, str], model: Any) -> tuple[str, str]:
-    """按优先级选取用量分桶 key：配置的 model spec > 响应携带的 model id > 适配器兜底标识。"""
+    """Pick the usage bucket key by priority: configured model spec > response model id > adapter fallback."""
     configured_spec = identity.get("configured_model_spec")
     if configured_spec:
         return configured_spec, "configured_metadata"
@@ -395,7 +397,7 @@ def _add_call_to_aggregate(
     identity: Mapping[str, str],
     usage: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
-    """把一次模型调用的 usage 累加进指定分桶，同时更新缓存命中统计和聚合总计。"""
+    """Accumulate one model call's usage into the target bucket, updating cache stats and totals."""
     result = _aggregate_from_state(aggregate)
     models = result["models"]
     previous_bucket = models.get(bucket_key)
@@ -447,7 +449,7 @@ def _add_call_to_aggregate(
 
 
 def _model_context_window(model: Any) -> int | None:
-    """读取模型配置的上下文窗口大小，未配置或非法时返回 None。"""
+    """Read the configured model context window size; return None when unset or invalid."""
     profile = getattr(model, "profile", None)
     if not isinstance(profile, Mapping):
         return None
@@ -456,7 +458,7 @@ def _model_context_window(model: Any) -> int | None:
 
 
 def _summary_trigger_tokens(runtime_context: Any) -> int | None:
-    """读取运行时上下文的摘要触发阈值并转换为 token 数，未配置时返回 None。"""
+    """Read the summarization trigger threshold from runtime context as tokens; None when unset."""
     threshold = _safe_int(getattr(runtime_context, "summary_threshold", None))
     if threshold is None or threshold <= 0:
         return None
@@ -464,17 +466,17 @@ def _summary_trigger_tokens(runtime_context: Any) -> int | None:
 
 
 def _is_summary_message(message: AnyMessage) -> bool:
-    """判断消息是否为摘要中间件产生的摘要消息。"""
+    """Check whether a message is a summary message produced by the summarization middleware."""
     return getattr(message, "additional_kwargs", {}).get("lc_source") == "summarization"
 
 
 def _is_tool_message(message: AnyMessage) -> bool:
-    """判断消息是否为工具消息。"""
+    """Check whether a message is a tool message."""
     return getattr(message, "type", None) == "tool" or getattr(message, "role", None) == "tool"
 
 
 def _ai_message_from_response(response: ModelResponse) -> AIMessage | None:
-    """从模型响应结果中取最后一条 AIMessage。"""
+    """Take the last AIMessage from the model response result."""
     for message in reversed(response.result):
         if isinstance(message, AIMessage):
             return message
@@ -482,14 +484,14 @@ def _ai_message_from_response(response: ModelResponse) -> AIMessage | None:
 
 
 def _model_usage_from_response(response: ModelResponse) -> dict[str, Any] | None:
-    """提取响应中 AIMessage 携带的原始 usage_metadata。"""
+    """Extract the raw usage_metadata carried by the AIMessage in the response."""
     message = _ai_message_from_response(response)
     usage = getattr(message, "usage_metadata", None) if message else None
     return dict(usage) if isinstance(usage, Mapping) else None
 
 
 def _usage_for_accumulation(usage: Mapping[str, Any] | None) -> UsageMetadata | None:
-    """保留可累计的数值 token 字段，忽略 Provider 的非数值扩展元数据。"""
+    """Keep accumulable numeric token fields and ignore non-numeric provider extension metadata."""
     if not usage:
         return None
 
@@ -514,13 +516,13 @@ def _usage_for_accumulation(usage: Mapping[str, Any] | None) -> UsageMetadata | 
 
 
 def _usage_input_tokens(usage: Mapping[str, Any] | None) -> int:
-    """读取 usage 中的 input_tokens，缺失或非法时返回 0。"""
+    """Read input_tokens from usage; return 0 when missing or invalid."""
     value = usage.get("input_tokens") if usage else None
     return value if isinstance(value, int) and not isinstance(value, bool) else 0
 
 
 def _cache_read_tokens(usage: Mapping[str, Any] | None) -> int | None:
-    """按优先级从 input_token_details 中读取缓存命中 token 数，未观测到缓存字段时返回 None。"""
+    """Read cache-hit token counts from input_token_details by priority; None when no cache fields observed."""
     details = usage.get("input_token_details") if usage else None
     if not isinstance(details, Mapping):
         return None
@@ -533,7 +535,7 @@ def _cache_read_tokens(usage: Mapping[str, Any] | None) -> int | None:
 
 
 def _model_identity(request: ModelRequest, response: ModelResponse) -> dict[str, str]:
-    """依次从模型元数据、运行时上下文配置的 model spec、model_cache 和响应元数据解析模型身份信息。"""
+    """Resolve model identity from model metadata, runtime-context spec, model_cache, and response metadata."""
     model_metadata = getattr(request.model, "metadata", None) or {}
     runtime_context = getattr(request.runtime, "context", None)
     configured_spec = getattr(runtime_context, "model", None)

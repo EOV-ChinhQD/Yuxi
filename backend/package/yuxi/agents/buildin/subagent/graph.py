@@ -30,7 +30,7 @@ from yuxi.agents.tool_approval import SENSITIVE_BACKEND_TOOLS, normalize_tool_ap
 from yuxi.agents.toolkits.service import resolve_configured_runtime_tools
 
 _SUBAGENT_DISABLED_TOOLS = frozenset({"present_artifacts", "ask_user_question", "install_skill"})
-# 默认审批模式额外隐藏敏感 backend 工具，避免子智能体绕过主线程逐项审批。
+# In default approval mode, hide sensitive backend tools to prevent subagents from bypassing main-thread approval.
 _SUBAGENT_DISABLED_TOOLS_DEFAULT_MODE = _SUBAGENT_DISABLED_TOOLS | SENSITIVE_BACKEND_TOOLS
 
 
@@ -43,7 +43,7 @@ def _tool_name(tool) -> str | None:
 
 
 def _disabled_tools_for(mode: str) -> frozenset[str]:
-    # 调用方已在边界 normalize 过 mode，这里直接按值选择隐藏集合。
+    # The caller has already normalized mode at the boundary; select the hidden set directly by value here.
     if mode == "always_trust":
         return _SUBAGENT_DISABLED_TOOLS
     return _SUBAGENT_DISABLED_TOOLS_DEFAULT_MODE

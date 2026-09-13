@@ -29,8 +29,8 @@ BUILTIN_SKILLS: list[BuiltinSkillSpec] = [
         slug="html-preview",
         source_dir=_SKILLS_ROOT / "html-preview",
         description=(
-            "使用 Markdown `html:preview` 围栏输出轻量静态 HTML/CSS 可视化，"
-            "适合数值对比、流程、时间线、层级关系和关键指标。"
+            "Render lightweight static HTML/CSS visualizations with Markdown `html:preview` fences, "
+            "suitable for numeric comparisons, flows, timelines, hierarchies, and key metrics."
         ),
         version="2026.07.23",
     ),

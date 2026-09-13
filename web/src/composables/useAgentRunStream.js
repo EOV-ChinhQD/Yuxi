@@ -465,8 +465,9 @@ export function useAgentRunStream({
           const runRes = await agentApi.getAgentRun(snapshot.run_id)
           const run = runRes?.run
           if (run?.status === RUN_INTERRUPTED_STATUS) {
-            // Chỉ khôi phục từ ảnh chụp nhanh nếu ngắt vẫn được giữ cục bộ；Mặt khác, các ngắt cũ không thể được phát lại chỉ dựa trên ảnh chụp nhanh
-            // （có thể đã được trả lời），Để nó ở dưới cùng active_run Đưa ra phán quyết có thẩm quyền。
+            // Only restore from snapshot if the interrupt is still held locally; otherwise old
+            // interrupts (possibly already answered) must not replay from snapshot alone.
+            // Fall through to the authoritative active_run verdict below.
             if (hasPendingInterruptForRun(ts, run.id)) {
               await preserveInterruptedRun(threadId, run, snapshot)
               return

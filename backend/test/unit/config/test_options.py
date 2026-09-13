@@ -177,18 +177,18 @@ def test_sensitive_fields_use_explicit_metadata():
 async def test_update_rejects_unknown_fields_and_invalid_urls(db_session):
     await options.ensure_options_in_db(db_session)
 
-    with pytest.raises(ValueError, match="未知配置字段"):
+    with pytest.raises(ValueError, match="Unknown option fields"):
         await options.update_option_value(db_session, "mineru_ocr_host_opts", {"unknown": "x"}, "tester")
     with pytest.raises(ValueError):
         await options.update_option_value(db_session, "mineru_ocr_host_opts", {"server_url": "not-url"}, "tester")
-    with pytest.raises(ValueError, match="配置值必须是列表"):
+    with pytest.raises(ValueError, match="Option value must be a list"):
         await options.update_option_value(
             db_session,
             "remote_skill_source_policy",
             {"allowed_hosts": "github.com"},
             "tester",
         )
-    with pytest.raises(ValueError, match="配置值必须是字符串列表"):
+    with pytest.raises(ValueError, match="Option value must be a string list"):
         await options.update_option_value(
             db_session,
             "remote_skill_source_policy",

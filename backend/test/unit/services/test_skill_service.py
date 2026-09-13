@@ -265,7 +265,13 @@ async def test_runtime_access_still_excludes_disabled_shared_skill(monkeypatch: 
         async def list_enabled(self):
             return []
 
+    from types import SimpleNamespace
+
+    async def fake_list_personal_skills(_uid, *args, **kwargs):
+        return SimpleNamespace(items=[])
+
     monkeypatch.setattr(svc, "SkillRepository", FakeRepo)
+    monkeypatch.setattr(svc, "list_personal_skills", fake_list_personal_skills)
 
     assert svc.user_can_access_skill(_user("root", role="user"), skill) is False
     assert await svc.list_accessible_skills(None, _user("root", role="user")) == []
@@ -389,7 +395,10 @@ async def test_confirm_skill_install_draft_only_processes_selected_slugs(
     assert results == [{"slug": "beta", "success": False, "error": "beta failed"}]
 
 
-@pytest.mark.parametrize(("slugs", "message"), [([], "至少选择一个 Skill"), (["missing"], "草稿外的 Skill")])
+@pytest.mark.parametrize(
+    ("slugs", "message"),
+    [([], "Select at least one Skill"), (["missing"], "contains Skills outside the draft")],
+)
 @pytest.mark.asyncio
 async def test_confirm_skill_install_draft_rejects_invalid_selection(
     tmp_path: Path,
@@ -475,8 +484,7 @@ def test_html_preview_builtin_skill_spec():
     content = (html_preview["source_dir"] / "SKILL.md").read_text(encoding="utf-8")
     assert "```html:preview" in content
     assert "\n    ```html:preview" not in content
-    assert "最多只能有 3 个前导空格" in content
-    assert "普通 `html` 代码块" in content
+    assert "at most 3 leading spaces" in content
 
 
 def test_deep_research_builtin_skill_includes_html_preview_dependency():

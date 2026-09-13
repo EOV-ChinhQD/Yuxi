@@ -23,13 +23,11 @@ def test_workspace_root_creates_default_agent_context_files(tmp_path: Path, monk
     root = svc._workspace_root(_user())
 
     assert root == tmp_path / "threads" / "shared" / "user-1" / "workspace"
-    assert (root / "agents" / "AGENTS.md").read_text(encoding="utf-8") == (
-        "# AGENTS\n\n以下是约束 Agent 行为的一些要求\n"
-    )
-    assert (root / "agents" / "USER.md").read_text(encoding="utf-8") == ("# USER\n\n以下是有关用户的一些信息\n")
-    assert (root / "agents" / "MEMORY.md").read_text(encoding="utf-8") == (
-        "# MEMORY\n\n以下是 Agent 需要记住的一些信息\n"
-    )
+    from yuxi.utils.paths import WORKSPACE_AGENT_CONTEXT_FILES
+
+    assert (root / "agents" / "AGENTS.md").read_text(encoding="utf-8") == WORKSPACE_AGENT_CONTEXT_FILES["AGENTS.md"]
+    assert (root / "agents" / "USER.md").read_text(encoding="utf-8") == WORKSPACE_AGENT_CONTEXT_FILES["USER.md"]
+    assert (root / "agents" / "MEMORY.md").read_text(encoding="utf-8") == WORKSPACE_AGENT_CONTEXT_FILES["MEMORY.md"]
 
 
 def test_ensure_thread_dirs_creates_default_agent_context_files(tmp_path: Path, monkeypatch) -> None:
