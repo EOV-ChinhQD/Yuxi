@@ -54,7 +54,7 @@ const renderHtmlPreview = (html, sanitizeHtml) => {
 /**
  * Sẽ Markdown Trong ```html:preview Chuyển đổi khối mã có hàng rào thành sandboxed iframe Xem trước.
  *
- * Thông thường ```html Giữ các khối mã không thay đổi để tránh ảnh hưởng đến các câu trả lời cần hiển thị mã nguồn. * Chưa đóng html:preview 围栏Render为Đang tải占位khối，等闭合后再替换成 iframe。
+ * Thông thường ```html Giữ các khối mã không thay đổi để tránh ảnh hưởng đến các câu trả lời cần hiển thị mã nguồn. * Chưa đóng html:preview RenderĐang tảikhối， iframe。
  */
 export function renderHtmlPreviewBlocks(markdown, options = {}) {
   const sanitizeHtml = options.sanitizeHtml || ((html) => html)

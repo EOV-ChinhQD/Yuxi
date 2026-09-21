@@ -829,7 +829,7 @@ const handleFetchUrls = async () => {
     return
   }
 
-  newUrl.value = '' // Xóa sạchNhập框
+  newUrl.value = '' // Clear input box
   fetchingUrls.value = true
 
   await Promise.all(newItems.map(fetchSingleUrlItem))
@@ -948,7 +948,7 @@ const isOcrEnabled = computed(() => {
   return processingParams.value.ocr_engine !== 'disable'
 })
 
-// chế độ tải lên切换相关逻辑Đã移除
+// Upload mode toggle logic removed
 
 // Thuộc tính tính toán: có tồn tại khôngPDFHoặc tệp hình ảnh
 const hasPdfOrImageFiles = computed(() => {
@@ -1534,7 +1534,7 @@ const chunkData = async () => {
 
   // URL Xử lý theo chế độ
   if (uploadMode.value === 'url') {
-    // 过滤出Thành côngcủaMục
+    // Filter successful items
     const successfulItems = urlList.value.filter((item) => item.status === 'success' && item.data)
     if (successfulItems.length === 0) {
       message.error('Vui lòng thêm và chờ ít nhất một URL phân tíchThành công')

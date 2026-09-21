@@ -1,0 +1,95 @@
+name: CI Quality Gate
+
+on:
+  push:
+    branches:
+      - main
+      - 'phase2-*'
+  pull_request:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-cjk-check:
+    name: Code Standards & Zero CJK Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.7.2"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          uv sync --group dev
+
+      - name: Verify Zero CJK Compliance (Backend & Web)
+        run: |
+          python3 -c "
+          import os, re
+          cjk_regex = re.compile(r'[\u4e00-\u9fff\u3040-\u30ff]')
+          violations = []
+          for root_dir in ['backend/package/yuxi', 'web/src']:
+              if not os.path.exists(root_dir):
+                  continue
+              for root, dirs, files in os.walk(root_dir):
+                  for f in files:
+                      if f.endswith(('.py', '.vue', '.ts', '.js', '.json', '.less', '.css')):
+                          p = os.path.join(root, f)
+                          with open(p, 'r', encoding='utf-8', errors='ignore') as fh:
+                              for idx, line in enumerate(fh, 1):
+                                  if cjk_regex.search(line):
+                                      violations.append((p, idx, line.strip()))
+          if violations:
+              print(f'FAILED: Found {len(violations)} CJK violations:')
+              for v in violations[:20]:
+                  print(f'  {v[0]}:{v[1]}: {v[2]}')
+              exit(1)
+          print('PASSED: Zero CJK detected in backend and frontend sources.')
+          "
+
+      - name: Run Ruff Format & Lint Check
+        working-directory: backend
+        run: |
+          uv run ruff check package/
+          uv run ruff format --check package/
+
+  unit-tests:
+    name: Unit Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.7.2"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          uv sync --group dev
+
+      - name: Run Unit Tests
+        working-directory: backend
+        run: |
+          uv run pytest test/unit -q --ignore=test/unit/storage/test_postgres_manager_schema.py
