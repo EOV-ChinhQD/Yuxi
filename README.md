@@ -180,8 +180,9 @@ docker compose up -d --build
 - Thực nghiệm kiểm chứng toàn diện trên tập dữ liệu chuẩn **ViQuAD**: Đạt **Recall@5 = 89.20%**, **MRR = 0.8140**, và **F1-Score thế hệ tác tử đạt 89.94%**.
 
 ### 2. Tài liệu Kiểm thử & Nghiệm thu
-- Báo cáo chi tiết nghiệm thu: [`docs/vibe/2026-09-21-nghiem-thu-rag-benchmark.md`](docs/vibe/2026-09-21-nghiem-thu-rag-benchmark.md)
-- Kế hoạch triển khai mã nguồn: [`docs/plans/2026-09-21-gitnexus-plan-phase3-phase4-delivery.md`](docs/plans/2026-09-21-gitnexus-plan-phase3-phase4-delivery.md)
+- **Báo cáo Khoa học & Nghiệm thu Độc lập Toàn diện**: [`docs/vibe/2026-09-21-comprehensive-rag-agent-evaluation-report.md`](docs/vibe/2026-09-21-comprehensive-rag-agent-evaluation-report.md)
+- **Nhật ký Thực nghiệm Benchmark**: [`docs/vibe/2026-09-21-nghiem-thu-rag-benchmark.md`](docs/vibe/2026-09-21-nghiem-thu-rag-benchmark.md)
+- **Kế hoạch Triển khai Mã nguồn**: [`docs/plans/2026-09-21-gitnexus-plan-phase3-phase4-delivery.md`](docs/plans/2026-09-21-gitnexus-plan-phase3-phase4-delivery.md)
 
 ---
 

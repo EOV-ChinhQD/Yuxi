@@ -168,6 +168,14 @@ docker compose up -d --build
 
 ---
 
+## 📊 Benchmark & Evaluation Reports
+
+- **Comprehensive Scientific & Acceptance Evaluation Report**: [`docs/vibe/2026-09-21-comprehensive-rag-agent-evaluation-report.md`](docs/vibe/2026-09-21-comprehensive-rag-agent-evaluation-report.md)
+- **ViQuAD Benchmark Run Log**: [`docs/vibe/2026-09-21-nghiem-thu-rag-benchmark.md`](docs/vibe/2026-09-21-nghiem-thu-rag-benchmark.md)
+- **Delivery & Implementation Plan**: [`docs/plans/2026-09-21-gitnexus-plan-phase3-phase4-delivery.md`](docs/plans/2026-09-21-gitnexus-plan-phase3-phase4-delivery.md)
+
+---
+
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
