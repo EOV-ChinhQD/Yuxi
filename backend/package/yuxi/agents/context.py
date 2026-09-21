@@ -60,6 +60,7 @@ def _role_can_access(auth: str | None, role: str | None) -> bool:
 
 _WORKSPACE_PROMPT_CACHE: dict[str, dict] = {}
 
+
 def _load_workspace_agents_prompt(thread_id: str, uid: str) -> str:
     prompt_file = sandbox_workspace_agents_prompt_file(thread_id, uid)
     try:
@@ -90,7 +91,7 @@ def _load_workspace_agents_prompt(thread_id: str, uid: str) -> str:
         return ""
     if len(content) > WORKSPACE_AGENTS_PROMPT_MAX_BYTES:
         prompt = f"{prompt}\n\n[AGENTS.md Content has been truncated]"
-    
+
     _WORKSPACE_PROMPT_CACHE[cache_key] = {"mtime": mtime, "content": prompt}
     return prompt
 

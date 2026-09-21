@@ -156,7 +156,7 @@ class AgentEnv(Base):
 
 
 class UserConfig(Base):
-    """用户级配置"""
+    """User level configuration"""
 
     __tablename__ = "user_config"
 
@@ -286,7 +286,7 @@ class Conversation(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, comment="Primary key")
     thread_id = Column(String(64), unique=True, index=True, nullable=False, comment="Thread ID (UUID)")
     uid = Column(String(64), index=True, nullable=False, comment="UID")
-    # 历史字段名，实际保存的是 Agent.slug。
+    # Legacy field name, stores Agent.slug.
     agent_id = Column(String(64), index=True, nullable=False, comment="Agent slug (legacy column name: agent_id)")
     title = Column(String(255), nullable=True, comment="Conversation title")
     status = Column(String(20), default="active", comment="Status: active/archived/deleted")
@@ -318,7 +318,7 @@ class Conversation(Base):
 
 
 class SubagentThread(Base):
-    """SubagentThread table - 子智能体长期线程归属关系表"""
+    """SubagentThread table - Subagent persistent thread mapping table"""
 
     __tablename__ = "subagent_threads"
 

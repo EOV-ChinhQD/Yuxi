@@ -4,9 +4,9 @@ import markdownItTaskCheckbox from 'markdown-it-task-checkbox'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  lang: 'zh-CN',
+  lang: 'en-US',
   title: "Yuxi",
-  description: "语析",
+  description: "Yuxi Intelligent Knowledge Base & Multi-Agent RAG Platform",
   base: '/Yuxi/',
   ignoreDeadLinks: [
     /localhost/,
@@ -23,55 +23,55 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     logo: "/favicon.svg",
     nav: [
-      { text: '快速开始', link: '/intro/quick-start' },
-      { text: '智能体开发', link: '/agents/agents-config' }
+      { text: 'Quick Start', link: '/intro/quick-start' },
+      { text: 'Agent Development', link: '/agents/agents-config' }
     ],
 
     sidebar: [
       {
-        text: '简介',
+        text: 'Introduction',
         items: [
-          { text: '什么是 Yuxi？', link: '/intro/project-overview' },
-          { text: '快速开始', link: '/intro/quick-start' },
-          { text: '命令行工具', link: '/intro/cli' },
-          { text: '模型配置', link: '/intro/model-config' },
-          { text: '知识库与知识图谱', link: '/intro/knowledge-base' },
-          { text: '知识库评估', link: '/intro/evaluation' }
+          { text: 'What is Yuxi?', link: '/intro/project-overview' },
+          { text: 'Quick Start', link: '/intro/quick-start' },
+          { text: 'CLI Tool', link: '/intro/cli' },
+          { text: 'Model Configuration', link: '/intro/model-config' },
+          { text: 'Knowledge Base & Graph', link: '/intro/knowledge-base' },
+          { text: 'KB Evaluation', link: '/intro/evaluation' }
         ]
       },
       {
-        text: '智能体开发',
+        text: 'Agent Development',
         items: [
-          { text: '智能体配置', link: '/agents/agents-config' },
-          { text: '工具系统', link: '/agents/tools-system' },
-          { text: '中间件', link: '/agents/middleware' },
-          { text: '智能体评估', link: '/agents/agent-evaluation' },
-          { text: '沙盒架构与设计', link: '/agents/sandbox-architecture' },
-          { text: 'MCP 集成', link: '/agents/mcp-integration' },
-          { text: 'Skills 管理', link: '/agents/skills-management' },
-          { text: '子智能体', link: '/agents/subagents-management' }
+          { text: 'Agent Configuration', link: '/agents/agents-config' },
+          { text: 'Tools System', link: '/agents/tools-system' },
+          { text: 'Middleware', link: '/agents/middleware' },
+          { text: 'Agent Evaluation', link: '/agents/agent-evaluation' },
+          { text: 'Sandbox Architecture', link: '/agents/sandbox-architecture' },
+          { text: 'MCP Integration', link: '/agents/mcp-integration' },
+          { text: 'Skills Management', link: '/agents/skills-management' },
+          { text: 'Subagents', link: '/agents/subagents-management' }
         ]
       },
       {
-        text: '高级配置',
+        text: 'Advanced Configuration',
         items: [
-          { text: '配置系统详解', link: '/advanced/configuration' },
-          { text: 'Langfuse 集成', link: '/advanced/langfuse-integration' },
-          { text: '文档解析', link: '/advanced/document-processing' },
-          { text: '品牌自定义', link: '/advanced/branding' },
-          { text: '其他配置', link: '/advanced/misc' },
-          { text: '生产部署', link: '/advanced/deployment' },
-          { text: 'API Key 外部集成', link: '/advanced/api-key-integration' }
+          { text: 'Configuration System', link: '/advanced/configuration' },
+          { text: 'Langfuse Integration', link: '/advanced/langfuse-integration' },
+          { text: 'Document Processing', link: '/advanced/document-processing' },
+          { text: 'Branding Customization', link: '/advanced/branding' },
+          { text: 'Miscellaneous', link: '/advanced/misc' },
+          { text: 'Production Deployment', link: '/advanced/deployment' },
+          { text: 'API Key Integration', link: '/advanced/api-key-integration' }
         ]
       },
       {
-        text: '开发指南',
+        text: 'Development Guides',
         items: [
-          { text: '参与贡献', link: '/develop-guides/contributing' },
-          { text: '开发路线图', link: '/develop-guides/roadmap' },
-          { text: '版本变更记录', link: '/develop-guides/changelog' },
-          { text: '界面设计规范', link: '/develop-guides/design' },
-          { text: '测试规范', link: '/develop-guides/testing-guidelines' },
+          { text: 'Contributing', link: '/develop-guides/contributing' },
+          { text: 'Roadmap', link: '/develop-guides/roadmap' },
+          { text: 'Changelog', link: '/develop-guides/changelog' },
+          { text: 'UI Design Guidelines', link: '/develop-guides/design' },
+          { text: 'Testing Guidelines', link: '/develop-guides/testing-guidelines' },
         ]
       }
     ],
@@ -81,17 +81,17 @@ export default defineConfig({
     ],
 
     footer: {
-      message: '本项目基于 MIT License 开源，欢迎使用和贡献。',
+      message: 'Released under the MIT License.',
       copyright: 'Copyright © 2025-present Yuxi'
     },
 
     editLink: {
       pattern: 'https://github.com/xerrors/Yuxi/edit/main/docs/:path',
-      text: '在 GitHub 上编辑此页'
+      text: 'Edit this page on GitHub'
     },
 
     lastUpdated: {
-      text: '最后更新时间',
+      text: 'Last Updated',
       formatOptions: {
         dateStyle: 'full',
         timeStyle: 'medium'
@@ -99,12 +99,24 @@ export default defineConfig({
     },
 
     search: {
-      provider: 'local'
-    },
-
-    docFooter: {
-      prev: '上一页',
-      next: '下一页'
+      provider: 'local',
+      options: {
+        translations: {
+          button: {
+            buttonText: 'Search Documentation',
+            buttonAriaLabel: 'Search Documentation'
+          },
+          modal: {
+            noResultsText: 'No results found',
+            resetButtonTitle: 'Clear query',
+            footer: {
+              selectText: 'Select',
+              navigateText: 'Navigate',
+              closeText: 'Close'
+            }
+          }
+        }
+      }
     }
-  },
+  }
 })

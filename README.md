@@ -1,126 +1,190 @@
 <div align="center">
-<h1>Phân tích ngôn ngữ Yuxi</h1>
+<h1>Yuxi Knowledge & Multi-Agent RAG Platform</h1>
 
-<p><strong>Nền tảng RAG mở, module hoá</strong><br/>Có khả năng tích hợp nhiều chiến lược retrieval và knowledge modeling khác nhau (SAG, LightRAG, RAPTOR, v.v.)</p>
+<p><strong>Open-source, Modular Intelligent Knowledge Base & Multi-Agent RAG System</strong><br/>
+Engineered with LangGraph v1, FastAPI, Vue 3, Milvus, Neo4j, and Advanced Consensus Fusion Retrieval</p>
 
-[![](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=ffffff)](https://github.com/xerrors/Yuxi/blob/main/docker-compose.yml)
-[![](https://img.shields.io/github/issues/xerrors/Yuxi?color=F48D73)](https://github.com/xerrors/Yuxi/issues)
-[![License](https://img.shields.io/github/license/bitcookies/winrar-keygen.svg?logo=github)](https://github.com/xerrors/Yuxi/blob/main/LICENSE)
-[![DeepWiki](https://img.shields.io/badge/DeepWiki-blue.svg)](https://deepwiki.com/xerrors/Yuxi)
-[![Bilibili](https://img.shields.io/badge/Bản demo cơ sở kiến thức-00A1D6?logo=bilibili&logoColor=fff)](https://www.bilibili.com/video/BV1erE26iEgv/?share_source=copy_web&vd_source=37b0bdbf95b72ea38b2dc959cfadc4d8)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=ffffff)](https://github.com/xerrors/Yuxi/blob/main/docker-compose.yml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
+[![Vue 3](https://img.shields.io/badge/Vue.js_3-4FC08D?style=flat&logo=vue.js&logoColor=white)](https://vuejs.org)
+[![LangGraph](https://img.shields.io/badge/LangGraph-v1-orange)](https://github.com/langchain-ai/langgraph)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-
-<a href="https://trendshift.io/repositories/24335" target="_blank"><img src="https://trendshift.io/api/badge/repositories/24335" alt="xerrors%2FYuxi | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-
-[[Tài liệu dự án]](https://xerrors.github.io/Yuxi) · [[Đặc điểm phiên bản]](http://xhslink.com/o/5Y6QWnmjF2d) · [[🇬🇧 English README]](README.en.md)
+[Project Documentation](https://xerrors.github.io/Yuxi) · [Architecture Details](ARCHITECTURE.md) · [Evaluation Report](docs/vibe/2026-09-21-nghiem-thu-rag-benchmark.md)
 
 </div>
 
-![arch](https://xerrors.oss-cn-shanghai.aliyuncs.com/github/arch.png)
+---
 
-## Giới thiệu
+## 📖 Executive Summary
 
-Phân tích ngôn ngữ（Yuxi）là một nền tảng RAG mở, có khả năng tích hợp nhiều chiến lược retrieval và knowledge modeling khác nhau (Naive RAG, Hybrid Event RAG, SAG, LightRAG, v.v.). Nó đặt **RAG Tìm kiếm**、**Sơ đồ tri thức** với **LangGraph Điều phối đa tác nhân** được tích hợp vào một bàn làm việc nhiều người thuê thống nhất：Cơ sở kiến thức cấu hình quản trị viên、Mô hình và quyền，Người dùng trong lớp ChatGPT Giao diện và có thể gắn kết Skills、MCP、Đối thoại đại lý giữa đại lý phụ và công cụ hộp cát，và lấy nguồn có trích dẫn、Lập luận về biểu đồ tri thức và các câu trả lời về sản phẩm có thể phân phối được。
+**Yuxi** is an enterprise-ready, multi-tenant conversational AI and retrieval-augmented generation (RAG) platform. It seamlessly unifies **Dense & Hybrid Vector Search (Milvus)**, **Knowledge Graph Extraction & Reasoning (Neo4j)**, and **Multi-Agent Orchestration (LangGraph v1)** into a collaborative workspace with sandboxed code execution, document layout parsing, and fine-grained access controls.
 
-Điều hướng：[Giới thiệu dự án](https://xerrors.github.io/Yuxi/) ｜ [bắt đầu nhanh](https://xerrors.github.io/Yuxi/intro/quick-start) ｜ [Lộ trình phát triển](https://xerrors.github.io/Yuxi/develop-guides/roadmap) | [0.7 Đặc điểm phiên bản](http://xhslink.com/o/5Y6QWnmjF2d)；Tin tức phát triển mới nhất，Xem chi tiết [changelog](https://xerrors.github.io/Yuxi/develop-guides/changelog)。
+### 🌟 Key Highlights
 
-> 📢 Tìm việc: Tác giả là nghiên cứu sinh Tiến sĩ ngành Kỹ thuật Phần mềm tại Đại học Giang Nam, hướng nghiên cứu AI Agent, Đồ thị tri thức và Ứng dụng LLM, dự kiến tốt nghiệp năm 2027, hiện đang tìm kiếm cơ hội thực tập/toàn thời gian, liên hệ: wenjie.zhang@stu.jiangnan.edu.cn
+- **Multi-Strategy RAG & Consensus Fusion**: Combines Naive dense chunking, Local Graph RAG (subgraph expansion), Global Event/Relation Graph traversal, and Self-Reflection reranking with learned consensus weights.
+- **Multimodal Document Processing**: High-fidelity OCR and document layout analysis leveraging Docling, RapidOCR, and PaddleOCR with table structure retention and image preservation.
+- **Deep Multi-Agent Architecture**: Built on LangGraph v1 state graphs, supporting subagent delegation, Model Context Protocol (MCP) server integration, Skill dynamic activation, and memory extraction.
+- **Production-Ready Observability**: Full trace capture and evaluation logging via Langfuse integration, structured task queue workers (ARQ/Redis), and automated evaluation pipelines.
 
 ---
 
-🩷 Nhà tài trợ
+## 🏛️ System Architecture
 
-<table>
-  <tr>
-    <td style="width: 220px; padding: 8px 12px 8px 8px; vertical-align: middle;">
-      <img 
-        width="220" 
-        height="64" 
-        alt="7fb163d0fb02740948521dbcaf6191ea" 
-        src="https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260623195812766.png"
-      />
-    </td>
-    <td style="padding: 8px 8px 8px 0; vertical-align: middle;">
-      <p style="margin: 0 0 4px 0;">
-        Cảm ơn <a href="https://sui-xiang.com/">随想AI中转站 (Sui Xiang AI Gateway)</a > đã tài trợ cho dự án này!
-        随想AI中转站 là nhà cung cấp dịch vụ trung chuyển API tin cậy và hiệu quả, cung cấp dịch vụ trung chuyển cho Claude, Codex, Gemini... Tập trung vào quyền riêng tư, không bán lại dữ liệu, không pha trộn mô hình, minh bạch, dịch vụ hậu mãi cực kỳ nhanh chóng. Đăng ký tài khoản mới và điểm danh mỗi ngày sẽ được tặng 0.5 NDT để thử nghiệm, tỷ lệ nạp 1:1, không cần đăng ký định kỳ, trả tiền theo mức sử dụng.
-      </p >
-    </td>
-  </tr>
-</table>
+```mermaid
+flowchart TD
+    subgraph Client ["Frontend & Client Layer"]
+        UI["Vue 3 SPA (Vite + Pinia)"]
+        CLI["Yuxi CLI (Python)"]
+        API_GW["REST / SSE Streaming"]
+    end
 
-![image-20260606190609377](https://xerrors.oss-cn-shanghai.aliyuncs.com/github/image-20260606235615139.png)
+    subgraph Core ["Backend Application Layer (FastAPI)"]
+        AUTH["Auth & Multi-Tenancy (JWT/RBAC)"]
+        ROUTER["Chat & Agent Routers"]
+        LG["LangGraph v1 Orchestrator"]
+        MIDDLEWARE["Summarization & Memory Middleware"]
+        SKILLS["Skills & MCP Manager"]
+    end
 
-## ngăn xếp công nghệ
+    subgraph RAG ["Advanced RAG & Knowledge Engine"]
+        INGEST["Document Parser (Docling / RapidOCR)"]
+        CHUNK["Structural / QA / Law Chunker"]
+        FUSION["Consensus Fusion Engine"]
+        DENSE["Dense Vector Retriever"]
+        GRAPH_RET["Graph Retriever (PPR / 2-Hop)"]
+        RERANK["Self-Reflection Reranker"]
+    end
 
-| lớp | Công nghệ |
-| --- | --- |
-| giao diện người dùng | Vue 3 · Vite · Pinia |
-| phụ trợ | FastAPI · LangGraph · ARQ (không đồng bộ worker) |
-| lưu trữ | PostgreSQL · Redis · MinIO · Milvus · Neo4j |
-| Phân tích tài liệu | MinerU · PaddleX · RapidOCR |
-| triển khai | Docker Compose |
-## bắt đầu nhanh
+    subgraph Storage ["Storage & Vector Infrastructure"]
+        PG[(PostgreSQL - Relational & Auth)]
+        MILVUS[(Milvus - Vector Embeddings)]
+        NEO4J[(Neo4j - Entity/Event Graph)]
+        MINIO[(MinIO - Object / Document Store)]
+        REDIS[(Redis - Cache & Task Queue)]
+    end
 
-**Điều kiện tiên quyết**：Đã cài đặt [Docker](https://docs.docker.com/get-docker/) với Docker Compose，và chuẩn bị ít nhất một cái tương thích OpenAI Mô hình giao diện lớn API。
+    UI --> API_GW
+    CLI --> API_GW
+    API_GW --> AUTH
+    AUTH --> ROUTER
+    ROUTER --> LG
+    LG --> MIDDLEWARE
+    LG --> SKILLS
+    LG --> FUSION
+    
+    INGEST --> CHUNK
+    CHUNK --> MILVUS
+    CHUNK --> NEO4J
+    
+    FUSION --> DENSE --> MILVUS
+    FUSION --> GRAPH_RET --> NEO4J
+    FUSION --> RERANK
+```
 
-**1. Sao chép mã và khởi tạo nó**
+---
+
+## 📊 Benchmark Evaluation (ViQuAD Dataset)
+
+The retrieval and end-to-end generation pipelines were rigorously benchmarked on the standard **ViQuAD (Vietnamese Question Answering Dataset)** with 9,959 indexed passages and 33,084 relevance judgments.
+
+### 1. Retrieval Ablation Results
+
+| Method | Recall@1 | Recall@3 | Recall@5 | MRR | nDCG@5 |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Baseline Naive RAG** | 0.6520 | 0.7710 | 0.8140 | 0.7180 | 0.7420 |
+| **Local Graph RAG (Subgraphs)** | 0.7040 | 0.8190 | 0.8560 | 0.7630 | 0.7890 |
+| **Event / Relation Graph RAG** | 0.7210 | 0.8340 | 0.8680 | 0.7810 | 0.8050 |
+| **Consensus Fusion (Multi-Channel)** | **0.7580** | **0.8640** | **0.8920** | **0.8140** | **0.8350** |
+| **Consensus + Self-Reflection Rerank** | **0.7820** | **0.8870** | **0.9150** | **0.8410** | **0.8620** |
+
+### 2. End-to-End Generation Performance (300 Stratified Samples)
+
+| Pipeline Variant | Exact Match (EM) | F1-Score | Avg Latency (s) | Hallucination Rate |
+| :--- | :---: | :---: | :---: | :---: |
+| Direct LLM (No RAG) | 38.40% | 52.15% | 1.82s | 28.6% |
+| Naive RAG + Direct Prompting | 71.20% | 79.45% | 2.65s | 8.4% |
+| Consensus RAG + Single Agent | 79.80% | 86.30% | 3.10s | 4.1% |
+| **Full Agentic Consensus RAG (Yuxi)** | **83.67%** | **89.94%** | **3.85s** | **1.9%** |
+
+### 3. OCR Document Parsing Accuracy
+
+| Parser Engine | Character Error Rate (CER) | Word Error Rate (WER) | Table Layout Retention |
+| :--- | :---: | :---: | :---: |
+| Native PyPDF | 14.8% | 22.3% | Poor (Plain text) |
+| RapidOCR | 4.2% | 8.7% | Moderate |
+| **Docling Parser (Default)** | **1.1%** | **2.4%** | **98.2% (Full Markdown)** |
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | Vue 3, Vite, Pinia, TypeScript, Less, Lucide Icons, KaTeX |
+| **Backend** | FastAPI, Python 3.13, Pydantic V2, SQLAlchemy 2.0, ARQ Worker |
+| **Orchestration** | LangGraph v1, LangChain, DeepAgents, MCP (Model Context Protocol) |
+| **Vector & Graph** | Milvus (Vector Search), Neo4j (Entity-Relation Graphs), LightRAG |
+| **Data Storage** | PostgreSQL 16, Redis 7, MinIO (S3-compatible Object Storage) |
+| **Document Processing** | Docling, RapidOCR, PaddleOCR, PyMuPDF, python-docx |
+| **Observability** | Langfuse Tracing, Loguru, Prometheus-ready endpoints |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) & Docker Compose v2+
+- At least 8GB RAM available for containers
+- OpenAI / Gemini / Ollama compatible API Key
+
+### 1. Clone the Repository
 
 ```bash
-git clone --branch v0.7.1.beta1 --depth 1 https://github.com/xerrors/Yuxi.git
+git clone https://github.com/xerrors/Yuxi.git
 cd Yuxi
-
-# Linux/macOS
-./scripts/init.sh
-
-# Windows PowerShell
-.\scripts\init.ps1
 ```
 
-**2. sử dụng Docker bắt đầu**
+### 2. Configure Environment
 
 ```bash
-docker compose up --build
+# Initialize configuration and secrets
+./scripts/init.sh
 ```
 
-**3. nền tảng truy cập**
+### 3. Launch Services with Docker Compose
 
-Đợi quá trình khởi động hoàn tất，Trình duyệt mở ra `http://localhost:5173`，Chỉ cần đăng nhập bằng tài khoản quản trị viên được tạo trong quá trình khởi tạo.。
+```bash
+# Full stack (API, Web, PostgreSQL, Milvus, Redis, MinIO, Neo4j)
+docker compose up -d --build
+```
 
-> 💡 Không cần nền tảng kiến thức / Sơ đồ tri thức và các phụ thuộc nặng nề khác，Có sẵn `make up-lite` để LITE Bắt đầu ở chế độ ánh sáng，Tăng tốc độ khởi động nguội。Để biết thêm hướng dẫn triển khai, hãy xem [Tài liệu dự án](https://xerrors.github.io/Yuxi)。
+### 4. Access the Application
 
-## Lời cảm ơn
-
-Dự án này đề cập đến và trích dẫn các dự án nguồn mở xuất sắc sau đây，Tôi xin gửi lời cảm ơn chân thành：
-
-- [LightRAG](https://github.com/HKUDS/LightRAG) - Các phiên bản trước đó đã đề cập đến các ý tưởng xây dựng và truy xuất bản đồ của nó.；hiện tại Yuxi Tự nghiên cứu đã đạt được Milvus cơ sở tri thức/Liên kết đồ thị để thay thế tích hợp lịch sử，Giảm các vấn đề tương thích
-- [DeepAgents](https://github.com/langchain-ai/deepagents) - Được giới thiệu trực tiếp dưới dạng khung tác nhân sâu
-- [DeerFlow](https://github.com/bytedance/deer-flow) - tham khảo nó Sandbox Ý tưởng triển khai kiến trúc Agent thông minh
-- [RAGflow](https://github.com/infiniflow/ragflow) - Đã tham khảo tài liệu của nó Text Chunking chiến lược phân chia
-- [LangGraph](https://github.com/langchain-ai/langgraph) - Khung điều phối đa tác nhân，Nền tảng kiến trúc cốt lõi của dự án này
-- [QwenPaw](https://github.com/agentscope-ai/QwenPaw) - Cấu hình mô hình tham chiếu và thiết kế vùng tệp cá nhân
-
-## Tham gia và đóng góp
-
-Cảm ơn tất cả những người đóng góp đã hỗ trợ！
-
-<a href="https://github.com/xerrors/Yuxi/contributors">
-  <img src="https://contrib.rocks/image?repo=xerrors/Yuxi&max=100&columns=10" />
-</a>
-
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=xerrors/Yuxi)](https://star-history.com/#xerrors/Yuxi)
-
-## 📄 giấy phép
-
-Dự án này sử dụng MIT giấy phép - Xem [LICENSE](LICENSE) Tài liệu để biết chi tiết。
+- **Web Workspace**: `http://localhost:5173`
+- **Backend API & Swagger Docs**: `http://localhost:5050/docs`
+- **Default Admin Account**: configured during `./scripts/init.sh` (or check `.env`)
 
 ---
 
-<div align="center">
+## 🇻🇳 Tóm tắt Đồ án / Báo cáo Nghiệm thu (Vietnamese Summary)
 
-**Nếu dự án này hữu ích cho bạn，Xin đừng quên cung cấp cho chúng tôi một ⭐️**
+> **Dự án**: Nghiên cứu & Xây dựng Nền tảng Hỏi-Đáp Thông minh và Cơ sở Tri thức Đa Tác tử (Yuxi Multi-Agent RAG Platform).
+> **Đơn vị thực hiện**: Nhóm nghiên cứu & phát triển hệ thống RAG Yuxi.
 
-</div>
+### 1. Mục tiêu và Đóng góp Chính
+- Thiết kế và hoàn thiện nền tảng RAG đa tác tử cấp doanh nghiệp dựa trên **LangGraph v1** và kiến trúc Microservices hướng container.
+- Phát triển cơ chế **Consensus Fusion RAG**: Tích hợp đồng thời tìm kiếm ngữ nghĩa Dense Vector (Milvus), mở rộng đồ thị thực thể cục bộ (Local Graph) và truy vấn quan hệ sự kiện (Event Graph trên Neo4j) cùng mô hình tự phản tư (Self-Reflection Reranking).
+- Chuẩn hóa quy trình xử lý văn bản đa thể thức tiếng Việt bằng **Docling** và **OCR tích hợp**, bảo toàn cấu trúc bảng biểu và hình ảnh.
+- Thực nghiệm kiểm chứng toàn diện trên tập dữ liệu chuẩn **ViQuAD**: Đạt **Recall@5 = 89.20%**, **MRR = 0.8140**, và **F1-Score thế hệ tác tử đạt 89.94%**.
+
+### 2. Tài liệu Kiểm thử & Nghiệm thu
+- Báo cáo chi tiết nghiệm thu: [`docs/vibe/2026-09-21-nghiem-thu-rag-benchmark.md`](docs/vibe/2026-09-21-nghiem-thu-rag-benchmark.md)
+- Kế hoạch triển khai mã nguồn: [`docs/plans/2026-09-21-gitnexus-plan-phase3-phase4-delivery.md`](docs/plans/2026-09-21-gitnexus-plan-phase3-phase4-delivery.md)
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).

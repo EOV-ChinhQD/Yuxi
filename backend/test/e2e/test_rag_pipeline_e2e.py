@@ -24,9 +24,10 @@ import datetime
 from pathlib import Path
 
 # =====================================================================
-BASE_URL  = "http://localhost:5050"
-USERNAME  = "admin"
-PASSWORD  = "admin"
+import os
+BASE_URL  = os.getenv("YUXI_API_URL", "http://localhost:5050")
+USERNAME  = os.getenv("ADMIN_USERNAME", "admin")
+PASSWORD  = os.getenv("ADMIN_PASSWORD", os.getenv("BENCH_ADMIN_PASSWORD", "zwj12138"))
 TEST_DOC  = Path(__file__).parent.parent / "data" / "test_rag_document.txt"
 LOG_FILE  = Path(__file__).parent / "test_rag_pipeline_e2e.log"
 # =====================================================================

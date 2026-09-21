@@ -169,31 +169,31 @@ def present_artifacts(
 class OcrParseFileInput(BaseModel):
     """Parse a sandbox file with OCR and save the Markdown result."""
 
-    file_path: str = Field(description="需要 OCR 解析的沙盒虚拟路径，必须位于 /home/gem/user-data 下")
-    ocr_engine: str | None = Field(default=None, description="可选 OCR 引擎；省略时使用系统默认 OCR 引擎")
+    file_path: str = Field(description="Sandbox virtual path for OCR parsing, must be under /home/gem/user-data")
+    ocr_engine: str | None = Field(default=None, description="Optional OCR engine; uses system default when omitted")
 
 
 OCR_PARSE_FILE_DESCRIPTION = f"""
-将沙盒中的 PDF 或图片文件解析为 Markdown 文本，并把结果保存为文件。
+Parse PDF or image file in sandbox into Markdown text and save result as file.
 
-使用场景：
-1. 用户上传了 PDF/图片附件，需要提取其中的文字内容
-2. 工作区、uploads 或 outputs 下已有文件，需要转成可读取的 Markdown
-3. 解析结果较长，后续应使用 read_file 读取保存后的 Markdown 文件
+Use cases:
+1. User uploaded PDF/image attachment and needs text extraction
+2. Existing files under workspace/uploads/outputs need conversion to Markdown
+3. Long parsing results should be read using read_file on saved Markdown file
 
-注意事项：
-1. file_path 必须是 /home/gem/user-data 下的虚拟路径
-2. 只允许读取 workspace、uploads、outputs 下的普通文件
-3. 解析结果会写入 {VIRTUAL_PATH_OUTPUTS}/{_OCR_OUTPUT_DIR_NAME}/
-4. 工具只返回结果文件路径和短预览，不直接返回完整 OCR 文本
-5. 如需在前端展示结果文件，请再调用 present_artifacts
+Notes:
+1. file_path must be a virtual path under /home/gem/user-data
+2. Only files under workspace, uploads, or outputs are allowed
+3. Parsing results are written to {VIRTUAL_PATH_OUTPUTS}/{_OCR_OUTPUT_DIR_NAME}/
+4. Tool returns result file path and short preview, not full OCR text directly
+5. Call present_artifacts to display result files in UI
 """
 
 
 @tool(
     category="buildin",
-    tags=["文件", "OCR"],
-    display_name="OCR 解析文件",
+    tags=["file", "ocr"],
+    display_name="OCR Parse File",
     description=OCR_PARSE_FILE_DESCRIPTION,
     args_schema=OcrParseFileInput,
 )
@@ -230,27 +230,27 @@ def _resolve_ocr_source_path(file_path: str, runtime: ToolRuntime) -> tuple[str,
 
     normalized_input = str(file_path or "").strip()
     if not normalized_input:
-        raise ValueError("文件路径不能为空")
+        raise ValueError("File path cannot be empty")
 
     virtual_prefix = get_virtual_path_prefix().rstrip("/")
     clean_virtual_path = "/" + normalized_input.lstrip("/")
     if clean_virtual_path != virtual_prefix and not clean_virtual_path.startswith(f"{virtual_prefix}/"):
-        raise ValueError(f"只允许解析 {virtual_prefix} 下的沙盒虚拟路径")
+        raise ValueError(f"Only allowed to parse {virtual_prefix} sandbox virtual path")
 
     relative_path = clean_virtual_path[len(virtual_prefix) :].lstrip("/")
     namespace = Path(relative_path).parts[0] if relative_path else ""
     if namespace not in _OCR_PARSE_ALLOWED_DIRS:
         allowed = ", ".join(f"{virtual_prefix}/{item}" for item in sorted(_OCR_PARSE_ALLOWED_DIRS))
-        raise ValueError(f"只允许解析 {allowed} 下的文件")
+        raise ValueError(f"Only allowed to parse {allowed} files under")
 
     try:
         actual_path = resolve_virtual_path(file_thread_id, clean_virtual_path, uid=uid)
     except ValueError as exc:
-        raise ValueError(f"只允许解析 {virtual_prefix} 下的沙盒虚拟路径") from exc
+        raise ValueError(f"Only allowed to parse {virtual_prefix} sandbox virtual path") from exc
     if not actual_path.exists():
-        raise ValueError(f"文件不存在: {clean_virtual_path}")
+        raise ValueError(f"File does not exist: {clean_virtual_path}")
     if not actual_path.is_file():
-        raise ValueError(f"路径不是普通文件: {clean_virtual_path}")
+        raise ValueError(f"Path is not a regular file: {clean_virtual_path}")
 
     return file_thread_id, uid, actual_path
 
@@ -260,9 +260,9 @@ def _resolve_runtime_file_scope(runtime: ToolRuntime) -> tuple[str, str]:
     thread_id = _runtime_scope_value(runtime, "file_thread_id") or _runtime_scope_value(runtime, "thread_id")
     uid = _runtime_scope_value(runtime, "uid")
     if not thread_id:
-        raise ValueError("当前运行时缺少 thread_id")
+        raise ValueError("Current runtime is missing thread_id")
     if not uid:
-        raise ValueError("当前运行时缺少 uid")
+        raise ValueError("Current runtime is missing uid")
     return thread_id, uid
 
 
@@ -290,7 +290,7 @@ def _resolve_ocr_engine(ocr_engine: str | None) -> str:
     engine = str(ocr_engine or config.default_ocr_engine).strip() or config.default_ocr_engine
     allowed = {"disable", *DocumentProcessorFactory.get_available_processors()}
     if engine not in allowed:
-        raise ValueError(f"不支持的 OCR 引擎: {engine}")
+        raise ValueError(f"Unsupported OCR engine: {engine}")
     return engine
 
 

@@ -1,5 +1,6 @@
 """Module công cụ kho kiến thức"""
 
+import asyncio
 import inspect
 from typing import Any
 
@@ -17,7 +18,6 @@ from yuxi.knowledge.schemas import (
     SearchOutputSchema,
 )
 from yuxi.utils import logger
-from yuxi.models import select_model
 
 # ========== Các hàm công cụ kho kiến thức chung ==========
 
@@ -261,6 +261,8 @@ YÊU CẦU:
 
 CÂU HỎI MỚI:"""
     try:
+        from yuxi.models import select_model
+
         model = select_model(model_spec=model_spec)
         response = await asyncio.wait_for(model.call(prompt, stream=False), timeout=10.0)
         rewritten = response.content.strip()

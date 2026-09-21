@@ -192,7 +192,9 @@ def aggregate_metrics(
 
     if answer_metrics_list:
         scores = [m.get("accuracy", m.get("score", 0)) for m in answer_metrics_list]
-        overall_metrics["answer_accuracy"] = sum(scores) / len(scores) if scores else 0.0
+        avg_score = sum(scores) / len(scores) if scores else 0.0
+        overall_metrics["answer_accuracy"] = avg_score
+        overall_metrics["answer_correctness"] = avg_score
 
         groundedness = [m.get("groundedness", 0) for m in answer_metrics_list]
         overall_metrics["answer_groundedness"] = sum(groundedness) / len(groundedness) if groundedness else 0.0

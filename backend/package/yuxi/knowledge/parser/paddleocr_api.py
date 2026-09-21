@@ -145,7 +145,7 @@ class PaddleOCRAPIParser(BaseDocumentProcessor):
         body = response.json()
         if body.get("code") not in (None, 0):
             raise DocumentParserException(
-                f"Gửi tác vụ PaddleOCR thất bại: {body.get('msg', '未知错误')}",
+                f"Gửi tác vụ PaddleOCR thất bại: {body.get('msg', 'Unknown error')}",
                 self.get_service_name(),
                 f"api_error_{body.get('code')}",
             )

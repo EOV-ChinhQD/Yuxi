@@ -39,6 +39,7 @@ class RAGWorker:
         self.max_retries = max_retries
         self.is_running = False
         self._handlers: dict[str, Callable[[dict], Any]] = {}
+        self._claim_cursor = "0-0"
 
     def register_handler(self, event_type: str, handler: Callable[[dict], Any]) -> None:
         self._handlers[event_type] = handler
@@ -59,71 +60,29 @@ class RAGWorker:
 
         while self.is_running:
             try:
-                # Đọc tin nhắn từ group (block 1 giây)
+                # Thu hồi các message bị kẹt trong PEL của consumer đã chết (block 1s,
+                # chỉ xử lý khi không có message mới để ưu tiên luồng chính).
+                claimed = await redis.xautoclaim(
+                    self.stream_name,
+                    self.group_name,
+                    self.consumer_name,
+                    min_idle_time=60_000,
+                    start_id=self._claim_cursor,
+                    count=10,
+                )
+                if claimed and claimed[1]:
+                    self._claim_cursor = claimed[0]
+                    await self._process_messages(claimed[1], claimed=True)
+
+                # Read messages from group (batch up to 10)
                 streams = await redis.xreadgroup(
-                    self.group_name, self.consumer_name, {self.stream_name: ">"}, count=1, block=1000
+                    self.group_name, self.consumer_name, {self.stream_name: ">"}, count=10, block=1000
                 )
                 if not streams:
                     continue
 
                 for stream_name, messages in streams:
-                    for msg_id, fields in messages:
-                        # Decode message fields
-                        event_type_bytes = fields.get(b"event_type") or fields.get("event_type")
-                        payload_bytes = fields.get(b"payload") or fields.get("payload")
-
-                        if not event_type_bytes or not payload_bytes:
-                            continue
-
-                        event_type = (
-                            event_type_bytes.decode("utf-8")
-                            if isinstance(event_type_bytes, bytes)
-                            else str(event_type_bytes)
-                        )
-                        payload_str = (
-                            payload_bytes.decode("utf-8") if isinstance(payload_bytes, bytes) else str(payload_bytes)
-                        )
-
-                        payload = json.loads(payload_str)
-                        logger.info(f"Processing event '{event_type}' (id: {msg_id})")
-
-                        # Tra cứu số lần thử lại bằng Redis key
-                        retry_key = f"yuxi:rag:retry:{msg_id}"
-                        retry_count_val = await redis.get(retry_key)
-                        retry_count = int(retry_count_val) if retry_count_val else 0
-
-                        # Dispatch xử lý
-                        handler = self._handlers.get(event_type)
-                        if handler:
-                            try:
-                                if asyncio.iscoroutinefunction(handler):
-                                    await handler(payload)
-                                else:
-                                    handler(payload)
-                                # Acknowledge tin nhắn sau khi thành công
-                                await redis.xack(self.stream_name, self.group_name, msg_id)
-                                await redis.delete(retry_key)
-                            except Exception as handler_err:
-                                retry_count += 1
-                                logger.error(
-                                    f"Handler error for event {event_type} (attempt {retry_count}/{self.max_retries}): {handler_err}"
-                                )
-
-                                if retry_count >= self.max_retries:
-                                    # Vượt quá giới hạn retry -> Đẩy vào Dead Letter Queue (DLQ) trong PostgreSQL
-                                    logger.error(f"Max retries reached for message {msg_id}. Moving to DLQ.")
-                                    await self._move_to_dlq(event_type, msg_id, payload, handler_err, retry_count)
-                                    # Acknowledge để xóa khỏi hàng đợi chính
-                                    await redis.xack(self.stream_name, self.group_name, msg_id)
-                                    await redis.delete(retry_key)
-                                else:
-                                    # Cập nhật số lần thử lại và không XACK để thử lại sau
-                                    await redis.set(retry_key, retry_count, ex=3600)
-                        else:
-                            logger.warning(
-                                f"No handler registered for event {event_type}, acknowledging automatically."
-                            )
-                            await redis.xack(self.stream_name, self.group_name, msg_id)
+                    await self._process_messages(messages)
 
             except asyncio.CancelledError:
                 logger.info("Worker loop cancelled.")
@@ -131,6 +90,55 @@ class RAGWorker:
             except Exception as worker_err:
                 logger.error(f"RAG Worker Loop Exception: {worker_err}")
                 await asyncio.sleep(2)
+
+    async def _process_single_message(self, redis, msg_id, fields, claimed: bool) -> None:
+        event_type_bytes = fields.get(b"event_type") or fields.get("event_type")
+        payload_bytes = fields.get(b"payload") or fields.get("payload")
+
+        if not event_type_bytes or not payload_bytes:
+            return
+
+        event_type = event_type_bytes.decode("utf-8") if isinstance(event_type_bytes, bytes) else str(event_type_bytes)
+        payload_str = payload_bytes.decode("utf-8") if isinstance(payload_bytes, bytes) else str(payload_bytes)
+
+        payload = json.loads(payload_str)
+        logger.info(f"Processing event '{event_type}' (id: {msg_id}){' [claimed]' if claimed else ''}")
+
+        retry_key = f"yuxi:rag:retry:{msg_id}"
+        retry_count_val = await redis.get(retry_key)
+        retry_count = int(retry_count_val) if retry_count_val else 0
+
+        handler = self._handlers.get(event_type)
+        if handler:
+            try:
+                if asyncio.iscoroutinefunction(handler):
+                    await handler(payload)
+                else:
+                    handler(payload)
+                await redis.xack(self.stream_name, self.group_name, msg_id)
+                await redis.delete(retry_key)
+            except Exception as handler_err:
+                retry_count += 1
+                err_msg = (
+                    f"Handler error for event {event_type} (attempt {retry_count}/{self.max_retries}): {handler_err}"
+                )
+                logger.error(err_msg)
+
+                if retry_count >= self.max_retries:
+                    logger.error(f"Max retries reached for message {msg_id}. Moving to DLQ.")
+                    await self._move_to_dlq(event_type, msg_id, payload, handler_err, retry_count)
+                    await redis.xack(self.stream_name, self.group_name, msg_id)
+                    await redis.delete(retry_key)
+                else:
+                    await redis.set(retry_key, retry_count, ex=3600)
+        else:
+            logger.warning(f"No handler registered for event {event_type}, acknowledging automatically.")
+            await redis.xack(self.stream_name, self.group_name, msg_id)
+
+    async def _process_messages(self, messages: list, claimed: bool = False) -> None:
+        redis = await get_async_redis_client()
+        tasks = [self._process_single_message(redis, msg_id, fields, claimed) for msg_id, fields in messages]
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _move_to_dlq(
         self, event_type: str, msg_id: str, payload: dict, error: Exception, retry_count: int

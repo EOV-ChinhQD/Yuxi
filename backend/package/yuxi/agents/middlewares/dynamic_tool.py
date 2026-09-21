@@ -38,7 +38,7 @@ class DynamicToolMiddleware(AgentMiddleware):
                     # Register MCP tools to middleware.tools
                     self.tools.extend(mcp_tools)
                     logger.info(f"Registered {len(mcp_tools)} tools from {mcp_name}")
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.error(f"Timeout while pre-loading MCP tools from: {mcp_name}")
                 except Exception as e:
                     logger.error(f"Failed to load MCP tools from {mcp_name}: {e}")

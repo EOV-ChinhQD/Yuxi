@@ -269,14 +269,17 @@ def parse_pdf(file, params=None):
 
     # Engine chain: user-selected engine first, then registered defaults.
     engine_preference: list[str] = []
-    
+
     if opt_ocr and opt_ocr != "disable" and opt_ocr in DocumentProcessorFactory.PROCESSOR_TYPES:
         if DocumentProcessorFactory.requires_external(opt_ocr) and not allow_external:
-            logger.error(f"[FileID: {trace_id}] Compliance violation: attempt to use external OCR '{opt_ocr}' when ALLOW_EXTERNAL_OCR=false.")
+            logger.error(
+                f"[FileID: {trace_id}] Compliance violation: attempt to use external OCR '{opt_ocr}' when ALLOW_EXTERNAL_OCR=false."
+            )
             from yuxi.knowledge.parser.base import DocumentProcessorException
+
             raise DocumentProcessorException(
-                f"Cannot use {opt_ocr}: External OCR is disabled by compliance policy (ALLOW_EXTERNAL_OCR=false).", 
-                opt_ocr
+                f"Cannot use {opt_ocr}: External OCR is disabled by compliance policy (ALLOW_EXTERNAL_OCR=false).",
+                opt_ocr,
             )
         engine_preference.append(opt_ocr)
     if policy == OCRPolicy.DISABLE:
@@ -294,7 +297,7 @@ def parse_pdf(file, params=None):
             "paddleocr_pp_ocrv6",
             "rapid_ocr",
             "pp_structure_v3_ocr",
-            "mineru_ocr"
+            "mineru_ocr",
         ]
         for engine in prioritized_engines:
             if engine not in DocumentProcessorFactory.PROCESSOR_TYPES:
@@ -303,7 +306,7 @@ def parse_pdf(file, params=None):
                 is_ext = DocumentProcessorFactory.requires_external(engine)
             except Exception:
                 is_ext = False
-            
+
             if is_ext and not allow_external:
                 continue
             if engine not in engine_preference:
@@ -334,7 +337,9 @@ def parse_pdf(file, params=None):
                 )
 
             if result.status == ProcessingStatus.SUCCESS:
-                logger.info(f"[FileID: {trace_id}] [Engine: {engine}] SUCCESS, content length={len(result.content or '')}")
+                logger.info(
+                    f"[FileID: {trace_id}] [Engine: {engine}] SUCCESS, content length={len(result.content or '')}"
+                )
                 return result
 
             if result.status == ProcessingStatus.DEGRADED:

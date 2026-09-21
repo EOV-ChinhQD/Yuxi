@@ -1,0 +1,2 @@
+## Cấu trúc mô hình Yuxi
+Kiến trúc bao gồm: LangGraph, FastAPI, LightRAG, và Milvus Vector Database. Hỗ trợ truy vấn đa bước và dung hợp kết quả.

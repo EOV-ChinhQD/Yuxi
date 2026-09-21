@@ -145,7 +145,7 @@ class PDFDensityAnalyzer:
         # Đề xuất cấu hình tối ưu dựa trên mẫu đã phân tích
         analyzed_count = len(pages_to_analyze)
         total_non_text_pages = len(scan_pages) + len(hybrid_pages)
-        
+
         if total_non_text_pages == 0:
             recommended_ocr = "disable"
         elif len(scan_pages) == analyzed_count:

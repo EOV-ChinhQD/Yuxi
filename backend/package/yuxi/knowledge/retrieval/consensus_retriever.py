@@ -3,7 +3,6 @@ import time
 import hashlib
 from collections import defaultdict
 from yuxi.utils import logger
-from yuxi.models import select_model
 from yuxi.storage.neo4j import neo4j_read, safe_neo4j_label
 from yuxi.knowledge.graphs.milvus_graph_vector_store import MilvusGraphVectorStore
 from yuxi.knowledge.graphs.milvus_graph_service import MilvusGraphService
@@ -113,6 +112,8 @@ Từ khóa:"""
             prompt = keywords_template.format(query=query)
 
             # Sử dụng select_model từ Yuxi để gọi LLM trích xuất keywords
+            from yuxi.models import select_model
+
             model = select_model(model_spec=self.llm_model_spec)
             response = await asyncio.wait_for(model.call(prompt), timeout=2.0)
             keyword_str = response.content.strip()

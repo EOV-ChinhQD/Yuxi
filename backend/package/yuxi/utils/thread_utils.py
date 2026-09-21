@@ -4,9 +4,9 @@ from collections.abc import Mapping
 
 
 def extract_thread_id(value: object, fallback: str | None = None) -> str | None:
-    """从规范化事件结构中提取 thread_id。
+    """Extract thread_id from normalized event structure.
 
-    只读取当前对象和一层稳定容器字段，避免递归扫描把未规范化的内部结构误判为路由依据。
+    Only read current object and one level of stable fields to prevent misrouting.
     """
     if not isinstance(value, Mapping):
         return fallback

@@ -4,6 +4,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from sqlalchemy import delete, func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from yuxi.storage.postgres.manager import pg_manager
 from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
@@ -99,7 +100,10 @@ class KnowledgeChunkRepository:
                 chunks_by_id.update({chunk.chunk_id: chunk for chunk in result.scalars().all()})
         return [chunks_by_id[chunk_id] for chunk_id in chunk_ids if chunk_id in chunks_by_id]
 
-    async def batch_upsert(self, chunks: list[dict[str, Any]]) -> list[KnowledgeChunk]:
+    async def batch_upsert(
+        self, chunks: list[dict[str, Any]], session: AsyncSession | None = None
+    ) -> list[KnowledgeChunk]:
+        """Upsert chunks; pass a session to join the caller's transaction (e.g. delete + insert atomically)."""
         if not chunks:
             return []
 
@@ -108,25 +112,34 @@ class KnowledgeChunkRepository:
         ]
         chunk_ids = [chunk["chunk_id"] for chunk in sanitized_chunks]
 
-        async with pg_manager.get_async_session_context() as session:
-            existing_by_chunk_id: dict[str, KnowledgeChunk] = {}
-            for batch in self._iter_batches(chunk_ids):
-                result = await session.execute(select(KnowledgeChunk).where(KnowledgeChunk.chunk_id.in_(batch)))
-                existing_by_chunk_id.update({chunk.chunk_id: chunk for chunk in result.scalars().all()})
+        if session is not None:
+            return await self._upsert_rows(session, chunk_ids, sanitized_chunks)
 
-            records: list[KnowledgeChunk] = []
-            for chunk_data in sanitized_chunks:
-                chunk_id = chunk_data["chunk_id"]
-                record = existing_by_chunk_id.get(chunk_id)
-                if record is None:
-                    record = KnowledgeChunk(**chunk_data)
-                    session.add(record)
-                else:
-                    for key, value in chunk_data.items():
-                        setattr(record, key, value)
-                records.append(record)
+        async with pg_manager.get_async_session_context() as owned_session:
+            return await self._upsert_rows(owned_session, chunk_ids, sanitized_chunks)
 
-            return records
+    @staticmethod
+    async def _upsert_rows(
+        session: AsyncSession, chunk_ids: list[str], sanitized_chunks: list[dict[str, Any]]
+    ) -> list[KnowledgeChunk]:
+        existing_by_chunk_id: dict[str, KnowledgeChunk] = {}
+        for batch in KnowledgeChunkRepository._iter_batches(chunk_ids):
+            result = await session.execute(select(KnowledgeChunk).where(KnowledgeChunk.chunk_id.in_(batch)))
+            existing_by_chunk_id.update({chunk.chunk_id: chunk for chunk in result.scalars().all()})
+
+        records: list[KnowledgeChunk] = []
+        for chunk_data in sanitized_chunks:
+            chunk_id = chunk_data["chunk_id"]
+            record = existing_by_chunk_id.get(chunk_id)
+            if record is None:
+                record = KnowledgeChunk(**chunk_data)
+                session.add(record)
+            else:
+                for key, value in chunk_data.items():
+                    setattr(record, key, value)
+            records.append(record)
+
+        return records
 
     async def delete_by_file_id(self, file_id: str) -> int:
         async with pg_manager.get_async_session_context() as session:

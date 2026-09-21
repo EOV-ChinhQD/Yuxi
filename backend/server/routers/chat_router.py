@@ -39,10 +39,10 @@ from yuxi.utils.image_processor import process_uploaded_image
 from yuxi.utils.paths import VIRTUAL_PATH_PREFIX
 
 
-# TODO：当前文件的功能过于庞杂，路由标签混乱
+# TODO: Refactor monolithic chat router endpoints into modular handlers
 
 
-# 图片上传响应模型
+#  [cleaned] 
 class ImageUploadResponse(BaseModel):
     success: bool
     image_content: str | None = None
@@ -60,10 +60,10 @@ chat = APIRouter(prefix="/chat", tags=["chat"])
 
 @chat.post("/call")
 async def call(query: str = Body(...), meta: dict = Body(None), current_user: User = Depends(get_required_user)):
-    """调用模型进行简单问答（需要登录）"""
+    """ [cleaned] （ [cleaned] ）"""
     meta = meta or {}
 
-    # 确保 request_id 存在
+    #  [cleaned]  request_id  [cleaned] 
     if "request_id" not in meta or not meta.get("request_id"):
         meta["request_id"] = str(uuid.uuid4())
 
@@ -79,7 +79,7 @@ async def call(query: str = Body(...), meta: dict = Body(None), current_user: Us
 async def get_thread_history(
     thread_id: str, current_user: User = Depends(get_required_user), db: AsyncSession = Depends(get_db)
 ):
-    """获取对话历史消息（需要登录）- 包含用户反馈状态"""
+    """ [cleaned] （ [cleaned] ）-  [cleaned] """
     try:
         return await get_thread_history_view(
             thread_id=thread_id,
@@ -88,7 +88,7 @@ async def get_thread_history(
         )
 
     except Exception as e:
-        logger.error(f"获取对话历史消息出错: {e}, {traceback.format_exc()}")
+        logger.error(f": {e}, {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy lịch sử tin nhắn: {str(e)}")
 
 
@@ -99,7 +99,7 @@ async def get_thread_state(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """获取对话当前状态（需要登录）"""
+    """ [cleaned] （ [cleaned] ）"""
     try:
         return await get_agent_state_view(
             thread_id=thread_id,
@@ -110,11 +110,11 @@ async def get_thread_state(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"获取对话状态出错: {e}, {traceback.format_exc()}")
+        logger.error(f": {e}, {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy trạng thái cuộc hội thoại: {str(e)}")
 
 
-# ==================== 线程管理 API ====================
+# ==================== Thread Management API ====================
 
 
 class ThreadCreate(BaseModel):
@@ -264,7 +264,7 @@ class SaveThreadArtifactResponse(BaseModel):
 
 
 # =============================================================================
-# > === 会话管理分组 ===
+# > ===  [cleaned]  ===
 # =============================================================================
 
 
@@ -272,7 +272,7 @@ class SaveThreadArtifactResponse(BaseModel):
 async def create_thread(
     thread: ThreadCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_required_user)
 ):
-    """创建新对话线程 (使用新存储系统)"""
+    """ [cleaned]  ( [cleaned] )"""
     return await create_thread_view(
         agent_slug=thread.agent_id,
         title=thread.title,
@@ -290,7 +290,7 @@ async def list_threads(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """获取用户的所有对话线程 (使用新存储系统)"""
+    """Get all conversation threads for user ( [cleaned] )"""
     return await list_threads_view(
         agent_slug=agent_id, db=db, current_uid=str(current_user.uid), limit=limit, offset=offset
     )
@@ -305,7 +305,7 @@ async def search_threads(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """搜索当前用户的历史对话。"""
+    """ [cleaned] 。"""
     return await search_threads_view(
         query=q,
         agent_id=agent_id,
@@ -320,7 +320,7 @@ async def search_threads(
 async def delete_thread(
     thread_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_required_user)
 ):
-    """删除对话线程 (使用新存储系统)"""
+    """Delete conversation thread ( [cleaned] )"""
     return await delete_thread_view(thread_id=thread_id, db=db, current_uid=str(current_user.uid))
 
 
@@ -336,7 +336,7 @@ async def update_thread(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """更新对话线程信息 (使用新存储系统)"""
+    """Update conversation thread [cleaned]  ( [cleaned] )"""
     return await update_thread_view(
         thread_id=thread_id,
         title=thread_update.title,
@@ -347,13 +347,13 @@ async def update_thread(
 
 
 # ================================
-# > === 附件管理分组 ===
+# > ===  [cleaned]  ===
 # ================================
 
 
 @chat.post("/attachments/tmp", response_model=TmpAttachmentResponse)
 async def upload_tmp_attachment(file: UploadFile = File(...), current_user: User = Depends(get_required_user)):
-    """上传附件到 MinIO tmp，暂不关联线程。"""
+    """ [cleaned]  MinIO tmp， [cleaned] 。"""
     return await upload_tmp_attachment_view(file=file, current_uid=str(current_user.uid))
 
 
@@ -362,7 +362,7 @@ async def parse_tmp_attachment(
     request: TmpAttachmentParseRequest,
     current_user: User = Depends(get_required_user),
 ):
-    """解析 tmp 附件并返回解析后的 tmp URL。"""
+    """ [cleaned]  tmp  [cleaned]  tmp URL。"""
     return await parse_tmp_attachment_view(
         object_name=request.object_name,
         file_name=request.file_name,
@@ -379,7 +379,7 @@ async def confirm_tmp_thread_attachments(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """将 tmp 附件正式加入线程附件列表。"""
+    """ [cleaned]  tmp  [cleaned] 。"""
     return await confirm_tmp_thread_attachments_view(
         thread_id=thread_id,
         attachments=[item.model_dump() for item in request.attachments],
@@ -395,7 +395,7 @@ async def upload_thread_attachment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """上传原始附件并关联到指定对话线程。"""
+    """ [cleaned] 。"""
     return await upload_thread_attachment_view(
         thread_id=thread_id,
         file=file,
@@ -410,7 +410,7 @@ async def list_thread_attachments(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """列出当前对话线程的所有附件元信息。"""
+    """ [cleaned] 。"""
     return await list_thread_attachments_view(
         thread_id=thread_id,
         db=db,
@@ -425,7 +425,7 @@ async def delete_thread_attachment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """移除指定附件。"""
+    """ [cleaned] 。"""
     return await delete_thread_attachment_view(
         thread_id=thread_id,
         file_id=file_id,
@@ -442,7 +442,7 @@ async def list_thread_files(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """列出线程文件目录。"""
+    """ [cleaned] 。"""
     return await list_thread_files_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -461,7 +461,7 @@ async def read_thread_file_content(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """读取线程文本文件（按行分页）。"""
+    """ [cleaned] （ [cleaned] ）。"""
     return await read_thread_file_content_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -480,7 +480,7 @@ async def get_thread_artifact(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """下载或预览线程文件。"""
+    """ [cleaned] 。"""
     file_path = await resolve_thread_artifact_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -500,7 +500,7 @@ async def save_thread_artifact_to_workspace(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """保存交付物到共享 workspace/saved_artifacts 目录。"""
+    """ [cleaned]  workspace/saved_artifacts  [cleaned] 。"""
     return await save_thread_artifact_to_workspace_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -510,7 +510,7 @@ async def save_thread_artifact_to_workspace(
 
 
 # =============================================================================
-# > === 消息反馈分组 ===
+# > ===  [cleaned]  ===
 # =============================================================================
 
 
@@ -534,7 +534,7 @@ async def submit_message_feedback(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """提交消息反馈（需要登录）"""
+    """ [cleaned] （ [cleaned] ）"""
     result = await submit_message_feedback_view(
         message_id=message_id,
         rating=feedback_data.rating,
@@ -551,7 +551,7 @@ async def get_message_feedback(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """获取指定消息的用户反馈（需要登录）"""
+    """ [cleaned] （ [cleaned] ）"""
     return await get_message_feedback_view(
         message_id=message_id,
         db=db,
@@ -560,38 +560,38 @@ async def get_message_feedback(
 
 
 # =============================================================================
-# > === 多模态图片支持分组 ===
+# > ===  [cleaned]  ===
 # =============================================================================
 
 
 @chat.post("/image/upload", response_model=ImageUploadResponse)
 async def upload_image(file: UploadFile = File(...), current_user: User = Depends(get_required_user)):
     """
-    上传并处理图片，返回base64编码的图片数据
+    ，base64
     """
     try:
-        # 验证文件类型
+        #  [cleaned] 
         if not file.content_type or not file.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Chỉ hỗ trợ tải lên tệp hình ảnh")
 
-        # 读取文件内容
+        #  [cleaned] 
         image_data = await file.read()
 
-        # 检查文件大小（10MB限制，超过后会压缩到5MB）
+        #  [cleaned] （10MB [cleaned] ， [cleaned] 5MB）
         if len(image_data) > 10 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Tệp hình ảnh quá lớn, vui lòng tải lên hình ảnh dưới 10MB")
 
-        # 处理图片
+        #  [cleaned] 
         result = process_uploaded_image(image_data, file.filename)
 
         if not result["success"]:
             raise HTTPException(status_code=400, detail=f"Xử lý hình ảnh thất bại: {result['error']}")
 
         logger.info(
-            f"用户 {current_user.id} 成功上传图片: {file.filename}, "
-            f"尺寸: {result['width']}x{result['height']}, "
-            f"格式: {result['format']}, "
-            f"大小: {result['size_bytes']} bytes"
+            f" {current_user.id} : {file.filename}, "
+            f": {result['width']}x{result['height']}, "
+            f": {result['format']}, "
+            f": {result['size_bytes']} bytes"
         )
 
         return ImageUploadResponse(**result)
@@ -599,5 +599,5 @@ async def upload_image(file: UploadFile = File(...), current_user: User = Depend
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"图片上传处理失败: {str(e)}, {traceback.format_exc()}")
+        logger.error(f": {str(e)}, {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Xử lý hình ảnh thất bại: {str(e)}")

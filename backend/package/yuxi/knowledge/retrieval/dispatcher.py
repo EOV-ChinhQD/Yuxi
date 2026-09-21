@@ -157,7 +157,7 @@ class CapabilityManager:
     async def is_graph_ready(kb_id: str) -> bool:
         """Kiểm tra xem CSDL đồ thị (Events/Entities) đã sẵn sàng hoạt động hay chưa."""
         from yuxi.storage.postgres.manager import pg_manager
-        from sqlalchemy import select, func
+        from sqlalchemy import select
         from yuxi.storage.postgres.models_knowledge import KnowledgeGraphEvent
 
         try:

@@ -56,7 +56,7 @@ async def test_evaluate_question_uses_custom_judge_llm():
 
     judge_llm = MagicMock()
     mock_response = MagicMock()
-    mock_response.content = '{"score": 1.0, "reasoning": "Correct answer"}'
+    mock_response.content = '{"accuracy": 10.0, "groundedness": 10.0, "coherence": 10.0, "reasoning": "Correct answer"}'
     judge_llm.call = AsyncMock(return_value=mock_response)
 
     res = await evaluate_question(
@@ -70,5 +70,6 @@ async def test_evaluate_question_uses_custom_judge_llm():
         select_model_fn=MagicMock()
     )
 
-    assert res["answer_scores"] == {"score": 1.0, "reasoning": "Correct answer"}
+    assert res["answer_scores"]["score"] == 1.0
+    assert res["answer_scores"]["reasoning"] == "Correct answer"
     judge_llm.call.assert_called_once()

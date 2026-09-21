@@ -1,9 +1,8 @@
-import re
-from typing import Any
 import json_repair
 
 from yuxi.utils import logger
 from yuxi.models import select_model
+
 
 def _heuristic_should_rewrite(query: str) -> bool:
     """
@@ -15,12 +14,13 @@ def _heuristic_should_rewrite(query: str) -> bool:
     words = query.strip().split()
     if len(words) <= 5:
         return True
-    
+
     # Phát hiện viết tắt (VD: HDSD, QCVN, Bơm ly tâm P-101)
     if any(w.isupper() and len(w) >= 2 for w in words):
         return True
 
     return False
+
 
 class QueryRewriter:
     @staticmethod
@@ -56,12 +56,12 @@ Lưu ý: Nếu không có từ đồng nghĩa nào phù hợp, để mảng rỗ
             raw_text = response.content if hasattr(response, "content") else str(response)
 
             data = json_repair.loads(raw_text)
-            
+
             expansions = []
             if isinstance(data, dict):
                 expansions.extend(data.get("expansions", []))
                 expansions.extend(data.get("abbreviations", []))
-                
+
             return [e for e in expansions if isinstance(e, str) and e.strip()]
         except Exception as e:
             logger.warning(f"[QueryRewriter] Failed to rewrite query: {e}")

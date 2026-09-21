@@ -1,4 +1,4 @@
-"""用户级配置模块。"""
+"""User level configuration [cleaned] 。"""
 
 from __future__ import annotations
 
@@ -14,15 +14,15 @@ from yuxi.utils.datetime_utils import format_utc_datetime, utc_now_naive
 
 
 class UserConfigSchema(BaseModel):
-    """用户专属配置 schema。"""
+    """User specific configuration schema."""
 
-    enable_memory: bool = Field(default=False, description="是否启用 Memory")
+    enable_memory: bool = Field(default=False, description="Whether to enable Memory")
 
     model_config = ConfigDict(extra="forbid")
 
 
 class UserConfig:
-    """用户级配置访问器。每次加载都从 PostgreSQL 查询，不做进程缓存。"""
+    """User level configuration [cleaned] 。 [cleaned]  PostgreSQL  [cleaned] ， [cleaned] 。"""
 
     def __init__(self, uid: str, schema: UserConfigSchema | None = None, updated_at: datetime | None = None):
         self.uid = uid

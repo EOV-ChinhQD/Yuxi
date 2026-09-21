@@ -44,7 +44,7 @@ class MilvusMemoryStore:
 
         default_spec = conf.embed_model
         embed_specs = model_cache.get_all_specs("embedding")
-        
+
         if embed_specs:
             for spec_info in embed_specs:
                 if spec_info.spec == default_spec:

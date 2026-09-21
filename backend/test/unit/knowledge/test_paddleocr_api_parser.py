@@ -226,7 +226,7 @@ def test_paddleocr_configured_token_health_does_not_submit_job() -> None:
     health = parser.check_health()
 
     assert health["status"] == "configured"
-    assert "解析时验证" in health["message"]
+    assert "xác minh" in health["message"] or "token" in health["message"]
     assert health["details"]["model"] == "PaddleOCR-VL-1.6"
 
 

@@ -3,28 +3,28 @@ param(
     [string]$ImageTag
 )
 
-# 当命令失败时，立即退出脚本
+# Exit immediately on error
 $ErrorActionPreference = "Stop"
 
 Write-Host "Pulling image: $ImageTag" -ForegroundColor Green
 
-# 计算斜杠数量来确定镜像格式
+# Count slashes to determine image format
 $slashCount = ($ImageTag -split '/' | Measure-Object).Count - 1
 
-# 根据镜像格式设置镜像 URL
+# Set mirror URL based on image format
 switch ($slashCount) {
     0 {
-        # 无前缀 (例如: python:3.13-slim)
+        # No prefix (e.g., python:3.13-slim)
         $mirrorUrl = "m.daocloud.io/docker.io/library"
         Write-Host "Image format: Official image (no prefix)" -ForegroundColor Cyan
     }
     1 {
-        # 一个前缀 (例如: milvusdb/milvus:latest)
+        # Single prefix (e.g., milvusdb/milvus:latest)
         $mirrorUrl = "m.daocloud.io/docker.io"
         Write-Host "Image format: Hub repository (one prefix)" -ForegroundColor Cyan
     }
     default {
-        # 两个或更多前缀 (例如: quay.io/coreos/etcd:v3.5.5)
+        # Multiple prefixes (e.g., quay.io/coreos/etcd:v3.5.5)
         $mirrorUrl = "m.daocloud.io"
         Write-Host "Image format: Third-party registry (multiple prefixes)" -ForegroundColor Cyan
     }
@@ -34,15 +34,15 @@ $fullMirrorUrl = "$mirrorUrl/$ImageTag"
 Write-Host "Mirror URL: $fullMirrorUrl" -ForegroundColor Yellow
 
 try {
-    # 从镜像加速器拉取镜像
+    # Pull image from mirror
     Write-Host "Step 1: Pulling image from mirror..." -ForegroundColor Blue
     docker pull $fullMirrorUrl
 
-    # 重新标记为原始名称
+    # Retag to original name
     Write-Host "Step 2: Tagging image with original name..." -ForegroundColor Blue
     docker tag $fullMirrorUrl $ImageTag
 
-    # 删除镜像加速器标签
+    # Remove mirror tag
     Write-Host "Step 3: Removing mirror tag..." -ForegroundColor Blue
     docker rmi $fullMirrorUrl
 

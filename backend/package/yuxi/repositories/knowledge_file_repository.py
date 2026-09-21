@@ -10,8 +10,8 @@ from yuxi.storage.postgres.manager import pg_manager
 from yuxi.storage.postgres.models_knowledge import KnowledgeFile
 from yuxi.utils.datetime_utils import utc_now_naive
 
-# asyncpg 单条 SQL 参数上限为 32767；按 file_id 批量查询时统一分批，避免
-# mindmap_file_ids 等大尺寸传入触发 `too many parameters` 报错。
+# asyncpg parameter limit is 32767; batch by file_id to avoid parameter overflow.
+# Large inputs like mindmap_file_ids triggering too many parameters error.
 SQL_IN_BATCH_SIZE = 10_000
 
 
@@ -578,19 +578,16 @@ class KnowledgeFileRepository:
             KnowledgeFile.file_id == file_id,
             KnowledgeFile.status.in_(sorted(allowed_statuses)),
         ]
-        
+
         if expected_chunking_version is not None:
             filters.append(KnowledgeFile.chunking_version == expected_chunking_version)
-            
+
         if expected_embedding_version is not None:
             filters.append(KnowledgeFile.embedding_version == expected_embedding_version)
 
         async with pg_manager.get_async_session_context() as session:
             result = await session.execute(
-                update(KnowledgeFile)
-                .where(*filters)
-                .values(**sanitized_data)
-                .returning(KnowledgeFile)
+                update(KnowledgeFile).where(*filters).values(**sanitized_data).returning(KnowledgeFile)
             )
             return result.scalar_one_or_none()
 

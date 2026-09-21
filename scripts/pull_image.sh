@@ -5,7 +5,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-set -e  # 当命令失败时，立即退出脚本
+set -e  # Exit immediately if a command exits with a non-zero status
 
 IMAGE_TAG=$1
 

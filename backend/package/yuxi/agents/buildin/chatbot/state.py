@@ -25,10 +25,10 @@ def merge_subagent_runs(
     existing: list[SubAgentRunState] | None,
     new: list[SubAgentRunState] | None,
 ) -> list[SubAgentRunState]:
-    """LangGraph state reducer：增量合并父 Agent 记录的子智能体运行摘要。
+    """LangGraph state reducer: incrementally merges subagent run summaries.
 
-    `run_id` 是一次真实子智能体执行的身份。只有相同 `run_id` 才会更新同一条记录；
-    没有 `run_id` 的增量记录直接追加，不用工具调用 ID 或子线程 ID 做旧状态兼容匹配。
+    run_id identifies an actual subagent execution. Identical run_ids update the same record;
+    Incremental records without run_id are appended directly.
     """
     if existing is None:
         return list(new or [])

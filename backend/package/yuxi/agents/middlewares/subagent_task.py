@@ -111,14 +111,15 @@ _SUBAGENTS_CACHE: dict[tuple[str, tuple[str, ...]], dict[str, Any]] = {}
 _SUBAGENTS_CACHE_TTL = 60
 _SUBAGENTS_CACHE_LOCK = asyncio.Lock()
 
+
 async def _get_cached_subagents(uid: str, selected_slugs: list[str]) -> list[Agent] | None:
     cache_key = (uid, tuple(selected_slugs))
-    
+
     async with _SUBAGENTS_CACHE_LOCK:
         cached = _SUBAGENTS_CACHE.get(cache_key)
         if cached and time.time() - cached["time"] < _SUBAGENTS_CACHE_TTL:
             return cached["subagents"]
-            
+
     async with pg_manager.get_async_session_context() as db:
         user = await UserRepository().get_by_uid_with_db(db, uid)
         if user is None:
@@ -136,13 +137,11 @@ async def _get_cached_subagents(uid: str, selected_slugs: list[str]) -> list[Age
                     subagents.append(agent)
         else:
             subagents = await repo.list_visible_subagents(user=user)
-            
+
     async with _SUBAGENTS_CACHE_LOCK:
-        _SUBAGENTS_CACHE[cache_key] = {
-            "subagents": subagents,
-            "time": time.time()
-        }
+        _SUBAGENTS_CACHE[cache_key] = {"subagents": subagents, "time": time.time()}
     return subagents
+
 
 async def create_subagent_task_middleware(parent_context) -> YuxiSubAgentMiddleware | None:
     """Dựa trên ngữ cảnh của agent cha để tải các sub-agent khả dụng, và tạo middleware task khi có các mục khả dụng."""

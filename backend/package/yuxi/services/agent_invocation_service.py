@@ -58,16 +58,16 @@ async def create_agent_call_run_view(
     current_user: User,
     db: AsyncSession,
 ) -> dict[str, Any]:
-    """创建外部系统非流式 Agent 调用，并返回 Agent Call 响应结构。
+    """Create external non-streaming Agent invocation and return Agent Call response.
 
-    Agent Call 是 HTTP/API 适配层语义：它接受 OpenAI 风格消息、支持同步等待
-    或异步返回 run_id，并把最终结果包装为兼容外部调用方的 ``choices`` 结构。
-    真正的 AgentRun 创建和执行仍交给 ``create_agent_invocation_run_view`` 与
+    Agent Call provides HTTP/API adapter semantics for OpenAI-style messages.
+    Supports sync waiting or async run_id return, formatting output as choices.
+    Actual AgentRun execution delegated to create_agent_invocation_run_view.
     ``agent_run_service``。
     """
     agent_slug = _normalize_required_text(agent_slug, field_name="agent_slug")
     if stream:
-        raise HTTPException(status_code=422, detail="agent-call 暂不支持 stream=true")
+        raise HTTPException(status_code=422, detail="agent-call does not support stream=true currently")
 
     input_message = _extract_agent_call_input_message(messages)
     normalized_request_id = _normalize_agent_call_request_id(request_id)
@@ -103,7 +103,7 @@ async def create_agent_call_run_view(
         raise HTTPException(
             status_code=504,
             detail={
-                "message": "运行仍在进行中，等待最终结果超时",
+                "message": "Execution in progress, timed out waiting for final result",
                 "run": exc.result,
             },
         ) from exc
@@ -122,15 +122,15 @@ async def create_agent_eval_run_view(
     db: AsyncSession,
     include_trajectory_summary: bool = False,
 ) -> dict[str, Any]:
-    """创建一次评估样例运行，并阻塞等待最终 AgentRun 结果。
+    """Create an eval sample run and block waiting for final AgentRun result.
 
-    Eval 不维护数据集或评分规则；它只把 CLI/Langfuse 的单条样例转换为普通
-    conversation-backed AgentRun，并通过 metadata 标记评估上下文，供 Langfuse
-    trace 和后续结果归档使用。
+    Eval converts CLI/Langfuse sample into conversation-backed AgentRun.
+    Tags evaluation context in metadata for Langfuse traces.
+    Used for tracing and result archival.
     """
     agent_slug = _normalize_required_text(agent_slug, field_name="agent_slug")
     if not query:
-        raise HTTPException(status_code=422, detail="query 不能为空")
+        raise HTTPException(status_code=422, detail="query cannot be empty")
 
     meta = dict(meta or {})
     evaluation_metadata = _normalize_evaluation(evaluation)
@@ -153,7 +153,7 @@ async def create_agent_eval_run_view(
         raise HTTPException(
             status_code=504,
             detail={
-                "message": "运行仍在进行中，等待最终结果超时",
+                "message": "Execution in progress, timed out waiting for final result",
                 "run": exc.result,
             },
         ) from exc
@@ -181,23 +181,23 @@ async def create_agent_invocation_run_view(
     conversation_title: str,
     attachment_file_ids: list[str] | None = None,
 ) -> dict[str, Any]:
-    """统一创建外部调用类 AgentRun，入口负责把请求解析成 input/meta。"""
+    """Unified creation of external AgentRuns, parsing request into input/meta."""
     invocation_metadata = dict(invocation_metadata or {})
     if not str(invocation_metadata.get("source") or "").strip():
-        raise HTTPException(status_code=422, detail="source 不能为空")
+        raise HTTPException(status_code=422, detail="source cannot be empty")
 
     agent_item = await AgentRepository(db).get_visible_by_slug(slug=agent_slug, user=current_user)
     if not agent_item:
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent does not exist")
 
     existing_run = await AgentRunRepository(db).get_run_by_request_id(request_id)
     if existing_run:
         if existing_run.uid != str(current_user.uid):
-            raise HTTPException(status_code=409, detail="request_id 冲突")
+            raise HTTPException(status_code=409, detail="request_id conflict")
         if existing_run.agent_slug != agent_item.slug or existing_run.run_type != "chat":
-            raise HTTPException(status_code=409, detail="request_id 冲突")
+            raise HTTPException(status_code=409, detail="request_id conflict")
         if requested_thread_id and existing_run.conversation_thread_id != requested_thread_id:
-            raise HTTPException(status_code=409, detail="request_id 冲突")
+            raise HTTPException(status_code=409, detail="request_id conflict")
         resolved_thread_id = existing_run.conversation_thread_id
     else:
         resolved_thread_id = requested_thread_id or str(uuid.uuid4())
@@ -240,26 +240,26 @@ async def get_agent_call_run_result_view(
 ) -> dict[str, Any]:
     run_id = str(run_id or "").strip()
     if not run_id:
-        raise HTTPException(status_code=422, detail="run_id 不能为空")
+        raise HTTPException(status_code=422, detail="run_id cannot be empty")
 
     run_view = await get_agent_run_view(run_id=run_id, current_uid=current_uid, db=db)
     run = run_view["run"]
     expected_agent_slug = str(agent_slug or "").strip()
     if expected_agent_slug and run.get("agent_slug") != expected_agent_slug:
-        raise HTTPException(status_code=409, detail="run_id 与 agent_slug 不匹配")
+        raise HTTPException(status_code=409, detail="run_id does not match agent_slug")
 
     result = await get_agent_run_result(run_id=run_id, current_uid=current_uid, db=db)
     return _build_agent_call_response(result)
 
 
 async def _load_trajectory_summary(run_id: str) -> dict[str, Any]:
-    """从 run event stream 读取有限事件并生成轻量轨迹摘要。"""
+    """Read events from run event stream and produce lightweight trajectory summary."""
     events = await list_run_stream_events(run_id, after_seq="0-0", limit=TRAJECTORY_SUMMARY_EVENT_LIMIT)
     return _build_trajectory_summary(events)
 
 
 def _build_trajectory_summary(events: list[dict[str, Any]]) -> dict[str, Any]:
-    """聚合工具调用、工具错误和人工中断计数，避免暴露完整事件载荷。"""
+    """Aggregate tool calls, errors, and interrupt counts without exposing full payload."""
     summary = _trajectory_summary_base(events)
     tool_calls: dict[str, str] = {}
     tool_errors: set[str] = set()
@@ -326,7 +326,7 @@ def _build_trajectory_summary(events: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _trajectory_summary_base(events: list[dict[str, Any]]) -> dict[str, Any]:
-    """创建轨迹摘要的固定字段，后续只填充聚合计数。"""
+    """Create fixed schema for trajectory summary with aggregated counts."""
     first_seq = _event_seq(events[0]) if events else None
     last_seq = _event_seq(events[-1]) if events else None
     return {
@@ -375,7 +375,7 @@ def _is_interrupt_status_event(event_type: str | None, chunk: dict[str, Any]) ->
 def _normalize_required_text(value: str | None, *, field_name: str) -> str:
     normalized = str(value or "").strip()
     if not normalized:
-        raise HTTPException(status_code=422, detail=f"{field_name} 不能为空")
+        raise HTTPException(status_code=422, detail=f"{field_name} cannot be empty")
     return normalized
 
 
@@ -385,33 +385,33 @@ def _normalize_agent_call_request_id(request_id: str | None) -> str:
 
     normalized = str(request_id).strip()
     if len(normalized) > MAX_REQUEST_ID_LENGTH:
-        raise HTTPException(status_code=422, detail=f"request_id 不能超过 {MAX_REQUEST_ID_LENGTH} 个字符")
+        raise HTTPException(status_code=422, detail=f"request_id cannot exceed {MAX_REQUEST_ID_LENGTH} characters")
     return normalized
 
 
 def _validate_agent_call_meta(agent_call_meta: dict[str, Any]) -> None:
-    """Agent Call 只允许通过 model_spec 覆盖运行模型，不允许 metadata 覆盖 Agent context。"""
+    """Agent Call allows model overriding via model_spec only."""
     if isinstance(agent_call_meta, dict) and "context" in agent_call_meta:
         raise HTTPException(
             status_code=422,
-            detail="agent_call_meta.context 不允许覆盖 Agent context，请使用 model_spec 覆盖模型",
+            detail="agent_call_meta.context cannot override Agent context, use model_spec instead",
         )
 
 
 def _normalize_agent_invocation_request_id(meta: dict[str, Any] | None) -> str:
-    """返回去空白并校验长度的 request_id；缺省时生成新的 UUID。"""
+    """Return sanitized request_id or generate new UUID."""
     raw_request_id = (meta or {}).get("request_id")
     if raw_request_id is None or not str(raw_request_id).strip():
         return str(uuid.uuid4())
 
     request_id = str(raw_request_id).strip()
     if len(request_id) > MAX_REQUEST_ID_LENGTH:
-        raise HTTPException(status_code=422, detail=f"request_id 不能超过 {MAX_REQUEST_ID_LENGTH} 个字符")
+        raise HTTPException(status_code=422, detail=f"request_id cannot exceed {MAX_REQUEST_ID_LENGTH} characters")
     return request_id
 
 
 def _normalize_evaluation(evaluation: dict[str, Any] | None) -> dict[str, str]:
-    """仅保留已知评估字段，并统一转成去空白的非空字符串。"""
+    """Retain known evaluation fields converted to trimmed non-empty strings."""
     if not isinstance(evaluation, dict):
         return {}
 
@@ -432,7 +432,7 @@ def _build_invocation_metadata(*, source: str, invocation_meta: dict[str, Any] |
         if "context" in invocation_meta:
             raise HTTPException(
                 status_code=422,
-                detail="agent_invocation_meta.context 不允许覆盖 Agent context，请使用 model_spec 覆盖模型",
+                detail="agent_invocation_meta.context cannot override Agent context, use model_spec instead",
             )
         metadata["agent_invocation_meta"] = dict(invocation_meta)
     return metadata
@@ -494,7 +494,7 @@ def _build_agent_call_response(result: dict[str, Any]) -> dict[str, Any]:
 
 def _extract_agent_call_input_message(messages: list[dict[str, Any]]) -> AgentRunInputMessage:
     if not messages:
-        raise HTTPException(status_code=422, detail="messages 不能为空")
+        raise HTTPException(status_code=422, detail="messages cannot be empty")
 
     for message in reversed(messages):
         if not isinstance(message, dict) or message.get("role") != "user":
@@ -505,4 +505,4 @@ def _extract_agent_call_input_message(messages: list[dict[str, Any]]) -> AgentRu
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    raise HTTPException(status_code=422, detail="messages 必须包含 user 消息")
+    raise HTTPException(status_code=422, detail="messages must contain a user message")

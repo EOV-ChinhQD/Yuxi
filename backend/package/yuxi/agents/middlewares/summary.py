@@ -455,13 +455,13 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
                 file_path=event.get("file_path"),
             )
 
-    # 重写 _create_summary/_acreate_summary 以在摘要 LLM 调用上挂 TAG_NOSTREAM：父类
-    # 的 model.invoke 带 lc_source 元数据但无 nostream 标记，其 token 流会被 LangGraph
-    # messages stream 捕获并广播到前端，形成 phantom 摘要消息。带 TAG_NOSTREAM 后流式
-    # 层在源头跳过该调用，无需 chat_service 下游过滤，主 messages 流天然只含用户可见回复。
-    # 父类硬编码 invoke config 且无 tags 钩子（self.model 为中间件实例共享属性，并发下不能
-    # 临时换绑 bind(tags=...)），故只能重写；trim/format 是纯同步逻辑，抽到 _build_summary_prompt
-    # 供 sync/async 两条路径共用，避免逐字重复。
+    # Override _create_summary/_acreate_summary to attach TAG_NOSTREAM to summary LLM calls:
+    # parent model.invoke has lc_source metadata without nostream tag, so its token stream
+    # would get broadcast to frontend as phantom summary messages. TAG_NOSTREAM prevents this.
+    # Streaming layer skips this call at the source, keeping main messages stream clean.
+    # Parent hardcodes invoke config without tags hooks (self.model shared across instances).
+    # Override allows clean tag attachment; trim/format shared via _build_summary_prompt.
+    # Shared across sync/async paths to avoid code duplication.
     _SUMMARY_INVOKE_CONFIG = {"metadata": {"lc_source": "summarization"}, "tags": [TAG_NOSTREAM]}
 
     def _build_summary_prompt(self, sanitized: list[AnyMessage]) -> str | None:
@@ -745,9 +745,9 @@ class YuxiSummarizationMiddleware(SummarizationMiddleware):
                 large_tool_results_prefix=self._large_tool_results_prefix,
             )
 
-        # Offload 与 summary 互相独立，并发执行以避免串行等待一次文件 I/O + 一次
-        # LLM 调用；_SUMMARY_SANITIZED_MESSAGES 的 id 缓存保证两路 sanitize 不会重复
-        # 写入工具结果文件，offload 失败返回 None 时 summary 仍可独立完成。
+        # Offload and summary are independent and run concurrently to avoid serial waiting.
+        # Cache ensures sanitize is not duplicated across execution paths.
+        # If offload returns None on failure, summary can still complete independently.
         file_path, summary = await asyncio.gather(
             self._aoffload_to_backend(backend, messages_to_summarize),
             self._acreate_summary(messages_to_summarize),

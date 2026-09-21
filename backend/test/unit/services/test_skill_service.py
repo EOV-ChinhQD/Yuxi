@@ -287,6 +287,7 @@ def test_knowledge_base_builtin_skill_spec():
     assert knowledge_base["tool_dependencies"] == [
         "list_kbs",
         "query_kb",
+        "query_keywords",
         "find_kb_document",
         "open_kb_document",
         "get_mindmap",

@@ -102,7 +102,7 @@ async def test_ocr_parse_file_uses_default_engine(tmp_path, monkeypatch: pytest.
 async def test_ocr_parse_file_rejects_non_user_data_path(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("yuxi.config.save_dir", str(tmp_path))
 
-    with pytest.raises(ValueError, match="只允许解析"):
+    with pytest.raises(ValueError, match="Only allowed to parse"):
         await ocr_parse_file.coroutine(file_path="/etc/passwd", runtime=_runtime())
 
 
@@ -114,7 +114,7 @@ async def test_ocr_parse_file_rejects_directory(tmp_path, monkeypatch: pytest.Mo
     ensure_thread_dirs(thread_id, uid)
     dir_virtual_path = virtual_path_for_thread_file(thread_id, sandbox_workspace_dir(thread_id, uid), uid=uid)
 
-    with pytest.raises(ValueError, match="路径不是普通文件"):
+    with pytest.raises(ValueError, match="Path is not a regular file"):
         await ocr_parse_file.coroutine(file_path=dir_virtual_path, runtime=_runtime(thread_id=thread_id, uid=uid))
 
 
@@ -122,7 +122,7 @@ async def test_ocr_parse_file_rejects_directory(tmp_path, monkeypatch: pytest.Mo
 async def test_ocr_parse_file_rejects_path_traversal(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("yuxi.config.save_dir", str(tmp_path))
 
-    with pytest.raises(ValueError, match="只允许解析"):
+    with pytest.raises(ValueError, match="Only allowed to parse"):
         await ocr_parse_file.coroutine(
             file_path="/home/gem/user-data/../secrets.png",
             runtime=_runtime(),

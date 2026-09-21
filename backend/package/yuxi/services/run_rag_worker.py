@@ -131,28 +131,55 @@ async def handle_extract_knowledge(payload: dict) -> None:
     logger.info(f"Successfully processed and stored Event & Entity resolution for chunk {chunk_id}")
 
 
+_SYNC_KB_MANAGER = None
+
+
 async def handle_sync_milvus_chunks(payload: dict) -> None:
     kb_id = payload.get("kb_id")
     file_id = payload.get("file_id")
     operator_id = payload.get("operator_id")
-    
+
     logger.info(f"RAG Worker received SYNC_MILVUS_CHUNKS job for file {file_id} in kb {kb_id}")
-    
+
     from yuxi.knowledge.manager import KnowledgeBaseManager
-    
+
     # 1. Khởi tạo kết nối DB nếu cần
     if not pg_manager._initialized:
         pg_manager.initialize()
-        
-    kb_manager = KnowledgeBaseManager(work_dir="saves")
-    await kb_manager.initialize()
-    
-    # Lấy instance KB
-    kb_instance = await kb_manager._get_kb_for_database(kb_id)
-    if not kb_instance:
-        logger.error(f"KB {kb_id} not found")
+
+    # Fast-check if KB exists in DB to discard obsolete queue jobs immediately
+    from yuxi.repositories.knowledge_base_repository import KnowledgeBaseRepository
+
+    kb_repo = KnowledgeBaseRepository()
+    kb_record = await kb_repo.get_by_kb_id(kb_id)
+    if not kb_record:
+        logger.warning(f"KB {kb_id} no longer exists in DB. Discarding stale sync job for file {file_id}.")
         return
-        
+
+    global _SYNC_KB_MANAGER
+    kb_manager = _SYNC_KB_MANAGER
+    if kb_manager is None:
+        from pathlib import Path as _SavesPath
+
+        saves_dir = "/app/saves" if _SavesPath("/app/saves").is_dir() else "saves"
+        kb_manager = KnowledgeBaseManager(work_dir=saves_dir)
+        await kb_manager.initialize()
+        _SYNC_KB_MANAGER = kb_manager
+
+    kb_instance = None
+    last_error: Exception | None = None
+    for _ in range(10):
+        try:
+            kb_instance = await kb_manager._get_kb_for_database(kb_id)
+            if kb_instance is not None:
+                break
+        except Exception as exc:
+            last_error = exc
+        await asyncio.sleep(0.3)
+    if kb_instance is None:
+        logger.error(f"KB {kb_id} not found after waiting (last error: {last_error})")
+        return
+
     # Gọi hàm sync_to_milvus của KB instance
     if hasattr(kb_instance, "sync_to_milvus"):
         await kb_instance.sync_to_milvus(kb_id, file_id, operator_id)

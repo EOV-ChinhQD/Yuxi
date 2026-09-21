@@ -84,13 +84,17 @@ def build_dependency_map(skills: list) -> dict[str, SkillDependencyNode]:
         }
     return result
 
+
 _SKILLS_CACHE: dict[str, dict[str, Any]] = {}
 _SKILLS_CACHE_TTL = 60
 _SKILLS_CACHE_LOCK = asyncio.Lock()
 
-async def _get_cached_skills_data(db: AsyncSession | None = None, user=None) -> tuple[dict[str, SkillPromptMetadata], dict[str, SkillDependencyNode]]:
+
+async def _get_cached_skills_data(
+    db: AsyncSession | None = None, user=None
+) -> tuple[dict[str, SkillPromptMetadata], dict[str, SkillDependencyNode]]:
     user_key = getattr(user, "uid", getattr(user, "id", "global")) if user else "global"
-    
+
     async with _SKILLS_CACHE_LOCK:
         cached = _SKILLS_CACHE.get(user_key)
         if cached and time.time() - cached["time"] < _SKILLS_CACHE_TTL:
@@ -99,19 +103,17 @@ async def _get_cached_skills_data(db: AsyncSession | None = None, user=None) -> 
     skills = await _list_skills_from_db(db, user)
     metadata = build_prompt_metadata(skills)
     dep_map = build_dependency_map(skills)
-    
+
     async with _SKILLS_CACHE_LOCK:
-        _SKILLS_CACHE[user_key] = {
-            "metadata": metadata,
-            "dep_map": dep_map,
-            "time": time.time()
-        }
+        _SKILLS_CACHE[user_key] = {"metadata": metadata, "dep_map": dep_map, "time": time.time()}
     return metadata, dep_map
+
 
 async def get_prompt_metadata(db: AsyncSession | None = None, user=None) -> dict[str, SkillPromptMetadata]:
     """Get prompt word metadata (load directly from database)"""
     metadata, _ = await _get_cached_skills_data(db, user)
     return metadata
+
 
 async def get_dependency_map(db: AsyncSession | None = None, user=None) -> dict[str, SkillDependencyNode]:
     """Get dependency mapping (load directly from database)"""

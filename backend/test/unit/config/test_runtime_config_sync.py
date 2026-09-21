@@ -194,7 +194,7 @@ def test_update_rejects_unknown_default_ocr_engine(tmp_path, monkeypatch: pytest
     _patch_runtime_redis(monkeypatch, _FakeRedis())
     cfg = Config(save_dir=str(tmp_path))
 
-    with pytest.raises(ValueError, match="不支持的默认 OCR 引擎"):
+    with pytest.raises(ValueError, match="Unsupported default OCR engine"):
         cfg.update({"default_ocr_engine": "not_an_ocr_engine"})
 
 

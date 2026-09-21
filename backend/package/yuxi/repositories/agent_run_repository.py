@@ -34,7 +34,7 @@ class AgentRunRepository:
         created_by_run_id: str,
         run_id: str,
     ) -> AgentRun | None:
-        """读取当前父 run 作用域内的子智能体 run，并校验线程关系一致性。"""
+        """Read subagent runs within current parent run scope and validate thread consistency."""
         creator_run = await self.get_run_for_user(created_by_run_id, uid)
         if not creator_run:
             return None
@@ -64,7 +64,7 @@ class AgentRunRepository:
     async def get_latest_subagent_run_by_thread_for_user(
         self, conversation_thread_id: str, uid: str
     ) -> AgentRun | None:
-        """读取某个子线程最近一次子智能体 run，用于状态页和继续线程校验。"""
+        """Read latest subagent run for a sub-thread for status and resume verification."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -78,7 +78,7 @@ class AgentRunRepository:
         return result.scalar_one_or_none()
 
     async def get_latest_run_by_thread_for_user(self, conversation_thread_id: str, uid: str) -> AgentRun | None:
-        """读取线程最近一次 run，用于恢复查询 checkpoint 时的运行时模型。"""
+        """Read latest run on thread to restore runtime model when querying checkpoint."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -92,7 +92,7 @@ class AgentRunRepository:
         return result.scalar_one_or_none()
 
     async def list_child_runs_for_user(self, created_by_run_id: str, uid: str) -> list[AgentRun]:
-        """列出由指定 run 创建的所有子 run。"""
+        """List all child runs created by specified run."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -104,7 +104,7 @@ class AgentRunRepository:
         return list(result.scalars().all())
 
     async def list_active_child_runs_for_user(self, created_by_run_id: str, uid: str) -> list[AgentRun]:
-        """列出由指定 run 创建且尚未结束的子 run，用于父 run 取消时级联处理。"""
+        """List uncompleted child runs created by run for cascading cancellation."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -123,7 +123,7 @@ class AgentRunRepository:
         conversation_thread_id: str,
         uid: str,
     ) -> AgentRun | None:
-        """检查同一用户、智能体、线程上是否已有未结束 run，避免并发写同一线程。"""
+        """Check for active uncompleted runs on same user/agent/thread to prevent race conditions."""
         result = await self.db.execute(
             select(AgentRun)
             .where(
@@ -152,7 +152,7 @@ class AgentRunRepository:
         run_type: str = "chat",
         input_message_id: int | None = None,
     ) -> AgentRun:
-        """登记一条 run 记录；输入正文和图片应通过 input_message_id 指向 Message。"""
+        """Register run record; input text and images link to Message via input_message_id."""
         run = AgentRun(
             id=run_id,
             conversation_thread_id=conversation_thread_id,

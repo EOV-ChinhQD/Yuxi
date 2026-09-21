@@ -2,10 +2,12 @@ import asyncio
 from yuxi.storage.redis import get_async_redis_client
 import time
 
+
 class GpuThrottle:
     """
     Distributed semaphore using Redis to limit concurrent GPU tasks (like embedding) globally.
     """
+
     def __init__(self, key: str = "gpu_semaphore", max_concurrent: int = 5, timeout_sec: int = 60):
         self.key = key
         self.max_concurrent = max_concurrent
@@ -16,7 +18,7 @@ class GpuThrottle:
         redis = await get_async_redis_client()
         # Clean up expired identifiers
         await redis.zremrangebyscore(self.key, "-inf", time.time() - self.timeout_sec)
-        
+
         # Simple loop for acquiring lock
         while True:
             count = await redis.zcard(self.key)

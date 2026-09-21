@@ -233,11 +233,17 @@ class StructuralChunker(BaseChunker):
         if node.node_type in ["text", "code"] and node.token_count > self.target_size:
             hard_limit = int(self.target_size * 1.5)
             splits = hard_split_by_token_limit(node.text, self.target_size, hard_limit)
-            for split_text in splits:
-                split_node = DocumentNode(split_text, node.level, node.node_type, node.metadata)
-                split_node.token_count = count_tokens(split_text)
-                self._add_content_to_chunk(split_node, accum, chunks, context_stack)
-            return
+            if len(splits) <= 1:
+                # hard_limit tolerates slightly-oversized nodes as a single split,
+                # which would recurse forever here; retry with a strict split.
+                splits = hard_split_by_token_limit(node.text, self.target_size)
+            if len(splits) > 1:
+                for split_text in splits:
+                    split_node = DocumentNode(split_text, node.level, node.node_type, node.metadata)
+                    split_node.token_count = count_tokens(split_text)
+                    self._add_content_to_chunk(split_node, accum, chunks, context_stack)
+                return
+            # Unsplittable (e.g. no token boundaries): fall through and accept as an oversized chunk.
 
         current_tokens = sum(n.token_count for n in accum)
 

@@ -13,7 +13,7 @@ class SubagentThreadRepository:
         self.db = db_session
 
     async def get_by_child_thread_for_user(self, child_thread_id: str, uid: str) -> SubagentThread | None:
-        """按子线程 ID 查找当前用户可见的父子线程关系。"""
+        """Find parent-child thread relationships visible to current user by sub-thread ID."""
         result = await self.db.execute(
             select(SubagentThread).where(
                 SubagentThread.child_thread_id == child_thread_id,
@@ -23,7 +23,7 @@ class SubagentThreadRepository:
         return result.scalar_one_or_none()
 
     async def get_for_user(self, relation_id: int, uid: str) -> SubagentThread | None:
-        """按关系记录主键读取当前用户的子智能体线程关系。"""
+        """Read subagent thread relationship for current user by primary key."""
         result = await self.db.execute(
             select(SubagentThread).where(
                 SubagentThread.id == relation_id,
@@ -33,7 +33,7 @@ class SubagentThreadRepository:
         return result.scalar_one_or_none()
 
     async def get_by_child_conversation_for_user(self, child_conversation_id: int, uid: str) -> SubagentThread | None:
-        """按子对话 ID 查找父子线程关系，用于从 conversation 反查父线程。"""
+        """Find parent-child relationship by sub-conversation ID to trace parent thread."""
         result = await self.db.execute(
             select(SubagentThread).where(
                 SubagentThread.child_conversation_id == child_conversation_id,
@@ -52,7 +52,7 @@ class SubagentThreadRepository:
         subagent_slug: str,
         created_by_run_id: str,
     ) -> SubagentThread:
-        """创建一条父对话到子对话的线程关系记录。"""
+        """Create parent-to-child conversation thread relationship record."""
         item = SubagentThread(
             uid=str(uid),
             parent_conversation_id=parent_conversation_id,

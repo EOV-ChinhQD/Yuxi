@@ -184,7 +184,7 @@ async def create_agent(
 @agent_router.get("/{agent_id}")
 async def get_agent(agent_id: str, current_user: User = Depends(get_required_user), db: AsyncSession = Depends(get_db)):
     repo = AgentRepository(db)
-    agent_slug = agent_id  # 兼容既有路径参数名；这里实际是 Agent.slug。
+    agent_slug = agent_id  # Compatibility with existing path param; actual value is Agent.slug.
     item = await repo.get_visible_by_slug(slug=agent_slug, user=current_user, kind="any")
     if not item:
         raise HTTPException(status_code=404, detail="Agent không tồn tại")
@@ -199,7 +199,7 @@ async def update_agent(
     db: AsyncSession = Depends(get_db),
 ):
     repo = AgentRepository(db)
-    agent_slug = agent_id  # 兼容既有路径参数名；这里实际是 Agent.slug。
+    agent_slug = agent_id  # Compatibility with existing path param; actual value is Agent.slug.
     item = await repo.get_visible_by_slug(slug=agent_slug, user=current_user, kind="any")
     if not item:
         raise HTTPException(status_code=404, detail="Agent không tồn tại")
@@ -237,7 +237,7 @@ async def delete_agent(
     agent_id: str, current_user: User = Depends(get_required_user), db: AsyncSession = Depends(get_db)
 ):
     repo = AgentRepository(db)
-    agent_slug = agent_id  # 兼容既有路径参数名；这里实际是 Agent.slug。
+    agent_slug = agent_id  # Compatibility with existing path param; actual value is Agent.slug.
     item = await repo.get_visible_by_slug(slug=agent_slug, user=current_user, kind="any")
     if not item:
         raise HTTPException(status_code=404, detail="Agent không tồn tại")
@@ -256,7 +256,7 @@ async def set_agent_default(
     db: AsyncSession = Depends(get_db),
 ):
     repo = AgentRepository(db)
-    agent_slug = agent_id  # 兼容既有路径参数名；这里实际是 Agent.slug。
+    agent_slug = agent_id  # Compatibility with existing path param; actual value is Agent.slug.
     item = await repo.get_by_slug(agent_slug)
     if not item:
         raise HTTPException(status_code=404, detail="Agent không tồn tại")

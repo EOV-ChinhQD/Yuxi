@@ -13,6 +13,24 @@ from yuxi.knowledge.implementations.milvus import (
 )
 
 
+@pytest.fixture(autouse=True)
+async def _reset_async_redis_singleton():
+    """Mỗi test dùng event loop riêng; client redis async singleton bám loop cũ sẽ hỏng test kế tiếp."""
+    try:
+        from yuxi.storage.redis import close_async_redis_client
+
+        await close_async_redis_client()
+    except Exception:
+        pass
+    yield
+    try:
+        from yuxi.storage.redis import close_async_redis_client
+
+        await close_async_redis_client()
+    except Exception:
+        pass
+
+
 class FakeHit:
     def __init__(self, content: str, distance: float):
         self.distance = distance
@@ -30,6 +48,9 @@ class FakeCollection:
         self.hybrid_calls = []
         self.insert_calls = []
         self.distance = distance
+        self.schema = types.SimpleNamespace(
+            fields=[types.SimpleNamespace(name=name) for name in ("id", "content", "chunk_id", "file_id", "chunk_index", "embedding", "content_sparse", "raw_content")]
+        )
 
     def search(self, **kwargs):
         self.search_calls.append(kwargs)
@@ -95,7 +116,19 @@ class FakeKnowledgeFileRepository:
         self.records = records
         self.update_calls = []
         self.conditional_update_calls = []
+        self.atomic_claim_calls = []
         self.deleted = []
+
+    async def atomic_update_status_and_version(
+        self, *, kb_id: str, file_id: str, allowed_statuses: set[str], data: dict
+    ):
+        record = self.records.get(file_id)
+        self.atomic_claim_calls.append((kb_id, file_id, set(allowed_statuses), dict(data)))
+        if record is None or record.kb_id != kb_id or record.status not in allowed_statuses:
+            return None
+        for key, value in data.items():
+            setattr(record, key, value)
+        return record
 
     async def get_by_file_id(self, file_id: str):
         return self.records.get(file_id)
@@ -223,14 +256,68 @@ def test_calculate_chunk_stats_counts_chunks_and_tokens():
     }
 
 
+class FakeAsyncSession:
+    def __init__(self):
+        self.executed = []
+        self.added = []
+
+    def add(self, record):
+        self.added.append(record)
+
+    async def execute(self, stmt, *args, **kwargs):
+        self.executed.append(stmt)
+        return types.SimpleNamespace(scalars=lambda: types.SimpleNamespace(all=lambda: []))
+
+
+class FakePgManager:
+    def __init__(self):
+        self.sessions = []
+
+    def get_async_session_context(self):
+        session = FakeAsyncSession()
+        self.sessions.append(session)
+
+        class _Ctx:
+            async def __aenter__(self):
+                return session
+
+            async def __aexit__(self, *args):
+                return False
+
+        return _Ctx()
+
+
+class FakeQueueClient:
+    def __init__(self):
+        self.publish_calls = []
+
+    async def publish(self, event_type: str, payload: dict, stream_name: str = "yuxi:rag:stream") -> str:
+        self.publish_calls.append((event_type, payload, stream_name))
+        return "0-0"
+
+
+def patch_async_pipeline(monkeypatch) -> tuple[FakePgManager, FakeQueueClient]:
+    """Fake the PG delete+insert transaction and the Redis queue publish of the async indexing pipeline."""
+    pg_manager = FakePgManager()
+    queue_client = FakeQueueClient()
+
+    import yuxi.knowledge.implementations.milvus as milvus_module
+    from yuxi.storage.postgres import manager as pg_manager_module
+    from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
+
+    monkeypatch.setattr(pg_manager_module.pg_manager, "get_async_session_context", pg_manager.get_async_session_context)
+    monkeypatch.setattr(milvus_module, "KnowledgeChunk", KnowledgeChunk, raising=False)
+    monkeypatch.setattr("yuxi.core.queue.QueueClient.publish", queue_client.publish)
+    return pg_manager, queue_client
+
+
 async def test_index_file_persists_chunk_stats(monkeypatch):
     kb = MilvusKB.__new__(MilvusKB)
     kb.databases_meta = {"db": {"embedding_model_spec": "test-provider:test-embedding", "metadata": {}}}
     file_repo = FakeKnowledgeFileRepository({"file-1": make_file_record()})
     patch_file_repository(monkeypatch, file_repo)
+    pg_manager, queue_client = patch_async_pipeline(monkeypatch)
     collection = FakeCollection()
-    deleted_files = []
-    store_calls = []
     refreshed_kbs = []
     chunks = [make_chunk(0, content="alpha beta"), make_chunk(1, content="Chinese")]
 
@@ -240,15 +327,6 @@ async def test_index_file_persists_chunk_stats(monkeypatch):
     async def read_markdown(path):
         return "# demo"
 
-    async def embedding_function(texts):
-        return [[0.1, 0.2] for _ in texts]
-
-    async def delete_file_chunks_only(kb_id, file_id):
-        deleted_files.append((kb_id, file_id))
-
-    async def embed_and_store_chunks(kb_id, file_id, collection_arg, chunk_records, embedding_fn):
-        store_calls.append((kb_id, file_id, collection_arg, list(chunk_records), embedding_fn))
-
     async def refresh_database_stats(kb_id):
         refreshed_kbs.append(kb_id)
         return {}
@@ -256,22 +334,20 @@ async def test_index_file_persists_chunk_stats(monkeypatch):
     kb._get_milvus_collection = get_collection
     kb._read_markdown_from_minio = read_markdown
     kb._split_text_into_chunks = lambda text, file_id, filename, params: chunks
-    kb._get_embedding_function = lambda embedding_model_spec: embedding_function
-    kb.delete_file_chunks_only = delete_file_chunks_only
-    kb._embed_and_store_chunks = embed_and_store_chunks
     kb.refresh_database_stats = refresh_database_stats
 
     result = await kb.index_file("db", "file-1", operator_id="user-1", params={})
 
-    assert deleted_files == [("db", "file-1")]
-    assert len(store_calls) == 1
-    assert [chunk["chunk_id"] for chunk in store_calls[0][3]] == ["chunk-0", "chunk-1"]
-    assert result["status"] == FileStatus.INDEXED
+    # Async pipeline: file is claimed to index_pending, chunks are persisted and a sync event is published.
+    assert file_repo.atomic_claim_calls[0][3]["status"] == FileStatus.INDEX_PENDING
+    assert [record["chunk_id"] for record in file_repo.conditional_update_calls] == []
+    assert result["status"] == FileStatus.INDEX_PENDING
     assert result["chunk_count"] == 2
     assert result["token_count"] == count_tokens("alpha beta") + count_tokens("Chinese")
-    assert file_repo.records["file-1"].chunk_count == result["chunk_count"]
-    assert file_repo.conditional_update_calls[0][3]["status"] == FileStatus.INDEXING
-    assert file_repo.update_calls[-1][2]["status"] == FileStatus.INDEXED
+    assert queue_client.publish_calls == [
+        ("SYNC_MILVUS_CHUNKS", {"kb_id": "db", "file_id": "file-1", "operator_id": "user-1"}, "yuxi:rag:stream")
+    ]
+    assert file_repo.records["file-1"].status == FileStatus.INDEX_PENDING
     assert refreshed_kbs == ["db"]
 
 
@@ -394,13 +470,12 @@ async def test_update_content_uses_streaming_chunk_store(monkeypatch):
     kb = MilvusKB.__new__(MilvusKB)
     kb.databases_meta = {"db": {"embedding_model_spec": "test-provider:test-embedding", "metadata": {}}}
     file_repo = FakeKnowledgeFileRepository(
-        {"file-1": make_file_record(markdown_file=None, status=FileStatus.INDEXED)}
+        {"file-1": make_file_record(status=FileStatus.INDEXED)}
     )
     patch_file_repository(monkeypatch, file_repo)
+    pg_manager, queue_client = patch_async_pipeline(monkeypatch)
     collection = FakeCollection()
     refreshed_kbs = []
-    deleted_files = []
-    store_calls = []
 
     async def get_collection(kb_id):
         return collection
@@ -412,11 +487,8 @@ async def test_update_content_uses_streaming_chunk_store(monkeypatch):
         refreshed_kbs.append(kb_id)
         return {}
 
-    async def delete_file_chunks_only(kb_id, file_id):
-        deleted_files.append((kb_id, file_id))
-
-    async def embed_and_store_chunks(kb_id, file_id, collection_arg, chunks, embedding_function):
-        store_calls.append((kb_id, file_id, collection_arg, list(chunks), embedding_function))
+    async def save_markdown(kb_id, file_id, content):
+        return "minio://parsed/db/file-1.md"
 
     async def parse_file(source, params):
         return "# markdown"
@@ -424,22 +496,21 @@ async def test_update_content_uses_streaming_chunk_store(monkeypatch):
     kb._get_milvus_collection = get_collection
     kb._get_embedding_function = lambda embedding_model_spec: forbidden_embedding
     kb.refresh_database_stats = refresh_database_stats
+    kb._save_markdown_to_minio = save_markdown
     kb._split_text_into_chunks = lambda text, file_id, filename, params: [make_chunk(0), make_chunk(1)]
-    kb.delete_file_chunks_only = delete_file_chunks_only
-    kb._embed_and_store_chunks = embed_and_store_chunks
     monkeypatch.setattr("yuxi.knowledge.implementations.milvus.Parser.aparse", parse_file)
 
     result = await kb.update_content("db", ["file-1"])
 
-    assert deleted_files == [("db", "file-1")]
-    assert len(store_calls) == 1
-    assert store_calls[0][2] is collection
-    assert [chunk["chunk_id"] for chunk in store_calls[0][3]] == ["chunk-0", "chunk-1"]
-    assert store_calls[0][4] is forbidden_embedding
-    assert result[0]["status"] == FileStatus.INDEXED
-    assert file_repo.records["file-1"].status == FileStatus.INDEXED
-    assert file_repo.update_calls[0][2]["status"] == FileStatus.INDEXING
-    assert file_repo.update_calls[-1][2]["status"] == FileStatus.INDEXED
+    # Reparse+chunk are persisted asynchronously: chunks go to PG and a sync event is published.
+    assert result[0]["status"] == FileStatus.INDEX_PENDING
+    assert file_repo.records["file-1"].status == FileStatus.INDEX_PENDING
+    assert file_repo.update_calls[0][2]["status"] == FileStatus.INDEX_PENDING
+    assert file_repo.update_calls[-1][2]["status"] == FileStatus.INDEX_PENDING
+    assert queue_client.publish_calls == [
+        ("SYNC_MILVUS_CHUNKS", {"kb_id": "db", "file_id": "file-1", "operator_id": None}, "yuxi:rag:stream")
+    ]
+    assert len(pg_manager.sessions) >= 1
     assert refreshed_kbs == ["db"]
 
 

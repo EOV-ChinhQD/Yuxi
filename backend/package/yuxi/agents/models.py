@@ -206,7 +206,7 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
 
 
 class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
-    """归一化流式 tool_call 续片中的空串 name/id，规避 v3 流式累积缺陷。"""
+    """Normalize empty name/id strings in streaming tool_call chunks to avoid v3 streaming issues."""
 
     def _get_request_payload(self, input_, *, stop=None, **kwargs):
         """Override to bridge tool image blocks to user messages."""
@@ -225,7 +225,7 @@ class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
 
 
 def _bridge_tool_images_to_user_messages(payload: dict[str, Any]) -> dict[str, Any]:
-    """将工具调用返回的 image_url 块桥接到用户消息中，避免工具消息中包含图片导致的渲染问题。"""
+    """Bridge tool call image_url blocks to user message to prevent rendering issues."""
     messages = payload.get("messages")
     if not isinstance(messages, list):
         return payload
@@ -278,13 +278,13 @@ def _bridge_tool_images_to_user_messages(payload: dict[str, Any]) -> dict[str, A
 
 
 def _normalize_tool_call_chunks(message) -> None:
-    """把工具调用续片里空字符串的 name/id 归一化为 None。
+    """Normalize empty string name/id in tool call chunks to None.
 
-    LangGraph v3 流式累积对 tool_call 字段是“后值覆盖”：部分 OpenAI 兼容提供商
-    （siliconflow、阿里云百炼等）在续片里把 name/id 下发为空字符串 ""，会覆盖首片
-    的真实值（siliconflow 丢 name、百炼丢 id），导致工具结果无法按 tool_call_id
-    关联、工具状态停留在“进行中”。OpenAI 官方在续片里发 None 不会触发覆盖，这里
-    把空串归一化为 None 对齐该行为。待上游修复 v3 协议后可移除。
+    LangGraph v3 stream accumulation overwrites tool_call fields: some providers
+    emit empty string name/id in subsequent chunks, which would overwrite the initial
+    valid values and break tool_call_id associations.
+    Normalizing empty strings to None aligns behavior with official OpenAI specs.
+    Can be removed once upstream v3 protocol fix lands.
     """
     for chunk in message.tool_call_chunks:
         if chunk.get("name") == "":
