@@ -1,4 +1,3 @@
-import re
 from typing import Any
 from yuxi.knowledge.chunking.base import BaseChunker, ChunkResult, ChunkMetadata, ChunkingResult
 from yuxi.knowledge.chunking.ragflow_like.nlp import count_tokens, hard_split_by_token_limit
@@ -152,7 +151,6 @@ class StructuralChunker(BaseChunker):
             blocks.append({"type": "table", "text": "\n".join(table_lines)})
 
         # Post-process latex
-        latex_pattern = re.compile(r"(\$\$[\s\S]*?\$\$)|(\\\([\s\S]*?\\\))")
         # Let's search for $$ or $ in paragraph blocks
         for block in blocks:
             if block.get("type") == "paragraph":

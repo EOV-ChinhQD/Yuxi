@@ -75,7 +75,7 @@ class MemoryExtractorTask:
 
                 # Fetch active procedural rules to check for overrides
                 stmt = select(UserProceduralMemory).where(
-                    UserProceduralMemory.uid == uid, UserProceduralMemory.is_active == True
+                    UserProceduralMemory.uid == uid, UserProceduralMemory.is_active.is_(True)
                 )
                 res = await session.execute(stmt)
                 active_rules = res.scalars().all()

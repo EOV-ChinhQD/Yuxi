@@ -99,7 +99,7 @@ class AnswerMetrics:
         prompt = textwrap.dedent(f"""Bạn là một giám khảo công bằng. Hãy đánh giá câu trả lời do AI sinh ra dựa trên thang điểm từ 1-10 cho các tiêu chí sau:
 
             Câu hỏi: {query}
-            
+
             Ngữ cảnh tham chiếu (Context):
             {context if context else "Không cung cấp ngữ cảnh"}
 

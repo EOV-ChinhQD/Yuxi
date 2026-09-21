@@ -1,6 +1,6 @@
 import re
 import asyncio
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import json
@@ -15,7 +15,7 @@ ENABLE_ROUTER_CACHE = os.getenv("ENABLE_ROUTER_CACHE", "True").lower() in ("true
 ROUTER_CACHE_PREFIX = "yuxi:router:cache:"
 
 
-class RouteType(str, Enum):
+class RouteType(StrEnum):
     # --- Pre-Retrieval Classification (Định tuyến trước khi tìm kiếm) ---
     CHIT_CHAT = "CHIT_CHAT"
     OUT_OF_DOMAIN = "OUT_OF_DOMAIN"

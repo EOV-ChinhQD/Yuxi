@@ -99,12 +99,10 @@ async def evaluate_question(
             decompose_result = await detect_and_decompose(query, model_spec=model_spec)
             # handle both bool/list tuple and dict returns from detect_and_decompose
             is_multi_hop = False
-            sub_queries = []
             if isinstance(decompose_result, tuple) and len(decompose_result) == 2:
-                is_multi_hop, sub_queries = decompose_result
+                is_multi_hop, _ = decompose_result
             elif isinstance(decompose_result, dict):
                 is_multi_hop = decompose_result.get("is_multi_hop", False)
-                sub_queries = decompose_result.get("sub_queries", [])
 
             if is_multi_hop:
                 mh_retriever = MultiHopRetriever(

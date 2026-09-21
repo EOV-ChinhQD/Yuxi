@@ -15,7 +15,7 @@ async def run_episodic_decay_job() -> int:
         try:
             stmt = (
                 update(UserEpisodicMemory)
-                .where(UserEpisodicMemory.timestamp < cutoff_date, UserEpisodicMemory.is_archived == False)
+                .where(UserEpisodicMemory.timestamp < cutoff_date, UserEpisodicMemory.is_archived.is_(False))
                 .values(is_archived=True)
             )
             result = await session.execute(stmt)

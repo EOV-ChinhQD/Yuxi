@@ -9,7 +9,6 @@ from yuxi.models import select_model
 from yuxi.repositories.knowledge_graph_repository import KnowledgeGraphRepository
 from yuxi.repositories.knowledge_chunk_repository import KnowledgeChunkRepository
 from yuxi.knowledge.graphs.milvus_graph_vector_store import MilvusGraphVectorStore
-from yuxi.models.embed import select_embedding_model
 
 _MULTI_HOP_PATTERNS = re.compile(
     r"\b(so sánh|khác nhau|khác biệt|giống nhau|tương đồng|"
@@ -202,7 +201,6 @@ Kết quả dạng JSON array chứa event_id:"""
                 exact_entities = await self.graph_repo.search_entities_by_name(self.kb_id, query_entities)
                 recalled_entity_ids = [e["id"] for e in exact_entities]
 
-                embed_model = select_embedding_model(self.embedding_model_spec)
                 for ent_name in query_entities:
                     vector_entities = await self.vector_store.search_entities(
                         kb_id=self.kb_id,

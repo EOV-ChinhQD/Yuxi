@@ -22,7 +22,7 @@ class MemoryInjector:
             # 1. Lấy top 10 Procedural Rules đang active mới nhất
             stmt_proc = (
                 select(UserProceduralMemory)
-                .where(UserProceduralMemory.uid == uid, UserProceduralMemory.is_active == True)
+                .where(UserProceduralMemory.uid == uid, UserProceduralMemory.is_active.is_(True))
                 .order_by(UserProceduralMemory.updated_at.desc())
                 .limit(10)
             )
@@ -44,7 +44,7 @@ class MemoryInjector:
                 conditions = [UserEpisodicMemory.event_summary.ilike(f"%{kw}%") for kw in keywords[:5]]
                 stmt_event = (
                     select(UserEpisodicMemory)
-                    .where(UserEpisodicMemory.uid == uid, UserEpisodicMemory.is_archived == False, or_(*conditions))
+                    .where(UserEpisodicMemory.uid == uid, UserEpisodicMemory.is_archived.is_(False), or_(*conditions))
                     .order_by(UserEpisodicMemory.timestamp.desc())
                     .limit(5)
                 )
@@ -55,7 +55,7 @@ class MemoryInjector:
             if not event_records:
                 stmt_event_fallback = (
                     select(UserEpisodicMemory)
-                    .where(UserEpisodicMemory.uid == uid, UserEpisodicMemory.is_archived == False)
+                    .where(UserEpisodicMemory.uid == uid, UserEpisodicMemory.is_archived.is_(False))
                     .order_by(UserEpisodicMemory.timestamp.desc())
                     .limit(5)
                 )

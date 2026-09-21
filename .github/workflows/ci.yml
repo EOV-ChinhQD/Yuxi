@@ -87,7 +87,7 @@ jobs:
       - name: Install dependencies
         working-directory: backend
         run: |
-          uv sync --group dev
+          uv sync --group dev --group test
 
       - name: Run Unit Tests
         working-directory: backend

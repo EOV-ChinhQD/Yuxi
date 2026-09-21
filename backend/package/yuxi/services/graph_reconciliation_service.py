@@ -12,7 +12,7 @@ async def reconcile_neo4j_failed_chunks(kb_id: str, limit: int = 100) -> int:
     """
     logger.info(f"[Reconciliation] Starting Neo4j sync reconciliation for KB {kb_id} (limit={limit})")
 
-    async with pg_manager.get_async_session_context() as db:
+    async with pg_manager.get_async_session_context():
         chunk_repo = KnowledgeChunkRepository()
         failed_chunks = await chunk_repo.list_by_neo4j_status(kb_id, "failed", limit=limit)
 

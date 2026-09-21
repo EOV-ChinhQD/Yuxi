@@ -1,15 +1,15 @@
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class ProcessingStatus(str, Enum):
+class ProcessingStatus(StrEnum):
     SUCCESS = "SUCCESS"
     DEGRADED = "DEGRADED"
     FAILED = "FAILED"
 
 
-class OCRPolicy(str, Enum):
+class OCRPolicy(StrEnum):
     AUTO = "auto"
     ENABLE = "enable"
     DISABLE = "disable"

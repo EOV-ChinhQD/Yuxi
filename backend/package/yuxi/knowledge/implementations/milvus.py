@@ -798,9 +798,11 @@ class MilvusKB(KnowledgeBase):
             del_ids = [ec.chunk_id for ec in chunks_to_delete]
 
             # Xóa khỏi Postgres
+            from yuxi.storage.postgres.manager import pg_manager
+            from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
+
             async with pg_manager.get_async_session_context() as session:
                 from sqlalchemy import delete
-                from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
 
                 await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.chunk_id.in_(del_ids)))
 

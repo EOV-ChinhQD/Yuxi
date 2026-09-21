@@ -86,68 +86,28 @@ Trả về JSON chính xác theo định dạng sau (không giải thích thêm)
         source_ids = [s["entity_id"] for s in sources]
         logger.info(f"[Deduplicator] Gộp {len(sources)} thực thể vào '{target['name']}'")
 
-        cypher = f"""
-        MATCH (target:Entity:MilvusKB:`{self.label}` {{entity_id: $target_id}})
-        UNWIND $source_ids AS src_id
-        MATCH (source:Entity:MilvusKB:`{self.label}` {{entity_id: src_id}})
-        
-        // Di chuyển RELATION đi ra
-        WITH target, source, src_id
-        OPTIONAL MATCH (source)-[r_out:RELATION]->(other)
-        CALL apoc.do.when(
-            r_out IS NOT NULL,
-            "MERGE (target)-[new_out:RELATION {{kb_id: r_out.kb_id, type: r_out.type, target_name: r_out.target_name}}]->(other) SET new_out += properties(r_out) RETURN new_out",
-            "",
-            {{target: target, r_out: r_out, other: other}}
-        ) YIELD value AS v1
-
-        // Di chuyển RELATION đi vào
-        WITH target, source, src_id
-        OPTIONAL MATCH (other2)-[r_in:RELATION]->(source)
-        CALL apoc.do.when(
-            r_in IS NOT NULL,
-            "MERGE (other2)-[new_in:RELATION {{kb_id: r_in.kb_id, type: r_in.type, source_name: r_in.source_name}}]->(target) SET new_in += properties(r_in) RETURN new_in",
-            "",
-            {{target: target, r_in: r_in, other2: other2}}
-        ) YIELD value AS v2
-
-        // Di chuyển MENTIONS
-        WITH target, source, src_id
-        OPTIONAL MATCH (c:Chunk)-[m:MENTIONS]->(source)
-        CALL apoc.do.when(
-            m IS NOT NULL,
-            "MERGE (c)-[new_m:MENTIONS {{chunk_id: m.chunk_id, file_id: m.file_id, kb_id: m.kb_id}}]->(target) SET new_m += properties(m) RETURN new_m",
-            "",
-            {{target: target, m: m, c: c}}
-        ) YIELD value AS v3
-
-        WITH source
-        DETACH DELETE source
-        """
-
-        # Vì apoc có thể không được bật trên server neo4j tiêu chuẩn của Yuxi
-        # Ta viết lại Cypher thuần bằng thủ thuật COLLECT và FOREACH
+        # Viết Cypher thuần bằng thủ thuật COLLECT và FOREACH
         native_cypher = f"""
         MATCH (target:Entity:MilvusKB:`{self.label}` {{entity_id: $target_id}})
         UNWIND $source_ids AS src_id
         MATCH (source:Entity:MilvusKB:`{self.label}` {{entity_id: src_id}})
-        
+
         // Move outgoing
         OPTIONAL MATCH (source)-[r_out:RELATION]->(other)
         WITH target, source, src_id, collect(r_out) AS r_outs, collect(other) AS others
-        FOREACH (i IN range(0, size(r_outs)-1) | 
-            FOREACH (ro IN [r_outs[i]] | FOREACH (ot IN [others[i]] | 
+        FOREACH (i IN range(0, size(r_outs)-1) |
+            FOREACH (ro IN [r_outs[i]] | FOREACH (ot IN [others[i]] |
                 MERGE (target)-[new_out:RELATION {{type: ro.type, target_name: ro.target_name, kb_id: ro.kb_id}}]->(ot)
                 SET new_out += properties(ro)
             ))
         )
-        
+
         // Move incoming
         WITH target, source, src_id
         OPTIONAL MATCH (other2)-[r_in:RELATION]->(source)
         WITH target, source, src_id, collect(r_in) AS r_ins, collect(other2) AS other2s
-        FOREACH (i IN range(0, size(r_ins)-1) | 
-            FOREACH (ri IN [r_ins[i]] | FOREACH (ot2 IN [other2s[i]] | 
+        FOREACH (i IN range(0, size(r_ins)-1) |
+            FOREACH (ri IN [r_ins[i]] | FOREACH (ot2 IN [other2s[i]] |
                 MERGE (ot2)-[new_in:RELATION {{type: ri.type, source_name: ri.source_name, kb_id: ri.kb_id}}]->(target)
                 SET new_in += properties(ri)
             ))
@@ -157,8 +117,8 @@ Trả về JSON chính xác theo định dạng sau (không giải thích thêm)
         WITH target, source, src_id
         OPTIONAL MATCH (c:Chunk)-[m:MENTIONS]->(source)
         WITH target, source, src_id, collect(m) AS ms, collect(c) AS cs
-        FOREACH (i IN range(0, size(ms)-1) | 
-            FOREACH (mm IN [ms[i]] | FOREACH (cc IN [cs[i]] | 
+        FOREACH (i IN range(0, size(ms)-1) |
+            FOREACH (mm IN [ms[i]] | FOREACH (cc IN [cs[i]] |
                 MERGE (cc)-[new_m:MENTIONS {{chunk_id: mm.chunk_id, file_id: mm.file_id, kb_id: mm.kb_id}}]->(target)
                 SET new_m += properties(mm)
             ))

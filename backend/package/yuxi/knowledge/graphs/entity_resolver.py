@@ -22,10 +22,6 @@ class EntityResolver:
         if not entities:
             return []
 
-        # 1. Thu thập tất cả các entity_id từ danh sách thực thể
-        entity_ids = {ent.get("entity_id") for ent in entities if ent.get("entity_id")}
-        normalized_names = {normalize_entity_name(ent.get("text", "")) for ent in entities}
-
         async with pg_manager.get_async_session_context() as session:
             # 2. Truy vấn tất cả thực thể hiện có trong KB
             stmt = select(KnowledgeGraphEntity).where(KnowledgeGraphEntity.kb_id == kb_id)
