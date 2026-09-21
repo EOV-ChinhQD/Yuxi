@@ -153,7 +153,7 @@ class BaseEmbeddingModel(ABC):
                     retry_index, delay = retry
                     await asyncio.sleep(delay)
                     continue
-                raise
+                raise ValueError(f"Embedding async request failed: {e}")
             except httpx.RequestError as e:
                 retry = self._prepare_retry(message, retry_index=retry_index, error=e)
                 if retry:

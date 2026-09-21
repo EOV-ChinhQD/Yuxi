@@ -498,7 +498,7 @@ async def test_update_content_uses_streaming_chunk_store(monkeypatch):
     kb.refresh_database_stats = refresh_database_stats
     kb._save_markdown_to_minio = save_markdown
     kb._split_text_into_chunks = lambda text, file_id, filename, params: [make_chunk(0), make_chunk(1)]
-    monkeypatch.setattr("yuxi.knowledge.implementations.milvus.Parser.aparse", parse_file)
+    monkeypatch.setattr("yuxi.knowledge.parser.unified.Parser.aparse", parse_file)
 
     result = await kb.update_content("db", ["file-1"])
 

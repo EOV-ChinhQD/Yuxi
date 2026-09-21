@@ -107,7 +107,7 @@ def chunk_markdown(
     preset_id = normalize_chunk_preset_id(params.get("chunk_preset_id"))
     parser_config = params.get("chunk_parser_config") if isinstance(params.get("chunk_parser_config"), dict) else {}
 
-    if FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING):
+    if preset_id == "general" and FeatureManager.is_enabled(FeatureManager.STRUCTURAL_CHUNKING):
         chunks = _chunk_with_base_chunker(markdown_content, filename, parser_config, preset_id)
         return _build_chunk_records(chunks, file_id, filename, markdown_content)
 

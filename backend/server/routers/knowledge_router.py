@@ -137,7 +137,9 @@ async def _ensure_database_supports_documents(kb_id: str, operation: str) -> Non
     kb_type = (db_info.get("kb_type") or "").lower()
     kb_class = KnowledgeBaseFactory.get_kb_class(kb_type)
     if not kb_class.supports_documents:
-        raise HTTPException(status_code=400, detail=f"{db_info.get('name') or kb_type} chỉ hỗ trợ tìm kiếm, không hỗ trợ {operation}")
+        raise HTTPException(
+            status_code=400, detail=f"{db_info.get('name') or kb_type} chỉ hỗ trợ tìm kiếm, không hỗ trợ {operation}"
+        )
 
 
 def _ensure_document_params(params: dict | None) -> dict:
@@ -382,7 +384,10 @@ async def get_mindmap_diff_route(kb_id: str, current_user: User = Depends(get_ad
 @knowledge.get("/databases/{kb_id}")
 async def get_database_info(
     kb_id: str,
-    include_files: bool = Query(False, description="Có bao gồm danh sách tệp đầy đủ hay không, mặc định tắt để tránh phản hồi quá lớn cho kho kiến thức lớn"),
+    include_files: bool = Query(
+        False,
+        description="Có bao gồm danh sách tệp đầy đủ hay không, mặc định tắt để tránh phản hồi quá lớn cho kho kiến thức lớn",
+    ),
     current_user: User = Depends(get_admin_user),
 ):
     """Get knowledge base details"""
@@ -532,7 +537,10 @@ async def index_graph_build(
             await context.set_progress(5.0, "Prepare to build the map")
             result = await service.build_pending_chunks(kb_id, batch_size=batch_size, context=context)
             await context.set_result(result)
-            await context.set_progress(100.0, f"Map construction completed, successful {result['success']} one, failed {result['failed']} indivual")
+            await context.set_progress(
+                100.0,
+                f"Map construction completed, successful {result['success']} one, failed {result['failed']} indivual",
+            )
             return result
 
         task, created = await tasker.enqueue_unique_by_payload(
@@ -564,7 +572,9 @@ async def reset_graph_build(
     data = data or {}
     try:
         if await _has_running_graph_build_task(kb_id):
-            raise HTTPException(status_code=409, detail="Kho kiến thức này có nhiệm vụ xây dựng đồ thị đang chạy, không thể đặt lại")
+            raise HTTPException(
+                status_code=409, detail="Kho kiến thức này có nhiệm vụ xây dựng đồ thị đang chạy, không thể đặt lại"
+            )
 
         return await MilvusGraphService().reset(
             kb_id,
@@ -617,7 +627,9 @@ async def export_database(
 async def list_documents(
     kb_id: str,
     parent_id: str | None = Query(None, description="ID thư mục cha, giá trị trống nghĩa là thư mục gốc"),
-    path_prefix: str | None = Query(None, description="Tiền tố thư mục dạng đường dẫn, dùng để tải lười thư mục ảo được tạo từ source_path"),
+    path_prefix: str | None = Query(
+        None, description="Tiền tố thư mục dạng đường dẫn, dùng để tải lười thư mục ảo được tạo từ source_path"
+    ),
     status: str = Query("all", description="Bộ lọc trạng thái tệp"),
     page: int = Query(1, ge=1, description="Số trang"),
     page_size: int = Query(100, ge=1, le=500, description="Số lượng mỗi trang"),
@@ -680,7 +692,9 @@ async def add_documents(
         indexing_params["chunk_parser_config"] = chunk_parser_config
 
     if content_type == "url":
-        raise HTTPException(status_code=400, detail="Cách xử lý URL đã thay đổi, vui lòng sử dụng API fetch-url để lấy nội dung trước")
+        raise HTTPException(
+            status_code=400, detail="Cách xử lý URL đã thay đổi, vui lòng sử dụng API fetch-url để lấy nội dung trước"
+        )
     if content_type != "file":
         raise HTTPException(status_code=400, detail=f"Unsupported content_type: {content_type}")
 
@@ -854,7 +868,9 @@ async def add_uploaded_documents(
     params = _ensure_document_params(payload.params)
     content_type = params.get("content_type", "file")
     if content_type == "url":
-        raise HTTPException(status_code=400, detail="Cách xử lý URL đã thay đổi, vui lòng sử dụng API fetch-url để lấy nội dung trước")
+        raise HTTPException(
+            status_code=400, detail="Cách xử lý URL đã thay đổi, vui lòng sử dụng API fetch-url để lấy nội dung trước"
+        )
     if content_type != "file":
         raise HTTPException(status_code=400, detail=f"Unsupported content_type: {content_type}")
 
@@ -883,11 +899,11 @@ async def add_uploaded_documents(
             logger.error(f"Failed to add file record {item}: {add_error}")
             failed_items.append(
                 {
-                     "index": index,
-                     "item": item,
-                     "status": "failed",
-                     "error": f"Thêm bản ghi thất bại: {str(add_error)}",
-                     "error_type": "add_failed",
+                    "index": index,
+                    "item": item,
+                    "status": "failed",
+                    "error": f"Thêm bản ghi thất bại: {str(add_error)}",
+                    "error_type": "add_failed",
                 }
             )
 
@@ -920,7 +936,9 @@ def _validate_direct_document_action_file_ids(file_ids: list[str]) -> list[str]:
     if len(normalized_file_ids) > MAX_DIRECT_DOCUMENT_ACTION_FILE_IDS:
         raise HTTPException(
             status_code=400,
-            detail=(f"Hỗ trợ tối đa {MAX_DIRECT_DOCUMENT_ACTION_FILE_IDS} tệp cho mỗi lần chạy, vui lòng sử dụng cổng trạng thái chờ xử lý để gửi toàn bộ nhiệm vụ chạy ngầm"),
+            detail=(
+                f"Hỗ trợ tối đa {MAX_DIRECT_DOCUMENT_ACTION_FILE_IDS} tệp cho mỗi lần chạy, vui lòng sử dụng cổng trạng thái chờ xử lý để gửi toàn bộ nhiệm vụ chạy ngầm"
+            ),
         )
     return normalized_file_ids
 
@@ -993,7 +1011,9 @@ async def _run_index_file_ids(
             except Exception as e:
                 logger.error(f"Failed to update params for {file_id}: {e}")
                 param_update_failed.add(file_id)
-                processed_items.append({"file_id": file_id, "status": "failed", "error": f"Cập nhật tham số thất bại: {str(e)}"})
+                processed_items.append(
+                    {"file_id": file_id, "status": "failed", "error": f"Cập nhật tham số thất bại: {str(e)}"}
+                )
 
     for idx, file_id in enumerate(file_ids, 1):
         await context.raise_if_cancelled()
@@ -1065,7 +1085,9 @@ async def _run_parse_pending_statuses(
                     {"file_id": file_id, "status": "failed", "error": str(e)},
                 )
 
-    message = f"Phân tích hoàn tất, thất bại {failed_count} tệp" if processed_count else "Không có tài liệu nào chờ phân tích"
+    message = (
+        f"Phân tích hoàn tất, thất bại {failed_count} tệp" if processed_count else "Không có tài liệu nào chờ phân tích"
+    )
     result_payload = {
         "items": result_items,
         "processed": processed_count,
@@ -1125,7 +1147,9 @@ async def _run_index_pending_statuses(
                     {"file_id": file_id, "status": "failed", "error": str(e)},
                 )
 
-    message = f"Nhập kho hoàn tất, thất bại {failed_count} tệp" if processed_count else "Không có tài liệu nào chờ nhập kho"
+    message = (
+        f"Nhập kho hoàn tất, thất bại {failed_count} tệp" if processed_count else "Không có tài liệu nào chờ nhập kho"
+    )
     result_payload = {
         "items": result_items,
         "processed": processed_count,
@@ -1355,6 +1379,7 @@ async def get_document_content(kb_id: str, doc_id: str, current_user: User = Dep
     try:
         info = await knowledge_base.get_file_content(kb_id, doc_id)
         from yuxi.utils.auth_utils import AuthUtils
+
         if isinstance(info, dict):
             if "lines" in info and isinstance(info["lines"], list):
                 for line in info["lines"]:
@@ -1407,12 +1432,14 @@ async def batch_delete_documents(
             logger.error(f"Create department {doc_id} fail: {e}, {traceback.format_exc()}")
             failed_items.append({"doc_id": doc_id, "error": str(e)})
 
-    #  [cleaned] ， [cleaned] 
+    #  [cleaned] ， [cleaned]
     await batch_remove_files_from_mindmap(kb_id, mindmap_removals)
 
     if failed_items:
         if deleted_count == 0:
-            raise HTTPException(status_code=400, detail=f"Xóa hàng loạt thất bại: Tất cả {len(failed_items)} tệp đều chưa được xóa.")
+            raise HTTPException(
+                status_code=400, detail=f"Xóa hàng loạt thất bại: Tất cả {len(failed_items)} tệp đều chưa được xóa."
+            )
         return {
             "message": f"Xóa thành công một phần: Đã xóa {deleted_count} tệp, thất bại {len(failed_items)} tệp",
             "deleted_count": deleted_count,
@@ -1991,7 +2018,7 @@ async def get_knowledge_base_types(current_user: User = Depends(get_admin_user))
 
 @knowledge.get("/chunk-presets")
 async def get_knowledge_chunk_presets(current_user: User = Depends(get_admin_user)):
-    """ [cleaned] """
+    """[cleaned]"""
     return {"chunk_presets": get_chunk_preset_options(), "message": "success"}
 
 
@@ -2064,21 +2091,23 @@ async def generate_description(
     except Exception as e:
         logger.error(f"Tạo mô tả thất bại: {e}, {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Tạo mô tả thất bại: {e}")
+
+
 @knowledge.get("/images/{object_name:path}")
 async def get_knowledge_image(
-    object_name: str,
-    token: str = Query(..., description="Access token"),
-    db: AsyncSession = Depends(get_db)
+    object_name: str, token: str = Query(..., description="Access token"), db: AsyncSession = Depends(get_db)
 ):
     from yuxi.utils.auth_utils import AuthUtils
+
     is_valid_sig = AuthUtils.verify_image_token(object_name, token)
-    
+
     if not is_valid_sig:
         from server.utils.auth_middleware import get_current_user
+
         user = await get_current_user(authorization=f"Bearer {token}", db=db)
         if not user:
             raise HTTPException(status_code=401, detail="Unauthorized")
-    
+
     # Fetch from MinIO
     minio_client = get_minio_client()
     try:
@@ -2088,10 +2117,10 @@ async def get_knowledge_image(
         )
     except Exception:
         raise HTTPException(status_code=404, detail="Image not found")
-        
+
     ext = os.path.splitext(object_name)[1].lower()
     media_type = media_types.get(ext, "application/octet-stream")
-    
+
     async def minio_stream():
         try:
             while True:
@@ -2104,4 +2133,3 @@ async def get_knowledge_image(
             minio_response.release_conn()
 
     return StreamingResponse(minio_stream(), media_type=media_type)
-

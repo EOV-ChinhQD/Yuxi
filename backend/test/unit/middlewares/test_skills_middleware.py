@@ -234,15 +234,15 @@ async def test_resolve_configured_runtime_tools_registers_skill_gated_tools():
 
 def _make_gated_request(activated):
     base = SimpleNamespace(name="read_file")
-    gated = [SimpleNamespace(name="list_kbs"), SimpleNamespace(name="query_kb")]
+    gated = [SimpleNamespace(name="custom_tool_1"), SimpleNamespace(name="custom_tool_2")]
 
     class FakeRequest:
         def __init__(self, tools):
             self.runtime = SimpleNamespace(
                 context=SimpleNamespace(
-                    _readable_skills=["knowledge-base"],
+                    _readable_skills=["custom-skill"],
                     _runtime_skill_dependency_map={
-                        "knowledge-base": {"tools": ["list_kbs", "query_kb"], "mcps": [], "skills": []}
+                        "custom-skill": {"tools": ["custom_tool_1", "custom_tool_2"], "mcps": [], "skills": []}
                     },
                     mcps=[],
                 )
@@ -277,7 +277,7 @@ async def test_awrap_model_call_hides_gated_tools_until_activated():
 
 @pytest.mark.asyncio
 async def test_awrap_model_call_keeps_gated_tools_when_activated():
-    request = _make_gated_request(activated=["knowledge-base"])
+    request = _make_gated_request(activated=["custom-skill"])
     captured = {}
 
     async def handler(req):
@@ -286,7 +286,7 @@ async def test_awrap_model_call_keeps_gated_tools_when_activated():
 
     await SkillsMiddleware().awrap_model_call(request, handler)
 
-    assert captured["tools"] == {"read_file", "list_kbs", "query_kb"}
+    assert captured["tools"] == {"read_file", "custom_tool_1", "custom_tool_2"}
 
 
 def test_read_file_activates_only_readable_skill() -> None:

@@ -49,6 +49,7 @@ from yuxi.storage.postgres.manager import pg_manager
 from yuxi.storage.postgres.models_business import FailedJob, AgentRun
 from yuxi.services.agent_run_service import enqueue_agent_run
 
+
 @tasks.get("/failed-jobs")
 async def list_failed_jobs(
     status: str | None = Query(default=None),
@@ -76,33 +77,33 @@ async def replay_failed_job(
         failed_job = await db.get(FailedJob, failed_job_id)
         if not failed_job:
             raise HTTPException(status_code=404, detail="Failed job not found")
-        
+
         if failed_job.status != "failed":
             raise HTTPException(status_code=400, detail=f"Job cannot be replayed with status {failed_job.status}")
-            
+
         payload = failed_job.payload or {}
         run_id = payload.get("run_id")
-        
+
         if not run_id:
             raise HTTPException(status_code=400, detail="Missing run_id in job payload")
-            
+
         run = await db.get(AgentRun, run_id)
         if not run:
             raise HTTPException(status_code=404, detail=f"AgentRun {run_id} not found")
-            
+
         # Reset run status to pending
         run.status = "pending"
         run.error_type = None
         run.error_message = None
-        
+
         # Mark job as replayed
         failed_job.status = "replayed"
-        
+
         await db.commit()
-        
+
         # Enqueue back to ARQ
         await enqueue_agent_run(run_id)
-        
+
         return {"status": "replayed", "failed_job_id": failed_job_id, "run_id": run_id}
 
 
@@ -116,8 +117,8 @@ async def ignore_failed_job(
         failed_job = await db.get(FailedJob, failed_job_id)
         if not failed_job:
             raise HTTPException(status_code=404, detail="Failed job not found")
-            
+
         failed_job.status = "ignored"
         await db.commit()
-        
+
         return {"status": "ignored", "failed_job_id": failed_job_id}

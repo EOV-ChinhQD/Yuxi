@@ -24,3 +24,27 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 pytest_plugins = ["pytest_asyncio"]
+
+# SQLite compatibility compilers for Postgres-specific types during unit testing
+from sqlalchemy.dialects.postgresql import ARRAY, INET, JSONB, TSVECTOR
+from sqlalchemy.ext.compiler import compiles
+
+
+@compiles(JSONB, "sqlite")
+def compile_jsonb_sqlite(type_, compiler, **kw):
+    return "JSON"
+
+
+@compiles(ARRAY, "sqlite")
+def compile_array_sqlite(type_, compiler, **kw):
+    return "JSON"
+
+
+@compiles(TSVECTOR, "sqlite")
+def compile_tsvector_sqlite(type_, compiler, **kw):
+    return "TEXT"
+
+
+@compiles(INET, "sqlite")
+def compile_inet_sqlite(type_, compiler, **kw):
+    return "TEXT"

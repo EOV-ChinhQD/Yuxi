@@ -118,7 +118,7 @@ class _FakeConvRepo:
                 "request_id": request_id,
             }
         )
-        return SimpleNamespace(id=1)
+        return SimpleNamespace(id=1, role=role, content=content, extra_metadata=extra_metadata)
 
     async def get_conversation_by_thread_id(self, thread_id: str):
         return self._conversation(thread_id)
@@ -283,7 +283,7 @@ async def test_build_agent_input_context_merges_workspace_agents_prompt(monkeypa
         uid="user-1",
     )
 
-    assert context["system_prompt"] == "原始系统提示词\n\n用户工作区 agents/AGENTS.md 内容：\n回答前先读取 AGENTS.md"
+    assert context["system_prompt"] == "原始系统提示词\n\nUser workspace agents/AGENTS.md content:\n回答前先读取 AGENTS.md"
     assert context["temperature"] == 0.1
     assert context["thread_id"] == "thread-1"
     assert context["uid"] == "user-1"

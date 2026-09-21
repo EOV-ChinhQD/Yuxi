@@ -58,7 +58,7 @@ async def create_agent_call_run(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """ [cleaned]  Agent  [cleaned]  run， [cleaned]  async_mode  [cleaned] 。"""
+    """[cleaned]  Agent  [cleaned]  run， [cleaned]  async_mode  [cleaned] 。"""
     return await create_agent_call_run_view(
         agent_slug=payload.agent_slug,
         messages=payload.messages,
@@ -79,7 +79,7 @@ async def get_agent_call_run_result(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """ [cleaned]  Agent  [cleaned]  run  [cleaned]  OpenAI-compatible  [cleaned] 。"""
+    """[cleaned]  Agent  [cleaned]  run  [cleaned]  OpenAI-compatible  [cleaned] 。"""
     return await get_agent_call_run_result_view(
         run_id=payload.run_id,
         agent_slug=payload.agent_slug,
@@ -94,7 +94,7 @@ async def create_agent_eval_run(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """ [cleaned]  CLI/Langfuse Agent  [cleaned] ， [cleaned] 。"""
+    """[cleaned]  CLI/Langfuse Agent  [cleaned] ， [cleaned] 。"""
     return await create_agent_eval_run_view(
         query=payload.query,
         agent_slug=payload.agent_slug,

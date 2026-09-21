@@ -108,7 +108,7 @@ async def lifespan(app: FastAPI):
     print("LangGraph Checkpoint tables verified/created!")
 
     await tasker.start()
-    
+
     # Start APScheduler for Episodic Decay Job (TTL)
     # NOTE: In a multi-worker deployment, this in-memory scheduler will run on each process.
     # To scale properly, configure a Redis or SQLAlchemy job store for APScheduler, or use a distributed lock.
@@ -120,10 +120,7 @@ async def lifespan(app: FastAPI):
         scheduler = AsyncIOScheduler()
         # Schedule the job to run every 24 hours, starting now
         scheduler.add_job(
-            run_episodic_decay_job,
-            "interval",
-            hours=24,
-            next_run_time=datetime.datetime.now(datetime.timezone.utc)
+            run_episodic_decay_job, "interval", hours=24, next_run_time=datetime.datetime.now(datetime.UTC)
         )
         scheduler.start()
         app.state.scheduler = scheduler

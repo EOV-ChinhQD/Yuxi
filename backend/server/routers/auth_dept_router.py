@@ -127,7 +127,9 @@ async def create_department(
     admin_phone = department_data.admin_phone
     if admin_phone:
         if not is_valid_phone_number(admin_phone):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Định dạng số điện thoại không chính xác")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Định dạng số điện thoại không chính xác"
+            )
         if await user_repo.exists_by_phone(admin_phone):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -157,7 +159,11 @@ async def create_department(
 
     # Record operations
     await log_operation(
-        db, current_user.id, "Tạo bộ phận", f"Tạo bộ phận: {department_data.name}, và tạo quản trị viên: {admin_uid}", request
+        db,
+        current_user.id,
+        "Tạo bộ phận",
+        f"Tạo bộ phận: {department_data.name}, và tạo quản trị viên: {admin_uid}",
+        request,
     )
 
     return {**new_department.to_dict(), "user_count": 1}

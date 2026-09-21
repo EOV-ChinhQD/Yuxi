@@ -59,7 +59,9 @@ class AgentRunCreate(BaseModel):
     thread_id: str = Field(..., description="ID thread hội thoại")
     meta: dict = Field(default_factory=dict, description="Tùy chọn, thông tin theo dõi yêu cầu, ví dụ request_id")
     image_content: str | None = Field(None, description="Tùy chọn, nội dung hình ảnh base64")
-    model_spec: str | None = Field(None, description="Tùy chọn, ghi đè mô hình ở cấp độ hội thoại, độ ưu tiên cao hơn cấu hình agent")
+    model_spec: str | None = Field(
+        None, description="Tùy chọn, ghi đè mô hình ở cấp độ hội thoại, độ ưu tiên cao hơn cấu hình agent"
+    )
     resume: Any | None = Field(None, description="Tùy chọn, khôi phục đầu vào của run bị gián đoạn")
     created_by_run_id: str | None = Field(None, description="Tùy chọn, ID run được khôi phục/ID run cha tạo ra run này")
 
@@ -74,9 +76,13 @@ class AgentEvalRunCreate(BaseModel):
     query: str = Field(..., description="Đầu vào mẫu đánh giá")
     agent_slug: str = Field(..., description="Slug của agent cần chạy")
     evaluation: AgentEvaluationContext = Field(default_factory=AgentEvaluationContext, description="Ngữ cảnh đánh giá")
-    meta: dict = Field(default_factory=dict, description="Tùy chọn, thông tin theo dõi yêu cầu, ví dụ request_id, attachment_file_ids")
+    meta: dict = Field(
+        default_factory=dict, description="Tùy chọn, thông tin theo dõi yêu cầu, ví dụ request_id, attachment_file_ids"
+    )
     image_content: str | None = Field(None, description="Tùy chọn, nội dung hình ảnh base64")
-    model_spec: str | None = Field(None, description="Tùy chọn, ghi đè mô hình ở cấp độ hội thoại, độ ưu tiên cao hơn cấu hình agent")
+    model_spec: str | None = Field(
+        None, description="Tùy chọn, ghi đè mô hình ở cấp độ hội thoại, độ ưu tiên cao hơn cấu hình agent"
+    )
 
 
 def _backend_info(info: dict) -> dict:
@@ -314,7 +320,10 @@ async def cancel_agent_run(
 async def stream_run_events(
     run_id: str,
     after_seq: str = "0-0",
-    verbose: bool = Query(default=True, description="Có trả về toàn bộ payload sự kiện hay không; nếu là false thì chỉ trả về các trường cần thiết cho UI/Client"),
+    verbose: bool = Query(
+        default=True,
+        description="Có trả về toàn bộ payload sự kiện hay không; nếu là false thì chỉ trả về các trường cần thiết cho UI/Client",
+    ),
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
     current_user: User = Depends(get_required_user),
 ):

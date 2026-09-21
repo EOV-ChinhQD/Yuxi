@@ -83,7 +83,9 @@ class RemoteSkillSearchRequest(BaseModel):
 
 
 class SkillBatchDeleteRequest(BaseModel):
-    slugs: list[str] = Field(..., max_length=50, description="Danh sách slug skill cần xóa hàng loạt, hỗ trợ tối đa 50 phần tử")
+    slugs: list[str] = Field(
+        ..., max_length=50, description="Danh sách slug skill cần xóa hàng loạt, hỗ trợ tối đa 50 phần tử"
+    )
 
 
 class SkillDraftConfirmRequest(BaseModel):

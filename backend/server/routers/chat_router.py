@@ -42,7 +42,7 @@ from yuxi.utils.paths import VIRTUAL_PATH_PREFIX
 # TODO: Refactor monolithic chat router endpoints into modular handlers
 
 
-#  [cleaned] 
+#  [cleaned]
 class ImageUploadResponse(BaseModel):
     success: bool
     image_content: str | None = None
@@ -60,10 +60,10 @@ chat = APIRouter(prefix="/chat", tags=["chat"])
 
 @chat.post("/call")
 async def call(query: str = Body(...), meta: dict = Body(None), current_user: User = Depends(get_required_user)):
-    """ [cleaned] （ [cleaned] ）"""
+    """[cleaned] （ [cleaned] ）"""
     meta = meta or {}
 
-    #  [cleaned]  request_id  [cleaned] 
+    #  [cleaned]  request_id  [cleaned]
     if "request_id" not in meta or not meta.get("request_id"):
         meta["request_id"] = str(uuid.uuid4())
 
@@ -79,7 +79,7 @@ async def call(query: str = Body(...), meta: dict = Body(None), current_user: Us
 async def get_thread_history(
     thread_id: str, current_user: User = Depends(get_required_user), db: AsyncSession = Depends(get_db)
 ):
-    """ [cleaned] （ [cleaned] ）-  [cleaned] """
+    """[cleaned] （ [cleaned] ）-  [cleaned]"""
     try:
         return await get_thread_history_view(
             thread_id=thread_id,
@@ -99,7 +99,7 @@ async def get_thread_state(
     current_user: User = Depends(get_required_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """ [cleaned] （ [cleaned] ）"""
+    """[cleaned] （ [cleaned] ）"""
     try:
         return await get_agent_state_view(
             thread_id=thread_id,
@@ -272,7 +272,7 @@ class SaveThreadArtifactResponse(BaseModel):
 async def create_thread(
     thread: ThreadCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_required_user)
 ):
-    """ [cleaned]  ( [cleaned] )"""
+    """[cleaned]  ( [cleaned] )"""
     return await create_thread_view(
         agent_slug=thread.agent_id,
         title=thread.title,
@@ -305,7 +305,7 @@ async def search_threads(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned] 。"""
+    """[cleaned] 。"""
     return await search_threads_view(
         query=q,
         agent_id=agent_id,
@@ -353,7 +353,7 @@ async def update_thread(
 
 @chat.post("/attachments/tmp", response_model=TmpAttachmentResponse)
 async def upload_tmp_attachment(file: UploadFile = File(...), current_user: User = Depends(get_required_user)):
-    """ [cleaned]  MinIO tmp， [cleaned] 。"""
+    """[cleaned]  MinIO tmp， [cleaned] 。"""
     return await upload_tmp_attachment_view(file=file, current_uid=str(current_user.uid))
 
 
@@ -362,7 +362,7 @@ async def parse_tmp_attachment(
     request: TmpAttachmentParseRequest,
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned]  tmp  [cleaned]  tmp URL。"""
+    """[cleaned]  tmp  [cleaned]  tmp URL。"""
     return await parse_tmp_attachment_view(
         object_name=request.object_name,
         file_name=request.file_name,
@@ -379,7 +379,7 @@ async def confirm_tmp_thread_attachments(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned]  tmp  [cleaned] 。"""
+    """[cleaned]  tmp  [cleaned] 。"""
     return await confirm_tmp_thread_attachments_view(
         thread_id=thread_id,
         attachments=[item.model_dump() for item in request.attachments],
@@ -395,7 +395,7 @@ async def upload_thread_attachment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned] 。"""
+    """[cleaned] 。"""
     return await upload_thread_attachment_view(
         thread_id=thread_id,
         file=file,
@@ -410,7 +410,7 @@ async def list_thread_attachments(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned] 。"""
+    """[cleaned] 。"""
     return await list_thread_attachments_view(
         thread_id=thread_id,
         db=db,
@@ -425,7 +425,7 @@ async def delete_thread_attachment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned] 。"""
+    """[cleaned] 。"""
     return await delete_thread_attachment_view(
         thread_id=thread_id,
         file_id=file_id,
@@ -442,7 +442,7 @@ async def list_thread_files(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned] 。"""
+    """[cleaned] 。"""
     return await list_thread_files_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -461,7 +461,7 @@ async def read_thread_file_content(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned] （ [cleaned] ）。"""
+    """[cleaned] （ [cleaned] ）。"""
     return await read_thread_file_content_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -480,7 +480,7 @@ async def get_thread_artifact(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned] 。"""
+    """[cleaned] 。"""
     file_path = await resolve_thread_artifact_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -500,7 +500,7 @@ async def save_thread_artifact_to_workspace(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned]  workspace/saved_artifacts  [cleaned] 。"""
+    """[cleaned]  workspace/saved_artifacts  [cleaned] 。"""
     return await save_thread_artifact_to_workspace_view(
         thread_id=thread_id,
         current_uid=str(current_user.uid),
@@ -534,7 +534,7 @@ async def submit_message_feedback(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned] （ [cleaned] ）"""
+    """[cleaned] （ [cleaned] ）"""
     result = await submit_message_feedback_view(
         message_id=message_id,
         rating=feedback_data.rating,
@@ -551,7 +551,7 @@ async def get_message_feedback(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_required_user),
 ):
-    """ [cleaned] （ [cleaned] ）"""
+    """[cleaned] （ [cleaned] ）"""
     return await get_message_feedback_view(
         message_id=message_id,
         db=db,
@@ -570,18 +570,18 @@ async def upload_image(file: UploadFile = File(...), current_user: User = Depend
     ，base64
     """
     try:
-        #  [cleaned] 
+        #  [cleaned]
         if not file.content_type or not file.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Chỉ hỗ trợ tải lên tệp hình ảnh")
 
-        #  [cleaned] 
+        #  [cleaned]
         image_data = await file.read()
 
         #  [cleaned] （10MB [cleaned] ， [cleaned] 5MB）
         if len(image_data) > 10 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Tệp hình ảnh quá lớn, vui lòng tải lên hình ảnh dưới 10MB")
 
-        #  [cleaned] 
+        #  [cleaned]
         result = process_uploaded_image(image_data, file.filename)
 
         if not result["success"]:

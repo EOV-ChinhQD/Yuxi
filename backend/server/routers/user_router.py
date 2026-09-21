@@ -121,7 +121,9 @@ def validate_agent_env(env: dict[str, Any]) -> dict[str, str]:
         if not name:
             raise HTTPException(status_code=400, detail="Tên biến môi trường không được để trống")
         if len(name) > MAX_ENV_KEY_LENGTH:
-            raise HTTPException(status_code=400, detail=f"Độ dài tên biến môi trường không được vượt quá {MAX_ENV_KEY_LENGTH}")
+            raise HTTPException(
+                status_code=400, detail=f"Độ dài tên biến môi trường không được vượt quá {MAX_ENV_KEY_LENGTH}"
+            )
         if not ENV_KEY_PATTERN.match(name):
             raise HTTPException(status_code=400, detail=f"Định dạng tên biến môi trường {name} không chính xác")
         if name in normalized:
@@ -189,7 +191,9 @@ async def create_api_key(
         target_user = user
 
     if data.department_id is not None and data.department_id != target_user.department_id:
-        raise HTTPException(status_code=403, detail="Bộ phận của API Key phải trùng khớp với bộ phận của người dùng liên kết")
+        raise HTTPException(
+            status_code=403, detail="Bộ phận của API Key phải trùng khớp với bộ phận của người dùng liên kết"
+        )
 
     full_key, key_hash, key_prefix = AuthUtils.generate_api_key()
     expires_at = None

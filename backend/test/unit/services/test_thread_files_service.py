@@ -15,7 +15,10 @@ async def test_resolve_thread_artifact_view_blocks_symlink_escape(tmp_path: Path
     uploads_dir.mkdir(parents=True, exist_ok=True)
     outside_file = tmp_path / "outside.txt"
     outside_file.write_text("secret", encoding="utf-8")
-    (uploads_dir / "escape.txt").symlink_to(outside_file)
+    try:
+        (uploads_dir / "escape.txt").symlink_to(outside_file)
+    except OSError:
+        pytest.skip("Symlinks require privilege on Windows")
 
     class _Conversation:
         uid = "user-1"

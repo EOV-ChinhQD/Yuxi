@@ -94,7 +94,7 @@ def test_agent_eval_run_rejects_too_long_request_id(monkeypatch: pytest.MonkeyPa
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "request_id 不能超过 64 个字符"
+    assert response.json()["detail"] == "request_id cannot exceed 64 characters"
 
 
 def test_agent_eval_run_returns_504_when_wait_times_out(monkeypatch: pytest.MonkeyPatch):
@@ -273,7 +273,7 @@ def test_agent_call_run_rejects_context_override(monkeypatch: pytest.MonkeyPatch
     )
 
     assert response.status_code == 422
-    assert "agent_call_meta.context 不允许覆盖 Agent context" in response.json()["detail"]
+    assert "agent_call_meta.context cannot override Agent context" in response.json()["detail"]
 
 
 def test_agent_call_run_accepts_openai_text_content_parts(monkeypatch: pytest.MonkeyPatch):
@@ -285,26 +285,46 @@ def test_agent_call_run_accepts_openai_text_content_parts(monkeypatch: pytest.Mo
             "run_id": "run-1",
             "agent_slug": kwargs["agent_slug"],
             "thread_id": "thread-1",
-            "status": "pending",
+            "status": "completed",
             "request_id": "req-1",
-            "output": "",
-            "choices": [{"index": 0, "messages": [{"role": "assistant", "content": ""}], "finish_reason": None}],
+            "output": "done",
+            "choices": [{"index": 0, "messages": [{"role": "assistant", "content": "done"}], "finish_reason": "stop"}],
             "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
         }
 
-    monkeypatch.setattr(agent_invocation_router_module, "create_agent_call_run_view", fake_create_agent_call_run_view)
+    monkeypatch.setattr(
+        agent_invocation_router_module,
+        "create_agent_call_run_view",
+        fake_create_agent_call_run_view,
+    )
     client = _build_app(monkeypatch)
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
         json={
             "agent_slug": "translator",
-            "messages": [{"role": "user", "content": [{"type": "text", "text": "hello"}]}],
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Hello "},
+                        {"type": "text", "text": "world"},
+                    ],
+                }
+            ],
         },
     )
 
     assert response.status_code == 200, response.text
-    assert calls["kwargs"]["messages"] == [{"role": "user", "content": [{"type": "text", "text": "hello"}]}]
+    assert calls["kwargs"]["messages"] == [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Hello "},
+                {"type": "text", "text": "world"},
+            ],
+        }
+    ]
 
 
 def test_agent_call_run_accepts_openai_multimodal_content_parts(monkeypatch: pytest.MonkeyPatch):
@@ -316,14 +336,18 @@ def test_agent_call_run_accepts_openai_multimodal_content_parts(monkeypatch: pyt
             "run_id": "run-1",
             "agent_slug": kwargs["agent_slug"],
             "thread_id": "thread-1",
-            "status": "pending",
+            "status": "completed",
             "request_id": "req-1",
-            "output": "",
-            "choices": [{"index": 0, "messages": [{"role": "assistant", "content": ""}], "finish_reason": None}],
+            "output": "done",
+            "choices": [{"index": 0, "messages": [{"role": "assistant", "content": "done"}], "finish_reason": "stop"}],
             "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
         }
 
-    monkeypatch.setattr(agent_invocation_router_module, "create_agent_call_run_view", fake_create_agent_call_run_view)
+    monkeypatch.setattr(
+        agent_invocation_router_module,
+        "create_agent_call_run_view",
+        fake_create_agent_call_run_view,
+    )
     client = _build_app(monkeypatch)
 
     response = client.post(
@@ -334,10 +358,12 @@ def test_agent_call_run_accepts_openai_multimodal_content_parts(monkeypatch: pyt
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "describe"},
+                        {"type": "text", "text": "describe image"},
                         {
                             "type": "image_url",
-                            "image_url": {"url": "data:image/png;base64,base64-image", "detail": "low"},
+                            "image_url": {
+                                "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+                            },
                         },
                     ],
                 }
@@ -346,26 +372,40 @@ def test_agent_call_run_accepts_openai_multimodal_content_parts(monkeypatch: pyt
     )
 
     assert response.status_code == 200, response.text
-    assert calls["kwargs"]["messages"][0]["content"][1]["image_url"] == {
-        "url": "data:image/png;base64,base64-image",
-        "detail": "low",
-    }
+    assert calls["kwargs"]["messages"] == [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "describe image"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+                    },
+                },
+            ],
+        }
+    ]
 
 
 def test_agent_call_run_propagates_agent_not_found(monkeypatch: pytest.MonkeyPatch):
     async def fake_create_agent_call_run_view(**_kwargs):
-        raise HTTPException(status_code=404, detail="智能体不存在")
+        raise HTTPException(status_code=404, detail="Agent not found")
 
-    monkeypatch.setattr(agent_invocation_router_module, "create_agent_call_run_view", fake_create_agent_call_run_view)
+    monkeypatch.setattr(
+        agent_invocation_router_module,
+        "create_agent_call_run_view",
+        fake_create_agent_call_run_view,
+    )
     client = _build_app(monkeypatch)
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
-        json={"agent_slug": "missing", "messages": [{"role": "user", "content": "Hello"}]},
+        json={"agent_slug": "missing-agent", "messages": [{"role": "user", "content": "Hello"}]},
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "智能体不存在"
+    assert response.json()["detail"] == "Agent not found"
 
 
 def test_agent_call_run_rejects_invalid_boundary_payload(monkeypatch: pytest.MonkeyPatch):
@@ -376,7 +416,7 @@ def test_agent_call_run_rejects_invalid_boundary_payload(monkeypatch: pytest.Mon
         json={"agent_slug": " ", "messages": [{"role": "user", "content": "Hello"}]},
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "agent_slug 不能为空"
+    assert response.json()["detail"] == "agent_slug cannot be empty"
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
@@ -390,21 +430,21 @@ def test_agent_call_run_rejects_invalid_boundary_payload(monkeypatch: pytest.Mon
         json={"agent_slug": "translator", "messages": []},
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "messages 不能为空"
+    assert response.json()["detail"] == "messages cannot be empty"
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
         json={"agent_slug": "translator", "messages": [{"role": "assistant", "content": "hello"}]},
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "messages 必须包含 user 消息"
+    assert response.json()["detail"] == "messages must contain a user message"
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
         json={"agent_slug": "translator", "messages": [{"role": "user", "content": ""}]},
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "user message content 必须是非空字符串或多模态数组"
+    assert response.json()["detail"] == "Nội dung tin nhắn user phải là chuỗi không rỗng hoặc mảng đa phương tiện"
 
     response = client.post(
         "/api/agent-invocation/agent-call/runs",
@@ -415,7 +455,7 @@ def test_agent_call_run_rejects_invalid_boundary_payload(monkeypatch: pytest.Mon
         },
     )
     assert response.status_code == 422
-    assert response.json()["detail"] == "request_id 不能超过 64 个字符"
+    assert response.json()["detail"] == "request_id cannot exceed 64 characters"
 
 
 def test_agent_call_result_returns_service_payload(monkeypatch: pytest.MonkeyPatch):

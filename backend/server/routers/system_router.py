@@ -24,21 +24,17 @@ async def health_check():
 
 
 from sqlalchemy import text
-from server.utils.auth_middleware import get_admin_user
+
 
 @system.get("/health/detailed")
 async def detailed_health_check(current_user: User = Depends(get_admin_user)):
     """Detailed health check for internal databases and third-party systems."""
-    health_status = {
-        "status": "healthy",
-        "postgres": "healthy",
-        "neo4j": "healthy",
-        "milvus": "healthy"
-    }
+    health_status = {"status": "healthy", "postgres": "healthy", "neo4j": "healthy", "milvus": "healthy"}
 
     # 1. PostgreSQL check
     try:
         from yuxi.storage.postgres.manager import pg_manager
+
         async with pg_manager.get_async_session_context() as db:
             await db.execute(text("SELECT 1"))
     except Exception as e:
@@ -48,8 +44,10 @@ async def detailed_health_check(current_user: User = Depends(get_admin_user)):
     # 2. Neo4j check
     try:
         from yuxi.knowledge.graphs.milvus_graph_service import MilvusGraphService
+
         graph_service = MilvusGraphService()
         import asyncio
+
         await asyncio.to_thread(graph_service.driver.verify_connectivity)
     except Exception as e:
         health_status["neo4j"] = f"unhealthy: {e}"
@@ -58,6 +56,7 @@ async def detailed_health_check(current_user: User = Depends(get_admin_user)):
     # 3. Milvus check
     try:
         from yuxi.knowledge.graphs.milvus_graph_vector_store import MilvusGraphVectorStore
+
         store = MilvusGraphVectorStore()
         store._init_connection()
     except Exception as e:

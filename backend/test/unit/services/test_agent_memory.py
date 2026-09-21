@@ -56,8 +56,12 @@ async def test_memory_extractor_confidence_gate_and_log(monkeypatch):
     mock_llm = MagicMock()
     mock_llm.ainvoke = AsyncMock(return_value=MockLLMResponse(content=json_dumps(llm_output)))
 
+    import zlib
+    expected_lock_id = zlib.crc32("user-123".encode("utf-8")) & 0x7FFFFFFF
+
     # Mock DB Session
     mock_db = AsyncMock()
+    mock_db.add = MagicMock()
     mock_result = MagicMock()
     mock_result.scalars = MagicMock(return_value=MagicMock(all=lambda: []))
     mock_db.execute.return_value = mock_result
@@ -84,7 +88,7 @@ async def test_memory_extractor_confidence_gate_and_log(monkeypatch):
     for call in mock_db.execute.call_args_list:
         args, kwargs = call
         if args and hasattr(args[0], "text") and "pg_advisory_xact_lock" in args[0].text:
-            if len(args) > 1 and args[1] == {"lock_id": hash("user-123") % (2**31 - 1)}:
+            if len(args) > 1 and args[1] == {"lock_id": expected_lock_id}:
                 lock_call_found = True
                 break
     assert lock_call_found is True

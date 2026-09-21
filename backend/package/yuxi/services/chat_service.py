@@ -580,7 +580,7 @@ async def save_messages_from_langgraph_state(
         elif msg_type == "tool":
             await _save_tool_message(conv_repo, msg_dict)
 
-    if last_ai_message and last_ai_message.role == "assistant":
+    if last_ai_message and getattr(last_ai_message, "role", None) == "assistant":
         # Trích xuất các chunks đã tìm được và chạy NLI Grounding Verification
         retrieved_chunks = _extract_retrieved_chunks(messages)
         if retrieved_chunks:

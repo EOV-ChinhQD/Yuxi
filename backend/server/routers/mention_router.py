@@ -22,7 +22,9 @@ class MentionFileItem(BaseModel):
 
 @mention_router.get("/search", response_model=list[MentionFileItem])
 async def search_mention_files(
-    thread_id: str | None = Query(None, description="ID phiên hội thoại hiện tại; khi để trống chỉ tìm kiếm trong workspace của người dùng"),
+    thread_id: str | None = Query(
+        None, description="ID phiên hội thoại hiện tại; khi để trống chỉ tìm kiếm trong workspace của người dùng"
+    ),
     query: str = Query("", description="Từ khóa tìm kiếm"),
     sources: str | None = Query(None, description="Nguồn tìm kiếm: workspace, thread; để trống sẽ tự động chọn"),
     current_user: User = Depends(get_required_user),

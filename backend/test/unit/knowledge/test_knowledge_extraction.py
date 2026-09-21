@@ -32,7 +32,7 @@ async def test_entity_resolver_aliases():
         {"text": "New Entity", "label": "Concept", "entity_id": "ent_new"}
     ]
 
-    with patch("yuxi.storage.postgres.manager.PostgresManager.get_async_session_context") as mock_session_ctx:
+    with patch("yuxi.storage.postgres.manager.pg_manager.get_async_session_context") as mock_session_ctx:
         mock_session = AsyncMock()
         mock_session.execute = AsyncMock(return_value=mock_execute.return_value)
         mock_session_ctx.return_value.__aenter__.return_value = mock_session
@@ -92,14 +92,17 @@ async def test_handle_extract_knowledge():
     mock_session.execute = AsyncMock(return_value=mock_execute)
     mock_session_ctx.__aenter__.return_value = mock_session
 
+    mock_store_instance = MagicMock()
+    mock_store_instance.insert_missing_graph_records = mock_insert_vector
+
     with patch("yuxi.knowledge.knowledge_base._get_kb_for_database", mock_kb_instance), \
          patch("yuxi.repositories.knowledge_chunk_repository.KnowledgeChunkRepository.get_by_chunk_id", mock_get_chunk), \
          patch("yuxi.knowledge.graphs.extractors.event.LLMEventExtractor.extract", mock_extract), \
          patch("yuxi.repositories.knowledge_graph_repository.KnowledgeGraphRepository.upsert_chunk_graph", mock_upsert_graph), \
          patch("yuxi.repositories.knowledge_graph_repository.KnowledgeGraphRepository.upsert_chunk_events", mock_upsert_events), \
-         patch("yuxi.knowledge.graphs.milvus_graph_vector_store.MilvusGraphVectorStore.insert_missing_graph_records", mock_insert_vector), \
+         patch("yuxi.knowledge.graphs.milvus_graph_vector_store.MilvusGraphVectorStore", return_value=mock_store_instance), \
          patch("yuxi.repositories.knowledge_chunk_repository.KnowledgeChunkRepository.mark_graph_indexed", mock_mark_indexed), \
-         patch("yuxi.storage.postgres.manager.PostgresManager.get_async_session_context", return_value=mock_session_ctx):
+         patch("yuxi.storage.postgres.manager.pg_manager.get_async_session_context", return_value=mock_session_ctx):
          
          await handle_extract_knowledge({
              "kb_id": "kb_123",
@@ -156,7 +159,7 @@ async def test_rag_worker_dlq():
     mock_session_ctx.__aenter__.return_value = mock_session
 
     with patch("yuxi.core.queue.get_async_redis_client", mock_get_redis), \
-         patch("yuxi.storage.postgres.manager.PostgresManager.get_async_session_context", return_value=mock_session_ctx):
+         patch("yuxi.storage.postgres.manager.pg_manager.get_async_session_context", return_value=mock_session_ctx):
          
          task = asyncio.create_task(worker.start())
          await asyncio.sleep(0.3)

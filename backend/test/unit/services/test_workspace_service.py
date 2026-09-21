@@ -55,7 +55,10 @@ def test_workspace_root_rejects_symlink_root(tmp_path: Path, monkeypatch) -> Non
     outside_root = tmp_path / "outside"
     user_root.mkdir(parents=True)
     outside_root.mkdir()
-    (user_root / "workspace").symlink_to(outside_root, target_is_directory=True)
+    try:
+        (user_root / "workspace").symlink_to(outside_root, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlinks require privilege on Windows")
 
     with pytest.raises(HTTPException) as exc_info:
         svc._workspace_root(_user())

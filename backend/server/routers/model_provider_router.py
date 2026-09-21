@@ -103,6 +103,7 @@ async def get_builtin_providers(
 ):
     """Get a list of built-in model providers."""
     from yuxi.models.providers.builtin import BUILTIN_PROVIDERS
+
     return {"success": True, "data": BUILTIN_PROVIDERS}
 
 
@@ -192,7 +193,9 @@ async def get_remote_models(
         # The error returned by the remote API does not transparently transmit the status code to avoid the front-end misjudgment as a system authentication failure.
         detail = e.response.text
         if e.response.status_code == 401:
-            raise HTTPException(status_code=502, detail="Xác thực API từ xa thất bại, vui lòng kiểm tra cấu hình API Key")
+            raise HTTPException(
+                status_code=502, detail="Xác thực API từ xa thất bại, vui lòng kiểm tra cấu hình API Key"
+            )
         raise HTTPException(status_code=e.response.status_code, detail=f"Yêu cầu Models thất bại: {detail}")
     except Exception as e:
         logger.error(f"Failed to pull remote model {provider_id}: {e}")
@@ -243,7 +246,7 @@ async def get_v2_models(
                     "batch_size": m.batch_size,
                 }
                 for m in models
-            ]
+            ],
         }
 
     return {"success": True, "data": result}

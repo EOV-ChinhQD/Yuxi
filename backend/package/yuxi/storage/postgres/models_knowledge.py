@@ -385,5 +385,5 @@ class EmbeddingCacheModel(Base):
     __tablename__ = "embedding_cache"
 
     hash_key: Mapped[str] = mapped_column(String(64), primary_key=True)
-    embedding: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    embedding: Mapped[dict] = mapped_column(JSON_VALUE, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

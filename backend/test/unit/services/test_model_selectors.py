@@ -434,7 +434,7 @@ async def test_embedding_async_400_logs_warning(monkeypatch):
 
     monkeypatch.setattr("yuxi.models.embed.httpx.AsyncClient", FakeAsyncClient)
 
-    with pytest.raises(httpx.HTTPStatusError, match="400 Bad Request"):
+    with pytest.raises(ValueError, match="400 Bad Request"):
         await model.aencode(["hello", "test"])
 
     assert len(warnings) == 1

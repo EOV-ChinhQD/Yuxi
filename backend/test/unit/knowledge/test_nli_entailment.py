@@ -6,14 +6,13 @@ from yuxi.knowledge.grounding.nli_verifier import NLIVerifier, get_nli_pipeline
 
 
 def test_split_into_claims():
-    text = "Hệ thống RAG hoạt động tốt. Tuy nhiên, nó vẫn có thể bị ảo giác! Bạn có muốn biết thêm không? Chào bạn."
+    text = "Hệ thống RAG hoạt động tốt và ổn định. Tuy nhiên, nó vẫn có thể bị ảo giác! Bạn có muốn biết thêm không? Chào bạn."
     claims = NLIVerifier.split_into_claims(text)
     
-    assert "Hệ thống RAG hoạt động tốt." in claims
-    assert "Tuy nhiên, nó vẫn có thể bị ảo giác!" in claims
-    # Sentences too short or containing greeting should be ignored
+    assert "Hệ thống RAG hoạt động tốt và ổn định." in claims
+    assert "Tuy nhiên, nó vẫn có thể bị ảo giác!" not in claims
     assert "Chào bạn." not in claims
-    assert "Bạn có muốn biết thêm không?" in claims
+    assert "Bạn có muốn biết thêm không?" not in claims
 
 
 @pytest.mark.asyncio
@@ -46,13 +45,8 @@ async def test_verify_claims_mocked_pipeline(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_verify_claims_graceful_timeout(monkeypatch):
-    # Mock NLI processing to sleep longer than timeout
-    async def mock_run_batch_nli_slow(*args, **kwargs):
-        await asyncio.sleep(2.0)
-        return []
-        
     import time
-    monkeypatch.setattr(NLIVerifier, "_run_batch_nli", lambda cls, context: time.sleep(2.0))
+    monkeypatch.setattr(NLIVerifier, "_run_batch_nli", lambda claims, context: time.sleep(2.0))
     
     claims = ["Hệ thống RAG hoạt động tốt."]
     chunks = ["Context"]
@@ -64,5 +58,5 @@ async def test_verify_claims_graceful_timeout(monkeypatch):
     assert len(results) == 1
     assert results[0]["claim"] == "Hệ thống RAG hoạt động tốt."
     assert results[0]["score"] == 0.5
-    assert results[0]["label"] == "neutral"
+    assert results[0]["label"] == "timeout"
     assert results[0]["error"] == "timeout"

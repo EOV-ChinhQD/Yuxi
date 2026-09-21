@@ -55,7 +55,7 @@ def test_knowledge_graph_event_new_fields():
 def test_milvus_pg_record_mapping():
     from yuxi.knowledge.implementations.milvus import MilvusKB
     # Mock databases_meta or instantiate a minimal MilvusKB
-    kb = MilvusKB(work_dir="/tmp")
+    kb = object.__new__(MilvusKB)
     chunks = [
         {
             "chunk_id": "c1",
@@ -85,7 +85,7 @@ async def test_incremental_indexing_logic():
     from unittest.mock import AsyncMock, MagicMock, patch
     from yuxi.storage.postgres.models_knowledge import KnowledgeChunk
 
-    kb = MilvusKB(work_dir="/tmp")
+    kb = object.__new__(MilvusKB)
 
     # Mock existing chunks in Postgres
     old_chunk = KnowledgeChunk(

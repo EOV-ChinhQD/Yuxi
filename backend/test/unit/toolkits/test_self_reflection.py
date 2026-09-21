@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from yuxi.agents.toolkits.kbs import tools
-from yuxi.knowledge.retrieval.router import RouteType
+from yuxi.knowledge.retrieval.router import RouteType, SemanticRouter
 
 
 async def _fake_visible_kbs(runtime):
@@ -34,7 +34,7 @@ async def test_self_reflection_retries_once_on_empty(monkeypatch):
     
     # Mock SemanticRouter to always return NAIVE_SEARCH
     mock_route = AsyncMock(return_value=(RouteType.NAIVE_SEARCH, {"confidence_score": 1.0}))
-    monkeypatch.setattr("yuxi.knowledge.retrieval.router.SemanticRouter.route", mock_route)
+    monkeypatch.setattr(SemanticRouter, "route", mock_route)
     
     # Mock _rewrite_query helper to return a rewritten question
     mock_rewrite = AsyncMock(return_value="câu hỏi đã viết lại")
@@ -73,7 +73,7 @@ async def test_self_reflection_max_retry_attempts(monkeypatch):
     
     # Mock SemanticRouter to always return NAIVE_SEARCH
     mock_route = AsyncMock(return_value=(RouteType.NAIVE_SEARCH, {"confidence_score": 1.0}))
-    monkeypatch.setattr("yuxi.knowledge.retrieval.router.SemanticRouter.route", mock_route)
+    monkeypatch.setattr(SemanticRouter, "route", mock_route)
     
     # Mock _rewrite_query helper to return a rewritten question
     mock_rewrite = AsyncMock(return_value="câu hỏi đã viết lại")

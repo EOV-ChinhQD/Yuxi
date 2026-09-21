@@ -242,7 +242,12 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         await db.commit()
 
         # Log failed operations
-        await log_operation(db, user.id if user else None, "Login failed", f"Wrong password, number of failures: {user.login_failed_count}")
+        await log_operation(
+            db,
+            user.id if user else None,
+            "Login failed",
+            f"Wrong password, number of failures: {user.login_failed_count}",
+        )
 
         # Check if locking is required
         if user.is_login_locked():
@@ -482,7 +487,9 @@ async def update_profile(
     if profile_data.phone_number is not None:
         # If the mobile phone number is not empty, verify the format
         if profile_data.phone_number and not is_valid_phone_number(profile_data.phone_number):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Định dạng số điện thoại không chính xác")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Định dạng số điện thoại không chính xác"
+            )
 
         # Check whether the mobile phone number is already used by another user
         if profile_data.phone_number:
@@ -491,7 +498,9 @@ async def update_profile(
             )
             existing_phone = result.scalar_one_or_none()
             if existing_phone:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Số điện thoại đã được sử dụng bởi người dùng khác")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Số điện thoại đã được sử dụng bởi người dùng khác"
+                )
 
         current_user.phone_number = profile_data.phone_number
         update_details.append(f"Phone number: {profile_data.phone_number or 'Cleared'}")
@@ -500,7 +509,9 @@ async def update_profile(
 
     # Record operations
     if update_details:
-        await log_operation(db, current_user.id, "Update profile", f"Update profile: {', '.join(update_details)}", request)
+        await log_operation(
+            db, current_user.id, "Update profile", f"Update profile: {', '.join(update_details)}", request
+        )
 
     return current_user.to_dict()
 
@@ -796,7 +807,9 @@ async def update_user(
     await db.commit()
 
     # Record operations
-    await log_operation(db, current_user.id, "Update user", f"Update user ID {user_id}: {', '.join(update_details)}", request)
+    await log_operation(
+        db, current_user.id, "Update user", f"Update user ID {user_id}: {', '.join(update_details)}", request
+    )
 
     return user.to_dict()
 
@@ -944,7 +957,9 @@ async def upload_user_avatar(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Tải lên ảnh đại diện thất bại: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Tải lên ảnh đại diện thất bại: {str(e)}"
+        )
 
 
 # Routing: Simulate user login (only for super administrators)
@@ -983,10 +998,18 @@ async def impersonate_user(
         department_name = result.scalar_one_or_none()
 
     # Recording operations (dangerous operation flags)
-    await log_operation(db, current_user.id, "⚠️ Dangerous operation-Impersonate user", f"Impersonate user: {target_user.username}", request)
+    await log_operation(
+        db,
+        current_user.id,
+        "⚠️ Dangerous operation-Impersonate user",
+        f"Impersonate user: {target_user.username}",
+        request,
+    )
 
     # Console warning log
-    logger.warning(f"⚠️ [Dangerous operation] super administrator {current_user.username} Impersonate logged in user: {target_user.username}")
+    logger.warning(
+        f"⚠️ [Dangerous operation] super administrator {current_user.username} Impersonate logged in user: {target_user.username}"
+    )
 
     return {
         "access_token": access_token,

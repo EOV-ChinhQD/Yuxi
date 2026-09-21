@@ -148,21 +148,21 @@ async def test_search_conversations_by_message_content_filters_user_status_and_t
             Message(
                 conversation=deleted,
                 role="assistant",
-                content="đại lục deleted should not show",
+                content="trên đất liền deleted should not show",
                 message_type="text",
                 created_at=now,
             ),
             Message(
                 conversation=other_user,
                 role="assistant",
-                content="đại lục other user should not show",
+                content="trên đất liền other user should not show",
                 message_type="text",
                 created_at=now,
             ),
             Message(
                 conversation=tool_only,
                 role="tool",
-                content="đại lục tool output should not show",
+                content="trên đất liền tool output should not show",
                 message_type="tool_result",
                 created_at=now,
             ),
@@ -173,7 +173,7 @@ async def test_search_conversations_by_message_content_filters_user_status_and_t
     repo = ConversationRepository(conversation_session)
     items, has_more = await repo.search_conversations_by_message_content(
         uid="user-a",
-        query="đại lục",
+        query="trên đất liền",
         limit=20,
         offset=0,
     )
@@ -182,7 +182,7 @@ async def test_search_conversations_by_message_content_filters_user_status_and_t
     assert [item["conversation"].thread_id for item in items] == ["thread-active"]
     assert items[0]["matched_count"] == 1
     assert items[0]["message_id"] is not None
-    assert "Kế hoạch triển khai đại lục" in items[0]["snippets"][0]["content"]
+    assert "Kế hoạch triển khai trên đất liền" in items[0]["snippets"][0]["content"]
 
 
 @pytest.mark.asyncio

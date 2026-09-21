@@ -50,8 +50,7 @@ async def test_multi_hop_retriever():
     mock_embed = MagicMock()
     mock_embed.encode = AsyncMock(return_value=[0.1] * 1024)
     
-    with patch("yuxi.storage.postgres.manager.pg_manager.get_async_session_context", return_value=mock_context), \
-         patch("yuxi.knowledge.retrieval.multi_hop_retriever.select_embedding_model", return_value=mock_embed):
+    with patch("yuxi.storage.postgres.manager.pg_manager.get_async_session_context", return_value=mock_context):
         res = await retriever.retrieve("What is SAG?")
     assert len(res) == 1
     assert res[0]["chunk_id"] == "chunk1"
