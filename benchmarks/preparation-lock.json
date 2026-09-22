@@ -51,7 +51,7 @@
       "records": 2899,
       "artifact": "benchmarks/artifacts/agent/vietnamese-function-calling/test.jsonl",
       "sha256": "eaa26b5c2a2ebe0b20d63ed7abd47fa388ab2f37e818c83b4edadd63dae651c8",
-      "status": "prepared_not_scored"
+      "status": "model_scored_qwen3_native_100_exact_match_0.93"
     },
     {
       "dataset": "when2call",
@@ -60,7 +60,7 @@
       "records": 3652,
       "artifact": "benchmarks/artifacts/agent/when2call/test_mcq.jsonl",
       "sha256": "f0ca7252546fa4d267265cc39c8238a6622a57fcf92585927645635f57d67917",
-      "status": "prepared_not_scored"
+      "status": "model_scored_qwen3_native_stratified60_accuracy_0.55"
     },
     {
       "dataset": "viequad-retrieval",
@@ -72,14 +72,14 @@
         "corpus": {"path": "benchmarks/artifacts/retrieval/viequad/corpus.jsonl", "sha256": "d754094ffae5a183c23d2aae9ecca37016bbb1d51db4d05757fb054f43289834"},
         "qrels": {"path": "benchmarks/artifacts/retrieval/viequad/qrels.jsonl", "sha256": "429e628d72f815889161f2e5b00cb406f4cb2ffcfdc3a6676cdfa8591e7d256d"}
       },
-      "status": "prepared_not_scored"
+      "status": "bm25_scored_full_2048_queries"
     }
   ],
   "pending": [
     "MeddiesOCR annotation redistribution approval",
     "BFCL fixed 50-100 task subset",
     "Yuxi production retrieval run on a populated benchmark knowledge base",
-    "Model-backed agent executor and tool-calling metric run",
+    "Real E2E generation runner and EM/F1 report",
     "NLI and OCR metric runs"
   ]
 }
