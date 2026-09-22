@@ -84,3 +84,22 @@ This is a secondary decision benchmark. Its adversarial tool descriptions and
 mixed-language examples make it unsuitable as a direct Vietnamese product
 quality score. The local artifact is
 `benchmarks/results/when2call_qwen3_native_stratified60.json`.
+
+## RAG retrieval regression
+
+The full 2,048-query VieQuAD BM25 baseline was rerun inside `api-dev`:
+
+| Metric | Result |
+|---|---:|
+| Recall@1 | 58.06% |
+| Recall@5 | 85.74% |
+| Recall@10 | 91.80% |
+| MRR@10 | 70.10% |
+| nDCG@10 | 49.19% |
+| Mean latency | 11.03 ms/query |
+
+The local result is
+`benchmarks/results/viequad_bm25_full_final.json`. The existing simulated
+`backend/scripts/run_e2e_sample.py` is not used as an E2E score because it
+constructs predictions from gold answers. A real generation runner is still
+required before reporting full E2E EM/F1.
