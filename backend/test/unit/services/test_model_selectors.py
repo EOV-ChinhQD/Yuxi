@@ -91,6 +91,56 @@ def test_resolve_chat_model_spec_rejects_all_empty(monkeypatch):
         resolve_chat_model_spec("", fallback=None)
 
 
+def test_load_agent_model_enables_native_ollama_tool_calling(monkeypatch):
+    captured = {}
+    info = _chat_model_info("ollama", "qwen3:8b", provider_type="openai")
+    monkeypatch.setattr("yuxi.agents.models.model_cache.get_model_info", lambda spec: info)
+
+    def fake_load_chat_model(spec, **kwargs):
+        captured.update(spec=spec, kwargs=kwargs)
+        return object()
+
+    monkeypatch.setattr("yuxi.agents.models.load_chat_model", fake_load_chat_model)
+
+    from yuxi.agents.models import load_agent_model
+
+    load_agent_model("ollama:qwen3:8b")
+
+    assert captured == {
+        "spec": "ollama:qwen3:8b",
+        "kwargs": {"native_ollama": True, "think": False},
+    }
+
+
+def test_native_ollama_model_serializes_tools_and_tool_calls():
+    from langchain_core.messages import HumanMessage
+    from langchain_core.tools import tool
+    from yuxi.agents.models import NativeOllamaChatModel
+
+    @tool
+    def get_weather(location: str) -> str:
+        """Get weather for a city."""
+        return location
+
+    model = NativeOllamaChatModel(model_name="qwen3:8b", base_url="http://localhost:11434/v1")
+    bound = model.bind_tools([get_weather])
+    payload = bound._payload([HumanMessage("What is the weather in Hanoi?")])
+    message = bound._message(
+        {
+            "message": {
+                "content": "",
+                "tool_calls": [
+                    {"id": "call_1", "function": {"name": "get_weather", "arguments": {"location": "Hanoi"}}}
+                ],
+            }
+        }
+    )
+
+    assert payload["tools"][0]["function"]["name"] == "get_weather"
+    assert payload["messages"] == [{"role": "user", "content": "What is the weather in Hanoi?"}]
+    assert message.tool_calls[0]["args"] == {"location": "Hanoi"}
+
+
 def test_select_embedding_model_loads_model_from_cache(monkeypatch):
     monkeypatch.setattr(
         "yuxi.models.embed.model_cache.get_model_info",

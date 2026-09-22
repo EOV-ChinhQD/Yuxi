@@ -2,7 +2,12 @@ import os
 
 os.environ.setdefault("OPENAI_API_KEY", "test-key")
 
-from yuxi.knowledge.eval.evaluator import aggregate_metrics, build_answer_prompt, normalize_query_result
+from yuxi.knowledge.eval.evaluator import (
+    _is_vietnamese_answer,
+    aggregate_metrics,
+    build_answer_prompt,
+    normalize_query_result,
+)
 
 
 def test_normalize_query_result_supports_dict_and_list():
@@ -20,10 +25,17 @@ def test_build_answer_prompt_uses_first_five_non_empty_chunks():
 
     prompt = build_answer_prompt("question", chunks)
 
-    assert "User questions:question" in prompt
+    assert "User question:question" in prompt
+    assert "Answer only in Vietnamese" in prompt
     assert "content0" in prompt
     assert "content4" in prompt
     assert "content5" not in prompt
+
+
+def test_is_vietnamese_answer_rejects_mixed_language_output():
+    assert _is_vietnamese_answer("Đây là câu trả lời tiếng Việt.")
+    assert not _is_vietnamese_answer("The answer is in the document.")
+    assert not _is_vietnamese_answer("Câu trả lời 中文")
 
 
 def test_aggregate_metrics_matches_service_output_shape():

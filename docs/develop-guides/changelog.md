@@ -15,6 +15,12 @@
 
 ### 开发记录
 
+- Benchmark smoke hạ tầng: bổ sung service `rag-worker` cho Redis Streams indexing, thêm runner retrieval smoke thực tế qua Milvus và ghi nhận artifact VieQuAD keyword smoke; OpenRouter free model/embedding được kiểm tra theo giới hạn quota thực tế, không ghi điểm giả khi provider trả 429.
+- AgentKit benchmark smoke: thêm runner model-backed cho Vietnamese Function Calling với Ollama, chấm riêng tool selection và argument exact match; prompt giữ nguyên ngôn ngữ và giá trị argument của người dùng.
+- Agent runtime Ollama: bổ sung model adapter gọi native `/api/chat` với structured tool calling, tự động dùng adapter này cho Ollama trong chatbot/sub-agent LangGraph; giữ OpenAI-compatible path cho các provider khác.
+- Benchmark runtime: mount `scripts/` và `benchmarks/` vào `api-dev` để smoke/full AgentKit có thể chạy reproducibly trong Docker và ghi artifact trực tiếp vào workspace.
+- AgentKit validation: thêm schema-aware retry và các repair lossless cho casing/ID; không tự sửa các slot ngày/giờ chưa đủ bằng chứng.
+
 - 统一 chunking 接口：`BaseChunker.chunk` 抽象方法统一返回 `ChunkingResult`，`NaiveChunker` 与 `StructuralChunker` 遵循同一契约，dispatcher 移除 `isinstance` 分支判断，POOR 质量 fallback 直接消费 `.chunks`；`_build_chunk_records`/`_build_chunk_records_from_results` 两个重复的 record builder 合并为一个统一接收 `list[ChunkResult]` 的实现，同时清除 `dispatcher.py` 中被后置同名定义覆盖的重复 `_build_chunk_records`/`_dispatch_markdown_parser` 死代码；naive 路径下 `section_type` 默认回退为 `text`，保持记录结构不变。测试随新契约更新：structural chunker 测试改用 `.chunks` 访问，`test_dispatcher_with_naive_by_default` 因 `STRUCTURAL_CHUNKING` 默认开启（此前测试注释假设默认关闭）更名为 `test_dispatcher_with_naive_when_disabled` 并显式 `override(False)` 验证 naive 路径。
 - 收敛 PDF OCR 编排链路：`parse_pdf` 的 engine 链改为从 `params["ocr_engine"]` 或 `config.default_ocr_engine` 派生，不再硬编码；`docling` 处理器注册进 `DocumentProcessorFactory.PROCESSOR_TYPES`，文本层 PDF（policy `DISABLE`）默认走 docling（关闭 OCR）；`paddleocr_vl_1_6`/`mineru_official`/`deepseek_ocr` 仅在 `config.allow_external_ocr` 开启时加入云 OCR fallback；`OCR_POLICY`/`ALLOW_EXTERNAL_OCR` 收敛为应用配置（`.env.template` 与 compose 同步声明），替换原先直接从 `os.environ` 读取；`ProcessingResult.success` 收紧为仅 `SUCCESS` 为真，消除与 DEGRADED 的语义冲突；解析器/分块测试随新契约更新。
 - 新增 Summary 上下文压缩实时状态流式同步：`YuxiSummarizationMiddleware` 触发压缩时通过 `langgraph.config.get_stream_writer()` 推送 `yuxi.context_compression` 自定义事件（started/completed/failed），复用 DeepAgents 已有 `_summarization_event` 作为完成数据源；`base.py` 通过 `astream_events(version="v3")` 的 `CustomTransformer` 透传 custom 流，`chat_service`/`agent_run_service` 将事件映射为 `context_compression` chunk 并透传到前端；前端收到 `started` 时将"正在生成回复"加载态文案切换为"正在压缩上下文"，压缩结束（`completed`/`finished`）即切回，不额外渲染分隔符、不保留压缩完成态。为避免摘要 LLM 调用的 token 流被 LangGraph messages stream 捕获并广播成 phantom 摘要消息，重写 `_create_summary`/`_acreate_summary` 在摘要模型 invoke 的 config 上挂 `TAG_NOSTREAM`，让流式层在源头跳过该调用，主 messages 流天然只含用户可见回复，无需 `chat_service` 下游过滤（参考 DeerFlow 实现）。异步 L2 压缩路径的 `_aoffload_to_backend` 与 `_acreate_summary` 改回 `asyncio.gather` 并发执行，与 DeepAgents 父类一致，避免串行等待一次文件 I/O 与一次摘要 LLM 调用；两路复用 `_SUMMARY_SANITIZED_MESSAGES` 的 id 缓存。L1-only 调用若仍触发 provider context overflow，会回落到 L2 summary 后重试；`summary_tool_result_token_limit` 默认改为 300，并同时作为 L1 工具结果 offload 阈值和预览上限，L2 只消费 L1 视图，不再对工具结果做第二轮 offload；L2 摘要模型的待摘要历史输入上限改为与 `summary_threshold` 对齐，避免固定 4000 token 裁剪丢失早期历史；新增 `summary_l2_trigger_ratio` 管理 L1 后进入 L2 的比例阈值，默认 `0.4`。
@@ -368,3 +374,11 @@
 - 前端工具调用渲染出现问题
 - 当前 ReAct 智能体有消息顺序错乱的 bug，且不会默认调用工具
 - 修复文件管理：（1）文件选择的时候会跨数据库；（2）文件校验会算上失败的文件；
+## Unreleased
+
+- Add an auditable benchmark registry for ViRE, UIT-ViQuAD 2.0, EvalRAGData, VCS, VinText, and the separately licensed printed-document OCR track; add normalized retrieval/OCR adapters with SHA-256 artifact reporting.
+- Add reproducible VieQuAD BM25 retrieval baseline and agent benchmark contract validation artifacts.
+- Add an AgentKit-style Yuxi tool contract and trace-first executor smoke harness.
+- Tune the default Milvus hybrid retrieval weights toward BM25 (`vector=0.3`, `bm25=0.7`) after full VieQuAD validation showed the previous vector-heavy default suppressing strong lexical matches.
+- Fix query rewrite to invoke Yuxi's chat adapter through its public `call()` interface.
+- Preserve query-rewrite provider errors so benchmark harnesses can distinguish refusal from an empty expansion.

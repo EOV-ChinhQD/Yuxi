@@ -5,7 +5,7 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import ModelRetryMiddleware, TodoListMiddleware
 from langchain.agents.middleware.types import AgentMiddleware
 
-from yuxi.agents import BaseAgent, BaseState, load_chat_model, resolve_chat_model_spec
+from yuxi.agents import BaseAgent, BaseState, load_agent_model, load_chat_model, resolve_chat_model_spec
 from yuxi.agents.backends import create_agent_filesystem_middleware
 from yuxi.agents.buildin.chatbot.graph import OllamaToolCallParserMiddleware
 from yuxi.agents.buildin.chatbot.prompt import TODO_MID_PROMPT, build_prompt_with_context
@@ -121,7 +121,7 @@ class SubAgentBackend(BaseAgent):
 
         context.system_prompt = await build_prompt_with_context(context)
         return create_agent(
-            model=load_chat_model(fully_specified_name=model_spec),
+            model=load_agent_model(fully_specified_name=model_spec),
             tools=_filter_disabled_tools(await resolve_configured_runtime_tools(context)),
             system_prompt=context.system_prompt,
             middleware=await _build_middlewares(context),

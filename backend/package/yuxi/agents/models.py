@@ -1,8 +1,12 @@
 from typing import Any
 
+import httpx
 from langchain.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_openai import ChatOpenAI
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 
 from yuxi import config as sys_config
 from yuxi.models.providers.cache import model_cache
@@ -174,7 +178,16 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
         except Exception:
             pass
 
-        if info.provider_type == "anthropic":
+        native_ollama = kwargs.pop("native_ollama", False)
+        if native_ollama and info.provider_id == "ollama":
+            llm = NativeOllamaChatModel(
+                model_name=info.model_id,
+                base_url=base_url,
+                think=kwargs.pop("think", False),
+                temperature=kwargs.get("temperature"),
+                max_tokens=kwargs.get("max_tokens"),
+            )
+        elif info.provider_type == "anthropic":
             from langchain_anthropic import ChatAnthropic
 
             llm = ChatAnthropic(
@@ -205,6 +218,16 @@ def load_chat_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel
         return llm
 
 
+def load_agent_model(fully_specified_name: str | None, **kwargs) -> BaseChatModel:
+    """Load the agent model, using Ollama's native tool API when applicable."""
+    resolved_spec = resolve_chat_model_spec(fully_specified_name)
+    info = model_cache.get_model_info(resolved_spec)
+    if info and info.provider_id == "ollama":
+        kwargs.setdefault("native_ollama", True)
+        kwargs.setdefault("think", False)
+    return load_chat_model(resolved_spec, **kwargs)
+
+
 class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
     """Normalize empty name/id strings in streaming tool_call chunks to avoid v3 streaming issues."""
 
@@ -222,6 +245,123 @@ class _ToolCallChunkFixChatOpenAI(ChatOpenAI):
         for chunk in super()._stream(*args, **kwargs):
             _normalize_tool_call_chunks(chunk.message)
             yield chunk
+
+
+class NativeOllamaChatModel(BaseChatModel):
+    """LangChain model backed by Ollama's native chat API."""
+
+    model_name: str
+    base_url: str
+    think: bool = False
+    temperature: float | None = None
+    max_tokens: int | None = None
+    bound_tools: list[dict[str, Any]] = Field(default_factory=list)
+
+    @property
+    def _llm_type(self) -> str:
+        return "ollama-native"
+
+    def bind_tools(self, tools, *, tool_choice=None, **kwargs):
+        del tool_choice, kwargs
+        return self.model_copy(update={"bound_tools": [convert_to_openai_tool(tool) for tool in tools]})
+
+    @staticmethod
+    def _role(message: BaseMessage) -> str:
+        return {"human": "user", "ai": "assistant", "system": "system", "tool": "tool"}.get(message.type, message.type)
+
+    @classmethod
+    def _messages(cls, messages: list[BaseMessage]) -> list[dict[str, Any]]:
+        payload = []
+        for message in messages:
+            item = {"role": cls._role(message), "content": message.content}
+            if isinstance(message, AIMessage) and message.tool_calls:
+                item["tool_calls"] = [
+                    {
+                        "id": call.get("id"),
+                        "type": "function",
+                        "function": {"name": call["name"], "arguments": call.get("args", {})},
+                    }
+                    for call in message.tool_calls
+                ]
+            if message.type == "tool":
+                item["tool_call_id"] = getattr(message, "tool_call_id", None)
+            payload.append(item)
+        return payload
+
+    @staticmethod
+    def _message(response: dict[str, Any]) -> AIMessage:
+        data = response.get("message") or {}
+        tool_calls = []
+        for call in data.get("tool_calls") or []:
+            function = call.get("function") or {}
+            tool_calls.append(
+                {
+                    "name": function.get("name", ""),
+                    "args": function.get("arguments") or {},
+                    "id": call.get("id"),
+                    "type": "tool_call",
+                }
+            )
+        return AIMessage(content=data.get("content", ""), tool_calls=tool_calls)
+
+    def _payload(self, messages: list[BaseMessage], **kwargs) -> dict[str, Any]:
+        options = {}
+        temperature = kwargs.get("temperature", self.temperature)
+        max_tokens = kwargs.get("max_tokens", self.max_tokens)
+        if temperature is not None:
+            options["temperature"] = temperature
+        if max_tokens is not None:
+            options["num_predict"] = max_tokens
+        payload = {
+            "model": self.model_name,
+            "messages": self._messages(messages),
+            "stream": False,
+            "think": self.think,
+            "options": options,
+        }
+        if self.bound_tools:
+            payload["tools"] = self.bound_tools
+        return payload
+
+    def _request(self, messages: list[BaseMessage], **kwargs) -> ChatResult:
+        with httpx.Client(timeout=120) as client:
+            response = client.post(
+                f"{self.base_url.rstrip('/').removesuffix('/v1')}/api/chat", json=self._payload(messages, **kwargs)
+            )
+            response.raise_for_status()
+        return ChatResult(generations=[ChatGeneration(message=self._message(response.json()))])
+
+    async def _arequest(self, messages: list[BaseMessage], **kwargs) -> ChatResult:
+        async with httpx.AsyncClient(timeout=120) as client:
+            response = await client.post(
+                f"{self.base_url.rstrip('/').removesuffix('/v1')}/api/chat",
+                json=self._payload(messages, **kwargs),
+            )
+            response.raise_for_status()
+        return ChatResult(generations=[ChatGeneration(message=self._message(response.json()))])
+
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        del stop, run_manager
+        return self._request(messages, **kwargs)
+
+    async def _agenerate(self, messages, stop=None, run_manager=None, **kwargs):
+        del stop, run_manager
+        return await self._arequest(messages, **kwargs)
+
+    def _stream(self, messages, stop=None, run_manager=None, **kwargs):
+        del stop, run_manager
+        result = self._request(messages, **kwargs)
+        message = result.generations[0].message
+        tool_call_chunks = [
+            {
+                "name": call["name"],
+                "args": json.dumps(call.get("args") or {}, ensure_ascii=False),
+                "id": call.get("id"),
+                "index": index,
+            }
+            for index, call in enumerate(message.tool_calls)
+        ]
+        yield ChatGenerationChunk(message=AIMessageChunk(content=message.content, tool_call_chunks=tool_call_chunks))
 
 
 def _bridge_tool_images_to_user_messages(payload: dict[str, Any]) -> dict[str, Any]:

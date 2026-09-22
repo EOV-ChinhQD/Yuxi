@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "audited_at": "2026-09-22",
+  "scope": "printed_real OCR evaluation subsets",
+  "records": [
+    {
+      "dataset": "MeddiesOCR",
+      "hf_repo": "Leo1903/meddiesOCR",
+      "hf_revision": "584aa75cac164df05fa999453432d18ad3783f5c",
+      "selected_records": 30,
+      "source_url": "https://commons.wikimedia.org/wiki/File:Doi_trong_nguc_1.pdf",
+      "source_license": "Public Domain",
+      "evidence": [
+        "Wikimedia Commons marks the work Public Domain under PD-Vietnam and PD-US tags.",
+        "The source page identifies the scan as a 1935 work by Nhượng Tống and links the Gallica record."
+      ],
+      "image_status": "cleared_for_local_benchmark_and_redistribution_under_source_terms",
+      "ground_truth_status": "conditional_internal_use",
+      "ground_truth_reason": "MeddiesOCR does not declare a dataset license; the selected text is retained as benchmark ground truth but is not cleared for public redistribution.",
+      "audit_status": "conditional"
+    },
+    {
+      "dataset": "VietAge-OCR",
+      "hf_repo": "taidng/vietage-ocr",
+      "hf_revision": "4e22d5ff4cc0dce8c1128e8106852053f7192083",
+      "split": "test:wikisource_qn",
+      "selected_records": 10,
+      "source_license": "CC-BY-SA-4.0",
+      "evidence": [
+        "Each selected record contains metadata.license=CC-BY-SA-4.0.",
+        "Each selected source URL points to a Vietnamese Wikisource page."
+      ],
+      "image_and_ground_truth_status": "cleared_for_local_benchmark_and_redistribution_with_attribution_and_share-alike",
+      "audit_status": "cleared"
+    }
+  ],
+  "policy": "Do not publish the Meddies ground-truth text or derived manifest outside the internal benchmark artifact until the dataset annotation license is clarified."
+}

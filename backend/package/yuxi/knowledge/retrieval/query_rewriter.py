@@ -52,7 +52,7 @@ Lưu ý: Nếu không có từ đồng nghĩa nào phù hợp, để mảng rỗ
 
         try:
             model = select_model(llm_model_spec)
-            response = await model.ainvoke(prompt)
+            response = await model.call(prompt, stream=False)
             raw_text = response.content if hasattr(response, "content") else str(response)
 
             data = json_repair.loads(raw_text)
@@ -65,4 +65,4 @@ Lưu ý: Nếu không có từ đồng nghĩa nào phù hợp, để mảng rỗ
             return [e for e in expansions if isinstance(e, str) and e.strip()]
         except Exception as e:
             logger.warning(f"[QueryRewriter] Failed to rewrite query: {e}")
-            return []
+            raise

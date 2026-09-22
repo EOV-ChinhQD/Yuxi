@@ -26,8 +26,8 @@ class QueryOptions(BaseModel):
     bm25_drop_ratio_search: float = Field(default=0.0, description="Tỷ lệ bỏ từ khóa ít quan trọng khi BM25 search")
 
     # Hybrid Fusion Options
-    vector_weight: float = Field(default=0.7, description="Trọng số của Vector Search khi kết hợp Hybrid")
-    bm25_weight: float = Field(default=0.3, description="Trọng số của BM25 khi kết hợp Hybrid")
+    vector_weight: float = Field(default=0.3, description="Trọng số của Vector Search khi kết hợp Hybrid")
+    bm25_weight: float = Field(default=0.7, description="Trọng số của BM25 khi kết hợp Hybrid")
     hybrid_ranker: Literal["weighted", "rrf"] = Field(
         default="weighted", description="Loại ranker kết hợp: weighted hoặc rrf"
     )

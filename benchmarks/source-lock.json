@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "sources": [
+    {
+      "id": "meddiesocr",
+      "role": "printed_document_ocr",
+      "hf_repo": "Leo1903/meddiesOCR",
+      "revision": "584aa75cac164df05fa999453432d18ad3783f5c",
+      "license": "dataset license not declared; selected source PDF is Public Domain",
+      "files": ["annotations.jsonl", "images.zip", "stats.json"],
+      "fields": ["image_path", "text", "page_number", "total_pages", "source_url", "doc_id"],
+      "selection": "Select 20-30 pages, grouped by doc_id, with no document overlap across splits",
+      "status": "subset_prepared; annotation_redistribution_requires_review"
+    },
+    {
+      "id": "vietage-ocr",
+      "role": "historical_printed_document_ocr",
+      "hf_repo": "taidng/vietage-ocr",
+      "revision": "4e22d5ff4cc0dce8c1128e8106852053f7192083",
+      "license": "dataset card: CC BY-NC-SA-4.0; selected wikisource_qn records declare CC-BY-SA-4.0",
+      "files": ["test-00000-of-00001.parquet"],
+      "fields": ["image", "text", "metadata"],
+      "selection": "Select 10 test pages and preserve historical-document metadata",
+      "status": "subset_prepared; source_metadata_license_recorded"
+    },
+    {
+      "id": "document-image-reasoning",
+      "role": "secondary_document_ocr",
+      "hf_repo": "trannhiem/TranNhiem-Vietnamese-DocumentImage-Reasoning",
+      "revision": "4394a35d3efae1db5f0c7e7c5ab33f9592fdaa98",
+      "license": "other; do not redistribute until the repository license is clarified",
+      "files": ["data/vdoc.jsonl", "preview/preview-000.parquet"],
+      "fields": ["image", "question", "model_answer"],
+      "selection": "Optional document-VQA stress track; not primary OCR ground truth",
+      "status": "reference_only"
+    },
+    {
+      "id": "viwikifc",
+      "role": "nli_grounding",
+      "hf_repo": "High-Will/ViWikiFC",
+      "revision": "0089cbaac1a58458893b11c5cc067c4a37843f8c",
+      "license": "CC BY-4.0",
+      "files": ["data/train.csv", "data/dev.csv", "data/test.csv"],
+      "fields": ["claim", "evidence", "context", "gold_label", "link"],
+      "label_mapping": {"Supports": "ENTAILMENT", "Refutes": "CONTRADICTION", "Not Enough Information": "NEUTRAL"},
+      "status": "source_locked_adapter_pending_export"
+    },
+    {
+      "id": "viequad-retrieval",
+      "role": "secondary_retrieval",
+      "hf_repo": "mteb/VieQuADRetrieval",
+      "revision": "f956535e394d5f2b4334de447151e3b237ef19d1",
+      "license": "MIT",
+      "files": ["queries/validation-00000-of-00001.parquet", "corpus/validation-00000-of-00001.parquet", "qrels/validation-00000-of-00001.parquet"],
+      "fields": ["query", "corpus", "relevant_docs"],
+      "status": "source_locked_adapter_pending_export"
+    },
+    {
+      "id": "when2call",
+      "role": "agent_tool_decision",
+      "hf_repo": "nvidia/When2Call",
+      "revision": "0582f7749df63a96fdc3070932e83e72396ace53",
+      "license": "CC BY-4.0",
+      "files": ["test/when2call_test_mcq.jsonl", "test/when2call_test_llm_judge.jsonl"],
+      "fields": ["question", "correct_answer", "answers", "target_tool", "tools"],
+      "status": "source_locked_adapter_pending_export"
+    },
+    {
+      "id": "bfcl",
+      "role": "agent_tool_calling",
+      "source_url": "https://github.com/ShishirPatil/gorilla/tree/6ea57973c7a6097fd7c5915698c54c17c5b1b6c8/berkeley-function-call-leaderboard",
+      "revision": "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8",
+      "license": "Apache-2.0 repository; audit each dataset component before redistribution",
+      "files": ["bfcl_eval/data"],
+      "selection": "Select 50-100 tasks across simple, multiple, parallel, relevance, and multi-turn categories; Vietnamese adaptations must be labeled adapted",
+      "status": "source_locked_adapter_pending_export"
+    },
+    {
+      "id": "vietnamese-function-calling",
+      "role": "agent_tool_calling_smoke",
+      "hf_repo": "phamhai/Vietnamese-Function-Calling-Test",
+      "revision": "6a06eb7f9fdcbacb7982450a404496795934ec65",
+      "license": "Apache-2.0",
+      "files": ["vietnamese-function-calling-test.json"],
+      "fields": ["input_text", "output", "tools"],
+      "status": "source_locked_adapter_pending_export"
+    }
+  ]
+}

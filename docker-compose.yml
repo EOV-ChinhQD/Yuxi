@@ -34,8 +34,8 @@ x-api-worker-env: &api-worker-env
   RUN_EVENTS_STREAM_TTL_SECONDS: ${RUN_EVENTS_STREAM_TTL_SECONDS:-7200}
   YUXI_CORS_ORIGINS: ${YUXI_CORS_ORIGINS:-}
   # Các biến môi trường khác (Other environment variables)
-  NO_PROXY: localhost,127.0.0.1,milvus,graph,minio,milvus-etcd-dev,etcd,mineru,paddlex,sandbox-provisioner,api.siliconflow.cn
-  no_proxy: localhost,127.0.0.1,milvus,graph,minio,milvus-etcd-dev,etcd,mineru,paddlex,sandbox-provisioner,api.siliconflow.cn
+  NO_PROXY: localhost,127.0.0.1,host.docker.internal,172.17.0.1,milvus,graph,minio,milvus-etcd-dev,etcd,mineru,paddlex,sandbox-provisioner,api.siliconflow.cn
+  no_proxy: localhost,127.0.0.1,host.docker.internal,172.17.0.1,milvus,graph,minio,milvus-etcd-dev,etcd,mineru,paddlex,sandbox-provisioner,api.siliconflow.cn
 
 services:
   api:
@@ -52,6 +52,8 @@ services:
       - ./docker/volumes/models:/app/models
       - ./backend/test:/app/test
       - ./backend/scripts:/app/scripts
+      - ./scripts:/app/project-scripts:ro
+      - ./benchmarks:/app/benchmarks
       - ./docker/sandbox_provisioner:/app/docker/sandbox_provisioner:ro
       - ./.env:/app/.env
       - /var/run/docker.sock:/var/run/docker.sock
@@ -125,6 +127,42 @@ services:
       sandbox-provisioner:
         condition: service_healthy
 
+  rag-worker:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    image: yuxi-api:${YUXI_VERSION:-0.7.1.beta1}
+    container_name: rag-worker-dev
+    working_dir: /app
+    volumes:
+      - ./backend/server:/app/server
+      - ./backend/package:/app/package
+      - ./docker/volumes/yuxi:/app/saves
+      - ./docker/volumes/models:/app/models
+      - ./backend/test:/app/test
+      - ./backend/scripts:/app/scripts
+      - ./docker/sandbox_provisioner:/app/docker/sandbox_provisioner:ro
+      - ./.env:/app/.env
+    networks:
+      - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+    environment:
+      <<: *api-worker-env
+    command: uv run --no-sync --no-dev python -m yuxi.services.run_rag_worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      sandbox-provisioner:
+        condition: service_healthy
+
   sandbox-provisioner:
     build:
       context: ./docker/sandbox_provisioner
@@ -137,7 +175,7 @@ services:
       - ./docker/sandbox_provisioner/sandbox.env:/app/sandbox.env:ro
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "8002:8002"
+      - "${SANDBOX_PROVISIONER_PORT:-8002}:8002"
     networks:
       - app-network
     extra_hosts:
@@ -253,7 +291,7 @@ services:
 
   minio:
     container_name: minio
-    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    image: quay.io/minio/minio:RELEASE.2023-03-20T20-16-18Z
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}

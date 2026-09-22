@@ -1,0 +1,9 @@
+raw/
+artifacts/
+results/
+*.parquet
+*.zip
+*.tar
+*.png
+*.jpg
+*.jpeg

@@ -152,7 +152,7 @@ class OllamaToolCallParserMiddleware(AgentMiddleware):
         return response
 
 
-from yuxi.agents import BaseAgent, load_chat_model, resolve_chat_model_spec
+from yuxi.agents import BaseAgent, load_agent_model, load_chat_model, resolve_chat_model_spec
 from yuxi.agents.backends import create_agent_filesystem_middleware
 from yuxi.agents.context import (
     DEFAULT_SUMMARY_KEEP_MESSAGES,
@@ -256,7 +256,7 @@ class ChatbotAgent(BaseAgent):
             ]
 
         graph = create_agent(
-            model=load_chat_model(fully_specified_name=model_spec),
+            model=load_agent_model(fully_specified_name=model_spec),
             tools=resolved_tools,
             system_prompt=context.system_prompt,
             middleware=await _build_middlewares(context),

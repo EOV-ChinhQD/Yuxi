@@ -7,6 +7,7 @@ from yuxi.evaluation.backends import (
 from yuxi.evaluation.config import EmbeddingConfig, EvaluationManifest, QueryOptions
 from yuxi.evaluation.datasets.loader import DatasetItem, DatasetLoader, EvaluationDataset
 from yuxi.evaluation.runner import EvaluationRunner, QueryResult
+from yuxi.evaluation.benchmark_registry import NLIRecord, OCRRecord, RetrievalRecord, ToolCallingRecord
 from yuxi.evaluation.stages import (
     EmbeddingStage,
     EvaluationStage,
@@ -33,4 +34,8 @@ __all__ = [
     "EmbeddingStage",
     "RetrievalPipelineStage",
     "RerankingStage",
+    "RetrievalRecord",
+    "OCRRecord",
+    "NLIRecord",
+    "ToolCallingRecord",
 ]

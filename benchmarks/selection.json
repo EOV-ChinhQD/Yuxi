@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "selection_policy": {
+    "ocr": {
+      "meddiesocr_pages": 30,
+      "vietage_pages": 10,
+      "hard_cases_pages": 10,
+      "group_by_document": true,
+      "disjoint_documents_across_splits": true,
+      "required_fields": ["sample_id", "image_path", "reference_text", "source", "license", "image_sha256", "ground_truth_sha256"]
+    },
+    "nli": {
+      "dataset": "viwikifc",
+      "split": "test",
+      "label_mapping": {
+        "Supports": "ENTAILMENT",
+        "Refutes": "CONTRADICTION",
+        "Not_Enough_Information": "NEUTRAL"
+      }
+    },
+    "retrieval": {
+      "dataset": "viequad-retrieval",
+      "split": "validation",
+      "metrics": ["recall@1", "recall@5", "recall@10", "mrr@10", "ndcg@10"]
+    },
+    "agent": {
+      "bfcl_tasks": 100,
+      "when2call_split": "test",
+      "vietnamese_function_calling_split": "test",
+      "adapted_tasks_must_be_labeled": true
+    }
+  },
+  "completion_gate": [
+    "raw source downloaded at locked revision",
+    "license recorded per source or page",
+    "normalized artifact written",
+    "artifact SHA-256 recorded",
+    "benchmark command executed",
+    "metric artifact written"
+  ]
+}

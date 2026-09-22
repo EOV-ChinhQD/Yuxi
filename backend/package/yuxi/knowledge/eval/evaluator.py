@@ -1,3 +1,4 @@
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -24,12 +25,20 @@ def build_answer_prompt(query: str, retrieved_chunks: list[dict[str, Any]], max_
 
     context_text = "\\n\\n".join(context_docs)
     return (
-        f"Based on the following contextual information, please answer the user's question.\n\n"
+        "Based on the following contextual information, answer the user's question.\n\n"
         f"Contextual information:{context_text}\n\n"
-        f"User questions:{query}\n\n"
-        "Please answer the question accurately based on contextual information.\n\n"
-        'Nếu thông tin không đủ trong context, hãy trả lời "Không đủ thông tin để trả lời".\n\n'
+        f"User question:{query}\n\n"
+        "Answer only in Vietnamese. Do not use English, Chinese, or any other language. "
+        "Answer directly in one to three concise sentences, using only the context. "
+        'If the context is insufficient, answer exactly: "Không đủ thông tin để trả lời".\n\n'
     )
+
+
+def _is_vietnamese_answer(answer: str) -> bool:
+    """Reject obvious mixed-language output before returning it to the caller."""
+    if not answer or re.search(r"[\u3400-\u9fff\u0400-\u04ff]", answer):
+        return False
+    return not re.search(r"\b(document|context|therefore|according|answer|the)\b", answer, re.IGNORECASE)
 
 
 async def generate_answer_if_needed(
@@ -48,8 +57,18 @@ async def generate_answer_if_needed(
     logger.debug(f"Use LLM {retrieval_config.get('answer_llm')} generate answer...")
     try:
         llm = select_model_fn(model_spec=retrieval_config["answer_llm"])
-        response = await llm.call(build_answer_prompt(query, retrieved_chunks), stream=False)
+        prompt = build_answer_prompt(query, retrieved_chunks)
+        response = await llm.call(prompt, stream=False)
         generated_answer = response.content if response else ""
+        if not _is_vietnamese_answer(generated_answer):
+            retry_prompt = (
+                f"{prompt}\nYour previous output violated the language requirement. "
+                "Return only a concise Vietnamese answer with no foreign-language words."
+            )
+            retry_response = await llm.call(retry_prompt, stream=False)
+            generated_answer = retry_response.content if retry_response else ""
+            if not _is_vietnamese_answer(generated_answer):
+                generated_answer = "Không đủ thông tin để trả lời"
         logger.debug(f"LLM generated answer length: {len(generated_answer) if generated_answer else 0}")
         return generated_answer
     except Exception as e:

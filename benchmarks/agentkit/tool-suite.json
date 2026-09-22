@@ -1,0 +1,323 @@
+{
+  "schema_version": "1.0",
+  "suite": "yuxi-agentkit-tool-suite",
+  "source": "Yuxi registered toolkits",
+  "tools": [
+    {
+      "name": "query_kb",
+      "description": "Tìm kiếm nội dung trong kho kiến thức được chỉ định.\n\nSử dụng công cụ này khi người dùng cần truy vấn nội dung cụ thể. kb_id là ID tài nguyên kho kiến thức;\nfile_id trong kết quả trả về có thể tiếp tục được sử dụng cho find_kb_document hoặc open_kb_document.",
+      "parameters": {
+        "properties": {
+          "kb_id": {
+            "description": "ID tài nguyên kho kiến thức, tức là kb_id",
+            "title": "Kb Id",
+            "type": "string"
+          },
+          "query_text": {
+            "description": "Từ khóa tìm kiếm, nên được trích xuất thành từ khóa hoặc cụm từ giúp truy xuất câu trả lời",
+            "title": "Query Text",
+            "type": "string"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Lọc từ khóa tên file tùy chọn, không sử dụng nếu không cần thiết",
+            "title": "File Name"
+          }
+        },
+        "required": [
+          "kb_id",
+          "query_text"
+        ],
+        "title": "SearchInputSchema",
+        "type": "object"
+      }
+    },
+    {
+      "name": "query_keywords",
+      "description": "Tìm kiếm nội dung trong kho kiến thức sử dụng công cụ tìm kiếm từ khóa BM25 chính xác.\n\nSử dụng công cụ này khi người dùng muốn tìm kiếm từ khóa chính xác, mã lỗi, tên riêng viết tắt,\nhoặc số hiệu văn bản cụ thể.",
+      "parameters": {
+        "properties": {
+          "kb_id": {
+            "description": "ID tài nguyên kho kiến thức, tức là kb_id",
+            "title": "Kb Id",
+            "type": "string"
+          },
+          "query_text": {
+            "description": "Từ khóa tìm kiếm, nên được trích xuất thành từ khóa hoặc cụm từ giúp truy xuất câu trả lời",
+            "title": "Query Text",
+            "type": "string"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Lọc từ khóa tên file tùy chọn, không sử dụng nếu không cần thiết",
+            "title": "File Name"
+          }
+        },
+        "required": [
+          "kb_id",
+          "query_text"
+        ],
+        "title": "SearchInputSchema",
+        "type": "object"
+      }
+    },
+    {
+      "name": "open_kb_document",
+      "description": "Mở văn bản gốc của tài liệu kho kiến thức theo cửa sổ dòng.\n\nSử dụng khi các đoạn trích trả về từ query_kb không đủ để trả lời câu hỏi, hoặc cần xem ngữ cảnh của một tài liệu nào đó.\nkb_id là ID tài nguyên kho kiến thức; file_id là ID tệp kho kiến thức.",
+      "parameters": {
+        "properties": {
+          "kb_id": {
+            "description": "ID tài nguyên kho kiến thức, tức là kb_id",
+            "title": "Kb Id",
+            "type": "string"
+          },
+          "file_id": {
+            "description": "ID file cần mở",
+            "title": "File Id",
+            "type": "string"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tùy chọn, số dòng bắt đầu, bắt đầu từ 1",
+            "title": "Line"
+          },
+          "offset": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tùy chọn, độ lệch bắt đầu, bắt đầu từ 0; line ưu tiên hơn offset",
+            "title": "Offset"
+          },
+          "window_size": {
+            "default": 1800,
+            "description": "Đọc số dòng cửa sổ",
+            "maximum": 2000,
+            "minimum": 1,
+            "title": "Window Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kb_id",
+          "file_id"
+        ],
+        "title": "OpenInputSchema",
+        "type": "object"
+      }
+    },
+    {
+      "name": "search_file",
+      "description": "Tìm kiếm tệp trong kho kiến thức.\n\nSử dụng công cụ này khi người dùng cần tìm kiếm tệp cụ thể. Có thể chỉ định tên kho kiến thức và từ khóa tìm kiếm.\nNếu không chỉ định kho kiến thức, hệ thống sẽ tìm kiếm trong tất cả kho kiến thức có quyền truy cập.\nNếu không chỉ định từ khóa tìm kiếm, hệ thống sẽ trả về tất cả các tệp.\n\nArgs:\n    kb_name: Tên kho kiến thức, để trống để tìm kiếm trong tất cả các kho kiến thức\n    query: Từ khóa tìm kiếm, để trống để trả về tất cả các tệp\n    offset: Độ lệch offset, bắt đầu từ 0\n    limit: Giới hạn số lượng trả về, mặc định 300\n\nReturns:\n    Danh sách các tệp khớp và thông tin phân trang",
+      "parameters": {
+        "description": "Model input tìm kiếm tệp",
+        "properties": {
+          "kb_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tên kho kiến thức, để trống để tìm kiếm tất cả kho kiến thức",
+            "title": "Kb Name"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Từ khóa tìm kiếm, để trống để trả về tất cả các tệp",
+            "title": "Query"
+          },
+          "offset": {
+            "default": 0,
+            "description": "Độ lệch offset, bắt đầu từ 0",
+            "minimum": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "limit": {
+            "default": 300,
+            "description": "Giới hạn số lượng trả về, mặc định 300",
+            "maximum": 5000,
+            "minimum": 1,
+            "title": "Limit",
+            "type": "integer"
+          }
+        },
+        "title": "SearchFileInput",
+        "type": "object"
+      }
+    },
+    {
+      "name": "ocr_parse_file",
+      "description": "Parse PDF or image file in sandbox into Markdown text and save result as file.\n\nUse cases:\n1. User uploaded PDF/image attachment and needs text extraction\n2. Existing files under workspace/uploads/outputs need conversion to Markdown\n3. Long parsing results should be read using read_file on saved Markdown file\n\nNotes:\n1. file_path must be a virtual path under /home/gem/user-data\n2. Only files under workspace, uploads, or outputs are allowed\n3. Parsing results are written to /home/gem/user-data/outputs/ocr/\n4. Tool returns result file path and short preview, not full OCR text directly\n5. Call present_artifacts to display result files in UI",
+      "parameters": {
+        "description": "Parse a sandbox file with OCR and save the Markdown result.",
+        "properties": {
+          "file_path": {
+            "description": "Sandbox virtual path for OCR parsing, must be under /home/gem/user-data",
+            "title": "File Path",
+            "type": "string"
+          },
+          "ocr_engine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional OCR engine; uses system default when omitted",
+            "title": "Ocr Engine"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "title": "OcrParseFileInput",
+        "type": "object"
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "kb-query-001",
+      "language": "vi",
+      "input_text": "Tìm trong kho kiến thức câu trả lời về chính sách nghỉ phép.",
+      "expected_decision": "tool_call",
+      "expected_tool": "query_kb",
+      "expected_arguments": {
+        "kb_id": "<benchmark_kb_id>",
+        "query_text": "chính sách nghỉ phép"
+      },
+      "category": "single_tool"
+    },
+    {
+      "task_id": "kb-keyword-001",
+      "language": "vi",
+      "input_text": "Tìm chính xác mã lỗi ERR-401 trong kho tài liệu.",
+      "expected_decision": "tool_call",
+      "expected_tool": "query_keywords",
+      "expected_arguments": {
+        "kb_id": "<benchmark_kb_id>",
+        "query_text": "ERR-401"
+      },
+      "category": "single_tool"
+    },
+    {
+      "task_id": "file-search-001",
+      "language": "vi",
+      "input_text": "Tìm file có tên hợp đồng lao động trong kho kiến thức.",
+      "expected_decision": "tool_call",
+      "expected_tool": "search_file",
+      "expected_arguments": {
+        "query": "hợp đồng lao động",
+        "offset": 0,
+        "limit": 20
+      },
+      "category": "single_tool"
+    },
+    {
+      "task_id": "document-open-001",
+      "language": "vi",
+      "input_text": "Mở file DOC-001 từ dòng 10 để đọc thêm ngữ cảnh.",
+      "expected_decision": "tool_call",
+      "expected_tool": "open_kb_document",
+      "expected_arguments": {
+        "kb_id": "<benchmark_kb_id>",
+        "file_id": "DOC-001",
+        "line": 10,
+        "window_size": 20
+      },
+      "category": "single_tool"
+    },
+    {
+      "task_id": "ocr-parse-001",
+      "language": "vi",
+      "input_text": "Đọc nội dung OCR của file /home/gem/user-data/uploads/document.pdf.",
+      "expected_decision": "tool_call",
+      "expected_tool": "ocr_parse_file",
+      "expected_arguments": {
+        "file_path": "/home/gem/user-data/uploads/document.pdf"
+      },
+      "category": "single_tool"
+    },
+    {
+      "task_id": "no-tool-001",
+      "language": "vi",
+      "input_text": "Giải thích ngắn gọn RAG là gì.",
+      "expected_decision": "no_tool_needed",
+      "expected_tool": null,
+      "expected_arguments": {},
+      "category": "no_tool_needed"
+    },
+    {
+      "task_id": "clarification-001",
+      "language": "vi",
+      "input_text": "Tìm tài liệu giúp tôi.",
+      "expected_decision": "clarification",
+      "expected_tool": null,
+      "expected_arguments": {},
+      "category": "clarification"
+    },
+    {
+      "task_id": "invalid-path-001",
+      "language": "vi",
+      "input_text": "OCR file /tmp/private.pdf.",
+      "expected_decision": "tool_call",
+      "expected_tool": "ocr_parse_file",
+      "expected_arguments": {
+        "file_path": "/tmp/private.pdf"
+      },
+      "category": "tool_error_recovery"
+    }
+  ],
+  "execution": {
+    "model_decision": "pending",
+    "tool_handlers": "bound at runtime",
+    "trace_schema": "AgentKitTrace v1"
+  }
+}

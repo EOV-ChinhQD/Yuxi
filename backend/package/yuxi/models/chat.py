@@ -67,10 +67,8 @@ def select_model(model_spec: str, **kwargs) -> LangChainChatAdapter:
 
     logger.info(f"Selecting model: {model_spec} (provider_type={info.provider_type})")
 
-    model = load_chat_model(
-        model_spec,
-        **_langchain_kwargs(info.provider_type, kwargs),
-    )
+    model_kwargs = _langchain_kwargs(info.provider_type, kwargs)
+    model = load_chat_model(model_spec, **model_kwargs)
     return LangChainChatAdapter(
         model,
         model_name=info.model_id,

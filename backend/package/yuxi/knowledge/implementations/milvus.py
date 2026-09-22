@@ -1431,8 +1431,8 @@ class MilvusKB(KnowledgeBase):
                 bm25_top_k = int(merged_kwargs.get("bm25_top_k", recall_top_k))
                 bm25_top_k = max(bm25_top_k, 1)
                 bm25_drop_ratio_search = float(merged_kwargs.get("bm25_drop_ratio_search", 0.0))
-                vector_weight = float(merged_kwargs.get("vector_weight", 0.7))
-                bm25_weight = float(merged_kwargs.get("bm25_weight", 0.3))
+                vector_weight = float(merged_kwargs.get("vector_weight", 0.3))
+                bm25_weight = float(merged_kwargs.get("bm25_weight", 0.7))
                 hybrid_ranker_type = str(merged_kwargs.get("hybrid_ranker", "weighted")).lower()
 
                 vector_request = AnnSearchRequest(

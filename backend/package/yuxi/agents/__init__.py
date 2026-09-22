@@ -8,7 +8,7 @@ from yuxi.agents.context import BaseContext
 from yuxi.agents.mcp.service import get_enabled_mcp_tools
 
 # Model utilities - model loading
-from yuxi.agents.models import load_chat_model, resolve_chat_model_spec
+from yuxi.agents.models import load_agent_model, load_chat_model, resolve_chat_model_spec
 from yuxi.agents.state import BaseState
 
 # Tools - core tool functions
@@ -21,6 +21,7 @@ __all__ = [
     "BaseState",
     # Model utilities
     "load_chat_model",
+    "load_agent_model",
     "resolve_chat_model_spec",
     # Core tools
     "get_tool_info",

@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "prepared_at": "2026-09-22",
+  "artifacts": [
+    {
+      "dataset": "yuxi-agentkit-tool-suite",
+      "source_revision": "working-tree-tool-registry",
+      "split": "smoke",
+      "records": {"tools": 5, "tasks": 8},
+      "artifact": "benchmarks/agentkit/tool-suite.json",
+      "sha256": "8b895df69479f78a579e50525856496b3897bb142aec092facb1853a13a70adc",
+      "status": "prepared_executor_smoke_verified_model_pending"
+    },
+    {
+      "dataset": "meddiesocr",
+      "source_revision": "584aa75cac164df05fa999453432d18ad3783f5c",
+      "split": "source_url:Doi_trong_nguc_1.pdf",
+      "records": 30,
+      "artifact": "benchmarks/artifacts/printed_real/meddiesocr_30_pages/manifest.jsonl",
+      "sha256": "0ba98cb5c0d10250e0e7de940a3f5184180178d1d2fd2dbf1f19de2b9a674cc2",
+      "source_pdf": "benchmarks/raw/ocr_sources/doi-trong-nguc-1.pdf",
+      "source_pdf_sha256": "2636c72384c049cdcefd53f1c50ad0654d1f00896b4c4e11afd4eeb3624739f9",
+      "license_audit": "source_pdf_public_domain; Meddies dataset license not declared",
+      "status": "prepared_for_internal_benchmark_not_public_redistribution"
+    },
+    {
+      "dataset": "vietage-ocr",
+      "source_revision": "4e22d5ff4cc0dce8c1128e8106852053f7192083",
+      "split": "test:wikisource_qn",
+      "records": 10,
+      "artifact": "benchmarks/artifacts/printed_real/vietage_10_pages/manifest.jsonl",
+      "sha256": "7529dd8592c2b72e56168d04e2dfcb700b4d542f14657c72405aa77ad37755e0",
+      "raw_source": "benchmarks/raw/vietage-ocr-test.parquet",
+      "raw_source_sha256": "7909cfa665a890440eae791900c62f81629d38615fea2192913736b2ce491ea7",
+      "license_audit": "all selected records declare CC-BY-SA-4.0",
+      "status": "prepared_not_scored"
+    },
+    {
+      "dataset": "viwikifc",
+      "source_revision": "0089cbaac1a58458893b11c5cc067c4a37843f8c",
+      "split": "test",
+      "records": 2091,
+      "artifact": "benchmarks/artifacts/nli/viwikifc/test.jsonl",
+      "sha256": "72828f5b1aee3eaceee6705013c1cfdd43f8e7801e1ae7cedcf17b2b8524f3c",
+      "status": "prepared_not_scored"
+    },
+    {
+      "dataset": "vietnamese-function-calling",
+      "source_revision": "6a06eb7f9fdcbacb7982450a404496795934ec65",
+      "split": "test",
+      "records": 2899,
+      "artifact": "benchmarks/artifacts/agent/vietnamese-function-calling/test.jsonl",
+      "sha256": "eaa26b5c2a2ebe0b20d63ed7abd47fa388ab2f37e818c83b4edadd63dae651c8",
+      "status": "prepared_not_scored"
+    },
+    {
+      "dataset": "when2call",
+      "source_revision": "0582f7749df63a96fdc3070932e83e72396ace53",
+      "split": "test_mcq",
+      "records": 3652,
+      "artifact": "benchmarks/artifacts/agent/when2call/test_mcq.jsonl",
+      "sha256": "f0ca7252546fa4d267265cc39c8238a6622a57fcf92585927645635f57d67917",
+      "status": "prepared_not_scored"
+    },
+    {
+      "dataset": "viequad-retrieval",
+      "source_revision": "f956535e394d5f2b4334de447151e3b237ef19d1",
+      "split": "validation",
+      "records": {"queries": 2048, "corpus": 2490, "qrels": 4096},
+      "artifacts": {
+        "queries": {"path": "benchmarks/artifacts/retrieval/viequad/queries.jsonl", "sha256": "98a9f79fb8cb949a684c5b8356d7d7a5e839324a69e12077d625808914318ae2"},
+        "corpus": {"path": "benchmarks/artifacts/retrieval/viequad/corpus.jsonl", "sha256": "d754094ffae5a183c23d2aae9ecca37016bbb1d51db4d05757fb054f43289834"},
+        "qrels": {"path": "benchmarks/artifacts/retrieval/viequad/qrels.jsonl", "sha256": "429e628d72f815889161f2e5b00cb406f4cb2ffcfdc3a6676cdfa8591e7d256d"}
+      },
+      "status": "prepared_not_scored"
+    }
+  ],
+  "pending": [
+    "MeddiesOCR annotation redistribution approval",
+    "BFCL fixed 50-100 task subset",
+    "Yuxi production retrieval run on a populated benchmark knowledge base",
+    "Model-backed agent executor and tool-calling metric run",
+    "NLI and OCR metric runs"
+  ]
+}

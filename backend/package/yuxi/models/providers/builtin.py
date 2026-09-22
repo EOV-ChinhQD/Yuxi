@@ -257,6 +257,7 @@ BUILTIN_PROVIDERS: list[dict[str, Any]] = [
         "api_key_env": "OLLAMA_API_KEY",
         "capabilities": ["chat"],
         "enabled_models": [
+            {"id": "qwen3:8b", "type": "chat", "display_name": "qwen3:8b"},
             {"id": "qwen2.5:7b", "type": "chat", "display_name": "qwen2.5:7b"},
             {"id": "qwen2.5:1.5b", "type": "chat", "display_name": "qwen2.5:1.5b"},
             {"id": "phi3:mini", "type": "chat", "display_name": "phi3:mini"},
