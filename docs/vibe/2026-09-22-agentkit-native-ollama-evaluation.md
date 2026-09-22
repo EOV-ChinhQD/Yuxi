@@ -66,5 +66,21 @@ heuristics.
 - [x] Smoke and 100-sample runs execute inside `api-dev`.
 - [x] Schema-aware validation and bounded repair are lint-clean.
 - [x] Latest valid run reaches 100% tool selection and 93% exact match.
-- [ ] When2Call model-backed evaluation is still pending.
+- [x] When2Call stratified model-backed smoke has been executed.
 - [ ] Full RAG and E2E API regression remain separate follow-up phases.
+
+## When2Call result
+
+The native Qwen3 stratified run used 20 samples for each decision class (60
+total) and produced 55% overall decision accuracy:
+
+| Decision | Accuracy |
+|---|---:|
+| `cannot_answer` | 45% |
+| `request_for_info` | 70% |
+| `tool_call` | 50% |
+
+This is a secondary decision benchmark. Its adversarial tool descriptions and
+mixed-language examples make it unsuitable as a direct Vietnamese product
+quality score. The local artifact is
+`benchmarks/results/when2call_qwen3_native_stratified60.json`.

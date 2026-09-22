@@ -104,4 +104,16 @@ PYTHONPATH=backend/package uv run python scripts/eval/prepare_agentkit_tool_suit
   --output benchmarks/agentkit/tool-suite.json
 ```
 
+Run the model-backed When2Call decision smoke inside `api-dev`:
+
+```bash
+docker exec api-dev python /app/project-scripts/eval/run_when2call_local.py \
+  --input /app/benchmarks/artifacts/agent/when2call/test_mcq.jsonl \
+  --output /app/benchmarks/results/when2call_qwen3_native_stratified60.json \
+  --model ollama:qwen3:8b --per-label 20 --native-ollama
+```
+
+This reports decision accuracy for `cannot_answer`, `request_for_info`, and
+`tool_call`; it is not an argument exact-match benchmark.
+
 NLI claims and agent tool-calling tasks can use the public sources in `source-lock.json`. ViWikiFC is normalized to `ENTAILMENT`, `CONTRADICTION`, and `NEUTRAL`; When2Call and Vietnamese Function Calling are normalized to the tool-calling schema. These remain source-locked until the exported artifact has its own hash and test report.
