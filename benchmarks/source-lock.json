@@ -66,6 +66,28 @@
       "status": "source_locked_adapter_pending_export"
     },
     {
+      "id": "uit-viquad-2",
+      "role": "e2e_qa_and_abstention",
+      "hf_repo": "taidng/UIT-ViQuAD2.0",
+      "revision": "406f09a45cc106a8f7b7fd0c25078883fe58cb1f",
+      "license": "mirror declares no license; local-only evaluation, no redistribution",
+      "files": ["data/validation-00000-of-00001.parquet"],
+      "fields": ["id", "title", "context", "question", "answers", "is_impossible", "plausible_answers"],
+      "selection": "Validation split (3814 rows: 2653 answerable, 1161 impossible); E2E sample of 100 answerable + 50 impossible with seed 42",
+      "status": "source_locked_adapter_pending_export"
+    },
+    {
+      "id": "vn-rag-1k",
+      "role": "reference_diversity_set",
+      "hf_repo": "checken9x/vietnamese-rag-benchmark-1k",
+      "revision": "cd979a5500b12b405d2197232e224d094bd1d248",
+      "license": "not declared; local-only, no redistribution",
+      "files": ["bo_de_1000_cau_v3-v2.xlsx", "ket_qua_scp_v3.xlsx"],
+      "fields": ["question", "contexts", "answer", "ground_truth"],
+      "selection": "Not scored: every ground_truth cell is the template placeholder text, so EM/F1 cannot be computed",
+      "status": "reference_only"
+    },
+    {
       "id": "bfcl",
       "role": "agent_tool_calling",
       "source_url": "https://github.com/ShishirPatil/gorilla/tree/6ea57973c7a6097fd7c5915698c54c17c5b1b6c8/berkeley-function-call-leaderboard",

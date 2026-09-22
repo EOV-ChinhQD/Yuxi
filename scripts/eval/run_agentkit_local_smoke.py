@@ -13,6 +13,8 @@ from pathlib import Path
 
 from yuxi.models.chat import select_model
 
+from usage_tracker import UsageTracker
+
 
 def _parse_prediction(text: str) -> dict:
     match = re.search(r"\{\s*[\"']?(?:name|tool_name)[\"']?\s*:", text, re.S)
@@ -255,12 +257,16 @@ async def run(args: argparse.Namespace) -> dict:
         for line in args.input.read_text(encoding="utf-8").splitlines()
         if line
     ][: args.limit]
-    model_kwargs = {"temperature": 0, "max_tokens": 256}
+    rows = rows[args.offset :]
+    model_kwargs = {"temperature": 0, "max_tokens": args.max_tokens}
     if args.native_ollama:
         model_kwargs.update(native_ollama=True, think=False)
     model = select_model(args.model, **model_kwargs)
+    tracker = UsageTracker(max_calls=args.max_calls, log_path=args.usage_log)
     results = []
     for row in rows:
+        if not tracker.allow():
+            break
         tools = _load_tools(row["tools"])
         compact_tools = json.dumps(
             [
@@ -287,11 +293,14 @@ async def run(args: argparse.Namespace) -> dict:
         )
         started = time.perf_counter()
         try:
+            if not tracker.allow():
+                break
             response = await asyncio.wait_for(
                 model.call(prompt, stream=False), timeout=args.timeout
             )
+            tracker.record(True, len(prompt), len(response.content or ""))
             predicted = _parse_prediction(response.content or "")
-            if _prediction_needs_retry(predicted, row["input_text"], tools):
+            if _prediction_needs_retry(predicted, row["input_text"], tools) and tracker.allow():
                 retry_prompt = (
                     f"{prompt}\nThe previous arguments were not copied verbatim from the user request. "
                     "Retry now. Validate required fields, use only schema field names, preserve exact casing, "
@@ -300,8 +309,10 @@ async def run(args: argparse.Namespace) -> dict:
                 retry_response = await asyncio.wait_for(
                     model.call(retry_prompt, stream=False), timeout=args.timeout
                 )
+                tracker.record(True, len(retry_prompt), len(retry_response.content or ""))
                 predicted = _parse_prediction(retry_response.content or "")
         except Exception as error:
+            tracker.record(False, len(prompt))
             predicted = {"decision": "error", "raw_output": repr(error)}
         predicted = _repair_confident_arguments(predicted, row["input_text"], tools)
         expected = _parse_expected(row["expected_tool_call"])
@@ -322,15 +333,27 @@ async def run(args: argparse.Namespace) -> dict:
                 "raw_output": predicted.get("raw_output", ""),
             }
         )
+    tracker.write_log(
+        "run_agentkit_local_smoke.py",
+        args.model,
+        {"output": str(args.output), "sample_size": len(results)},
+    )
     return {
         "benchmark": "vietnamese-function-calling",
         "split": "test",
         "model": args.model,
         "sample_size": len(results),
-        "tool_match_rate": sum(item["tool_match"] for item in results) / len(results),
+        "usage": tracker.summary(),
+        "tool_match_rate": sum(item["tool_match"] for item in results) / len(results)
+        if results
+        else 0.0,
         "argument_match_rate": sum(item["argument_match"] for item in results)
-        / len(results),
-        "exact_match_rate": sum(item["exact_match"] for item in results) / len(results),
+        / len(results)
+        if results
+        else 0.0,
+        "exact_match_rate": sum(item["exact_match"] for item in results) / len(results)
+        if results
+        else 0.0,
         "results": results,
     }
 
@@ -341,7 +364,11 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--model", default="ollama:qwen2.5:7b")
     parser.add_argument("--limit", type=int, default=50)
+    parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--timeout", type=int, default=90)
+    parser.add_argument("--max-tokens", type=int, default=256)
+    parser.add_argument("--max-calls", type=int, default=0)
+    parser.add_argument("--usage-log", type=Path, default=None)
     parser.add_argument("--native-ollama", action="store_true")
     args = parser.parse_args()
     result = asyncio.run(run(args))

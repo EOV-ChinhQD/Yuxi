@@ -59,8 +59,20 @@
       "split": "test_mcq",
       "records": 3652,
       "artifact": "benchmarks/artifacts/agent/when2call/test_mcq.jsonl",
-      "sha256": "f0ca7252546fa4d267265cc39c8238a6622a57fcf92585927645635f57d67917",
+      "sha256": "b8b25b0afc515fa7beb50d15106f0984229d05bb0d3bbcc5da30e8290bdc650d",
       "status": "model_scored_qwen3_native_stratified60_accuracy_0.55"
+    },
+    {
+      "dataset": "uit-viquad-2",
+      "source_revision": "406f09a45cc106a8f7b7fd0c25078883fe58cb1f",
+      "split": "validation",
+      "records": {"source_rows": 3814, "corpus": 557, "sampled_queries": 150, "n_answerable": 100, "n_impossible": 50, "seed": 42},
+      "artifacts": {
+        "queries": {"path": "benchmarks/artifacts/e2e/uit-viquad-2/queries.jsonl", "sha256": "926fcf2edd80ba20ef762bbbb8dd3a22112bcfa389ea755602789bb9609295b7"},
+        "corpus": {"path": "benchmarks/artifacts/e2e/uit-viquad-2/corpus.jsonl", "sha256": "57127d1793feee118d18319a6d31225f797e4c4a750480b7ecab6a97f81ff821"},
+        "qrels": {"path": "benchmarks/artifacts/e2e/uit-viquad-2/qrels.jsonl", "sha256": "51ede10a0ffdac361944376e3c764a3abefe344cb784c242f49bacc9cef61b0d"}
+      },
+      "status": "prepared_not_scored"
     },
     {
       "dataset": "viequad-retrieval",
