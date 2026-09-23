@@ -22,11 +22,11 @@ Thesis đã điền số thật: `docs/thesis/template_thesis.md` (§4.2, §4.3,
 
 ## CHƯA XONG
 
-1. **NLI dual-config (EXP-NLI-01)** — đang chạy trên máy CPU này (PID 2138,
-   ~2h53 wall, ~5× CPU, khỏe). Xong sẽ ra `viwikifc_nli_dual_2091.json`
-   (production zero-shot vs standard 3-way, cùng weights mDeBERTa
-   `MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7`, 2091 cặp).
-   Sang máy GPU chạy lại chỉ mất vài phút thay vì chờ.
+1. **NLI dual-config (EXP-NLI-01)** — full 2.091 cặp trên CPU **bị gián đoạn do tắt máy**
+   (đã chạy ~3h nhưng script không checkpoint nên mất tiến trình). Còn lại
+   `viwikifc_nli_dual_smoke6.json` (pipeline check N=6: production 4/6, standard
+   3/6 — không dùng làm kết quả). **Chạy lại full trên GPU chỉ mất vài phút**,
+   rồi điền §4.11 + C-005.
 2. **VN-FC failure review 7/100**, **E2E retrieval-vs-generation decomposition** —
    có đủ per-sample data, chưa viết phân tích.
 3. **OCR, dense/hybrid/consensus arms, weight search, BFCL, production retrieval,

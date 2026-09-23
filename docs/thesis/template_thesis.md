@@ -494,7 +494,7 @@ EXP-E2E-01	End-to-end QA	Test split	EM, F1, citation, abstention	`Measured` (150
 
 EXP-AGT-01	Agent trajectory	Tool-calling suite	Task success, tool/argument accuracy	`Measured` (VN-FC 100 + When2Call 60)
 
-EXP-NLI-01	Claim grounding	Gold claim set	Precision, Recall, F1, confusion matrix	Đang chạy (dual-config trên 2.091 cặp ViWikiFC)
+EXP-NLI-01	Claim grounding	Gold claim set	Precision, Recall, F1, confusion matrix	Chưa đo (full 2.091 bị gián đoạn do tắt máy; chỉ smoke pipeline 6 mẫu; chạy lại trên GPU)
 
 EXP-SYS-01	Latency và chi phí	Request traces	p50, p95, p99, cost/query	`Measured` một phần (latency từ run E2E/agent/NLI; chi phí `Estimated` vì dùng free trial)
 
@@ -752,7 +752,7 @@ Trả lời sơ bộ từ số liệu đã chốt (cập nhật tiếp sau NLI):
 
 RQ1 (retrieval): mới chỉ đo arm BM25 whitespace trên VieQuAD (R@10 91,80%, MRR@10 0,7010, N=2.048) và BM25 trên corpus E2E 557 docs (hit@1 77,33%). Chưa đủ cơ sở so sánh với dense/hybrid/consensus (`Blocked`, §4.6).
 
-RQ2 (NLI + tác tử): E2E standard RAG đạt EM 45,33% (95% CI [37,58; 53,32]), F1 66,94%, abstention P 79,49% / R 62,00% trên 150 mẫu; đóng góp của NLI gate chưa tách được cho tới khi có confusion matrix dual-config (§4.11 đang chạy).
+RQ2 (NLI + tác tử): E2E standard RAG đạt EM 45,33% (95% CI [37,58; 53,32]), F1 66,94%, abstention P 79,49% / R 62,00% trên 150 mẫu; đóng góp của NLI gate chưa tách được — confusion matrix dual-config phải chạy lại full 2.091 trên GPU (bản CPU bị gián đoạn; xem §4.11).
 
 RQ3 (agent): VN-FC 100 mẫu tool match 98% (95% CI [93,00; 99,45]), EM 93%; When2Call 60 mẫu accuracy 66,67% (95% CI [54,06; 77,27]), lỗi tập trung ở over-trigger tool_call (15/20). Recovery chưa đo chính thức (§4.10, §4.13).
 
@@ -818,7 +818,7 @@ C-003	VN-FC tool match 98%, EM 93% trên 100 mẫu	EXP-AGT-01	Bảng 4.10	`bench
 
 C-004	When2Call accuracy 66,67% trên 60 mẫu phân tầng	EXP-AGT-01	Bảng 4.10	`benchmarks/results/when2call_nvidia_deepseek_stratified60.json`	`Measured`
 
-C-005	[CẦN BỔ SUNG sau NLI]	EXP-NLI-01	Bảng 4.11	`benchmarks/results/viwikifc_nli_dual_2091.json`	Đang chạy
+C-005	[NLI: chờ chạy lại full 2.091 trên GPU]	EXP-NLI-01	Bảng 4.11	`benchmarks/results/viwikifc_nli_dual_smoke6.json` (pipeline check, N=6)	Chưa đo
 
 PHỤ LỤC B. CẤU HÌNH HỆ THỐNG
 
