@@ -21,7 +21,9 @@
       "source_pdf": "benchmarks/raw/ocr_sources/doi-trong-nguc-1.pdf",
       "source_pdf_sha256": "2636c72384c049cdcefd53f1c50ad0654d1f00896b4c4e11afd4eeb3624739f9",
       "license_audit": "source_pdf_public_domain; Meddies dataset license not declared",
-      "status": "prepared_for_internal_benchmark_not_public_redistribution"
+      "status": "pilot_scored_internal_not_public_redistribution",
+      "result": "benchmarks/results/printed_ocr_meddiesocr_30_rapid_ocr.json",
+      "result_sha256": "12ec2f2e8ea2f78ae76889d1443881d16786b17e8d9f5c899faecfed6c65da4d"
     },
     {
       "dataset": "vietage-ocr",
@@ -33,7 +35,9 @@
       "raw_source": "benchmarks/raw/vietage-ocr-test.parquet",
       "raw_source_sha256": "7909cfa665a890440eae791900c62f81629d38615fea2192913736b2ce491ea7",
       "license_audit": "all selected records declare CC-BY-SA-4.0",
-      "status": "prepared_not_scored"
+      "status": "pilot_scored",
+      "result": "benchmarks/results/printed_ocr_vietage_10_rapid_ocr.json",
+      "result_sha256": "a51d18993048a479cbf0b5405ad610a3f520f0a39d5328c95ee0af8e4d044ffa"
     },
     {
       "dataset": "viwikifc",
@@ -74,7 +78,9 @@
         "corpus": {"path": "benchmarks/artifacts/e2e/uit-viquad-2/corpus.jsonl", "sha256": "57127d1793feee118d18319a6d31225f797e4c4a750480b7ecab6a97f81ff821"},
         "qrels": {"path": "benchmarks/artifacts/e2e/uit-viquad-2/qrels.jsonl", "sha256": "51ede10a0ffdac361944376e3c764a3abefe344cb784c242f49bacc9cef61b0d"}
       },
-      "status": "prepared_not_scored"
+      "status": "scored_qwen25_1.5b_single_evidence_ablation",
+      "result": "benchmarks/results/uit-viquad-2_e2e_qwen25_15b_full150_single_evidence.json",
+      "result_sha256": "908bb2f1b558bbc18ce833b343523a97572fcf4228693a3a050886b9406444f6"
     },
     {
       "dataset": "viequad-retrieval",
@@ -93,7 +99,7 @@
     "MeddiesOCR annotation redistribution approval",
     "BFCL fixed 50-100 task subset",
     "Yuxi production retrieval run on a populated benchmark knowledge base",
-    "Real E2E generation runner and EM/F1 report",
-    "OCR metric runs"
+    "DeepSeek full evidence-filtering run (NVIDIA request stalled)",
+    "Enterprise/modern printed-document OCR benchmark"
   ]
 }

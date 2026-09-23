@@ -70,6 +70,22 @@ the MeddiesOCR dataset does not declare an annotation license, so its
 ground-truth text is cleared for the local benchmark only until that license
 is clarified. The selected VietAge records declare CC-BY-SA-4.0.
 
+The local OCR pilot is scored with RapidOCR without a fallback parser:
+
+```bash
+docker exec api-dev python /app/project-scripts/eval/run_printed_ocr.py \
+  --manifest /app/benchmarks/artifacts/printed_real/meddiesocr_30_pages/manifest.jsonl \
+  --root /app/benchmarks/artifacts/printed_real/meddiesocr_30_pages \
+  --output /app/benchmarks/results/printed_ocr_meddiesocr_30_rapid_ocr.json \
+  --engine rapid_ocr
+```
+
+The same command applies to the VietAge manifest. The pilot preserves
+Vietnamese diacritics using Unicode NFC, reports CER/WER/exact match and
+latency, and must not be interpreted as a representative enterprise-document
+OCR benchmark. Meddies results remain internal/conditional because the
+annotation license is undeclared.
+
 ## First benchmark runs
 
 Run the retrieval baseline with:
@@ -129,5 +145,21 @@ docker exec api-dev python /app/project-scripts/eval/run_e2e_viquad2.py \
 
 This reports decision accuracy for `cannot_answer`, `request_for_info`, and
 `tool_call`; it is not an argument exact-match benchmark.
+
+The completed single-evidence RAG ablation uses the local Qwen2.5 1.5B model
+with the same fixed 150-question sample:
+
+```bash
+docker exec api-dev python /app/project-scripts/eval/run_e2e_viquad2.py \
+  --queries /app/benchmarks/artifacts/e2e/uit-viquad-2/queries.jsonl \
+  --corpus /app/benchmarks/artifacts/e2e/uit-viquad-2/corpus.jsonl \
+  --output /app/benchmarks/results/uit-viquad-2_e2e_qwen25_15b_full150_single_evidence.json \
+  --model ollama:qwen2.5:1.5b --top-k 1 --evidence-k 1 \
+  --n-answerable 100 --n-impossible 50 --max-calls 160 \
+  --max-tokens 128 --timeout 60
+```
+
+This is an ablation/robustness result, not a controlled comparison with the
+DeepSeek primary RAG result because the model and evidence configuration differ.
 
 NLI claims and agent tool-calling tasks can use the public sources in `source-lock.json`. ViWikiFC is normalized to `ENTAILMENT`, `CONTRADICTION`, and `NEUTRAL`; When2Call and Vietnamese Function Calling are normalized to the tool-calling schema. These remain source-locked until the exported artifact has its own hash and test report.
