@@ -17,6 +17,18 @@ from usage_tracker import UsageTracker
 
 CONTROLLED_ARGUMENT_QUALIFIERS = {"giao tiếp", "hữu cơ"}
 
+OPTIONAL_ARGUMENT_MARKERS = {
+    "location": re.compile(r"\b(?:ở|tại|khu vực|thành phố|quận|huyện)\b", re.I),
+    "level": re.compile(
+        r"\b(?:lớp|cấp|trình độ|người mới|cơ bản|sơ cấp|trung cấp|nâng cao|trẻ em)\b",
+        re.I,
+    ),
+    "goal": re.compile(
+        r"\b(?:mục tiêu|để|nhằm|ôn thi|giao tiếp|kỹ năng)\b", re.I
+    ),
+    "reason": re.compile(r"\blý do(?:\s+là)?\b", re.I),
+}
+
 
 def _parse_prediction(text: str) -> dict:
     match = re.search(r"\{\s*[\"']?(?:name|tool_name)[\"']?\s*:", text, re.S)
@@ -118,6 +130,15 @@ def _arguments_are_grounded(predicted: dict, user_request: str) -> bool:
     return True
 
 
+def _optional_argument_needs_retry(arguments: dict, user_request: str) -> bool:
+    """Retry only optional slots that lack a semantic marker in the request."""
+    return any(
+        key in OPTIONAL_ARGUMENT_MARKERS
+        and not OPTIONAL_ARGUMENT_MARKERS[key].search(user_request)
+        for key in arguments
+    )
+
+
 def _prediction_needs_retry(
     predicted: dict, user_request: str, tools: list[dict]
 ) -> bool:
@@ -151,6 +172,8 @@ def _prediction_needs_retry(
     ):
         return True
     if not _arguments_are_grounded(predicted, user_request):
+        return True
+    if _optional_argument_needs_retry(arguments, user_request):
         return True
 
     lowered = user_request.casefold()
@@ -337,7 +360,8 @@ async def run(args: argparse.Namespace) -> dict:
                 retry_prompt = (
                     f"{prompt}\nThe previous arguments were not copied verbatim from the user request. "
                     "Retry now. Validate required fields, use only schema field names, preserve exact casing, "
-                    "and copy ID values without prefixes or surrounding words."
+                    "and copy ID values without prefixes or surrounding words. Do not add optional location, "
+                    "level, goal, or reason fields unless the request explicitly provides that slot."
                 )
                 retry_response = await asyncio.wait_for(
                     model.call(retry_prompt, stream=False), timeout=args.timeout

@@ -478,7 +478,7 @@ Bộ NLI gồm các mệnh đề nguyên tử được gán nhãn `entailment`, 
 
 Mỗi task phải có câu hỏi, tool kỳ vọng, arguments kỳ vọng, tool không được phép gọi, outcome kỳ vọng và loại lỗi nếu là bài kiểm tra recovery.
 
-Số liệu đã khóa (trạng thái `Measured`, chi tiết tại §4.10): kiểm định contract đạt 2.899/2.899 records Vietnamese Function Calling và 3.652/3.652 records When2Call hợp lệ, 0 lỗi (`agent_contract_validation.json`); đo mô hình trên 100 task VN-FC (tool match 98%, exact match 93%) và 60 quyết định When2Call phân tầng (accuracy 66,67%).
+Số liệu đã khóa (trạng thái `Measured`, chi tiết tại §4.10): kiểm định contract đạt 2.899/2.899 records Vietnamese Function Calling và 3.652/3.652 records When2Call hợp lệ, 0 lỗi (`agent_contract_validation.json`); baseline DeepSeek đo trên 100 task VN-FC đạt tool match 98%, exact match 93% và 60 quyết định When2Call phân tầng đạt accuracy 66,67%. Một run robustness bằng Qwen3 8B local đạt tool match 100%, exact match 89% trên 100 task VN-FC và When2Call 63,33% trên 60 task; các run này là số liệu phụ vì dùng model và cấu hình retry khác.
 
 4.3. Experiment registry
 
@@ -650,6 +650,10 @@ VN Function Calling (tool match / EM)	100	—	98,00% (95% CI [93,00; 99,45])	—
 
 When2Call decision (accuracy)	60 (20/class)	66,67% (95% CI [54,06; 77,27])	—	—	—	—	`Measured` (cannot 60%, request 55%, tool_call 90%; `when2call_nvidia_deepseek_stratified60.json`; chạy trước tracker nên quota tính tay ~60 calls)
 
+VN Function Calling (Qwen3 local, bounded retry)	100	—	100,00%	—	89,00%	1,46	`Measured secondary robustness` (`vietnamese_function_calling_qwen3_host_full100_retry_budget180.json`; 146 calls, 0 call errors; không thay thế baseline DeepSeek)
+
+When2Call decision (Qwen3 local, relevance gate)	60 (20/class)	63,33%	—	—	—	1,82	`Measured secondary robustness` (`when2call_qwen3_host_relevance_gate_full60.json`; 109 calls, 0 call errors; cannot 55%, request 60%, tool_call 75%)
+
 Knowledge retrieval	—	—	—	—	—	—	`Missing` (cần task manifest + trajectory log trên KB populated)
 
 Document navigation	—	—	—	—	—	—	`Missing` (như trên)
@@ -742,6 +746,10 @@ Unsupported generation	—	—	—	Chờ phân tích claim-level trên artifact 
 
 Tool/argument error (VN-FC: 7/100 EM sai)	7	7%	—	Phân tích chi tiết sau (tách lỗi gold-chuẩn-hóa khỏi lỗi slot)
 
+Qwen3 argument mismatch (VN-FC secondary run)	11/100	11%	—	Không post-process; chỉ retry bounded cho optional fields; giữ run để đánh giá local-model robustness
+
+Qwen3 When2Call decision error (secondary run)	22/60	36,67%	—	Sai lệch giữa cannot/request/tool_call dù relevance gate không phát sinh call error; chưa dùng làm claim chính
+
 4.14. Đe dọa đối với tính hợp lệ
 
 Internal validity: sai lệch có thể đến từ thay đổi model API, cache, prompt hoặc phiên bản index.
@@ -766,7 +774,7 @@ RQ1 (retrieval): mới chỉ đo arm BM25 whitespace trên VieQuAD (R@10 91,80%,
 
 RQ2 (NLI + tác tử): E2E standard RAG đạt EM 45,33% (95% CI [37,58; 53,32]), F1 66,94%, abstention P 79,49% / R 62,00% trên 150 mẫu. Trên ViWikiFC, production config đạt accuracy 56,77%, macro F1 51,54%; standard 3-way config đạt 39,93%, macro F1 32,22%. Đây là đánh giá năng lực NLI trên claim-evidence, chưa phải phép đo nhân quả của NLI gate lên E2E RAG; đóng góp của gate vẫn chưa tách được (§4.11).
 
-RQ3 (agent): VN-FC 100 mẫu tool match 98% (95% CI [93,00; 99,45]), EM 93%; When2Call 60 mẫu accuracy 66,67% (95% CI [54,06; 77,27]), lỗi tập trung ở over-trigger tool_call (15/20). Recovery chưa đo chính thức (§4.10, §4.13).
+RQ3 (agent): baseline DeepSeek trên VN-FC đạt tool match 98% (95% CI [93,00; 99,45]), EM 93%; When2Call đạt accuracy 66,67% trên 60 mẫu (95% CI [54,06; 77,27]). Run robustness Qwen3 local đạt lần lượt 100%/89% trên VN-FC và 63,33% trên When2Call, cho thấy kết quả phụ thuộc model và cấu hình retry; recovery chưa đo chính thức (§4.10, §4.13).
 
 RQ4 (trade-off): E2E standard RAG p50 11,7s (reasoning model) so với retrieval thuần 0,3–32,7ms; chi phí ở mức `Estimated` vì dùng free trial — cần bảng giá công khai hoặc đo spend thật trước khi kết luận (§4.12).
 
@@ -774,7 +782,7 @@ RQ4 (trade-off): E2E standard RAG p50 11,7s (reasoning model) so với retrieval
 
 Tại thời điểm của bản thảo, bộ OCR tài liệu in thực tế chưa được score; một số benchmark agent và retrieval lớn chưa được chạy đầy đủ do hạn chế dữ liệu, hạ tầng hoặc license. ViWikiFC là bộ fact-verification có evidence, nên kết quả NLI không thay thế cho đánh giá claim-level trên các câu trả lời E2E. Ngoài ra, benchmark đọc hiểu từ Wikipedia chưa phản ánh đầy đủ tài liệu nội bộ, bảng biểu phức tạp và truy vấn nhiều bước trong môi trường doanh nghiệp.
 
-Bổ sung từ đợt đo 2026-09-22: E2E 150 mẫu cho thấy khoảng cách giữa retrieval (hit@1 77,33%) và generation (EM 45,33%) — trả lời sai không chỉ do miss chứng cứ; abstention recall mới 62% nghĩa là 38% câu unanswerable vẫn bị trả lời bừa; mẫu E2E 150 và agent 60–100 còn nhỏ nên khoảng tin cậy rộng (±8–15 điểm phần trăm); chi phí suy luận chưa đo bằng tiền thật; toàn bộ model calls đi qua trial rate-limit của NVIDIA nên khả năng tái lập dài hạn phụ thuộc nhà cung cấp.
+Bổ sung từ đợt đo 2026-09-22/23: E2E 150 mẫu cho thấy khoảng cách giữa retrieval (hit@1 77,33%) và generation (EM 45,33%) — trả lời sai không chỉ do miss chứng cứ; abstention recall mới 62% nghĩa là 38% câu unanswerable vẫn bị trả lời bừa. Run Qwen3 local E2E mới dừng ở smoke 15 mẫu (EM 20%, F1 36,92%, hit@1 46,67%, một call error), nên chưa đủ để so sánh model hoặc thay thế baseline. Agent 60–100 còn nhỏ nên khoảng tin cậy rộng; chi phí suy luận chưa đo bằng tiền thật; các run DeepSeek phụ thuộc trial rate-limit của NVIDIA.
 
 NLI chỉ kiểm tra quan hệ giữa claim và context được cung cấp; nó không chứng minh chân lý tuyệt đối. Knowledge graph cũng phụ thuộc vào chất lượng trích xuất thực thể và quan hệ. Cuối cùng, Docker Compose phục vụ phát triển và tái lập cục bộ nhưng không tự chứng minh khả năng sẵn sàng cao hay mở rộng production.
 
@@ -831,6 +839,10 @@ C-003	VN-FC tool match 98%, EM 93% trên 100 mẫu	EXP-AGT-01	Bảng 4.10	`bench
 C-004	When2Call accuracy 66,67% trên 60 mẫu phân tầng	EXP-AGT-01	Bảng 4.10	`benchmarks/results/when2call_nvidia_deepseek_stratified60.json`	`Measured`
 
 C-005	ViWikiFC NLI dual-config trên 2.091 cặp: production accuracy 56,77%, contradiction recall 60,48%	EXP-NLI-01	Bảng 4.11	`benchmarks/results/viwikifc_nli_dual_2091.json`	`Measured`
+
+C-006	Qwen3 local VN-FC tool match 100%, exact match 89% trên 100 mẫu (secondary robustness)	EXP-AGT-01	Bảng 4.10	`benchmarks/results/vietnamese_function_calling_qwen3_host_full100_retry_budget180.json`	`Measured secondary`
+
+C-007	Qwen3 local When2Call accuracy 63,33% trên 60 mẫu (secondary robustness)	EXP-AGT-01	Bảng 4.10	`benchmarks/results/when2call_qwen3_host_relevance_gate_full60.json`	`Measured secondary`
 
 PHỤ LỤC B. CẤU HÌNH HỆ THỐNG
 
@@ -905,6 +917,12 @@ vietnamese_function_calling_nvidia_deepseek_100.json	EXP-AGT-01	—	`benchmarks/
 when2call_nvidia_deepseek_stratified60.json	EXP-AGT-01	—	`benchmarks/results/`	Accuracy 66,67% (20/class)
 
 agent_contract_validation.json	EXP-AGT-01	—	`benchmarks/results/`	2.899 + 3.652 records hợp lệ
+
+vietnamese_function_calling_qwen3_host_full100_retry_budget180.json	EXP-AGT-01	642c7db39950b2da0b3c5d8d57324804dc8b8592b925681516786d34ca287723	`benchmarks/results/`	Qwen3 local secondary: tool 100%, exact 89%, 100 mẫu, 146 calls
+
+when2call_qwen3_host_relevance_gate_full60.json	EXP-AGT-01	03446608c266e6764b8f41bc9af8483f498d2737469866ce9b77c3898bc55a51	`benchmarks/results/`	Qwen3 local secondary: accuracy 63,33%, 60 mẫu, 109 calls
+
+uit-viquad-2_e2e_qwen3_host_smoke15_k3.json	EXP-E2E-01	3ce1dc95c3937442bc1f3dcf9dfd1e96384f2cce32c06ae3a56c3d95f2a73e8c	`benchmarks/results/`	Qwen3 local diagnostic smoke: N=15, EM 20%, F1 36,92%, hit@1 46,67%; chưa phải full benchmark
 
 usage_log.jsonl	EXP-SYS-01	—	`benchmarks/results/`	Calls/tokens từng run có guard (không ước tính token)
 

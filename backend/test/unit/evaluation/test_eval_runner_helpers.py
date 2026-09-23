@@ -8,6 +8,7 @@ if EVAL_SCRIPTS.exists():
 
 from run_agentkit_local_smoke import (  # noqa: E402
     _arguments_equivalent,
+    _optional_argument_needs_retry,
     _prediction_needs_retry,
 )
 from run_e2e_viquad2 import hit_at_k, select_evidence  # noqa: E402
@@ -44,6 +45,15 @@ def test_agent_retries_parse_error_and_missing_explicit_time():
         {"decision": "tool_call", "tool_name": tool["name"], "arguments": {"new_date": "thứ Hai"}},
         "dời sang thứ Hai lúc 10 giờ sáng",
         [tool],
+    )
+
+
+def test_agent_retries_only_inferred_optional_slots():
+    assert _optional_argument_needs_retry(
+        {"goal": "học"}, "Gợi ý tài liệu học lập trình Python."
+    )
+    assert not _optional_argument_needs_retry(
+        {"goal": "giao tiếp"}, "Tìm tài liệu học tiếng Trung giao tiếp."
     )
 
 
