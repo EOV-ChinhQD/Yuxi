@@ -1,0 +1,674 @@
+{
+  "benchmark": "when2call",
+  "model": "nvidia:deepseek-ai/deepseek-v4.1-flash",
+  "sample_size": 60,
+  "class_counts": {
+    "cannot_answer": 20,
+    "request_for_info": 20,
+    "tool_call": 20
+  },
+  "decision_accuracy": 0.6666666666666666,
+  "per_class_accuracy": {
+    "cannot_answer": 0.6,
+    "request_for_info": 0.5,
+    "tool_call": 0.9
+  },
+  "results": [
+    {
+      "sample_id": "5ce19067-938e-41f5-acd5-0e8e66683f62",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "ChaFod"
+      },
+      "correct": false,
+      "latency_ms": 18032.0,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"ChaFod\"}"
+    },
+    {
+      "sample_id": "ca90b386-643b-4103-8b1d-30f0c44df933",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "ChaFod"
+      },
+      "correct": false,
+      "latency_ms": 43012.0,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"ChaFod\"}"
+    },
+    {
+      "sample_id": "97797959-1f15-464d-a5f5-f0df4da70366",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 17059.5,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "c38c6471-c320-451a-bfe5-e85dbc1c49b2",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 6265.2,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "1c177ab0-c9a0-4779-b5e0-d39b182712bc",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 8882.3,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "bea94b7f-1509-4be8-baab-34bc77a66be8",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 4882.9,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "a95e60f5-87e6-4ae2-983d-f3e9972c1eca",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 9496.8,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "7ea21890-de0a-472c-90c2-9f78c2405024",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 8925.9,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "a69d2f24-9e31-4e61-b3cd-aa91513dec94",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": false,
+      "latency_ms": 11853.2,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "3b813839-ed32-405d-9fe1-4262584a6f84",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 3269.5,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "08abb2e6-71e5-44b8-ad9d-a73792fc9027",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 1118.0,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "3533bba4-4f3d-420f-96f0-a66c588cd849",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 10871.0,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "b88dc26e-dae7-45bd-8730-22f0d434ecba",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 2689.2,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "db03c9e8-1ea2-4995-ab4e-6a2528ee0586",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": false,
+      "latency_ms": 6391.1,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "1aed765c-fccb-4ea3-888f-75ca9a0c7e63",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 13193.3,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "1dd07042-26ee-49aa-b962-e391bdba1492",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": false,
+      "latency_ms": 22167.4,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "8bd6e468-d704-4e56-98ac-97141e965564",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": false,
+      "latency_ms": 6135.5,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "764b45e3-de4e-46db-9306-e1d2a08b74b8",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": false,
+      "latency_ms": 23595.8,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "554f8b9e-6ab4-4b7d-9ef8-077def88ec29",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "parse_error"
+      },
+      "correct": false,
+      "latency_ms": 24519.1,
+      "raw_output": ""
+    },
+    {
+      "sample_id": "dd864261-7358-48c7-9d42-544d4c7fa0c6",
+      "expected": "cannot_answer",
+      "predicted": {
+        "decision": "cannot_answer",
+        "tool_name": null
+      },
+      "correct": true,
+      "latency_ms": 3440.4,
+      "raw_output": "{\"decision\":\"cannot_answer\",\"tool_name\":null}"
+    },
+    {
+      "sample_id": "4e78734d-04da-43fe-acde-ba560dccfd2c",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "ChaDri.change_drink"
+      },
+      "correct": false,
+      "latency_ms": 22501.2,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"ChaDri.change_drink\"}"
+    },
+    {
+      "sample_id": "6dba6bd8-bbef-41db-bf7c-2a8ec9d8d55a",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "ChaDri.change_drink"
+      },
+      "correct": true,
+      "latency_ms": 13565.0,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"ChaDri.change_drink\"}"
+    },
+    {
+      "sample_id": "8d9d62b1-8dda-48e3-9acb-b1c26a5767a7",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "uber.ride"
+      },
+      "correct": true,
+      "latency_ms": 20007.0,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"uber.ride\"}"
+    },
+    {
+      "sample_id": "4c5a1a73-345f-46c6-bdaa-49625c22b5ec",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "api.weather"
+      },
+      "correct": true,
+      "latency_ms": 8622.2,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"api.weather\"}"
+    },
+    {
+      "sample_id": "1bd8dda9-a20e-4a9b-bb70-b743d9489fe9",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "uber.ride"
+      },
+      "correct": true,
+      "latency_ms": 7593.5,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"uber.ride\"}"
+    },
+    {
+      "sample_id": "451cb5bb-8d71-47ae-acd3-220d1db9a969",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "get_current_weather"
+      },
+      "correct": true,
+      "latency_ms": 8326.7,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"get_current_weather\"}"
+    },
+    {
+      "sample_id": "240b33c0-7d32-495a-9aa0-17401bc12e83",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "create_workspace"
+      },
+      "correct": true,
+      "latency_ms": 7713.5,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"create_workspace\"}"
+    },
+    {
+      "sample_id": "78953d6f-db44-4bec-9c75-2335422de2b3",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "create_workspace"
+      },
+      "correct": true,
+      "latency_ms": 5742.0,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"create_workspace\"}"
+    },
+    {
+      "sample_id": "a0bc455a-e7aa-4cb2-9a09-d4e01a90b8b5",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cookbook.search_recipe"
+      },
+      "correct": false,
+      "latency_ms": 5750.3,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"cookbook.search_recipe\"}"
+    },
+    {
+      "sample_id": "9fe2ee5f-9b90-409b-9b87-17bce5236ce2",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": false,
+      "latency_ms": 10075.3,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "d752d08c-628c-4f0f-8f20-46526cd16b40",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "ControlAppliance.execute"
+      },
+      "correct": false,
+      "latency_ms": 31342.6,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"ControlAppliance.execute\"}"
+    },
+    {
+      "sample_id": "b745bce8-128f-4adc-9257-59b29387e8c3",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": false,
+      "latency_ms": 10780.2,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "d3f664d4-6d7d-4a30-8b14-3b9c32652d03",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": false,
+      "latency_ms": 12699.1,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "03741490-fd7f-4cd2-94bb-e9d75306ebf3",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "OpenWeatherMap.get_current_weather"
+      },
+      "correct": true,
+      "latency_ms": 12566.9,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"OpenWeatherMap.get_current_weather\"}"
+    },
+    {
+      "sample_id": "5da2cc0f-4b63-4d10-b658-b9d62ff37056",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "parse_error"
+      },
+      "correct": false,
+      "latency_ms": 17294.0,
+      "raw_output": ""
+    },
+    {
+      "sample_id": "76ccbb11-1a41-4a71-b782-2d586b100284",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "HNA_NEWS.search"
+      },
+      "correct": true,
+      "latency_ms": 9285.3,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"HNA_NEWS.search\"}"
+    },
+    {
+      "sample_id": "b8623281-fbf1-4503-b19f-560bd946ee01",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_NEWS.search"
+      },
+      "correct": false,
+      "latency_ms": 3635.1,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_NEWS.search\"}"
+    },
+    {
+      "sample_id": "f952c81d-2126-44d7-a616-d5f4d070fef1",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cookbook.search_recipe"
+      },
+      "correct": false,
+      "latency_ms": 7508.4,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"cookbook.search_recipe\"}"
+    },
+    {
+      "sample_id": "5cb5a950-ac01-4945-bd38-d3e1a8ceb78c",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "parse_error"
+      },
+      "correct": false,
+      "latency_ms": 50079.8,
+      "raw_output": ""
+    },
+    {
+      "sample_id": "7b95a7f2-7fd9-4ee6-9771-f57bce0bc621",
+      "expected": "request_for_info",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "ControlAppliance.execute"
+      },
+      "correct": true,
+      "latency_ms": 13747.2,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"ControlAppliance.execute\"}"
+    },
+    {
+      "sample_id": "7ffe14a2-d948-4703-adbd-93cc90891f77",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "ChaDri.change_drink"
+      },
+      "correct": true,
+      "latency_ms": 8495.2,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"ChaDri.change_drink\"}"
+    },
+    {
+      "sample_id": "833a4786-ef0c-4fb1-950f-87a2b6cd1095",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "request_for_info",
+        "tool_name": "ChaDri.change_drink"
+      },
+      "correct": false,
+      "latency_ms": 7179.1,
+      "raw_output": "{\"decision\":\"request_for_info\",\"tool_name\":\"ChaDri.change_drink\"}"
+    },
+    {
+      "sample_id": "a32f39d9-a1be-4851-8529-479b2c33cd1b",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "uber.ride"
+      },
+      "correct": true,
+      "latency_ms": 11632.2,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"uber.ride\"}"
+    },
+    {
+      "sample_id": "a1494943-b619-4117-a380-dccc5791f3bc",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "api.weather"
+      },
+      "correct": true,
+      "latency_ms": 6132.8,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"api.weather\"}"
+    },
+    {
+      "sample_id": "3081c48d-6b68-4870-8e96-79c0971d3b36",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "uber.ride"
+      },
+      "correct": true,
+      "latency_ms": 10691.9,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"uber.ride\"}"
+    },
+    {
+      "sample_id": "8fd1f0e2-668c-4426-9178-76227fbd29be",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "get_current_weather"
+      },
+      "correct": true,
+      "latency_ms": 6197.6,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"get_current_weather\"}"
+    },
+    {
+      "sample_id": "f1fad135-bf79-46d6-90a7-9f9673f20636",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "create_workspace"
+      },
+      "correct": true,
+      "latency_ms": 7760.2,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"create_workspace\"}"
+    },
+    {
+      "sample_id": "b0d41d0e-29d4-4127-87fd-615f8c765fba",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "create_workspace"
+      },
+      "correct": true,
+      "latency_ms": 2623.5,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"create_workspace\"}"
+    },
+    {
+      "sample_id": "3e272466-2424-4ccb-9af7-3e7e654901e4",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cookbook.search_recipe"
+      },
+      "correct": true,
+      "latency_ms": 2629.3,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"cookbook.search_recipe\"}"
+    },
+    {
+      "sample_id": "d739d710-2670-492a-ad7b-8593fc84dffc",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": true,
+      "latency_ms": 8578.9,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "5df4bfdf-9406-49a5-831a-0aacc4b6aadf",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "ControlAppliance.execute"
+      },
+      "correct": true,
+      "latency_ms": 9899.2,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"ControlAppliance.execute\"}"
+    },
+    {
+      "sample_id": "8d64b8de-d06f-41f1-a4f2-203dabdf1702",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": true,
+      "latency_ms": 6254.0,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "6888f8ef-5c25-4e4f-b3f2-d771f2cecd03",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_WQA.search"
+      },
+      "correct": true,
+      "latency_ms": 17045.0,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_WQA.search\"}"
+    },
+    {
+      "sample_id": "c5940615-5136-4d3d-97a2-a39a70ce4249",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "OpenWeatherMap.get_current_weather"
+      },
+      "correct": true,
+      "latency_ms": 3915.7,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"OpenWeatherMap.get_current_weather\"}"
+    },
+    {
+      "sample_id": "81307508-553d-46e3-810c-00cc4f472d71",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "ControlAppliance.execute"
+      },
+      "correct": true,
+      "latency_ms": 17371.6,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"ControlAppliance.execute\"}"
+    },
+    {
+      "sample_id": "04a63a26-c054-446c-bed3-306e7a1cf49a",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_NEWS.search"
+      },
+      "correct": true,
+      "latency_ms": 6119.5,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_NEWS.search\"}"
+    },
+    {
+      "sample_id": "837f04f4-c3f0-4f2f-ba55-0dae53a6bed2",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "HNA_NEWS.search"
+      },
+      "correct": true,
+      "latency_ms": 28311.5,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"HNA_NEWS.search\"}"
+    },
+    {
+      "sample_id": "72ee9f2a-5043-4495-aac3-1b17a1af85ad",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cookbook.search_recipe"
+      },
+      "correct": true,
+      "latency_ms": 12829.4,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"cookbook.search_recipe\"}"
+    },
+    {
+      "sample_id": "f95f23f9-4dc7-42ba-a147-a83548ced219",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "parse_error"
+      },
+      "correct": false,
+      "latency_ms": 27936.4,
+      "raw_output": ""
+    },
+    {
+      "sample_id": "a25aeed8-5a4c-409f-92d0-a67f17efa720",
+      "expected": "tool_call",
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "ControlAppliance.execute"
+      },
+      "correct": true,
+      "latency_ms": 18052.5,
+      "raw_output": "{\"decision\":\"tool_call\",\"tool_name\":\"ControlAppliance.execute\"}"
+    }
+  ]
+}

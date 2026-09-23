@@ -1,0 +1,5399 @@
+{
+  "benchmark": "uit-viquad-2-e2e",
+  "split": "validation-sample",
+  "model": "nvidia:deepseek-ai/deepseek-v4.1-flash",
+  "model_params": {
+    "temperature": 0,
+    "max_tokens": 4096,
+    "top_k": 5
+  },
+  "tokenizer": "whitespace-unicode-word-regex",
+  "abstain_phrase": "KHÔNG ĐỦ THÔNG TIN",
+  "sample_size": 150,
+  "usage": {
+    "model_calls": 150,
+    "call_errors": 2,
+    "max_calls_budget": 160,
+    "stopped_early": false,
+    "prompt_chars": 686996,
+    "completion_chars": 9004
+  },
+  "summary": {
+    "extractive": {
+      "sample_size": 150,
+      "hit@1": 0.7733333333333333,
+      "em": 0.006666666666666667,
+      "f1": 0.17572787995514755,
+      "abstention_precision": 0.0,
+      "abstention_recall": 0.0,
+      "language_valid_rate": 1.0,
+      "latency_ms": {
+        "mean": 0.432,
+        "p50": 0.3
+      }
+    },
+    "standard_rag": {
+      "sample_size": 150,
+      "hit@1": 0.7733333333333333,
+      "em": 0.4533333333333333,
+      "f1": 0.669385535543296,
+      "abstention_precision": 0.7948717948717948,
+      "abstention_recall": 0.62,
+      "language_valid_rate": 1.0,
+      "latency_ms": {
+        "mean": 23085.052666666666,
+        "p50": 11748.8
+      }
+    }
+  },
+  "samples": [
+    {
+      "query_id": "0018-0007-0001",
+      "answerable": true,
+      "gold_answers": [
+        "chăn nuôi gia súc, và đánh bắt cá"
+      ],
+      "retrieved_ids": [
+        "p00513",
+        "p00512",
+        "p00519",
+        "p00245",
+        "p00141"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Nông nghiệp là ngành quan trọng nhất trong nền kinh tế thu hút 80% lao động.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 1.1
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 23516.2
+        }
+      }
+    },
+    {
+      "query_id": "0001-0023-0004",
+      "answerable": true,
+      "gold_answers": [
+        "mừng một năm ngày phá ngục Bastille"
+      ],
+      "retrieved_ids": [
+        "p00312",
+        "p00073",
+        "p00022",
+        "p00195",
+        "p00424"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ở Mỹ, thịt gà tây đã trở thành món ăn không thể thiếu trên bàn ăn của mỗi gia đình Mỹ dịp lễ Tạ ơn hay Giáng sinh, thịt gà tây là thực đơn chính cho cả hai dịp này.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Mừng một năm ngày phá ngục Bastille.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 6197.9
+        }
+      }
+    },
+    {
+      "query_id": "0019-0004-0002",
+      "answerable": true,
+      "gold_answers": [
+        "Tây Ban Nha"
+      ],
+      "retrieved_ids": [
+        "p00518",
+        "p00123",
+        "p00544",
+        "p00153",
+        "p00252"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tây Ban Nha là quốc gia châu Âu đầu tiên tuyên bố chủ quyền đối với khu vực Texas.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2727272727272727,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Tây Ban Nha",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 19768.8
+        }
+      }
+    },
+    {
+      "query_id": "0006-0013-0007",
+      "answerable": true,
+      "gold_answers": [
+        "Đảng Cấp tiến Mới Puerto Rico (PNP)"
+      ],
+      "retrieved_ids": [
+        "p00115",
+        "p00532",
+        "p00533",
+        "p00229",
+        "p00125"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Sau các xung đột khác nhau, Anh Quốc giành được rồi để mất nhiều lãnh thổ tại Bắc Mỹ, và đến cuối thế kỷ XVIII thì còn lại lãnh thổ chủ yếu thuộc Canada ngày nay.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Phe do Sam Houston lãnh đạo.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 8889.7
+        }
+      }
+    },
+    {
+      "query_id": "0017-0054-0006",
+      "answerable": true,
+      "gold_answers": [
+        "cày nát tất cả các thành phố chính của Đức và cắt đứt các nguồn tiếp tế dầu",
+        "đã cày nát tất cả các thành phố chính của Đức và cắt đứt các nguồn tiếp tế dầu"
+      ],
+      "retrieved_ids": [
+        "p00490",
+        "p00026",
+        "p00385",
+        "p00192",
+        "p00195"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Chiến dịch ném bom chiến lược leo thang vào năm 1944 đã cày nát tất cả các thành phố chính của Đức và cắt đứt các nguồn tiếp tế dầu.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7755102040816326,
+          "language_valid": true,
+          "latency_ms": 3.1
+        },
+        "standard_rag": {
+          "answer": "Chiến dịch ném bom chiến lược leo thang vào năm 1944 đã cày nát tất cả các thành phố chính của Đức và cắt đứt các nguồn tiếp tế dầu.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7755102040816326,
+          "language_valid": true,
+          "latency_ms": 15074.5
+        }
+      }
+    },
+    {
+      "query_id": "0001-0012-0005",
+      "answerable": true,
+      "gold_answers": [
+        "Paris",
+        "Paris"
+      ],
+      "retrieved_ids": [
+        "p00218",
+        "p00406",
+        "p00310",
+        "p00408",
+        "p00384"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Những ước tính thấp nhất thường dựa trên số lượng những lần bắn chặn và có bằng chứng cho thấy đầu đạn đã bị ít nhất một tên lửa bắn trúng, nhưng vì cách thức các tên lửa Al-Hussein (gốc từ Scud) nổ khi đang bay đến mục tiêu rất khó giải thích vì khó có thể biết đâu là mảnh đầu đạn và có ít dữ liệu ghi lại những lần dò tìm radar còn được lưu trữ cho phép phân tích về sau này.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.6
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 4761.1
+        }
+      }
+    },
+    {
+      "query_id": "0007-0005-0001",
+      "answerable": true,
+      "gold_answers": [
+        "Nam Ossetia trở thành một phần của nước Cộng hòa Dân chủ Gruzia Menshevik",
+        "trở thành một phần của Đế quốc Nga"
+      ],
+      "retrieved_ids": [
+        "p00250",
+        "p00256",
+        "p00263",
+        "p00262",
+        "p00251"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Cuộc xung đột cuối cùng đã dẫn đến chiến tranh Nam Ossetia 2008, kết quả là Nga công nhận độc lập cho Nam Ossetia và Abkhazia.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.1,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Nga công nhận độc lập cho Nam Ossetia và Abkhazia.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.16666666666666666,
+          "language_valid": true,
+          "latency_ms": 87707.9
+        }
+      }
+    },
+    {
+      "query_id": "0006-0016-0003",
+      "answerable": true,
+      "gold_answers": [
+        "giá nhân công rẻ",
+        "giá nhân công rẻ hơn"
+      ],
+      "retrieved_ids": [
+        "p00245",
+        "p00243",
+        "p00229",
+        "p00246",
+        "p00239"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Puerto Rico là một trong những đầu tàu kinh tế vùng Caribbean cùng với Cuba và Cộng hòa Dominicana, và Ngân hàng Thế giới xếp Puerto Rico vào nhóm các nước có thu nhập bình quân cao.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Giá nhân công rẻ hơn.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 3593.7
+        }
+      }
+    },
+    {
+      "query_id": "0019-0022-0002",
+      "answerable": true,
+      "gold_answers": [
+        "cảng chính của tiểu bang là Galveston"
+      ],
+      "retrieved_ids": [
+        "p00536",
+        "p00518",
+        "p00444",
+        "p00537",
+        "p00519"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Quân đội Liên bang từng chiếm được cảng chính của tiểu bang là Galveston trong một thời gian ngắn.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5384615384615384,
+          "language_valid": true,
+          "latency_ms": 0.6
+        },
+        "standard_rag": {
+          "answer": "Galveston",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.25,
+          "language_valid": true,
+          "latency_ms": 3471.7
+        }
+      }
+    },
+    {
+      "query_id": "0002-0005-0004",
+      "answerable": true,
+      "gold_answers": [
+        "Nouvelle-Calédonie thông qua năm đạo luật, đều gây nên bất mãn và hỗn loạn nghiêm trọng"
+      ],
+      "retrieved_ids": [
+        "p00095",
+        "p00148",
+        "p00313",
+        "p00468",
+        "p00516"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Các hiệp định Matignon được ký kết vào ngày 26 tháng 6 năm 1988 đảm bảo một thập niên ổn định.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.05263157894736842,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Do tình trạng bất mãn và hỗn loạn nghiêm trọng, đỉnh điểm là vụ bắt cóc con tin đẫm máu tại Ouvéa năm 1988.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.39024390243902435,
+          "language_valid": true,
+          "latency_ms": 19258.7
+        }
+      }
+    },
+    {
+      "query_id": "0003-0016-0003",
+      "answerable": true,
+      "gold_answers": [
+        "1873",
+        "năm 1873"
+      ],
+      "retrieved_ids": [
+        "p00129",
+        "p00161",
+        "p00153",
+        "p00125",
+        "p00117"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "British Columbia và Đảo Vancouver (được hợp nhất vào năm 1866) gia nhập Liên minh vào năm 1871, còn đảo Prince Edward gia nhập vào năm 1873.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.13793103448275862,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Năm 1873.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 5003.7
+        }
+      }
+    },
+    {
+      "query_id": "0009-0011-0007",
+      "answerable": true,
+      "gold_answers": [
+        "cùng đặt một kế hoạch giải phóng các tù binh chiến tranh và các trại tập trung",
+        "đặt một kế hoạch giải phóng các tù binh chiến tranh và các trại tập trung"
+      ],
+      "retrieved_ids": [
+        "p00282",
+        "p00272",
+        "p00281",
+        "p00299",
+        "p00285"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tháng 10 năm 1944 Mitterrand và Jacques Foccart cùng đặt một kế hoạch giải phóng các tù binh chiến tranh và các trại tập trung.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8095238095238095,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Tháng 10 năm 1944, Mitterrand và Jacques Foccart cùng đặt kế hoạch giải phóng các tù binh chiến tranh và các trại tập trung, gọi là chiến dịch Viacarage.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6956521739130435,
+          "language_valid": true,
+          "latency_ms": 10932.2
+        }
+      }
+    },
+    {
+      "query_id": "0009-0010-0001",
+      "answerable": true,
+      "gold_answers": [
+        "Cailliau"
+      ],
+      "retrieved_ids": [
+        "p00281",
+        "p00448",
+        "p00355",
+        "p00352",
+        "p00341"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Mitterrand từ chối sáp nhập nhóm của ông với các phong trào tù binh chiến tranh khác nếu Cailliau sẽ là người lãnh đạo.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.07999999999999999,
+          "language_valid": true,
+          "latency_ms": 0.8
+        },
+        "standard_rag": {
+          "answer": "Cailliau.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 28177.7
+        }
+      }
+    },
+    {
+      "query_id": "0002-0011-0002",
+      "answerable": true,
+      "gold_answers": [
+        "có độc và hàm lượng khoáng không phù hợp với hầu hết thực vật ngoại lai",
+        "tại đó có độc và hàm lượng khoáng không phù hợp với hầu hết thực vật ngoại lai"
+      ],
+      "retrieved_ids": [
+        "p00101",
+        "p00100",
+        "p00267",
+        "p00007",
+        "p00313"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Đất gồm đá siêu mafic (địa hình mỏ) là nơi trú ẩn cho nhiều loài thực vật bản địa do tại đó có độc và hàm lượng khoáng không phù hợp với hầu hết thực vật ngoại lai.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6428571428571429,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Do tại đó có độc và hàm lượng khoáng không phù hợp với hầu hết thực vật ngoại lai.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.972972972972973,
+          "language_valid": true,
+          "latency_ms": 9688.2
+        }
+      }
+    },
+    {
+      "query_id": "0015-0023-0003",
+      "answerable": true,
+      "gold_answers": [
+        "hỗ trợ cho MINURCAT"
+      ],
+      "retrieved_ids": [
+        "p00412",
+        "p00393",
+        "p00411",
+        "p00402",
+        "p00424"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "200 quân Mông Cổ đang thực hiện nhiệm vụ ở Sierra Leone dưới một sự uỷ quyền của Liên hiệp quốc để bảo vệ toà án đặc biệt của Liên hiệp quốc được thành lập ở đó, và vào tháng 7 năm 2009, Mông Cổ đã quyết định gửi một tiểu đoàn tới Chad để hỗ trợ cho MINURCAT.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.12698412698412698,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Để hỗ trợ cho MINURCAT.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.888888888888889,
+          "language_valid": true,
+          "latency_ms": 9064.7
+        }
+      }
+    },
+    {
+      "query_id": "0017-0044-0003",
+      "answerable": true,
+      "gold_answers": [
+        "từ khi tổng thống George Washington từ chối ra tranh cử nhiệm kỳ thứ ba vào năm 1796"
+      ],
+      "retrieved_ids": [
+        "p00480",
+        "p00293",
+        "p00440",
+        "p00437",
+        "p00229"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Truyền thống hai nhiệm kỳ đã là một luật bất thành văn (cho đến khi có tu chính án hiến pháp 22 ra đời quy định rõ mỗi tổng thống chỉ được phục vụ hai nhiệm kỳ) từ khi tổng thống George Washington từ chối ra tranh cử nhiệm kỳ thứ ba vào năm 1796.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.4931506849315069,
+          "language_valid": true,
+          "latency_ms": 0.7
+        },
+        "standard_rag": {
+          "answer": "Từ khi Tổng thống George Washington từ chối ra tranh cử nhiệm kỳ thứ ba vào năm 1796.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 4242.7
+        }
+      }
+    },
+    {
+      "query_id": "0019-0006-0004",
+      "answerable": true,
+      "gold_answers": [
+        "kinh độ 103°T"
+      ],
+      "retrieved_ids": [
+        "p00520",
+        "p00527",
+        "p00536",
+        "p00515",
+        "p00534"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Vùng cán xoong Texas có biên giới phía đông với Oklahoma theo kinh tuyến 100°T, biên giới phía bắc với Oklahoma theo vĩ tuyến 36°30'B và biên giới phía tây với New México theo kinh độ 103°T.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.17777777777777776,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Kinh độ 103°T.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 7162.8
+        }
+      }
+    },
+    {
+      "query_id": "0001-0058-0003",
+      "answerable": true,
+      "gold_answers": [
+        "Quinconces ở Bordeaux"
+      ],
+      "retrieved_ids": [
+        "p00057",
+        "p00072",
+        "p00053",
+        "p00022",
+        "p00023"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Trong số đó, quảng trường lớn nhất là Concorde, rộng thứ hai tại Pháp - sau quảng trường Quinconces ở Bordeaux - và thứ 11 thế giới.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.21428571428571425,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Quảng trường Quinconces ở Bordeaux.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7499999999999999,
+          "language_valid": true,
+          "latency_ms": 8071.2
+        }
+      }
+    },
+    {
+      "query_id": "0011-0007-0001",
+      "answerable": true,
+      "gold_answers": [
+        "can đảm sử dụng triết học Hy Lạp để giải thích các mầu nhiệm Ki-tô giáo",
+        "sử dụng triết học Hy Lạp để giải thích các mầu nhiệm Ki-tô giáo",
+        "đã can đảm sử dụng triết học Hy Lạp để giải thích các mầu nhiệm Ki-tô giáo"
+      ],
+      "retrieved_ids": [
+        "p00324",
+        "p00323",
+        "p00325",
+        "p00322",
+        "p00423"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Để rao giảng thành công tín lý Ki-tô giáo cũng như để thuyết phục người ngoại giáo đến với giáo hội, các giáo phụ thời kỳ đầu đã can đảm sử dụng triết học Hy Lạp để giải thích các mầu nhiệm Ki-tô giáo.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5625,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Các giáo phụ thời kỳ đầu đã can đảm sử dụng triết học Hy Lạp để giải thích các mầu nhiệm Ki-tô giáo, nhằm rao giảng thành công tín lý và thuyết phục người ngoại giáo đến với giáo hội.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6101694915254238,
+          "language_valid": true,
+          "latency_ms": 11613.9
+        }
+      }
+    },
+    {
+      "query_id": "0015-0040-0004",
+      "answerable": true,
+      "gold_answers": [
+        "Những cuộc cải cách thị trường"
+      ],
+      "retrieved_ids": [
+        "p00429",
+        "p00428",
+        "p00276",
+        "p00093",
+        "p00209"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Những cuộc cải cách thị trường đã dẫn tới sự gia tăng của số người làm việc trong ngành truyền thông sau từng năm, cùng với số lượng các sinh viên và trường báo chí.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2926829268292683,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Những cuộc cải cách thị trường.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 19206.1
+        }
+      }
+    },
+    {
+      "query_id": "0002-0015-0004",
+      "answerable": true,
+      "gold_answers": [
+        "thiếu tiếp cận phổ thông đối với giáo dục công lập trước năm 1953, song cũng là do nhập cư và đa dạng dân tộc"
+      ],
+      "retrieved_ids": [
+        "p00105",
+        "p00162",
+        "p00133",
+        "p00421",
+        "p00190"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tuy nhiên, mức độ thông thạo khác biệt đáng kể trong toàn thể dân số, chủ yếu là do thiếu tiếp cận phổ thông đối với giáo dục công lập trước năm 1953, song cũng là do nhập cư và đa dạng dân tộc.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7246376811594203,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Chủ yếu do thiếu tiếp cận phổ thông đối với giáo dục công lập trước năm 1953, cùng với nhập cư và đa dạng dân tộc.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8627450980392156,
+          "language_valid": true,
+          "latency_ms": 4453.9
+        }
+      }
+    },
+    {
+      "query_id": "0003-0019-0001",
+      "answerable": true,
+      "gold_answers": [
+        "William Lyon Mackenzie King"
+      ],
+      "retrieved_ids": [
+        "p00409",
+        "p00145",
+        "p00510",
+        "p00146",
+        "p00130"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tổ chức phi chính phủ Freedom House nhìn nhận Mông Cổ là quốc gia tự do.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Wilfrid Laurier",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 2694.9
+        }
+      }
+    },
+    {
+      "query_id": "0015-0025-0003",
+      "answerable": true,
+      "gold_answers": [
+        "một vùng đá vô dụng nơi thậm chí cả lạc đà hai bướu cũng không sống nổi",
+        "rất mong manh và dễ bị tàn phá bởi sự quá tải"
+      ],
+      "retrieved_ids": [
+        "p00414",
+        "p00413",
+        "p00264",
+        "p00101",
+        "p00521"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Cái tên \"Gobi\" là một thuật ngữ tiếng Mông Cổ để chỉ một thảo nguyên sa mạc, thường nói tới một đặc tính của loại đất không có đủ thực vật cho những con marmot nhưng đủ cho lạc đà.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.14035087719298245,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Là thảo nguyên sa mạc; đất không đủ thực vật cho loài gặm nhấm nhưng đủ cho lạc đà; rất mong manh, dễ bị tàn phá bởi sự quá tải; một số vùng hầu như không có mưa trong nhiều năm.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.4150943396226415,
+          "language_valid": true,
+          "latency_ms": 32405.3
+        }
+      }
+    },
+    {
+      "query_id": "0003-0022-0005",
+      "answerable": true,
+      "gold_answers": [
+        "Chuyến bay 182 của Air India phát nổ vào năm 1985"
+      ],
+      "retrieved_ids": [
+        "p00135",
+        "p00057",
+        "p00119",
+        "p00541",
+        "p00138"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Chúng gồm có Chuyến bay 182 của Air India phát nổ vào năm 1985, vụ mưu sát hàng loạt lớn nhất trong lịch sử Canada; Thảm sát trường Bách khoa École vào năm 1989, một vụ xả súng đại học với mục tiêu là các nữ sinh; và Khủng hoảng Oka năm 1990, là diễn biến đầu tiên trong một loạt các xung đột bạo lực giữa chính phủ và các nhóm Thổ dân.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.25882352941176473,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Chuyến bay 182 của Air India phát nổ vào năm 1985.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 10182.6
+        }
+      }
+    },
+    {
+      "query_id": "0003-0015-0006",
+      "answerable": true,
+      "gold_answers": [
+        "1840"
+      ],
+      "retrieved_ids": [
+        "p00119",
+        "p00239",
+        "p00128",
+        "p00126",
+        "p00434"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Một phần lãnh thổ đơn phương thêm vào này được chuyển giao cho Hoa Kỳ vào năm 1783, song Canada thuộc Anh vẫn giữ lại toàn bộ vùng đất phía bắc của Ngũ Đại Hồ (tạo thành phần lớn Ontario hiện nay).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Năm 1841, theo Đạo luật Liên minh 1840.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2222222222222222,
+          "language_valid": true,
+          "latency_ms": 3847.2
+        }
+      }
+    },
+    {
+      "query_id": "0006-0017-0004",
+      "answerable": true,
+      "gold_answers": [
+        "nông nghiệp"
+      ],
+      "retrieved_ids": [
+        "p00244",
+        "p00245",
+        "p00243",
+        "p00242",
+        "p00229"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ngày nay Puerto Rico là một quốc gia có nền kinh tế cơ cấu hiện đại với nông nghiệp chỉ chiếm 1%, công nghiệp chiếm 45% và dịch vụ chiếm 54%.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.12121212121212122,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Nông nghiệp.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 4633.5
+        }
+      }
+    },
+    {
+      "query_id": "0017-0029-0002",
+      "answerable": true,
+      "gold_answers": [
+        "5,3%"
+      ],
+      "retrieved_ids": [
+        "p00465",
+        "p00463",
+        "p00466",
+        "p00464",
+        "p00478"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tổng số thất nghiệp trong suốt nhiệm kỳ của ông nới rộng khoảng 18,31 triệu việc làm bị mất trong khi tỉ lệ gia tăng việc làm trung bình hàng năm dưới thời chính phủ của ông là 5,3%.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.09302325581395349,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "5,3%",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 10611.7
+        }
+      }
+    },
+    {
+      "query_id": "0017-0048-0003",
+      "answerable": true,
+      "gold_answers": [
+        "bắt đầu lập kế hoạch cho sự tham chiến hoàn toàn của Hoa Kỳ",
+        "lập kế hoạch cho sự tham chiến hoàn toàn của Hoa Kỳ"
+      ],
+      "retrieved_ids": [
+        "p00484",
+        "p00478",
+        "p00487",
+        "p00275",
+        "p00482"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tháng 7 năm 1941, Roosevelt ra lệnh cho Bộ trưởng Chiến tranh Henry Stimson bắt đầu lập kế hoạch cho sự tham chiến hoàn toàn của Hoa Kỳ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6666666666666666,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Bắt đầu lập kế hoạch cho sự tham chiến hoàn toàn của Hoa Kỳ.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 28832.9
+        }
+      }
+    },
+    {
+      "query_id": "0009-0018-0002",
+      "answerable": true,
+      "gold_answers": [
+        "Mitterrand là một nhân vật đơn độc",
+        "là một nhân vật đơn độc"
+      ],
+      "retrieved_ids": [
+        "p00289",
+        "p00273",
+        "p00292",
+        "p00300",
+        "p00394"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Hơn nữa, Mitterrand là một nhân vật đơn độc nên ông không có vẻ là một mối đe doạ với các thành viên của các đảng cánh tả.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.4,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 7408.3
+        }
+      }
+    },
+    {
+      "query_id": "0010-0003-0001",
+      "answerable": true,
+      "gold_answers": [
+        "Gà sao có sức đề kháng cao, thích nghi rộng với nhiều vùng sinh thái",
+        "Gà sao có sức đề kháng cao, thích nghi rộng với nhiều vùng sinh thái và là loài dễ nuôi, có thể nuôi nhốt hoặc nuôi thả vườn",
+        "có sức đề kháng cao, thích nghi rộng với nhiều vùng sinh thái và là loài dễ nuôi, có thể nuôi nhốt hoặc nuôi thả vườn"
+      ],
+      "retrieved_ids": [
+        "p00313",
+        "p00312",
+        "p00311",
+        "p00516",
+        "p00032"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Gà sao có sức đề kháng cao, thích nghi rộng với nhiều vùng sinh thái và là loài dễ nuôi, có thể nuôi nhốt hoặc nuôi thả vườn.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Vì gà sao có sức đề kháng cao, thích nghi rộng với nhiều vùng sinh thái và là loài dễ nuôi, có thể nuôi nhốt hoặc nuôi thả vườn.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.9824561403508771,
+          "language_valid": true,
+          "latency_ms": 4729.5
+        }
+      }
+    },
+    {
+      "query_id": "0001-0087-0004",
+      "answerable": true,
+      "gold_answers": [
+        "biểu tượng cho những người cách mạng vào năm 1792",
+        "ca khúc biểu tượng cho những người cách mạng vào năm 1792"
+      ],
+      "retrieved_ids": [
+        "p00086",
+        "p00541",
+        "p00032",
+        "p00149",
+        "p00098"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Nhiều bài hát đại chúng được sáng tác trong thời kỳ Cách mạng Pháp, như Carmagnole trở thành ca khúc biểu tượng cho những người cách mạng vào năm 1792.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5714285714285715,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Carmagnole trở thành ca khúc biểu tượng cho những người cách mạng vào năm 1792 trong thời kỳ Cách mạng Pháp.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7272727272727273,
+          "language_valid": true,
+          "latency_ms": 11814.9
+        }
+      }
+    },
+    {
+      "query_id": "0004-0020-0006",
+      "answerable": true,
+      "gold_answers": [
+        "34",
+        "34 nước"
+      ],
+      "retrieved_ids": [
+        "p00186",
+        "p00187",
+        "p00376",
+        "p00182",
+        "p00198"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Cũng trong ngày hôm đó, 48 chiếc F-15 thuộc Không lực Hoa Kỳ từ 1st Fighter Wing tại Căn cứ không quân Langley, Virginia, đã hạ cánh xuống Ả Rập Xê Út và ngay lập tức bắt đầu tiến hành tuần tra trên những vùng không phận biên giới Ả Rập Xê Út và Iraq nhằm ngăn chặn đà tiến của quân đội Iraq.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "34 nước.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 6682.6
+        }
+      }
+    },
+    {
+      "query_id": "0015-0030-0004",
+      "answerable": true,
+      "gold_answers": [
+        "1.2%"
+      ],
+      "retrieved_ids": [
+        "p00419",
+        "p00416",
+        "p00417",
+        "p00156",
+        "p00102"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tổng dân số Mông Cổ vào tháng 7 năm 2007 ước tính bởi Văn phòng Điều tra Hoa Kỳ là 2.951.786 người, xếp khoảng hạng thứ 138 trên thế giới theo quy mô dân số.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.05128205128205129,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "1,2% (ước tính 2007).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5714285714285715,
+          "language_valid": true,
+          "latency_ms": 3533.9
+        }
+      }
+    },
+    {
+      "query_id": "0009-0008-0002",
+      "answerable": true,
+      "gold_answers": [
+        "1943"
+      ],
+      "retrieved_ids": [
+        "p00279",
+        "p00289",
+        "p00273",
+        "p00305",
+        "p00281"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Từ thời điểm đó trở về sau, Mitterrand là một thành viên của ORA .",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.8
+        },
+        "standard_rag": {
+          "answer": "Từ năm 1943.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5,
+          "language_valid": true,
+          "latency_ms": 11096.4
+        }
+      }
+    },
+    {
+      "query_id": "0009-0009-0002",
+      "answerable": true,
+      "gold_answers": [
+        "Masson không có quyền tuyên bố thay mặt các tù binh chiến tranh",
+        "không có quyền tuyên bố thay mặt các tù binh chiến tranh"
+      ],
+      "retrieved_ids": [
+        "p00280",
+        "p00502",
+        "p00278",
+        "p00180",
+        "p00440"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Cuộc gặp có dự tính cho phép những tù binh chiến tranh Pháp quay trở về nhà nếu họ được thay thế bởi những thanh niên Pháp bị buộc phải tới làm việc ở Đức\" (trong tiếng Pháp điều này được gọi là \"la relève\").",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2105263157894737,
+          "language_valid": true,
+          "latency_ms": 1.7
+        },
+        "standard_rag": {
+          "answer": "Mitterrand bác bỏ Masson, nói rằng Masson không có quyền tuyên bố thay mặt các tù binh chiến tranh và gọi \"la relève\" là một trò bịp.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.65,
+          "language_valid": true,
+          "latency_ms": 25506.9
+        }
+      }
+    },
+    {
+      "query_id": "0009-0008-0006",
+      "answerable": true,
+      "gold_answers": [
+        "Tướng Charles de Gaulle"
+      ],
+      "retrieved_ids": [
+        "p00279",
+        "p00292",
+        "p00131",
+        "p00281",
+        "p00149"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Giraud sau đó đã tranh chấp vai trò lãnh đạo Kháng chiến Pháp với Tướng Charles de Gaulle.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.3636363636363636,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Tướng Charles de Gaulle.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 21202.3
+        }
+      }
+    },
+    {
+      "query_id": "0001-0064-0002",
+      "answerable": true,
+      "gold_answers": [
+        "Louvre"
+      ],
+      "retrieved_ids": [
+        "p00063",
+        "p00032",
+        "p00056",
+        "p00059",
+        "p00001"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ở ngoại ô, lâu đài Versailles, được xây dựng bởi vua Louis XIV là cung điện của các vị vua nước Pháp trong thế kỷ 17 và 18, cũng thu hút nhiều triệu du khách mỗi năm với 18.000 m² dành cho bảo tàng Lịch sử Pháp.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.7
+        },
+        "standard_rag": {
+          "answer": "Louvre",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 2346.3
+        }
+      }
+    },
+    {
+      "query_id": "0015-0012-0006",
+      "answerable": true,
+      "gold_answers": [
+        "700 tu viện",
+        "700 tu viện lớn nhỏ"
+      ],
+      "retrieved_ids": [
+        "p00401",
+        "p00399",
+        "p00391",
+        "p00445",
+        "p00484"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Đến năm 1911, có trên 700 tu viện lớn nhỏ tại Ngoại Mông; 115.000 tăng nhân tại đó chiếm đến 21% dân số.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.3448275862068966,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Trên 700 tu viện lớn nhỏ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.9090909090909091,
+          "language_valid": true,
+          "latency_ms": 3936.2
+        }
+      }
+    },
+    {
+      "query_id": "0009-0021-0004",
+      "answerable": true,
+      "gold_answers": [
+        "nâng cấp Chương trình Chung"
+      ],
+      "retrieved_ids": [
+        "p00292",
+        "p00283",
+        "p00348",
+        "p00289",
+        "p00286"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Năm 1977, các đảng Cộng sản và Xã hội không thể nâng cấp Chương trình Chung, sau đó thua trong cuộc bầu cử lập pháp năm 1978.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.3125,
+          "language_valid": true,
+          "latency_ms": 0.8
+        },
+        "standard_rag": {
+          "answer": "Không thể nâng cấp Chương trình Chung.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8333333333333333,
+          "language_valid": true,
+          "latency_ms": 31351.7
+        }
+      }
+    },
+    {
+      "query_id": "0019-0026-0001",
+      "answerable": true,
+      "gold_answers": [
+        "Cơ quan tư pháp"
+      ],
+      "retrieved_ids": [
+        "p00540",
+        "p00477",
+        "p00116",
+        "p00553",
+        "p00541"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Cơ quan tư pháp của Texas là một trong các cơ quan tư pháp phức tạp nhất tại Hoa Kỳ, với các quyền lực chồng lặp nhau.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.25806451612903225,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Cơ quan tư pháp của Texas.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8,
+          "language_valid": true,
+          "latency_ms": 9798.0
+        }
+      }
+    },
+    {
+      "query_id": "0019-0002-0001",
+      "answerable": true,
+      "gold_answers": [
+        "Texas"
+      ],
+      "retrieved_ids": [
+        "p00516",
+        "p00485",
+        "p00136",
+        "p00547",
+        "p00546"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Houston là thành phố lớn nhất tại Texas và là thành phố lớn thứ tư tại Hoa Kỳ, còn San Antonio là thành phố lớn thứ hai của tiểu bang và lớn thứ bảy tại Hoa Kỳ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.052631578947368425,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Texas",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 6006.3
+        }
+      }
+    },
+    {
+      "query_id": "0004-0004-0003",
+      "answerable": true,
+      "gold_answers": [
+        "Iraq là nước đệm chống lại Iran bảo vệ cho toàn bộ các nước Ả Rập",
+        "buộc tội Kuwait đã khoan nghiêng vào các giếng dầu của họ ở vùng biên giới và cho rằng vì Iraq là nước đệm chống lại Iran bảo vệ cho toàn bộ các nước Ả Rập"
+      ],
+      "retrieved_ids": [
+        "p00171",
+        "p00185",
+        "p00184",
+        "p00187",
+        "p00203"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ngoài ra, Iraq bắt đầu buộc tội Kuwait đã khoan nghiêng vào các giếng dầu của họ ở vùng biên giới và cho rằng vì Iraq là nước đệm chống lại Iran bảo vệ cho toàn bộ các nước Ả Rập nên Kuwait và Ả Rập Xê Út phải đàm phán hay hủy bỏ những khoản nợ cho chiến tranh của Iraq.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7346938775510204,
+          "language_valid": true,
+          "latency_ms": 1.0
+        },
+        "standard_rag": {
+          "answer": "Iraq viện lý do rằng Iraq là nước đệm chống lại Iran, bảo vệ cho toàn bộ các nước Ả Rập, nên Kuwait và Ả Rập Xê Út phải đàm phán hay hủy bỏ các khoản nợ chiến tranh của Iraq.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5614035087719299,
+          "language_valid": true,
+          "latency_ms": 10333.7
+        }
+      }
+    },
+    {
+      "query_id": "0004-0024-0008",
+      "answerable": true,
+      "gold_answers": [
+        "ngày 17 tháng 1 năm 1991",
+        "sáng sớm ngày 17 tháng 1 năm 1991"
+      ],
+      "retrieved_ids": [
+        "p00191",
+        "p00169",
+        "p00207",
+        "p00414",
+        "p00184"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Một ngày sau thời hạn chót do Nghị quyết của Liên Hiệp Quốc đặt ra, liên minh tung ra một cuộc tấn công không quân ồ ạt với mật danh \"Chiến dịch bão táp sa mạc\" với hơn 1.000 lần xuất kích một ngày, bắt đầu từ sáng sớm ngày 17 tháng 1 năm 1991.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.25,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Từ sáng sớm ngày 17 tháng 1 năm 1991.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.9411764705882353,
+          "language_valid": true,
+          "latency_ms": 12861.3
+        }
+      }
+    },
+    {
+      "query_id": "0007-0003-0005",
+      "answerable": true,
+      "gold_answers": [
+        "Tổ chức Hiệp ước Bắc Đại Tây Dương"
+      ],
+      "retrieved_ids": [
+        "p00252",
+        "p00376",
+        "p00477",
+        "p00379",
+        "p00362"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Liên hiệp quốc, Liên minh châu Âu, Tổ chức An ninh và Hợp tác châu Âu (OSCE), Hội đồng Liên minh châu Âu, Tổ chức Hiệp ước Bắc Đại Tây Dương (NATO) và tất cả các quốc gia khác trên thế giới công nhận Nam Ossetia là một phần lãnh thổ Gruzia.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2666666666666667,
+          "language_valid": true,
+          "latency_ms": 0.9
+        },
+        "standard_rag": {
+          "answer": "Tổ chức Hiệp ước Bắc Đại Tây Dương.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 19080.8
+        }
+      }
+    },
+    {
+      "query_id": "0004-0018-0004",
+      "answerable": true,
+      "gold_answers": [
+        "lôi kéo sự ủng hộ từ Nhóm huynh đệ Hồi giáo và chia rẽ nhóm Hồi giáo Mu-gia-hít-đin với Ả Rập Xê Út"
+      ],
+      "retrieved_ids": [
+        "p00185",
+        "p00184",
+        "p00200",
+        "p00178",
+        "p00183"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Việc đưa thêm dòng chữ Allahu Akbar (Thánh Ala vĩ đại) vào lá cờ Iraq và những hình ảnh Xát-đam đang cầu nguyện ở Kuwait được coi là một phần của kế hoạch lôi kéo sự ủng hộ từ Nhóm huynh đệ Hồi giáo và chia rẽ nhóm Hồi giáo Mu-gia-hít-đin với Ả Rập Xê Út.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6046511627906976,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Nhằm lôi kéo sự ủng hộ từ Nhóm huynh đệ Hồi giáo và chia rẽ nhóm Hồi giáo Mu-gia-hít-đin với Ả Rập Xê Út.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.9811320754716981,
+          "language_valid": true,
+          "latency_ms": 11272.4
+        }
+      }
+    },
+    {
+      "query_id": "0019-0038-0005",
+      "answerable": true,
+      "gold_answers": [
+        "Bò nhà"
+      ],
+      "retrieved_ids": [
+        "p00552",
+        "p00514",
+        "p00553",
+        "p00417",
+        "p00519"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Bò nhà là sản phẩm nông nghiệp có giá trị nhất của bang, và tiểu bang dẫn đầu toàn quốc về sản lượng cừu và dê.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.14285714285714288,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Bò nhà",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 9078.7
+        }
+      }
+    },
+    {
+      "query_id": "0003-0031-0005",
+      "answerable": true,
+      "gold_answers": [
+        "ISS",
+        "trạm vũ trụ quốc tế (ISS)"
+      ],
+      "retrieved_ids": [
+        "p00144",
+        "p00321",
+        "p00151",
+        "p00167",
+        "p00117"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Canada là một bên tham gia trong trạm vũ trụ quốc tế (ISS), và là một nước tiên phong trong người máy không gian, chế tạo ra các tay máy robot Canadarm, Canadarm2 và Dextre cho ISS và cho tàu con thoi của NASA.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.24000000000000002,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Trạm vũ trụ quốc tế (ISS).",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 11748.8
+        }
+      }
+    },
+    {
+      "query_id": "0005-0008-0001",
+      "answerable": true,
+      "gold_answers": [
+        "công nghệ của thiết bị bốc hơi chân không, thiết bị bốc hơi flash hay công nghệ thẩm thấu ngược"
+      ],
+      "retrieved_ids": [
+        "p00226",
+        "p00222",
+        "p00011",
+        "p00086",
+        "p00087"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tuy nhiên, các công nghệ đó rất tiêu tốn năng lượng và nó gần như không thực tế và không thể trong thời đại thuyền buồm trong giai đoạn thế kỷ 16 tới thế kỷ 19.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.10714285714285714,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Thiết bị bốc hơi chân không, thiết bị bốc hơi flash và công nghệ thẩm thấu ngược.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8648648648648648,
+          "language_valid": true,
+          "latency_ms": 17264.0
+        }
+      }
+    },
+    {
+      "query_id": "0001-0055-0004",
+      "answerable": true,
+      "gold_answers": [
+        "Axe historique"
+      ],
+      "retrieved_ids": [
+        "p00061",
+        "p00046",
+        "p00054",
+        "p00000",
+        "p00059"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Theo thiết kế của kiến trúc sư Bernard Tschumi, một khu vực lò mổ cũ đã trở thành công viên La Villette - công viên lớn nhất trong nội ô Paris hiện nay.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Axe historique.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 3535.3
+        }
+      }
+    },
+    {
+      "query_id": "0013-0001-0005",
+      "answerable": true,
+      "gold_answers": [
+        "cho quân sĩ sống nhờ nhà dân và buộc các nhà giàu phải cho triều đình vay tiền, những người từ chối sẽ bị tống giam vào ngục"
+      ],
+      "retrieved_ids": [
+        "p00366",
+        "p00368",
+        "p00371",
+        "p00367",
+        "p00369"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Hành động này của vua Charles I và các quyết định bất thường khác đã khiến cho các vị lãnh đạo quốc hội Anh phản đối, vị họ cho rằng các chính sách này vi phạm đến các tự do hiến định của nhân dân.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.13698630136986303,
+          "language_valid": true,
+          "latency_ms": 0.5
+        },
+        "standard_rag": {
+          "answer": "Chính sách buộc nhà giàu cho triều đình vay tiền, cho quân sĩ sống nhờ nhà dân và tống giam những người từ chối; bị cho là vi phạm các tự do hiến định của nhân dân.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7384615384615384,
+          "language_valid": true,
+          "latency_ms": 29164.8
+        }
+      }
+    },
+    {
+      "query_id": "0014-0012-0004",
+      "answerable": true,
+      "gold_answers": [
+        "lãnh thổ của người Đức",
+        "trên những lãnh thổ của người Đức"
+      ],
+      "retrieved_ids": [
+        "p00384",
+        "p00385",
+        "p00189",
+        "p00218",
+        "p00362"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Một loạt trận chiến trong giai đoạn 1618-1648, mà các sử gia gọi là Chiến tranh Ba mươi Năm, diễn ra trên những lãnh thổ của người Đức.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.3888888888888889,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Trên những lãnh thổ của người Đức.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 13265.5
+        }
+      }
+    },
+    {
+      "query_id": "0014-0011-0007",
+      "answerable": true,
+      "gold_answers": [
+        "Các công tước và hầu tước"
+      ],
+      "retrieved_ids": [
+        "p00383",
+        "p00374",
+        "p00385",
+        "p00381",
+        "p00373"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Các công tước và hầu tước trên thực tế là tự chủ nhưng lại không có chủ quyền này, công nhận vị hoàng đế như là người đứng đầu đế chế, ít nhất là về mặt tư tưởng và phải tuân theo các đạo luật đế chế, tòa án đế chế và các nghị quyết của quốc hội đế chế nhưng đồng thời cũng thông qua việc lựa chọn hoàng đế, đại hội đế chế và các đại diện tầng lớp khác mà tham gia vào chính sách của đế chế và đã có thể tạo ảnh hưởng cho chính mình.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.11214953271028036,
+          "language_valid": true,
+          "latency_ms": 0.1
+        },
+        "standard_rag": {
+          "answer": "Các công tước và hầu tước.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 22535.0
+        }
+      }
+    },
+    {
+      "query_id": "0017-0013-0004",
+      "answerable": true,
+      "gold_answers": [
+        "Roosevelt giúp thành lập Quỹ Quốc gia cho Trẻ em bại liệt",
+        "giúp thành lập Quỹ Quốc gia cho Trẻ em bại liệt",
+        "thành lập Quỹ Quốc gia cho Trẻ em bại liệt"
+      ],
+      "retrieved_ids": [
+        "p00449",
+        "p00502",
+        "p00471",
+        "p00452",
+        "p00492"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Sau khi trở thành Tổng thống Hoa Kỳ, Roosevelt giúp thành lập Quỹ Quốc gia cho Trẻ em bại liệt, ngày nay được gọi là \"March of Dimes\" (tạm dịch: cuộc đi bộ của tiền kim loại 10 xu).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.47058823529411764,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Sau khi trở thành Tổng thống Hoa Kỳ, Roosevelt giúp thành lập Quỹ Quốc gia cho Trẻ em bại liệt, ngày nay gọi là “March of Dimes”.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6153846153846153,
+          "language_valid": true,
+          "latency_ms": 7101.8
+        }
+      }
+    },
+    {
+      "query_id": "0016-0006-0006",
+      "answerable": true,
+      "gold_answers": [
+        "Montréal"
+      ],
+      "retrieved_ids": [
+        "p00435",
+        "p00157",
+        "p00117",
+        "p00107",
+        "p00140"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Thống kê dân số năm 2001 tính được 25.605 cư dân gốc Việt đông thứ nhì sau cộng đồng người Việt tại Toronto.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.7
+        },
+        "standard_rag": {
+          "answer": "Montréal",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 6332.2
+        }
+      }
+    },
+    {
+      "query_id": "0017-0035-0003",
+      "answerable": true,
+      "gold_answers": [
+        "dường như làm đảo lộn tam quyền phân lập và trao cho tổng thống cả quyền kiểm soát ngành tư pháp",
+        "vì nó dường như làm đảo lộn tam quyền phân lập và trao cho tổng thống cả quyền kiểm soát ngành tư pháp"
+      ],
+      "retrieved_ids": [
+        "p00471",
+        "p00492",
+        "p00356",
+        "p00285",
+        "p00442"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Roosevelt làm sửng sốt Quốc hội vào đầu năm 1937 khi đề nghị một luật mới cho phép ông bổ nhiệm 5 thẩm phán tối cao pháp viện mới Kế hoạch \"lấp đầy tòa án\" này bị phản đối kịch liệt từ chính đảng của ông, dẫn đầu là Phó Tổng thống Garner vì nó dường như làm đảo lộn tam quyền phân lập và trao cho tổng thống cả quyền kiểm soát ngành tư pháp.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.46464646464646464,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Vì nó dường như làm đảo lộn tam quyền phân lập và trao cho tổng thống cả quyền kiểm soát ngành tư pháp.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 14506.8
+        }
+      }
+    },
+    {
+      "query_id": "0002-0001-0001",
+      "answerable": true,
+      "gold_answers": [
+        "ngày 4 tháng 9 năm 1774"
+      ],
+      "retrieved_ids": [
+        "p00091",
+        "p00092",
+        "p00110",
+        "p00100",
+        "p00113"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Nhà thám hiểm người Anh James Cook là người châu Âu đầu tiên trông thấy Nouvelle-Calédonie, đó là vào ngày 4 tháng 9 năm 1774 trong hành trình thứ nhì của ông.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.3076923076923077,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Ngày 4 tháng 9 năm 1774.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 10251.9
+        }
+      }
+    },
+    {
+      "query_id": "0017-0035-0002",
+      "answerable": true,
+      "gold_answers": [
+        "Tối cao Pháp viện Hoa Kỳ"
+      ],
+      "retrieved_ids": [
+        "p00471",
+        "p00184",
+        "p00438",
+        "p00243",
+        "p00038"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tối cao Pháp viện Hoa Kỳ là rào cản chính đối với những chương trình của Roosevelt trong suốt nhiệm kỳ hai vì nó lật ngược nhiều chương trình của ông.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.3243243243243243,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Tối cao Pháp viện Hoa Kỳ là rào cản chính, lật ngược nhiều chương trình của Roosevelt. Ngoài ra, Liên minh bảo thủ lưỡng đảng năm 1937 đã ngăn cản ông thông qua quá nhiều luật mới và hủy bỏ phần lớn các chương trình trợ cấp.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.22641509433962262,
+          "language_valid": true,
+          "latency_ms": 14733.7
+        }
+      }
+    },
+    {
+      "query_id": "0001-0009-0004",
+      "answerable": true,
+      "gold_answers": [
+        "Oise"
+      ],
+      "retrieved_ids": [
+        "p00008",
+        "p00069",
+        "p00075",
+        "p00081",
+        "p00171"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Đá vôi được khai thác cho tới thế kỷ 14 ở tả ngạn sông Seine, từ quảng trường Italie tới phố Vaugirard.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 5848.6
+        }
+      }
+    },
+    {
+      "query_id": "0004-0030-0004",
+      "answerable": true,
+      "gold_answers": [
+        "28 người Mỹ đã thiệt mạng"
+      ],
+      "retrieved_ids": [
+        "p00197",
+        "p00192",
+        "p00217",
+        "p00218",
+        "p00193"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Các tên lửa Scud nói chung là gây ra rất ít thiệt hại, dù nó cũng đã một lần chứng minh được sức mạnh vào ngày 25 tháng 2 với 28 người Mỹ đã thiệt mạng khi một tên lửa Scud phá hủy doanh trại của họ tại Dhahran.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2181818181818182,
+          "language_valid": true,
+          "latency_ms": 0.6
+        },
+        "standard_rag": {
+          "answer": "28 người Mỹ thiệt mạng khi một tên lửa Scud phá hủy doanh trại của họ tại Dhahran.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.4166666666666667,
+          "language_valid": true,
+          "latency_ms": 6666.0
+        }
+      }
+    },
+    {
+      "query_id": "0009-0008-0007",
+      "answerable": true,
+      "gold_answers": [
+        "người khuyến khích phong trào kháng chiến Pháp ủng hộ Mitterrand thay vì Michel Cailliau"
+      ],
+      "retrieved_ids": [
+        "p00279",
+        "p00018",
+        "p00281",
+        "p00304",
+        "p00496"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tháng 3, Mitterrand gặp Henri Frenay, người khuyến khích phong trào kháng chiến Pháp ủng hộ Mitterrand thay vì Michel Cailliau, nhưng ngày 28 tháng 5 năm 1943, khi Mitterrand gặp gỡ với Philippe Dechartre, người theo phái de Gaulle, thường được coi là ngày ly khai của Mitterrand với Vichy.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.45454545454545453,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Theo ngữ cảnh, Henri Frenay là người khuyến khích phong trào kháng chiến Pháp ủng hộ Mitterrand thay vì Michel Cailliau; có ảnh hưởng khiến de Gaulle đồng ý sáp nhập mạng lưới của cháu mình và RNPG với Mitterrand làm lãnh đạo.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5172413793103449,
+          "language_valid": true,
+          "latency_ms": 56371.1
+        }
+      }
+    },
+    {
+      "query_id": "0009-0019-0004",
+      "answerable": true,
+      "gold_answers": [
+        "(247 ghế",
+        "247",
+        "247 ghế"
+      ],
+      "retrieved_ids": [
+        "p00290",
+        "p00407",
+        "p00146",
+        "p00473",
+        "p00354"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Liên minh cầm quyền giành đa số nhưng bị giảm một ghế (247 ghế trong số 487).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.21052631578947367,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "247 ghế trong số 487.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5714285714285715,
+          "language_valid": true,
+          "latency_ms": 15087.2
+        }
+      }
+    },
+    {
+      "query_id": "0006-0012-0007",
+      "answerable": true,
+      "gold_answers": [
+        "không phải là một tiểu bang của Hoa Kỳ"
+      ],
+      "retrieved_ids": [
+        "p00239",
+        "p00233",
+        "p00229",
+        "p00230",
+        "p00242"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Puerto Rico thiếu sự bảo vệ toàn phần từ Hiến pháp Hoa Kỳ vì không phải là một tiểu bang của Hoa Kỳ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5625,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Vì Puerto Rico không phải là một tiểu bang của Hoa Kỳ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8571428571428571,
+          "language_valid": true,
+          "latency_ms": 16559.3
+        }
+      }
+    },
+    {
+      "query_id": "0003-0042-0001",
+      "answerable": true,
+      "gold_answers": [
+        "dân số già hơn"
+      ],
+      "retrieved_ids": [
+        "p00155",
+        "p00148",
+        "p00117",
+        "p00116",
+        "p00225"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Giống như các quốc gia phát triển khác, Canada đang trải qua biến đổi nhân khẩu học theo hướng dân số già hơn, với nhiều người nghỉ hưu hơn và ít người trong độ tuổi lao động hơn.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.1904761904761905,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Dân số Canada đang phát triển theo hướng già hơn, với nhiều người nghỉ hưu hơn và ít người trong độ tuổi lao động hơn.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2758620689655173,
+          "language_valid": true,
+          "latency_ms": 6862.4
+        }
+      }
+    },
+    {
+      "query_id": "0002-0010-0006",
+      "answerable": true,
+      "gold_answers": [
+        "13 loài",
+        "44 loài"
+      ],
+      "retrieved_ids": [
+        "p00100",
+        "p00101",
+        "p00267",
+        "p00415",
+        "p00104"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Nouvelle-Calédonie có nhiều loài thực vật hạt trần nhiệt đới đặc hữu hơn so với bất kỳ khu vực tương tự nào trên Trái Đất.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.07142857142857144,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "44 loài.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 2222.7
+        }
+      }
+    },
+    {
+      "query_id": "0003-0010-0002",
+      "answerable": true,
+      "gold_answers": [
+        "Port Royal"
+      ],
+      "retrieved_ids": [
+        "p00123",
+        "p00126",
+        "p00104",
+        "p00121",
+        "p00525"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Nhà thám hiểm người Pháp Samuel de Champlain đến vào năm 1603, và thiết lập các khu định cư thường xuyên đầu tiên của người châu Âu tại Port Royal vào năm 1605 và thành phố Québec vào năm 1608.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.09523809523809523,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Port Royal (năm 1605).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6666666666666666,
+          "language_valid": true,
+          "latency_ms": 64107.2
+        }
+      }
+    },
+    {
+      "query_id": "0015-0007-0009",
+      "answerable": true,
+      "gold_answers": [
+        "22%"
+      ],
+      "retrieved_ids": [
+        "p00396",
+        "p00390",
+        "p00397",
+        "p00416",
+        "p00403"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Năm 1206, ông lấy hiệu là Thành Cát Tư Hãn, và tiến hành một loạt chiến dịch quân sự vốn nổi tiếng tàn bạo tại một phần lớn của châu Á, lập nên Đế quốc Mông Cổ, là đế quốc lục địa liền kề lớn nhất trong lịch sử thế giới.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "22% tổng diện tích đất liền của Trái đất.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.19999999999999998,
+          "language_valid": true,
+          "latency_ms": 11575.8
+        }
+      }
+    },
+    {
+      "query_id": "0019-0042-0003",
+      "answerable": true,
+      "gold_answers": [
+        "Baylor Bears, Texas Longhorns, TCU Horned Frogs, và Texas Tech Red Raiders"
+      ],
+      "retrieved_ids": [
+        "p00556",
+        "p00555",
+        "p00517",
+        "p00543",
+        "p00551"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Bốn trong số các đội tuyển đại học của bang là Baylor Bears, Texas Longhorns, TCU Horned Frogs, và Texas Tech Red Raiders tham gia Big 12 Conference.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Baylor Bears, Texas Longhorns, TCU Horned Frogs và Texas Tech Red Raiders.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 11452.2
+        }
+      }
+    },
+    {
+      "query_id": "0017-0001-0004",
+      "answerable": true,
+      "gold_answers": [
+        "Là tổng thống Hoa Kỳ duy nhất được bầu hơn hai nhiệm kỳ, ông tạo ra một liên minh bền vững giúp tái tổ chức nền chính trị Hoa Kỳ trong nhiều thập niên",
+        "tổng thống Hoa Kỳ duy nhất được bầu hơn hai nhiệm kỳ"
+      ],
+      "retrieved_ids": [
+        "p00451",
+        "p00480",
+        "p00457",
+        "p00166",
+        "p00440"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Mặc dù ông vẫn có tên trong thành phần chống đối bộ máy chính trị Tammany Hall của Thành phố New York nhưng ông giảm nhẹ thái độ của mình.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.125,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Roosevelt (FDR) có các thành tựu chính trị: giúp Alfred E. Smith đắc cử thống đốc New York năm 1922; đọc diễn văn đề cử Smith tại đại hội Đảng Dân chủ năm 1924 và 1928; đắc cử thống đốc New York năm 1928; được đề cử tranh cử tổng thống với tỉ lệ 946–147; chi phối chính trị Mỹ trong 12 năm làm tổng thống; lãnh đạo chương trình “cứu nguy, hồi phục và cải cách”; thực hiện các bài nói chuyện buổi tối trên sóng phát thanh; tái phối trí cử tri hình thành Hệ thống đảng phái lần thứ 5; tập hợp Liên minh New Deal; có ảnh hưởng ngoại giao với Liên Hiệp Quốc và Hệ thống Bretton Woods; được đánh giá là một trong các tổng thống vĩ đại của Hoa Kỳ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.16279069767441862,
+          "language_valid": true,
+          "latency_ms": 54097.6
+        }
+      }
+    },
+    {
+      "query_id": "0006-0020-0001",
+      "answerable": true,
+      "gold_answers": [
+        "Đạo Tin lành"
+      ],
+      "retrieved_ids": [
+        "p00247",
+        "p00246",
+        "p00229",
+        "p00236",
+        "p00239"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Công giáo Rôma là tôn giáo lớn lâu đời nhất tại Puerto Rico (nếu không kể những tôn giáo bản địa) và cho đến ngày nay vẫn là tôn giáo chủ yếu tại nước này.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Đạo Tin lành.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 12427.9
+        }
+      }
+    },
+    {
+      "query_id": "0001-0064-0006",
+      "answerable": true,
+      "gold_answers": [
+        "viện bảo tàng Louvre"
+      ],
+      "retrieved_ids": [
+        "p00063",
+        "p00228",
+        "p00076",
+        "p00081",
+        "p00054"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Cổ nhất, diện tích lớn nhất là viện bảo tàng Louvre, nơi lưu trữ các tác phẩm nổi tiếng như Mona Lisa, tượng thần Vệ Nữ...",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2666666666666667,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Viện bảo tàng Louvre.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 8338.2
+        }
+      }
+    },
+    {
+      "query_id": "0019-0041-0001",
+      "answerable": true,
+      "gold_answers": [
+        "Houston Rockets, San Antonio Spurs, và Dallas Mavericks"
+      ],
+      "retrieved_ids": [
+        "p00555",
+        "p00556",
+        "p00113",
+        "p00530",
+        "p00531"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Trong giải đấu chuyên nghiệp \"Big Four\", Texas có hai đội tuyển NFL (Dallas Cowboys và Houston Texans), hai đội tuyển MLB (Texas Rangers và Houston Astros), ba đội tuyển NBA (Houston Rockets, San Antonio Spurs, và Dallas Mavericks), và một đội tuyển NHL (Dallas Stars).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.29629629629629634,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Houston Rockets, San Antonio Spurs, và Dallas Mavericks.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 4213.8
+        }
+      }
+    },
+    {
+      "query_id": "0004-0007-0006",
+      "answerable": true,
+      "gold_answers": [
+        "Trung Quốc"
+      ],
+      "retrieved_ids": [
+        "p00174",
+        "p00176",
+        "p00175",
+        "p00308",
+        "p00192"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Với thắng lợi mới đạt được của Iran trong cuộc chiến và việc họ từ chối một đề xuất hòa bình vào tháng 7, việc mua bán vũ khí từ các nước khác (nhiều nhất là Liên Xô, Pháp, Ai Cập, và bắt đầu từ năm đó là Trung Quốc) đã đạt tới đỉnh điểm năm 1982, nhưng một trở ngại vẫn còn chưa được giải quyết để có được bất kỳ một mối quan hệ tiềm năng nào giữa Mỹ-Iraq - Abu Nidal tiếp tục hoạt động với sự hỗ trợ chính thức của Baghdad.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.04081632653061225,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Trung Quốc và Hoa Kỳ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5714285714285715,
+          "language_valid": true,
+          "latency_ms": 5215.0
+        }
+      }
+    },
+    {
+      "query_id": "0002-0013-0001",
+      "answerable": true,
+      "gold_answers": [
+        "tỉnh Nam"
+      ],
+      "retrieved_ids": [
+        "p00096",
+        "p00093",
+        "p00103",
+        "p00034",
+        "p00037"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Xã hội Kanak có một số tầng quyền lực tục lệ, từ 4.000-5000 thị tộc dựa trên gia đình thuộc tám khu vực tục lệ hình thành lãnh thổ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Tỉnh Nam.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 2079.2
+        }
+      }
+    },
+    {
+      "query_id": "0012-0027-0006",
+      "answerable": true,
+      "gold_answers": [
+        "tình trạng \"vô chính phủ có tổ chức\" xung quanh ông \"",
+        "vô chính phủ có tổ chức"
+      ],
+      "retrieved_ids": [
+        "p00352",
+        "p00457",
+        "p00459",
+        "p00510",
+        "p00335"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ông cho rằng, tình trạng \"vô chính phủ có tổ chức\" xung quanh ông \"nguy hiểm hơn là vô chính phủ thật sự\".",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6470588235294118,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "\"Vô chính phủ có tổ chức\"",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 4784.9
+        }
+      }
+    },
+    {
+      "query_id": "0012-0020-0007",
+      "answerable": true,
+      "gold_answers": [
+        "60.000",
+        "hơn 60.000 người"
+      ],
+      "retrieved_ids": [
+        "p00345",
+        "p00376",
+        "p00222",
+        "p00478",
+        "p00332"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Hành trình muối này là một trong những chiến dịch thành công nhất của ông với kết quả là hơn 60.000 người bị bắt giam.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2666666666666667,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Hơn 60.000 người.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 2271.6
+        }
+      }
+    },
+    {
+      "query_id": "0001-0073-0004",
+      "answerable": true,
+      "gold_answers": [
+        "Concorde"
+      ],
+      "retrieved_ids": [
+        "p00057",
+        "p00072",
+        "p00032",
+        "p00062",
+        "p00020"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ở giữa quảng trường này là cột đá Obélisque, còn xung quanh quảng trường còn có nhiều tòa nhà quan trọng như Đại sứ quán Hoa Kỳ, khách sạn Crillon.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Quảng trường Concorde.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5,
+          "language_valid": true,
+          "latency_ms": 9710.5
+        }
+      }
+    },
+    {
+      "query_id": "0019-0030-0004",
+      "answerable": true,
+      "gold_answers": [
+        "27%",
+        "27% cư dân"
+      ],
+      "retrieved_ids": [
+        "p00551",
+        "p00544",
+        "p00037",
+        "p00313",
+        "p00550"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Năm 2010, Texas có tổng sản phẩm tiểu bang là (GSP) là 1.207 tỷ đô la Mỹ, xếp hạng thứ nhì tại Hoa Kỳ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "27%",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 11890.1
+        }
+      }
+    },
+    {
+      "query_id": "0012-0034-0007",
+      "answerable": true,
+      "gold_answers": [
+        "ăn chay đủ cung cấp chất dinh dưỡng tối thiểu cho thân thể"
+      ],
+      "retrieved_ids": [
+        "p00359",
+        "p00330",
+        "p00329",
+        "p00271",
+        "p00342"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ông viết sách về chủ đề này trong thời gian du học tại Luân Đôn, sau khi gặp người tranh đấu cho việc ăn chay là Henry Stephens Salt ở những cuộc hội họp của Hội người ăn chay.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.11538461538461538,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Ăn chay đủ cung cấp chất dinh dưỡng tối thiểu cho thân thể.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 6479.3
+        }
+      }
+    },
+    {
+      "query_id": "0004-0006-0007",
+      "answerable": true,
+      "gold_answers": [
+        "Trong một nỗ lực nhằm mở ra khả năng về những quan hệ có thể có với Iraq",
+        "nỗ lực nhằm mở ra khả năng về những quan hệ có thể có với Iraq"
+      ],
+      "retrieved_ids": [
+        "p00173",
+        "p00202",
+        "p00028",
+        "p00516",
+        "p00326"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Trong một nỗ lực nhằm mở ra khả năng về những quan hệ có thể có với Iraq, Hoa Kỳ đã đưa nước này ra khỏi danh sách ủng hộ khủng bố.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.72,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Theo Nguồn 1, Hoa Kỳ xóa Iraq khỏi danh sách nhằm mở ra khả năng quan hệ với Iraq; bề ngoài nhờ cải thiện chính sách của Iraq, nhưng lý do thực sự là để giúp Iraq giành thắng lợi trong cuộc chiến với Iran.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.31746031746031744,
+          "language_valid": true,
+          "latency_ms": 5575.5
+        }
+      }
+    },
+    {
+      "query_id": "0015-0017-0005",
+      "answerable": true,
+      "gold_answers": [
+        "lạm phát cao và thiếu hụt thực phẩm",
+        "đương đầu với lạm phát cao và thiếu hụt thực phẩm"
+      ],
+      "retrieved_ids": [
+        "p00406",
+        "p00428",
+        "p00391",
+        "p00402",
+        "p00135"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Sự sự sụp đổ của Liên Xô vào năm 1989 tác động mạnh đến chính trường và thanh niên Mông Cổ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.06896551724137931,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Lạm phát cao, thiếu hụt thực phẩm và quá trình chuyển đổi sang kinh tế thị trường không vững chắc.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5714285714285715,
+          "language_valid": true,
+          "latency_ms": 8223.1
+        }
+      }
+    },
+    {
+      "query_id": "0004-0003-0007",
+      "answerable": true,
+      "gold_answers": [
+        "Anh"
+      ],
+      "retrieved_ids": [
+        "p00170",
+        "p00184",
+        "p00171",
+        "p00186",
+        "p00189"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Iraq không bao giờ chấp nhận chủ quyền của Kuwait và vào thập niên 1960 Anh đã phải triển khai quân đội để bảo vệ Kuwait khỏi ý định sáp nhập của Iraq.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.05882352941176471,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Anh",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 10766.4
+        }
+      }
+    },
+    {
+      "query_id": "0012-0031-0010",
+      "answerable": true,
+      "gold_answers": [
+        "thiểu số người Hồi giáo sẽ bị bức áp một cách có hệ thống",
+        "thiểu số người Hồi giáo sẽ bị bức áp một cách có hệ thống bởi phần lớn môn đồ Ấn Độ giáo trong một quốc gia Ấn Độ thống nhất"
+      ],
+      "retrieved_ids": [
+        "p00356",
+        "p00354",
+        "p00185",
+        "p00350",
+        "p00365"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Liên minh Hồi giáo luận cứ rằng thiểu số người Hồi giáo sẽ bị bức áp một cách có hệ thống bởi phần lớn môn đồ Ấn Độ giáo trong một quốc gia Ấn Độ thống nhất, và một quốc gia riêng cho người theo Hồi giáo là một giải pháp hợp lý.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7228915662650602,
+          "language_valid": true,
+          "latency_ms": 3.4
+        },
+        "standard_rag": {
+          "answer": "Vì Liên minh Hồi giáo cho rằng thiểu số người Hồi giáo sẽ bị phần lớn người Ấn Độ giáo bức áp một cách có hệ thống trong một quốc gia Ấn Độ thống nhất, nên một quốc gia riêng cho người theo Hồi giáo là giải pháp hợp lý.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.675,
+          "language_valid": true,
+          "latency_ms": 9452.3
+        }
+      }
+    },
+    {
+      "query_id": "0019-0001-0002",
+      "answerable": true,
+      "gold_answers": [
+        "bang Chihuahua, Coahuila, Nuevo León, và Tamaulipas",
+        "các bang Chihuahua, Coahuila, Nuevo León, và Tamaulipas"
+      ],
+      "retrieved_ids": [
+        "p00515",
+        "p00518",
+        "p00516",
+        "p00520",
+        "p00527"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Về mặt địa lý, Texas nằm ở vùng Trung Nam của quốc gia, có biên giới quốc tế với các bang Chihuahua, Coahuila, Nuevo León, và Tamaulipas của México; bên trong Hoa Kỳ, Texas có biên giới với tiểu bang New Mexico ở phía tây, Oklahoma ở phía bắc, Arkansas ở phía đông bắc, và Louisiana ở phía đông.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.23880597014925373,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Chihuahua, Coahuila, Nuevo León, và Tamaulipas.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.923076923076923,
+          "language_valid": true,
+          "latency_ms": 17654.1
+        }
+      }
+    },
+    {
+      "query_id": "0011-0001-0006",
+      "answerable": true,
+      "gold_answers": [
+        "Theos (nghĩa là thần linh) và logos (nghĩa là lời)"
+      ],
+      "retrieved_ids": [
+        "p00318",
+        "p00319",
+        "p00321",
+        "p00324",
+        "p00044"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Thần học giúp các nhà thần học hiểu rõ hơn về truyền thống tôn giáo của chính mình, về các truyền thống tôn giáo khác, cũng như so sánh giữa các truyền thống tôn giáo khác nhau, … Thần học, nguyên nghĩa trong tiếng La Tinh là Theologia, ghép 2 từ trong tiếng Hy Lạp là Theos (nghĩa là thần linh) và logos (nghĩa là lời); vậy Theologia là môn học nghiên cứu về những lời, lý lẽ phù hợp với Thiên Chúa.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.21739130434782605,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Theos (thần linh) và logos (lời).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7499999999999999,
+          "language_valid": true,
+          "latency_ms": 16008.7
+        }
+      }
+    },
+    {
+      "query_id": "0001-0065-0003",
+      "answerable": true,
+      "gold_answers": [
+        "lưu trữ tư liệu quan trọng bậc nhất thế giới với khoảng 30 triệu cuốn sách gồm nhiều phiên bản gốc giá trị",
+        "nơi lưu trữ tư liệu quan trọng bậc nhất thế giới với khoảng 30 triệu cuốn sách gồm nhiều phiên bản gốc giá trị"
+      ],
+      "retrieved_ids": [
+        "p00064",
+        "p00059",
+        "p00065",
+        "p00046",
+        "p00281"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Thư viện quốc gia Pháp được nằm chủ yếu ở Paris, với hai địa điểm chính: \" Richelieu \" ở Quận 2 và \" François-Mitterrand \" ở Quận 13.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.04081632653061224,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Richelieu là thư viện cổ, nhỏ hơn, nằm ở trung tâm; François-Mitterrand là công trình kiến trúc hiện đại gồm bốn tòa nhà cao tầng ở khu Paris Rive Gauche. Chúng thuộc Thư viện quốc gia Pháp, nơi lưu trữ tư liệu quan trọng bậc nhất thế giới với khoảng 30 triệu cuốn sách, gồm nhiều phiên bản gốc giá trị, và là nơi lưu trữ hợp pháp của nước Pháp từ triều vua François Đệ nhất.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.47058823529411764,
+          "language_valid": true,
+          "latency_ms": 35841.8
+        }
+      }
+    },
+    {
+      "query_id": "0001-0065-0001",
+      "answerable": true,
+      "gold_answers": [
+        "triều vua François Đệ nhất",
+        "vua François Đệ nhất"
+      ],
+      "retrieved_ids": [
+        "p00064",
+        "p00065",
+        "p00059",
+        "p00461",
+        "p00439"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Thư viện quốc gia Pháp được nằm chủ yếu ở Paris, với hai địa điểm chính: \" Richelieu \" ở Quận 2 và \" François-Mitterrand \" ở Quận 13.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.06666666666666668,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 20641.1
+        }
+      }
+    },
+    {
+      "query_id": "0001-0076-0001",
+      "answerable": true,
+      "gold_answers": [
+        "thế kỷ 20"
+      ],
+      "retrieved_ids": [
+        "p00075",
+        "p00077",
+        "p00063",
+        "p00437",
+        "p00084"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Vào thế kỷ 18, Paris là trung tâm của triết học Khai sáng với những Rousseau, Voltaire.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.2,
+          "language_valid": true,
+          "latency_ms": 0.5
+        },
+        "standard_rag": {
+          "answer": "Thế kỷ 20.",
+          "abstained": false,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 14077.4
+        }
+      }
+    },
+    {
+      "query_id": "0006-0003-0008",
+      "answerable": true,
+      "gold_answers": [
+        "Tình trạng chính trị hiện nay của hòn đảo, bao gồm khả năng trở thành một tiểu bang của Hoa Kỳ hay được độc lập",
+        "khả năng trở thành một tiểu bang của Hoa Kỳ hay được độc lập"
+      ],
+      "retrieved_ids": [
+        "p00230",
+        "p00240",
+        "p00229",
+        "p00236",
+        "p00235"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tình trạng chính trị hiện nay của hòn đảo, bao gồm khả năng trở thành một tiểu bang của Hoa Kỳ hay được độc lập, đang được bàn cãi rất nhiều tại Puerto Rico.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8474576271186441,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Tình trạng chính trị của Puerto Rico, bao gồm khả năng trở thành một tiểu bang của Hoa Kỳ hay được độc lập.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8749999999999999,
+          "language_valid": true,
+          "latency_ms": 14401.7
+        }
+      }
+    },
+    {
+      "query_id": "0001-0078-0002",
+      "answerable": true,
+      "gold_answers": [
+        "đầu thế kỷ 20"
+      ],
+      "retrieved_ids": [
+        "p00020",
+        "p00519",
+        "p00011",
+        "p00124",
+        "p00439"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Thế kỷ 18 còn là giai đoạn Paris phát triển mạnh mẽ về kinh tế khiến dân số tăng nhanh, đạt tới con số 640.000 người trước khi nổ ra Cách mạng Pháp.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.10526315789473684,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 8513.6
+        }
+      }
+    },
+    {
+      "query_id": "0017-0004-0003",
+      "answerable": true,
+      "gold_answers": [
+        "là một trong số các tổng thống vĩ đại của Hoa Kỳ",
+        "tổng thống vĩ đại của Hoa Kỳ",
+        "đánh giá là một trong số các tổng thống vĩ đại của Hoa Kỳ"
+      ],
+      "retrieved_ids": [
+        "p00440",
+        "p00319",
+        "p00502",
+        "p00477",
+        "p00159"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Roosevelt từ trước đến nay luôn được các học giả đánh giá là một trong số các tổng thống vĩ đại của Hoa Kỳ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.7368421052631579,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Các học giả đánh giá Roosevelt là một trong số các tổng thống vĩ đại của Hoa Kỳ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8750000000000001,
+          "language_valid": true,
+          "latency_ms": 15545.8
+        }
+      }
+    },
+    {
+      "query_id": "0001-0023-0003",
+      "answerable": true,
+      "gold_answers": [
+        "Louis XVI bị hành quyết",
+        "Louis XVI bị hành quyết bởi tội danh âm mưu chống lại tự do nhân dân và an ninh chung"
+      ],
+      "retrieved_ids": [
+        "p00022",
+        "p00372",
+        "p00485",
+        "p00386",
+        "p00356"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ngày 21 tháng 9 năm 1792, chính quyền tuyên bố chấm dứt chế độ quân chủ và lập ra nền Cộng hòa.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.04761904761904762,
+          "language_valid": true,
+          "latency_ms": 0.5
+        },
+        "standard_rag": {
+          "answer": "Ngày 21 tháng 9 năm 1792, chính quyền tuyên bố chấm dứt chế độ quân chủ và lập ra nền Cộng hòa.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.04761904761904762,
+          "language_valid": true,
+          "latency_ms": 43476.4
+        }
+      }
+    },
+    {
+      "query_id": "0015-0020-0005",
+      "answerable": true,
+      "gold_answers": [
+        "Tổ chức phi chính phủ Freedom House"
+      ],
+      "retrieved_ids": [
+        "p00409",
+        "p00424",
+        "p00406",
+        "p00397",
+        "p00429"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tổ chức phi chính phủ Freedom House nhìn nhận Mông Cổ là quốc gia tự do.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.6086956521739131,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Freedom House",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.4444444444444445,
+          "language_valid": true,
+          "latency_ms": 5067.8
+        }
+      }
+    },
+    {
+      "query_id": "0008-0002-0002",
+      "answerable": true,
+      "gold_answers": [
+        "Dominica",
+        "hổ phách ở Dominica",
+        "trong hổ phách ở Dominica"
+      ],
+      "retrieved_ids": [
+        "p00266",
+        "p00268",
+        "p00267",
+        "p00271",
+        "p00101"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Một trong số các loài sống trong Eocene thì còn khoảng 1/10 các chi hiện còn tồn tại đến ngày nay.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.07407407407407407,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Các vùng nhiệt đới.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 14045.1
+        }
+      }
+    },
+    {
+      "query_id": "0013-0006-0006",
+      "answerable": true,
+      "gold_answers": [
+        "Ngày 20 tháng 1 năm 1649"
+      ],
+      "retrieved_ids": [
+        "p00371",
+        "p00306",
+        "p00310",
+        "p00305",
+        "p00369"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ngày 20 tháng 1 năm 1649, trước sức ép của nhân dân và quân đội,Charles bị đưa ra xét xử vì tội \"phản bội\".",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.3870967741935484,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "20 tháng 1 năm 1649",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.9090909090909091,
+          "language_valid": true,
+          "latency_ms": 13940.3
+        }
+      }
+    },
+    {
+      "query_id": "0007-0014-0004",
+      "answerable": true,
+      "gold_answers": [
+        "94% phiếu ủng hộ"
+      ],
+      "retrieved_ids": [
+        "p00252",
+        "p00301",
+        "p00263",
+        "p00230",
+        "p00542"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Theo cơ quan bầu cử của Tskhinvali, cuộc trưng cầu dân ý kết thúc với đa số người đồng ý giành độc lập từ Gruzia với 99% người dân Nam Ossetian ủng hộ trong số 95% người đi bầu và cuộc trưng cầu này đã được giám sát bởi một đội 34 quan sát viên từ Đức, Áo, Ba Lan, Thụy Điển và các quốc gia khác tại 78 điểm bầu cử.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.05263157894736842,
+          "language_valid": true,
+          "latency_ms": 0.8
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 146452.8
+        }
+      }
+    },
+    {
+      "query_id": "0004-0020-0003",
+      "answerable": true,
+      "gold_answers": [
+        "chứng khiến sự hiếu chiến của Iraq đối với các nước Ả Rập khác, và khi được hứa hẹn viện trợ kinh tế cũng như giảm nợ",
+        "khi chứng khiến sự hiếu chiến của Iraq đối với các nước Ả Rập khác, và khi được hứa hẹn viện trợ kinh tế cũng như giảm nợ"
+      ],
+      "retrieved_ids": [
+        "p00187",
+        "p00200",
+        "p00197",
+        "p00201",
+        "p00171"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Nhiều lực lượng đồng minh bất đắc dĩ phải tham gia; một số cảm thấy rằng cuộc chiến là công việc nội bộ của Ả Rập, hay lo ngại sự tăng cường ảnh hưởng của Mỹ ở Kuwait.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.15384615384615383,
+          "language_valid": true,
+          "latency_ms": 0.5
+        },
+        "standard_rag": {
+          "answer": "Nhiều nước đã bị thuyết phục khi chứng kiến sự hiếu chiến của Iraq đối với các nước Ả Rập khác, và khi được hứa hẹn viện trợ kinh tế cũng như giảm nợ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8709677419354839,
+          "language_valid": true,
+          "latency_ms": 58070.2
+        }
+      }
+    },
+    {
+      "query_id": "0017-0063-0009",
+      "answerable": true,
+      "gold_answers": [
+        "chứng chảy máu não (đột quy)",
+        "tổng thống bị chứng chảy máu não (đột quy)"
+      ],
+      "retrieved_ids": [
+        "p00499",
+        "p00494",
+        "p00476",
+        "p00213",
+        "p00227"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Bác sĩ tim trực bên cạnh tổng thống là Howard Bruenn đã chẩn đoán cho ông và cho biết là tổng thống bị chứng chảy máu não (đột quy).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.4736842105263158,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Chứng chảy máu não (đột quỵ).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8333333333333334,
+          "language_valid": true,
+          "latency_ms": 2480.8
+        }
+      }
+    },
+    {
+      "query_id": "0009-0007-0004",
+      "answerable": true,
+      "gold_answers": [
+        "gười lãnh đạo của ông Maurice Pinot, một vichysto-résistant khác, bị thay thế bởi cộng tác viên André Masson",
+        "khi người lãnh đạo của ông Maurice Pinot, một vichysto-résistant khác, bị thay thế bởi cộng tác viên André Masson, nhưng ông vẫn chịu trách nhiệm về centres d'entraides",
+        "người lãnh đạo của ông Maurice Pinot, một vichysto-résistant khác, bị thay thế bởi cộng tác viên André Masson"
+      ],
+      "retrieved_ids": [
+        "p00278",
+        "p00353",
+        "p00064",
+        "p00291",
+        "p00059"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Mitterrand rời ban thư ký tháng 1 năm 1943, khi người lãnh đạo của ông Maurice Pinot, một vichysto-résistant khác, bị thay thế bởi cộng tác viên André Masson, nhưng ông vẫn chịu trách nhiệm về centres d'entraides.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.8732394366197184,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Maurice Pinot bị thay thế bởi André Masson.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.5714285714285715,
+          "language_valid": true,
+          "latency_ms": 8696.1
+        }
+      }
+    },
+    {
+      "query_id": "0005-0007-0002",
+      "answerable": true,
+      "gold_answers": [
+        "bảo tồn các nguồn nước ngọt"
+      ],
+      "retrieved_ids": [
+        "p00225",
+        "p00176",
+        "p00217",
+        "p00194",
+        "p00195"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Hồng Kông đang sử dụng một cách tích cực nước biển để dội rửa nhà vệ sinh trên phạm vi cả thành phố.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.06896551724137931,
+          "language_valid": true,
+          "latency_ms": 0.9
+        },
+        "standard_rag": {
+          "answer": "Để dội rửa nhà vệ sinh, nhằm bảo tồn các nguồn nước ngọt.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.631578947368421,
+          "language_valid": true,
+          "latency_ms": 14940.7
+        }
+      }
+    },
+    {
+      "query_id": "0001-0002-0002",
+      "answerable": true,
+      "gold_answers": [
+        "Sự nhộn nhịp, các công trình kiến trúc và không khí nghệ sĩ"
+      ],
+      "retrieved_ids": [
+        "p00497",
+        "p00492",
+        "p00502",
+        "p00457",
+        "p00180"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Đây là một điều nhượng bộ của ông chưa từng có trước đây đối với sự bất lực của cơ thể mình (ông mở đầu bài diễn văn bằng lời nói như sau: \"Tôi hy vọng mọi người sẽ tha thứ cho tôi vì phải ngồi đây một cách bất thường để diễn thuyết những gì tôi muốn nói, nhưng...nó giúp cho tôi dễ dàng hơn khi không phải đeo khoảng 10 pound thép quanh phía dưới chân tôi.\" Đây là lần duy nhất ông nhắc đến sự tàn phế của mình trước đám đông).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.03669724770642201,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 10143.9
+        }
+      }
+    },
+    {
+      "query_id": "0009-0028-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00496",
+        "p00448",
+        "p00174",
+        "p00466",
+        "p00498"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ngày hôm sau, trên tuần dương hạm Quincy, ông gặp Quốc vương Ai Cập là Farouk I và Hoàng đế Ethiopia là Haile Selassie.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.7
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 10897.5
+        }
+      }
+    },
+    {
+      "query_id": "0003-0032-0003",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00145",
+        "p00510",
+        "p00411",
+        "p00130",
+        "p00409"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Trong thực tiễn, họ sử dụng các quyền hành pháp theo chỉ dẫn của Nội các, đây là một hội đồng gồm các bộ trưởng của Vương quốc chịu trách nhiệm trước Chúng nghị viện, do Thủ tướng Canada lựa chọn và đứng đầu, thủ tướng là người đứng đầu chính phủ (Thủ tướng hiện tại là ông Justin Trudeau).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.7
+        },
+        "standard_rag": {
+          "answer": "Toàn quyền bổ nhiệm thủ tướng.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 29808.1
+        }
+      }
+    },
+    {
+      "query_id": "0017-0038-0004",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00474",
+        "p00479",
+        "p00471",
+        "p00289",
+        "p00473"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Năm 1935, thời điểm Ý xâm lăng Ethiopia, Quốc hội Hoa Kỳ thông qua Đạo luật Trung lập, ra lệnh cấm vận chuyển vũ khí từ Mỹ đến các nước tham chiến.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Roosevelt chống đối Đạo luật Trung lập vì cho rằng nó trừng phạt nạn nhân xâm lược (Ethiopia) và hạn chế quyền tổng thống trong việc trợ giúp các quốc gia thân thiện; nhưng do công chúng ủng hộ quá lớn, ông buộc phải ký ban hành. Ngày 2/9/1940, ông công khai thách thức các đạo luật trung lập bằng việc ký hiệp ước trao 50 khu trục hạm cho Anh Quốc để đổi lấy quyền sử dụng căn cứ hải quân, báo trước Hiệp ước Lend-Lease.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 82428.0
+        }
+      }
+    },
+    {
+      "query_id": "0017-0010-0002",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00448",
+        "p00443",
+        "p00187",
+        "p00480",
+        "p00496"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Đại hội đảng toàn quốc năm 1920 của Đảng Dân chủ chọn Roosevelt là ứng viên Phó Tổng thống Hoa Kỳ trong liên danh tranh cử tổng thống của Thống đốc tiểu bang Ohio là James M.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 28581.5
+        }
+      }
+    },
+    {
+      "query_id": "0013-0002-0005",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00367",
+        "p00366",
+        "p00487",
+        "p00376",
+        "p00387"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ông còn nghĩ đền nhiều cách gây quỹ làm mất lòng dân, chẳng hạn như để trang bị một hạm đội, nhà vua đòi thần dân nộp \"tiền đóng tàu\" (ship money) và coi đây không phải là một thứ thuế.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.7
+        },
+        "standard_rag": {
+          "answer": "Thần dân Anh đã phản kháng việc nộp “tiền đóng tàu”; John Hampden từ chối nộp 20 bảng Anh và đưa vấn đề ra tòa án để tranh cãi.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 40159.7
+        }
+      }
+    },
+    {
+      "query_id": "0003-0005-0006",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00123",
+        "p00118",
+        "p00122",
+        "p00091",
+        "p00523"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Nhà thám hiểm người Pháp Samuel de Champlain đến vào năm 1603, và thiết lập các khu định cư thường xuyên đầu tiên của người châu Âu tại Port Royal vào năm 1605 và thành phố Québec vào năm 1608.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 10435.1
+        }
+      }
+    },
+    {
+      "query_id": "0004-0025-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00168",
+        "p00484",
+        "p00017",
+        "p00376",
+        "p00482"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Sự kiện dẫn tới chiến tranh là việc Iraq xâm chiếm Kuwait ngày 2 tháng 8 năm 1990, sau khi Iraq cho rằng (nhưng không chứng minh được) Kuwait đã \"khoan nghiêng\" giếng dầu của họ vào biên giới Iraq.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Phe đồng minh có tổn thất nhân mạng ở mức tối thiểu.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 7541.0
+        }
+      }
+    },
+    {
+      "query_id": "0009-0015-0007",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00286",
+        "p00293",
+        "p00291",
+        "p00292",
+        "p00252"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Quả thực, ở vòng hai cuộc bầu cử lập pháp, Mitterrand được những người Cộng sản ủng hộ tuy nhiên Nhóm Công nhân Quốc tế Pháp (SFIO) từ chối rút lui ứng cử viên của họ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.8
+        },
+        "standard_rag": {
+          "answer": "Vòng một.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 69133.9
+        }
+      }
+    },
+    {
+      "query_id": "0012-0003-0009",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00328",
+        "p00326",
+        "p00345",
+        "p00334",
+        "p00337"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Nguyên lý Chấp trì chân lý của Gandhi (có gốc tiếng Phạn: satya là \"chân lý\" và ā-graha là \"nắm lấy\", \"nắm chặt\"), cũng thường được dịch là \"con đường chân thật\", \"truy tầm chân lý\", đã cảm kích những người chủ trương hành động giành tự do như Đạt-lại Lạt-ma Đăng-châu Gia-mục-thố (Tenzin Gyatso), Lech Wałęsa, Stephen Biko, Aung San Suu Kyi và Nelson Mandela.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 34747.2
+        }
+      }
+    },
+    {
+      "query_id": "0017-0036-0006",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00472",
+        "p00451",
+        "p00445",
+        "p00446",
+        "p00495"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Vì quyết tâm vượt qua sự chống đối của các đảng viên Dân chủ bảo thủ (đa số từ miền Nam Hoa Kỳ), Roosevelt tự dấn thân vào các cuộc bầu cử sơ bộ đảng Dân chủ năm 1938, tích cực vận động cho các ứng viên có thái độ ủng hộ hơn dành cho chương trình cải cách New Deal.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Vì quyết tâm vượt qua sự chống đối của các đảng viên Dân chủ bảo thủ (đa số từ miền Nam Hoa Kỳ), Roosevelt tự dấn thân vào các cuộc bầu cử sơ bộ đảng Dân chủ năm 1938, tích cực vận động cho các ứng viên có thái độ ủng hộ hơn dành cho chương trình cải cách New Deal.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 27731.3
+        }
+      }
+    },
+    {
+      "query_id": "0003-0015-0003",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00128",
+        "p00531",
+        "p00476",
+        "p00479",
+        "p00467"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Anh Quốc và Hoa Kỳ ký kết Hiệp định Oregon vào năm 1846, qua đó kết thúc tranh chấp biên giới Oregon, kéo dài biên giới về phía tây dọc theo vĩ độ 49° Bắc.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 5302.3
+        }
+      }
+    },
+    {
+      "query_id": "0004-0032-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00194",
+        "p00488",
+        "p00490",
+        "p00199",
+        "p00131"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Ngoài ra, họ cũng nhắm vào các mục tiêu có thể sử dụng được cho cả mục đích dân sự và quân sự: các nhà máy điện, các lò phản ứng hạt nhân, các thiết bị thông tin liên lạc, các cảng biển, các nhà máy lọc và phân phối xăng dầu, các đường sắt và các cây cầu.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.5
+        },
+        "standard_rag": {
+          "answer": "Lực lượng Vệ binh cộng hoà Iraq.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 151019.7
+        }
+      }
+    },
+    {
+      "query_id": "0012-0023-0003",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00348",
+        "p00351",
+        "p00341",
+        "p00350",
+        "p00361"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Khi đảng Quốc dân Đại hội Ấn Độ tranh luận về tuyển cử và chấp nhận quyền chính trị dưới kế hoạch liên bang, Gandhi quyết định rời đảng.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 33863.1
+        }
+      }
+    },
+    {
+      "query_id": "0015-0016-0003",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00405",
+        "p00391",
+        "p00174",
+        "p00300",
+        "p00428"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Chính sách ngoại giao của ông ghi dấu ấn với các nỗ lực nhằm đưa Mông Cổ hợp tác mật thiết hơn nữa với Liên Xô.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "LỖI: TimeoutError()",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 180058.0
+        }
+      }
+    },
+    {
+      "query_id": "0010-0007-0003",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00317",
+        "p00313",
+        "p00311",
+        "p00316",
+        "p00230"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Bồ câu nhà được nuôi tại nhiều nước để lấy thịt bồ câu đây là loài tương đối dễ nuôi.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Vì bồ câu nhà tương đối dễ nuôi, không đòi hỏi kỹ thuật chăm sóc, chi phí cao mà hiệu quả nhanh; dễ nuôi, nhanh lớn, ít bệnh, sinh sản tốt và có thể tận dụng sản phẩm nông nghiệp dư thừa.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 57355.4
+        }
+      }
+    },
+    {
+      "query_id": "0006-0009-0003",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00207",
+        "p00242",
+        "p00141",
+        "p00391",
+        "p00231"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Những vùng cấm bay này (bắt đầu từ vĩ tuyến 36 Bắc và vĩ tuyến 32 Nam) chủ yếu do Mỹ và Anh kiểm soát, mặc dù Pháp cũng có tham gia ít nhiều.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.6
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 123768.4
+        }
+      }
+    },
+    {
+      "query_id": "0002-0023-0005",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00113",
+        "p00102",
+        "p00100",
+        "p00098",
+        "p00110"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Đội tuyển bóng đá Nouvelle-Calédonie bắt đầu thi đấu vào năm 1950, và được nhận vào FIFA vào năm 2004.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "2004",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 34376.7
+        }
+      }
+    },
+    {
+      "query_id": "0017-0024-0006",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00460",
+        "p00479",
+        "p00425",
+        "p00454",
+        "p00477"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Roosevelt vẫn giữ vững lập trường của mình nhưng vào năm 1936 vì sức ép của các cựu chiến binh, đạo luật tiền thưởng khồng lồ được thông qua mặc dù bị ông phủ quyết.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Vì sức ép của các cựu chiến binh.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 64060.4
+        }
+      }
+    },
+    {
+      "query_id": "0001-0072-0004",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00071",
+        "p00070",
+        "p00188",
+        "p00205",
+        "p00267"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Sau đó, những người nhập cư tiếp tục giúp cho ẩm thực Paris thêm đa dạng với những món ăn của các dân tộc trên khắp thế giới như Ý, Ấn Độ, Trung Quốc, Việt Nam, Thái Lan...",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 29362.6
+        }
+      }
+    },
+    {
+      "query_id": "0015-0007-0004",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00396",
+        "p00246",
+        "p00103",
+        "p00397",
+        "p00136"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Dưới sự cai trị của những người thừa kế của ông, đế quốc kéo dài từ Ukraina hiện nay đến bán đảo Triều Tiên, và từ Siberia đến vịnh Oman và Việt Nam hiện nay, chiếm diện tích khoảng 33.000.000 kilômét vuông (13.000.000 sq mi), (22% tổng diện tích đất liền của Trái đất), dân số đạt trên 100 triệu người (khoảng một phần tư tổng dân số thế giới vào đương thời).",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 23592.0
+        }
+      }
+    },
+    {
+      "query_id": "0015-0015-0007",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00263",
+        "p00404",
+        "p00407",
+        "p00535",
+        "p00445"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Hội đồng bầu cử cũng đã đưa ra một kết quả rất cao, với ước tính hơn 42.000 cử tri cả người Ossetia (quận Java và Tskhinvali) và người Gruzia (Eredvi, Tamarasheni, vân vân) trong các cộng đồng Nam Ossetia và Sanakoev được thông báo đã nhận được 96% phiếu bầu.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 26905.2
+        }
+      }
+    },
+    {
+      "query_id": "0003-0006-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00125",
+        "p00119",
+        "p00124",
+        "p00186",
+        "p00334"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Điều này khiến cho nhiều cư dân Mười ba Thuộc địa tức giận, kích động tình cảm chống Anh trong những năm trước khi bùng nổ Cách mạng Mỹ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 6662.8
+        }
+      }
+    },
+    {
+      "query_id": "0001-0088-0003",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00087",
+        "p00086",
+        "p00166",
+        "p00549",
+        "p00066"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Sau năm 1870, Paul Dukas, Camille Saint-Saëns hay Georges Bizet đã làm nước Pháp trở thành bậc thầy của âm nhạc ba lê.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 8714.9
+        }
+      }
+    },
+    {
+      "query_id": "0015-0019-0002",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00408",
+        "p00542",
+        "p00481",
+        "p00407",
+        "p00299"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Trong bầu cử tổng thống năm 2009, ứng cử viên của Đảng Dân chủ là Tsakhiagiin Elbegdorj chiến thắng trước tổng thống đương nhiệm Nambaryn Enkhbayar của Đảng Nhân dân Cách mạng.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 12433.0
+        }
+      }
+    },
+    {
+      "query_id": "0004-0023-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00355",
+        "p00297",
+        "p00178",
+        "p00170",
+        "p00190"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Những nhà lãnh đạo cố cựu của Quốc hội biết rõ Gandhi sẽ phản đối cực lực sự phân chia, nhưng họ cũng thừa biết là Quốc hội không tiến bước nếu không có sự thoả thuận của ông vì sự hỗ trợ trong đảng và toàn quốc dành cho Gandhi rất sâu rộng.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "LỖI: TimeoutError()",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 180101.7
+        }
+      }
+    },
+    {
+      "query_id": "0002-0014-0008",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00104",
+        "p00147",
+        "p00297",
+        "p00336",
+        "p00236"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Người gốc Âu được chia thành vài nhóm: Caldoche thường được định nghĩa là người sinh tại Nouvelle-Calédonie có quan hệ tổ tiên từ những người Pháp định cư ban đầu.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 10867.0
+        }
+      }
+    },
+    {
+      "query_id": "0004-0024-0007",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00191",
+        "p00295",
+        "p00164",
+        "p00485",
+        "p00404"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Năm tiếng đồng hồ sau những cuộc tấn công đầu tiên, đài phát thanh quốc gia Bagdad phát đi một giọng nói được xác định là của Saddam Hussein tuyên bố rằng \"Cuộc chiến vĩ đại, cuộc chiến của mọi cuộc chiến đã bắt đầu.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 19104.5
+        }
+      }
+    },
+    {
+      "query_id": "0018-0005-0003",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00512",
+        "p00513",
+        "p00508",
+        "p00509",
+        "p00243"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tuy nhiên, việc duy trì mức tăng trưởng khả quan đang gặp những thách đố lớn do Uganda tham gia vào cuộc chiến ở Cộng hòa Dân chủ Congo, tình trạng tham nhũng gia tăng và chậm trễ trong quyết định cải cách kinh tế của Chính phủ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 30197.3
+        }
+      }
+    },
+    {
+      "query_id": "0003-0026-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00139",
+        "p00010",
+        "p00099",
+        "p00241",
+        "p00220"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Mùa đông có thể khắc nghiệt tại nhiều nơi của quốc gia, đặc biệt là trong vùng nội địa và các tỉnh thảo nguyên, là những nơi có khí hậu lục địa với nhiệt độ trung bình ngày là gần −15 °C (5 °F), song có thể xuống dưới −40 °C (−40 °F) với các cơn gió lạnh dữ dội.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 5977.5
+        }
+      }
+    },
+    {
+      "query_id": "0012-0031-0003",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00356",
+        "p00399",
+        "p00423",
+        "p00039",
+        "p00431"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Xứ sở mới của người theo Hồi giáo được kiến lập từ các vùng Đông và Tây Ấn Độ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 1.2
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 48173.8
+        }
+      }
+    },
+    {
+      "query_id": "0009-0023-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00294",
+        "p00287",
+        "p00293",
+        "p00278",
+        "p00470"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Sự khởi đầu nhiệm kỳ đầu tiên của ông được đánh dấu bởi một chính sách kinh tế cánh tả dựa trên 110 Đề xuất cho Pháp và Common Program năm 1972 giữa Đảng Xã hội, Đảng Cộng sản và Đảng Cấp tiến cánh Tả.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "Sự khởi đầu nhiệm kỳ đầu tiên của ông được đánh dấu bởi một chính sách kinh tế cánh tả dựa trên 110 Đề xuất cho Pháp và Common Program năm 1972.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 10703.8
+        }
+      }
+    },
+    {
+      "query_id": "0017-0018-0002",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00454",
+        "p00480",
+        "p00451",
+        "p00445",
+        "p00448"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Roosevelt vận động tranh cử theo cương lĩnh của Đảng Dân chủ với chủ trương \"cắt giảm mạnh và ngay tức khắc tất cả chi tiêu công cộng\", \"bãi bỏ các cơ quan và các ủy ban vô dụng, kết hợp lại các cơ quan văn phòng và loại trừ lãng phí quan liêu.\" Ngày 23 tháng 9, Roosevelt đưa ra nhận định u ám rằng \"bộ máy công nghiệp của chúng ta được xây dựng; vấn đề hiện nay là có phải chăng dưới những điều kiện hiện tại nó được xây quá mức hay không.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.5
+        },
+        "standard_rag": {
+          "answer": "Theo ngữ cảnh, Roosevelt vận động tranh cử theo cương lĩnh Đảng Dân chủ với chủ trương: “cắt giảm mạnh và ngay tức khắc tất cả chi tiêu công cộng”, “bãi bỏ các cơ quan và các ủy ban vô dụng, kết hợp lại các cơ quan văn phòng và loại trừ lãng phí quan liêu.”",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 108430.4
+        }
+      }
+    },
+    {
+      "query_id": "0007-0014-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00263",
+        "p00262",
+        "p00230",
+        "p00376",
+        "p00238"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Hội đồng bầu cử cũng đã đưa ra một kết quả rất cao, với ước tính hơn 42.000 cử tri cả người Ossetia (quận Java và Tskhinvali) và người Gruzia (Eredvi, Tamarasheni, vân vân) trong các cộng đồng Nam Ossetia và Sanakoev được thông báo đã nhận được 96% phiếu bầu.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 16078.5
+        }
+      }
+    },
+    {
+      "query_id": "0002-0007-0002",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00104",
+        "p00113",
+        "p00100",
+        "p00097",
+        "p00108"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Theo điều tra năm 2009, trong số 71.721 người gốc Âu tại Nouvelle-Calédonie, có 32.354 người sinh tại quần đảo, 33.551 người sinh tại các nơi khác của Pháp, và 5.816 người sinh tại nước ngoài.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 1.0
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 55014.8
+        }
+      }
+    },
+    {
+      "query_id": "0016-0002-0004",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00444",
+        "p00270",
+        "p00014",
+        "p00393",
+        "p00012"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Một trong những mối quan hệ này là với cô thư ký của Eleanor, Lucy Mercer, chỉ một thời gian ngắn sau khi Mercer đến nhận việc vào đầu năm 1914.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 7828.7
+        }
+      }
+    },
+    {
+      "query_id": "0003-0012-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00184",
+        "p00490",
+        "p00183",
+        "p00189",
+        "p00210"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Quyết định của phương Tây nhằm đẩy lùi cuộc xâm lược của Iraq thực chất có mục đích chính là để ngăn Iraq xâm lược Ả Rập Xê Út, một nước có tầm quan trọng hơn rất nhiều so với Kuwait, như việc Iraq đã làm với Kuwait.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.6
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 29765.7
+        }
+      }
+    },
+    {
+      "query_id": "0004-0051-0005",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00376",
+        "p00192",
+        "p00190",
+        "p00184",
+        "p00180"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Các lãnh chúa nắm mọi quyền quyết định tôn giáo nào thần dân của họ phải theo, bao nhiêu quân công quốc của họ có quyền huy động, ngay cả quyền quyết định trong thời chiến: về phe với Hoàng đế, hoặc chống lại Hoàng đế, hoặc giữ trung lập.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 58534.5
+        }
+      }
+    },
+    {
+      "query_id": "0001-0071-0002",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00061",
+        "p00060",
+        "p00046",
+        "p00044",
+        "p00069"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Theo thiết kế của kiến trúc sư Bernard Tschumi, một khu vực lò mổ cũ đã trở thành công viên La Villette - công viên lớn nhất trong nội ô Paris hiện nay.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Dựa vào sự chỉ đạo của kỹ sư Jean-Charles Alphand và họa sĩ phong cảnh Jean-Pierre Barillet-Deschamps.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 10372.8
+        }
+      }
+    },
+    {
+      "query_id": "0006-0009-0009",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00239",
+        "p00238",
+        "p00236",
+        "p00229",
+        "p00240"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Người đứng đầu nhà nước của Puerto Rico là tổng thống Mỹ.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "Thống đốc Puerto Rico có thể chỉ định các thành viên của Tòa án Tối cao Puerto Rico, với sự thông qua của Thượng viện.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 21030.3
+        }
+      }
+    },
+    {
+      "query_id": "0010-0007-0005",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00317",
+        "p00382",
+        "p00494",
+        "p00311",
+        "p00313"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Chim bồ câu siêu thịt, có thể nặng từ 1,2 kg trở lên, dễ nuôi, nhanh lớn, ít bệnh, sinh sản tốt.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 21840.7
+        }
+      }
+    },
+    {
+      "query_id": "0009-0028-0005",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00299",
+        "p00293",
+        "p00308",
+        "p00272",
+        "p00285"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Mitterrand chỉ định cựu Bộ trưởng Tài chính của đảng Tập hợp vì nền Cộng hoà Edouard Balladur làm Thủ tướng.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 12601.1
+        }
+      }
+    },
+    {
+      "query_id": "0003-0028-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00141",
+        "p00142",
+        "p00029",
+        "p00132",
+        "p00553"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Giống như nhiều quốc gia phát triển khác, ngành công nghiệp dịch vụ chi phối kinh tế Canada, cung cấp việc làm cho khoảng ba phần tư lực lượng lao động toàn quốc.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 16337.5
+        }
+      }
+    },
+    {
+      "query_id": "0002-0020-0007",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00102",
+        "p00157",
+        "p00228",
+        "p00104",
+        "p00107"
+      ],
+      "hits": {
+        "1": false,
+        "5": false
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Tăng trưởng dân số ở mức cao tại tỉnh Nam (2,3% mỗi năm từ 1996 đến 2009), vừa phải tại tỉnh Bắc (0,7%), song âm tại Quần đảo Loyauté.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 5857.2
+        }
+      }
+    },
+    {
+      "query_id": "0002-0003-0002",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00093",
+        "p00127",
+        "p00376",
+        "p00400",
+        "p00476"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Điều này dây ra một phản ứng bạo lực vào năm 1878 khi tù trưởng cấp cao Atal của La Foa thống nhất nhiều bộ lạc tại miền trung và phát động chiến tranh du kích, khiến 200 người Pháp và 1.000 người Kanak thiệt mạng.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "200 người Pháp.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 8820.4
+        }
+      }
+    },
+    {
+      "query_id": "0002-0003-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00093",
+        "p00103",
+        "p00111",
+        "p00096",
+        "p00042"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Dân số người Kanak giảm từ 60.000 vào năm 1878 xuống còn 27.100 vào năm 1921, và quy mô công đồng không tăng trở lại cho đến thập niên 1930.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "60.000",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 4992.9
+        }
+      }
+    },
+    {
+      "query_id": "0012-0011-0004",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00336",
+        "p00480",
+        "p00151",
+        "p00466",
+        "p00028"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Như đã thực hiện trong cuộc chiến Nam Phi, Gandhi khuyến khích việc ủng hộ người Anh trong cuộc chiến (Chiến tranh thế giới thứ nhất) và chủ động khích lệ người Ấn tham gia quân đội.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.4
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 6198.9
+        }
+      }
+    },
+    {
+      "query_id": "0017-0058-0004",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00494",
+        "p00502",
+        "p00449",
+        "p00450",
+        "p00476"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Trạng thái căng thẳng của bệnh bại liệt và sự gắng sức chịu đựng của ông trong suốt trên 20 năm cộng thêm những năm làm việc căng thẳng và cả đời hút thuốc đã làm hao mòn sức khỏe của ông.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "Có tin lan truyền rằng Roosevelt bị mổ để lấy khối u ác tính phía trên mắt trái, nhưng chưa được xác nhận và công chúng không hề hay biết.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 25682.3
+        }
+      }
+    },
+    {
+      "query_id": "0001-0032-0001",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00031",
+        "p00418",
+        "p00068",
+        "p00297",
+        "p00025"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Được phát triển từ những năm 1960, khu vực La Défense ở phía tây thành phố với các nhà chọc trời như tháp Areva, tháp EDF, tháp Gan...",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.2
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN.",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 9532.7
+        }
+      }
+    },
+    {
+      "query_id": "0017-0026-0009",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00462",
+        "p00184",
+        "p00440",
+        "p00453",
+        "p00243"
+      ],
+      "hits": {
+        "1": true,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Trong khi New Deal lần thứ nhất năm 1933 được đa số thành phần xã hội rộng rãi ủng hộ, New Deal lần thứ hai phải đối mặt với cộng đồng thương mại.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 3814.8
+        }
+      }
+    },
+    {
+      "query_id": "0009-0023-0002",
+      "answerable": false,
+      "gold_answers": [],
+      "retrieved_ids": [
+        "p00297",
+        "p00294",
+        "p00473",
+        "p00043",
+        "p00457"
+      ],
+      "hits": {
+        "1": false,
+        "5": true
+      },
+      "arms": {
+        "extractive": {
+          "answer": "Nhiệm kỳ thứ hai của ông được ghi dấu bởi Thoả thuận Matignon về New Caledonia, việc thành lập Bù đắp Thu nhập Tối thiểu (RMI), đảm bảo một mức độ thu nhập tối thiểu cho những người bị tước đoạt bất kỳ hình thức thu nhập nào, việc tái lập thuế đoàn kết vào tài sản, đã từng bị xoá bỏ dưới thời chính phủ Chirac, việc thể chế thuế xã hội chung, cải cách Chính sách Nông nghiệp Chung, Đạo luật Gayssot năm 1990 về tuyên bố hận thù và bác bỏ Holocaust, Đạo luật Arpaillange về cung cấp tài chính cho các đảng chính trị, cải cách luật hình sự và Đạo luật Evin về những địa điểm hút thuốc nơi công cộng.",
+          "abstained": false,
+          "em": 0.0,
+          "f1": 0.0,
+          "language_valid": true,
+          "latency_ms": 0.3
+        },
+        "standard_rag": {
+          "answer": "KHÔNG ĐỦ THÔNG TIN",
+          "abstained": true,
+          "em": 1.0,
+          "f1": 1.0,
+          "language_valid": true,
+          "latency_ms": 62138.7
+        }
+      }
+    }
+  ]
+}

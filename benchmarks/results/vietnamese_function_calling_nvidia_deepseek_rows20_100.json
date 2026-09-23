@@ -1,0 +1,1921 @@
+{
+  "benchmark": "vietnamese-function-calling",
+  "split": "test",
+  "model": "nvidia:deepseek-ai/deepseek-v4.1-flash",
+  "sample_size": 80,
+  "usage": {
+    "model_calls": 105,
+    "call_errors": 0,
+    "max_calls_budget": 200,
+    "stopped_early": false,
+    "prompt_chars": 860502,
+    "completion_chars": 9788
+  },
+  "tool_match_rate": 0.975,
+  "argument_match_rate": 0.9375,
+  "exact_match_rate": 0.9375,
+  "results": [
+    {
+      "task_id": "20",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {}
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {}
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 8953.4,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{}}"
+    },
+    {
+      "task_id": "21",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {}
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {}
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 17699.4,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{}}"
+    },
+    {
+      "task_id": "22",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "A123"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "A123"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 7312.9,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"A123\"}}"
+    },
+    {
+      "task_id": "23",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "B456"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "B456"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 5767.3,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"B456\"}}"
+    },
+    {
+      "task_id": "24",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "C789"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "C789"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 5168.5,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"C789\"}}"
+    },
+    {
+      "task_id": "25",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "D012"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "D012"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 5557.7,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"D012\"}}"
+    },
+    {
+      "task_id": "26",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "E345"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "E345"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 7389.9,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"E345\"}}"
+    },
+    {
+      "task_id": "27",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "F678"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "F678"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 10597.9,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"F678\"}}"
+    },
+    {
+      "task_id": "28",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "G901"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "G901"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 5560.8,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"G901\"}}"
+    },
+    {
+      "task_id": "29",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "H234"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "H234"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 4825.1,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"H234\"}}"
+    },
+    {
+      "task_id": "30",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "I567"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "I567"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 2813.2,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"I567\"}}"
+    },
+    {
+      "task_id": "31",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "J890"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "J890"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 2670.3,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"J890\"}}"
+    },
+    {
+      "task_id": "32",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "K123"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "K123"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 8484.6,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"K123\"}}"
+    },
+    {
+      "task_id": "33",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "L456"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "L456"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 5734.2,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"L456\"}}"
+    },
+    {
+      "task_id": "34",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "M789"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "M789"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 5569.8,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"M789\"}}"
+    },
+    {
+      "task_id": "35",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "N012"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "N012"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 3299.3,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"N012\"}}"
+    },
+    {
+      "task_id": "36",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "P345"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "P345"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 4828.3,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"P345\"}}"
+    },
+    {
+      "task_id": "37",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "Q678"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "Q678"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 6188.5,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"Q678\"}}"
+    },
+    {
+      "task_id": "38",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "R901"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "R901"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 9219.3,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"R901\"}}"
+    },
+    {
+      "task_id": "39",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "S234"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "S234"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 1260.9,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"S234\"}}"
+    },
+    {
+      "task_id": "40",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "T567"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "view_tutor_details",
+        "arguments": {
+          "tutor_id": "T567"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 5802.0,
+      "raw_output": "{\"name\":\"view_tutor_details\",\"arguments\":{\"tutor_id\":\"T567\"}}"
+    },
+    {
+      "task_id": "41",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS123",
+          "student_name": "Lan",
+          "session_date": "ngày mai",
+          "session_time": "9 giờ sáng"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS123",
+          "student_name": "Lan",
+          "session_date": "ngày mai",
+          "session_time": "9 giờ sáng"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 10894.0,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS123\",\"student_name\":\"Lan\",\"session_date\":\"ngày mai\",\"session_time\":\"9 giờ sáng\"}}"
+    },
+    {
+      "task_id": "42",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS456",
+          "student_name": "Minh",
+          "session_date": "25/10",
+          "session_time": "10h sáng"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS456",
+          "student_name": "Minh",
+          "session_date": "25/10",
+          "session_time": "10h sáng"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 3019.2,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS456\",\"student_name\":\"Minh\",\"session_date\":\"25/10\",\"session_time\":\"10h sáng\"}}"
+    },
+    {
+      "task_id": "43",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS789",
+          "student_name": "Tuấn",
+          "session_date": "26/10",
+          "session_time": "3 giờ chiều"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS789",
+          "student_name": "Tuấn",
+          "session_date": "26/10",
+          "session_time": "3 giờ chiều"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 12923.0,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS789\",\"student_name\":\"Tuấn\",\"session_date\":\"26/10\",\"session_time\":\"3 giờ chiều\"}}"
+    },
+    {
+      "task_id": "44",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS001",
+          "student_name": "An",
+          "session_date": "27/10",
+          "session_time": "4 giờ chiều"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS001",
+          "student_name": "An",
+          "session_date": "27/10",
+          "session_time": "4 giờ chiều"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 33303.4,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS001\",\"student_name\":\"bé An\",\"session_date\":\"27/10\",\"session_time\":\"4 giờ chiều\"}}"
+    },
+    {
+      "task_id": "45",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS112",
+          "student_name": "Bình",
+          "session_date": "28/10",
+          "session_time": "8 giờ tối"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS112",
+          "student_name": "Bình",
+          "session_date": "28/10",
+          "session_time": "8 giờ tối"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 16768.9,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS112\",\"student_name\":\"Bình\",\"session_date\":\"28/10\",\"session_time\":\"8 giờ tối\"}}"
+    },
+    {
+      "task_id": "46",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS223",
+          "student_name": "Linh",
+          "session_date": "29/10",
+          "session_time": "2 giờ chiều"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS223",
+          "student_name": "Linh",
+          "session_date": "29/10",
+          "session_time": "2 giờ chiều"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 17376.7,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS223\",\"student_name\":\"Linh\",\"session_date\":\"29/10\",\"session_time\":\"2 giờ chiều\"}}"
+    },
+    {
+      "task_id": "47",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS334",
+          "student_name": "Nam",
+          "session_date": "30/10",
+          "session_time": "7 giờ tối"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS334",
+          "student_name": "Nam",
+          "session_date": "30/10",
+          "session_time": "7 giờ tối"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 19133.8,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS334\",\"student_name\":\"Nam\",\"session_date\":\"30/10\",\"session_time\":\"7 giờ tối\"}}"
+    },
+    {
+      "task_id": "48",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS445",
+          "student_name": "Vân",
+          "session_date": "31/10",
+          "session_time": "1 giờ chiều"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS445",
+          "student_name": "Vân",
+          "session_date": "31/10",
+          "session_time": "1 giờ chiều"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 4559.6,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS445\",\"student_name\":\"Vân\",\"session_date\":\"31/10\",\"session_time\":\"1 giờ chiều\"}}"
+    },
+    {
+      "task_id": "49",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS556",
+          "student_name": "Hà",
+          "session_date": "1/11",
+          "session_time": "6 giờ tối"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS556",
+          "student_name": "Hà",
+          "session_date": "1/11",
+          "session_time": "6 giờ tối"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 17240.7,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS556\",\"student_name\":\"Hà\",\"session_date\":\"1/11\",\"session_time\":\"6 giờ tối\"}}"
+    },
+    {
+      "task_id": "50",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS667",
+          "student_name": "Phương",
+          "session_date": "2/11",
+          "session_time": "5 giờ chiều"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "book_tutoring_session",
+        "arguments": {
+          "tutor_id": "GS667",
+          "student_name": "Phương",
+          "session_date": "2/11",
+          "session_time": "5 giờ chiều"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 70028.7,
+      "raw_output": "{\"name\":\"book_tutoring_session\",\"arguments\":{\"tutor_id\":\"GS667\",\"student_name\":\"Phương\",\"session_date\":\"2/11\",\"session_time\":\"5 giờ chiều\"}}"
+    },
+    {
+      "task_id": "51",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1234",
+          "reason": "tôi bị bệnh"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1234",
+          "reason": "tôi bị bệnh"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 7897.3,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"1234\",\"reason\":\"tôi bị bệnh\"}}"
+    },
+    {
+      "task_id": "52",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "5678",
+          "reason": "tôi có việc gấp"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "5678",
+          "reason": "tôi có việc gấp"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 21631.9,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"5678\",\"reason\":\"tôi có việc gấp\"}}"
+    },
+    {
+      "task_id": "53",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "9101",
+          "reason": "tôi phải đi công tác"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "9101",
+          "reason": "tôi phải đi công tác"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 4021.6,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"9101\",\"reason\":\"tôi phải đi công tác\"}}"
+    },
+    {
+      "task_id": "54",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1121"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1121"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 12893.3,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"1121\"}}"
+    },
+    {
+      "task_id": "55",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1314",
+          "reason": "lý do cá nhân"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1314",
+          "reason": "lý do cá nhân"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 10726.2,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"1314\",\"reason\":\"lý do cá nhân\"}}"
+    },
+    {
+      "task_id": "56",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1516",
+          "reason": "tôi bận đột xuất"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1516",
+          "reason": "tôi bận đột xuất"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 21206.7,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"1516\",\"reason\":\"tôi bận đột xuất\"}}"
+    },
+    {
+      "task_id": "57",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1718"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1718",
+          "reason": "Tôi không thể tham gia buổi học 1718, xin hủy."
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 24831.8,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"1718\",\"reason\":\"Tôi không thể tham gia buổi học 1718, xin hủy.\"}}"
+    },
+    {
+      "task_id": "58",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1920",
+          "reason": "tôi có lịch khác"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "1920",
+          "reason": "tôi có lịch khác."
+        }
+      },
+      "tool_match": true,
+      "argument_match": false,
+      "exact_match": false,
+      "latency_ms": 30261.4,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"1920\",\"reason\":\"tôi có lịch khác.\"}}"
+    },
+    {
+      "task_id": "59",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2122",
+          "reason": "tôi bị ốm"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2122",
+          "reason": "tôi bị ốm"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 41134.0,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"2122\",\"reason\":\"tôi bị ốm\"}}"
+    },
+    {
+      "task_id": "60",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2324"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2324"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 4608.9,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"2324\"}}"
+    },
+    {
+      "task_id": "61",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2526",
+          "reason": "gia đình có việc"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2526",
+          "reason": "gia đình có việc"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 26941.4,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"2526\",\"reason\":\"gia đình có việc\"}}"
+    },
+    {
+      "task_id": "62",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2728",
+          "reason": "tôi phải về quê"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2728",
+          "reason": "tôi phải về quê"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 4026.9,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"2728\",\"reason\":\"tôi phải về quê\"}}"
+    },
+    {
+      "task_id": "63",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2930",
+          "reason": "lý do sức khỏe"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "2930",
+          "reason": "lý do sức khỏe"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 2495.2,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"2930\",\"reason\":\"sức khỏe\"}}"
+    },
+    {
+      "task_id": "64",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "3132"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "3132"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 7335.0,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"3132\"}}"
+    },
+    {
+      "task_id": "65",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "3334",
+          "reason": "kẹt xe"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "3334",
+          "reason": "kẹt xe"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 14734.4,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"3334\",\"reason\":\"kẹt xe\"}}"
+    },
+    {
+      "task_id": "66",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "3536",
+          "reason": "tôi có hẹn trước"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "cancel_tutoring_session",
+        "arguments": {
+          "session_id": "3536",
+          "reason": "tôi có hẹn trước"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 2101.9,
+      "raw_output": "{\"name\":\"cancel_tutoring_session\",\"arguments\":{\"session_id\":\"3536\",\"reason\":\"tôi có hẹn trước\"}}"
+    },
+    {
+      "task_id": "67",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "123",
+          "new_date": "ngày mai",
+          "new_time": "9 giờ sáng"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "123",
+          "new_date": "ngày mai",
+          "new_time": "9 giờ sáng"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 17262.0,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"123\",\"new_date\":\"ngày mai\",\"new_time\":\"9 giờ sáng\"}}"
+    },
+    {
+      "task_id": "68",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "ABC",
+          "new_date": "thứ Năm tuần sau",
+          "new_time": "3 giờ chiều"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "ABC",
+          "new_date": "thứ Năm tuần sau"
+        }
+      },
+      "tool_match": true,
+      "argument_match": false,
+      "exact_match": false,
+      "latency_ms": 6193.0,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"ABC\",\"new_date\":\"thứ Năm tuần sau\",\"new_time\":\"3 giờ chiều\"}}"
+    },
+    {
+      "task_id": "69",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "XYZ",
+          "new_date": "thứ Hai",
+          "new_time": "10 giờ sáng"
+        }
+      },
+      "predicted": {
+        "decision": "parse_error"
+      },
+      "tool_match": false,
+      "argument_match": false,
+      "exact_match": false,
+      "latency_ms": 28887.8,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"XYZ"
+    },
+    {
+      "task_id": "70",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "PQR",
+          "new_date": "25/10",
+          "new_time": "14h"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "PQR",
+          "new_date": "25/10",
+          "new_time": "14h"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 30434.4,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"PQR\",\"new_date\":\"25/10\",\"new_time\":\"14h\"}}"
+    },
+    {
+      "task_id": "71",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "MNO",
+          "new_date": "ngày kia",
+          "new_time": "15h30"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "MNO",
+          "new_date": "ngày kia",
+          "new_time": "15h30"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 4350.7,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"MNO\",\"new_date\":\"ngày kia\",\"new_time\":\"15h30\"}}"
+    },
+    {
+      "task_id": "72",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "567",
+          "new_date": "20/11",
+          "new_time": "17 giờ"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "567",
+          "new_date": "20/11",
+          "new_time": "17 giờ"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 61839.1,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"567\",\"new_date\":\"20/11\",\"new_time\":\"17 giờ\"}}"
+    },
+    {
+      "task_id": "73",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "STU",
+          "new_date": "thứ Sáu",
+          "new_time": "11 giờ trưa"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "STU",
+          "new_date": "thứ Sáu",
+          "new_time": "11 giờ trưa"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 19508.5,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"STU\",\"new_date\":\"thứ Sáu\",\"new_time\":\"11 giờ trưa\"}}"
+    },
+    {
+      "task_id": "74",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "VWX",
+          "new_date": "thứ Bảy",
+          "new_time": "8 giờ tối"
+        }
+      },
+      "predicted": {
+        "decision": "no_tool"
+      },
+      "tool_match": false,
+      "argument_match": false,
+      "exact_match": false,
+      "latency_ms": 55677.7,
+      "raw_output": ""
+    },
+    {
+      "task_id": "75",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "YZA",
+          "new_date": "1/12",
+          "new_time": "16 giờ"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "YZA",
+          "new_date": "1/12",
+          "new_time": "16 giờ"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 17929.9,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"YZA\",\"new_date\":\"1/12\",\"new_time\":\"16 giờ\"}}"
+    },
+    {
+      "task_id": "76",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "BCD",
+          "new_date": "ngày mai"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "BCD",
+          "new_date": "ngày mai"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 16277.5,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"BCD\",\"new_date\":\"ngày mai\"}}"
+    },
+    {
+      "task_id": "77",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "EFG",
+          "new_time": "2 giờ chiều"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "EFG",
+          "new_time": "2 giờ chiều"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 16760.0,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"EFG\",\"new_time\":\"2 giờ chiều\"}}"
+    },
+    {
+      "task_id": "78",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "HIJ",
+          "new_date": "ngày kia"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "HIJ",
+          "new_date": "ngày kia"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 32093.5,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"HIJ\",\"new_date\":\"ngày kia\"}}"
+    },
+    {
+      "task_id": "79",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "KLM",
+          "new_time": "7 giờ tối"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "KLM",
+          "new_time": "7 giờ tối"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 4218.0,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"KLM\",\"new_time\":\"7 giờ tối\"}}"
+    },
+    {
+      "task_id": "80",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "NOP",
+          "new_date": "thứ Tư tuần sau"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "NOP",
+          "new_date": "thứ Tư tuần sau"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 15369.4,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"NOP\",\"new_date\":\"thứ Tư tuần sau\"}}"
+    },
+    {
+      "task_id": "81",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "QRS",
+          "new_time": "9h sáng"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "QRS",
+          "new_time": "9h sáng"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 3057.4,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"QRS\",\"new_time\":\"9h sáng\"}}"
+    },
+    {
+      "task_id": "82",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "890"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "reschedule_tutoring_session",
+        "arguments": {
+          "session_id": "890"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 9661.2,
+      "raw_output": "{\"name\":\"reschedule_tutoring_session\",\"arguments\":{\"session_id\":\"890\"}}"
+    },
+    {
+      "task_id": "83",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Toán",
+          "level": "lớp 12"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Toán",
+          "level": "lớp 12"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 40744.3,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"Toán\",\"level\":\"lớp 12\"}}"
+    },
+    {
+      "task_id": "84",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "tiếng Anh",
+          "level": "sơ cấp"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "tiếng Anh",
+          "level": "sơ cấp"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 5935.4,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"tiếng Anh\",\"level\":\"sơ cấp\"}}"
+    },
+    {
+      "task_id": "85",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "lập trình Python",
+          "level": "người mới bắt đầu"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "lập trình Python",
+          "level": "người mới bắt đầu"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 33935.0,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"lập trình Python\",\"level\":\"người mới bắt đầu\"}}"
+    },
+    {
+      "task_id": "86",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Vật Lý",
+          "goal": "ôn thi đại học"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Vật Lý",
+          "goal": "ôn thi đại học"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 12227.0,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"Vật Lý\",\"goal\":\"ôn thi đại học\"}}"
+    },
+    {
+      "task_id": "87",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "tiếng Nhật",
+          "level": "nâng cao",
+          "goal": "cải thiện kỹ năng giao tiếp"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "tiếng Nhật",
+          "level": "nâng cao",
+          "goal": "cải thiện kỹ năng giao tiếp"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 7038.8,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"tiếng Nhật\",\"level\":\"nâng cao\",\"goal\":\"cải thiện kỹ năng giao tiếp\"}}"
+    },
+    {
+      "task_id": "88",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Hóa học",
+          "level": "lớp 10"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Hóa học",
+          "level": "lớp 10"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 22093.2,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"Hóa học\",\"level\":\"lớp 10\"}}"
+    },
+    {
+      "task_id": "89",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Sinh học",
+          "goal": "ôn thi tốt nghiệp"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Sinh học",
+          "goal": "ôn thi tốt nghiệp"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 13527.9,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"Sinh học\",\"goal\":\"ôn thi tốt nghiệp\"}}"
+    },
+    {
+      "task_id": "90",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "vẽ tranh",
+          "level": "cơ bản"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "vẽ tranh",
+          "level": "cơ bản"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 52817.1,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"vẽ tranh\",\"level\":\"cơ bản\"}}"
+    },
+    {
+      "task_id": "91",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "đàn guitar",
+          "level": "người mới học"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "đàn guitar",
+          "level": "người mới học"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 18334.4,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"đàn guitar\",\"level\":\"người mới học\"}}"
+    },
+    {
+      "task_id": "92",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "nấu ăn"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "nấu ăn"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 28752.1,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"nấu ăn\"}}"
+    },
+    {
+      "task_id": "93",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "tiếng Trung",
+          "goal": "giao tiếp"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "tiếng Trung",
+          "goal": "giao tiếp"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 30771.5,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"tiếng Trung\",\"goal\":\"giao tiếp\"}}"
+    },
+    {
+      "task_id": "94",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "marketing online"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "marketing online"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 9319.1,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"marketing online\"}}"
+    },
+    {
+      "task_id": "95",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Toán",
+          "level": "lớp 11",
+          "goal": "ôn tập"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "Toán",
+          "level": "lớp 11",
+          "goal": "ôn tập"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 29118.6,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"Toán\",\"level\":\"lớp 11\",\"goal\":\"ôn tập\"}}"
+    },
+    {
+      "task_id": "96",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "tiếng Anh",
+          "level": "trẻ em"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "tiếng Anh"
+        }
+      },
+      "tool_match": true,
+      "argument_match": false,
+      "exact_match": false,
+      "latency_ms": 18179.2,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"tiếng Anh\"}}"
+    },
+    {
+      "task_id": "97",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "lập trình web",
+          "level": "nâng cao"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "lập trình web",
+          "level": "nâng cao"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 5899.7,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"lập trình web\",\"level\":\"nâng cao\"}}"
+    },
+    {
+      "task_id": "98",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "nhiếp ảnh"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "nhiếp ảnh"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 15072.9,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"nhiếp ảnh\"}}"
+    },
+    {
+      "task_id": "99",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "thiết kế đồ họa"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "recommend_learning_materials",
+        "arguments": {
+          "subject": "thiết kế đồ họa",
+          "goal": "học thiết kế đồ họa"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 37262.8,
+      "raw_output": "{\"name\":\"recommend_learning_materials\",\"arguments\":{\"subject\":\"thiết kế đồ họa\",\"goal\":\"học thiết kế đồ họa\"}}"
+    }
+  ]
+}

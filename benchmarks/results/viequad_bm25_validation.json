@@ -1,0 +1,21 @@
+{
+  "benchmark": "mteb/VieQuADRetrieval",
+  "split": "validation",
+  "method": "bm25_baseline",
+  "queries": 2048,
+  "corpus_documents": 2490,
+  "qrels": 4096,
+  "metrics": {
+    "recall@1": 0.58056640625,
+    "recall@5": 0.857421875,
+    "recall@10": 0.91796875,
+    "mrr@10": 0.7009961325024802,
+    "ndcg@10": 0.4919463752918994
+  },
+  "latency_seconds": {
+    "mean": 0.035188764038571796,
+    "p50": 0.03268314799993277,
+    "p95": 0.05596122400004333,
+    "total": 72.099794675
+  }
+}

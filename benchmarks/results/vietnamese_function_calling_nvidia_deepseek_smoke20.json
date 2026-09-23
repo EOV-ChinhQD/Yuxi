@@ -1,0 +1,466 @@
+{
+  "benchmark": "vietnamese-function-calling",
+  "split": "test",
+  "model": "nvidia:deepseek-ai/deepseek-v4.1-flash",
+  "sample_size": 20,
+  "tool_match_rate": 1.0,
+  "argument_match_rate": 0.9,
+  "exact_match_rate": 0.9,
+  "results": [
+    {
+      "task_id": "0",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Toán",
+          "location": "Hà Nội"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Toán",
+          "location": "Hà Nội"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 6260.5,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Toán\",\"location\":\"Hà Nội\"}}"
+    },
+    {
+      "task_id": "1",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Lý"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Lý"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 6256.8,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Lý\"}}"
+    },
+    {
+      "task_id": "2",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Hóa",
+          "location": "TP. Hồ Chí Minh"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Hóa",
+          "location": "TP. Hồ Chí Minh"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 11731.1,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Hóa\",\"location\":\"TP. Hồ Chí Minh\"}}"
+    },
+    {
+      "task_id": "3",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Sinh học"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Sinh học"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 11353.1,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Sinh học\"}}"
+    },
+    {
+      "task_id": "4",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Tiếng Anh",
+          "location": "Đà Nẵng"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Tiếng Anh",
+          "location": "Đà Nẵng"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 10784.4,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Tiếng Anh\",\"location\":\"Đà Nẵng\"}}"
+    },
+    {
+      "task_id": "5",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Văn"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Văn"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 15095.5,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Văn\"}}"
+    },
+    {
+      "task_id": "6",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Toán"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Toán"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 2473.5,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Toán\"}}"
+    },
+    {
+      "task_id": "7",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Lý",
+          "location": "quận 1"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Lý",
+          "location": "quận 1"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 4867.0,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Lý\",\"location\":\"quận 1\"}}"
+    },
+    {
+      "task_id": "8",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Hóa",
+          "location": "Biên Hòa"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Hóa",
+          "location": "Biên Hòa"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 7373.2,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Hóa\",\"location\":\"Biên Hòa\"}}"
+    },
+    {
+      "task_id": "9",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Sinh học"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Sinh học"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 2347.0,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Sinh học\"}}"
+    },
+    {
+      "task_id": "10",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Tiếng Anh"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Tiếng Anh giao tiếp"
+        }
+      },
+      "tool_match": true,
+      "argument_match": false,
+      "exact_match": false,
+      "latency_ms": 9556.3,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Tiếng Anh giao tiếp\"}}"
+    },
+    {
+      "task_id": "11",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Toán"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Toán"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 7688.5,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Toán\"}}"
+    },
+    {
+      "task_id": "12",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Lý"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Lý"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 3291.3,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Lý\"}}"
+    },
+    {
+      "task_id": "13",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Hóa"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Hóa hữu cơ"
+        }
+      },
+      "tool_match": true,
+      "argument_match": false,
+      "exact_match": false,
+      "latency_ms": 8260.1,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Hóa hữu cơ\"}}"
+    },
+    {
+      "task_id": "14",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Sinh học"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Sinh học",
+          "location": "tại nhà"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 37453.2,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Sinh học\",\"location\":\"tại nhà\"}}"
+    },
+    {
+      "task_id": "15",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Tiếng Anh"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Tiếng Anh"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 20399.4,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Tiếng Anh\"}}"
+    },
+    {
+      "task_id": "16",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Toán"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Toán"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 6179.6,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Toán\"}}"
+    },
+    {
+      "task_id": "17",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Lý",
+          "location": "Hà Đông"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Lý",
+          "location": "Hà Đông"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 11519.2,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Lý\",\"location\":\"Hà Đông\"}}"
+    },
+    {
+      "task_id": "18",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Hóa",
+          "location": "quận 7"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Hóa",
+          "location": "quận 7"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 13704.5,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Hóa\",\"location\":\"quận 7\"}}"
+    },
+    {
+      "task_id": "19",
+      "expected": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Sinh học"
+        }
+      },
+      "predicted": {
+        "decision": "tool_call",
+        "tool_name": "search_tutors",
+        "arguments": {
+          "subject": "Sinh học"
+        }
+      },
+      "tool_match": true,
+      "argument_match": true,
+      "exact_match": true,
+      "latency_ms": 15441.2,
+      "raw_output": "{\"name\":\"search_tutors\",\"arguments\":{\"subject\":\"Sinh học\"}}"
+    }
+  ]
+}

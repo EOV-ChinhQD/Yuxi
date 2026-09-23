@@ -1,0 +1,16 @@
+{
+  "dataset": "uit-viquad-2",
+  "split": "validation",
+  "source_rows": 3814,
+  "corpus_documents": 557,
+  "sampled_queries": 150,
+  "n_answerable": 100,
+  "n_impossible": 50,
+  "seed": 42,
+  "sampling_rule": "seeded shuffle, first N per answerability class",
+  "files": {
+    "corpus.jsonl": "57127d1793feee118d18319a6d31225f797e4c4a750480b7ecab6a97f81ff821",
+    "queries.jsonl": "926fcf2edd80ba20ef762bbbb8dd3a22112bcfa389ea755602789bb9609295b7",
+    "qrels.jsonl": "51ede10a0ffdac361944376e3c764a3abefe344cb784c242f49bacc9cef61b0d"
+  }
+}
