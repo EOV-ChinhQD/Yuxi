@@ -48,7 +48,7 @@ TÓM TẮT
 
 Các mô hình ngôn ngữ lớn có khả năng sinh văn bản tự nhiên nhưng còn hạn chế khi xử lý tri thức chuyên biệt, dữ liệu nội bộ và thông tin cần đối chiếu nguồn. Đồ án này nghiên cứu và xây dựng Yuxi, một nền tảng hỏi–đáp tăng cường truy xuất trên ngữ liệu tiếng Việt, hỗ trợ tài liệu văn bản, PDF và ảnh. Hệ thống kết hợp truy xuất từ khóa, truy xuất vector, đồ thị tri thức, tái xếp hạng kết quả và cơ chế kiểm chứng dựa trên suy luận ngôn ngữ tự nhiên. Luồng xử lý được điều phối bằng đồ thị trạng thái nhằm hỗ trợ lựa chọn công cụ, truy xuất nhiều bước và hiệu chỉnh câu trả lời.
 
-Đồ án đề xuất một khung đánh giá gồm các tầng: chất lượng trích xuất tài liệu, hiệu năng truy xuất, chất lượng trả lời đầu cuối, khả năng gọi công cụ của tác tử, mức độ nhất quán với nguồn, độ trễ và chi phí. Các thí nghiệm được thiết kế theo nguyên tắc tách tập hiệu chỉnh và tập đánh giá, lưu cấu hình và artifact để bảo đảm khả năng tái lập. Tại thời điểm hoàn thiện bản thảo, một số bộ đánh giá thực tế cho OCR, NLI và agent tool-calling vẫn đang được xây dựng; do đó, báo cáo chỉ công bố những kết quả có bằng chứng thực nghiệm đầy đủ.
+Đồ án đề xuất một khung đánh giá gồm các tầng: chất lượng trích xuất tài liệu, hiệu năng truy xuất, chất lượng trả lời đầu cuối, khả năng gọi công cụ của tác tử, mức độ nhất quán với nguồn, độ trễ và chi phí. Các thí nghiệm được thiết kế theo nguyên tắc tách tập hiệu chỉnh và tập đánh giá, lưu cấu hình và artifact để bảo đảm khả năng tái lập. NLI trên ViWikiFC đã có kết quả full dual-config; OCR tài liệu in và một số nhánh agent/retrieval vẫn đang được mở rộng, nên báo cáo chỉ công bố những kết quả có bằng chứng thực nghiệm đầy đủ.
 
 Từ khóa: truy xuất tăng cường tạo sinh, RAG, tác tử trí tuệ nhân tạo, truy xuất thông tin, đồ thị tri thức, OCR, NLI, tiếng Việt.
 
@@ -56,7 +56,7 @@ ABSTRACT
 
 Large language models can generate fluent natural-language responses but remain limited when handling domain-specific knowledge, private data, and claims that require source verification. This thesis presents Yuxi, a retrieval-augmented question-answering platform for Vietnamese documents, including text, PDF, and image inputs. The system combines lexical retrieval, dense retrieval, knowledge-graph expansion, reranking, and natural-language-inference-based verification. A state-graph workflow coordinates tool selection, multi-step retrieval, and answer correction.
 
-The thesis also proposes a layered evaluation framework covering document extraction, retrieval effectiveness, end-to-end answer quality, agent tool use, factual grounding, latency, and cost. Experiments are designed with separate calibration and evaluation splits, versioned configurations, and reproducible artifacts. At the time of this draft, several real-world evaluation sets for OCR, NLI, and agent tool calling are still under construction; therefore, only results supported by verifiable experimental artifacts are intended for final publication.
+The thesis also proposes a layered evaluation framework covering document extraction, retrieval effectiveness, end-to-end answer quality, agent tool use, factual grounding, latency, and cost. Experiments are designed with separate calibration and evaluation splits, versioned configurations, and reproducible artifacts. The ViWikiFC NLI evaluation has a full dual-configuration result; OCR and some agent/retrieval arms remain incomplete, so only results supported by verifiable artifacts are intended for final publication.
 
 Keywords: retrieval-augmented generation, RAG, AI agent, information retrieval, knowledge graph, OCR, natural language inference, Vietnamese.
 
@@ -494,7 +494,7 @@ EXP-E2E-01	End-to-end QA	Test split	EM, F1, citation, abstention	`Measured` (150
 
 EXP-AGT-01	Agent trajectory	Tool-calling suite	Task success, tool/argument accuracy	`Measured` (VN-FC 100 + When2Call 60)
 
-EXP-NLI-01	Claim grounding	Gold claim set	Precision, Recall, F1, confusion matrix	Chưa đo (full 2.091 bị gián đoạn do tắt máy; chỉ smoke pipeline 6 mẫu; chạy lại trên GPU)
+EXP-NLI-01	Claim grounding	ViWikiFC test, 2.091 cặp	Precision, Recall, F1, confusion matrix	`Measured` (dual-config trên GPU; `viwikifc_nli_dual_2091.json`)
 
 EXP-SYS-01	Latency và chi phí	Request traces	p50, p95, p99, cost/query	`Measured` một phần (latency từ run E2E/agent/NLI; chi phí `Estimated` vì dùng free trial)
 
@@ -662,27 +662,39 @@ Recovery phải được định nghĩa trước, ví dụ: tác vụ hoàn tấ
 
 4.11. Đánh giá NLI
 
-Gold \ Predicted	Entailment	Neutral	Contradiction
+Gold \\ Predicted	Entailment	Neutral	Contradiction
 
-Entailment	—	—	—
+Production config — hàng là gold, cột là predicted
 
-Neutral	—	—	—
+Entailment	662	27	19
 
-Contradiction	—	—	—
+Neutral	453	98	126
+
+Contradiction	188	91	427
+
+Standard 3-way config — hàng là gold, cột là predicted
+
+Entailment	442	4	262
+
+Neutral	342	5	330
+
+Contradiction	305	13	388
 
 Chỉ số	Giá trị	Trạng thái
 
-Macro F1	—	`Missing`
+Production accuracy / macro F1	56,77% / 51,54%	`Measured`
 
-Contradiction precision	—	`Missing`
+Standard accuracy / macro F1	39,93% / 32,22%	`Measured`
 
-Contradiction recall	—	`Missing`
+Production contradiction precision / recall	74,65% / 60,48%	`Measured`
 
-False-negative rate	—	`Missing`
+Standard contradiction precision / recall	39,59% / 54,96%	`Measured`
 
-Hallucination rate trước correction	—	`Missing`
+Contradiction false-negative rate	39,52% production; 45,04% standard	`Measured`
 
-Hallucination rate sau correction	—	`Missing`
+Hallucination rate trước correction	—	`Not measured by ViWikiFC`
+
+Hallucination rate sau correction	—	`Not measured by ViWikiFC`
 
 Số lượng nhãn do mô hình dự đoán không được dùng thay cho accuracy hoặc confusion matrix.
 
@@ -704,7 +716,7 @@ LLM TTFT	—	—	—	—	—	`Missing` (adapter không tách TTFT)
 
 Generation (DeepSeek V4.1 Flash, reasoning)	11,7s	—	—	không cache	150	`Measured` (mean 23,1s p50 11,7s; `uit-viquad-2_e2e_150.json`)
 
-NLI	—	—	—	—	—	Đang chạy (2.091 cặp × 2 cấu hình, CPU)
+NLI	8,9ms production / 26,2ms standard	—	—	2.091/config	`Measured` (GPU, p50; p95 chưa được runner ghi)
 
 E2E trực tiếp	11,7s	—	—	không cache	150	`Measured` (standard_rag; p95 tính sau khi chốt mẫu, không cộng dồn phân vị thành phần)
 
@@ -726,7 +738,7 @@ Extraction/OCR	—	—	—	`Deferred` theo OCR
 
 Retrieval miss (E2E: hit@1 đúng nhưng abstain / EM sai)	—	—	—	Phân tích sau khi chốt NLI (xem §4.8: hit@1 77,33% nhưng EM 45,33%)
 
-Unsupported generation	—	—	—	Chờ NLI dual-config
+Unsupported generation	—	—	—	Chờ phân tích claim-level trên artifact E2E; NLI benchmark đã có kết quả độc lập
 
 Tool/argument error (VN-FC: 7/100 EM sai)	7	7%	—	Phân tích chi tiết sau (tách lỗi gold-chuẩn-hóa khỏi lỗi slot)
 
@@ -748,11 +760,11 @@ CHƯƠNG 5. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
 
 [CẦN CẬP NHẬT SAU THỰC NGHIỆM: viết một đoạn trả lời cho từng RQ1–RQ4, kèm số liệu và tham chiếu bảng. Không dùng “vượt trội”, “đột phá”, “chặn hoàn toàn” hoặc “production-ready” nếu dữ liệu không chứng minh.]
 
-Trả lời sơ bộ từ số liệu đã chốt (cập nhật tiếp sau NLI):
+Trả lời sơ bộ từ số liệu đã chốt:
 
 RQ1 (retrieval): mới chỉ đo arm BM25 whitespace trên VieQuAD (R@10 91,80%, MRR@10 0,7010, N=2.048) và BM25 trên corpus E2E 557 docs (hit@1 77,33%). Chưa đủ cơ sở so sánh với dense/hybrid/consensus (`Blocked`, §4.6).
 
-RQ2 (NLI + tác tử): E2E standard RAG đạt EM 45,33% (95% CI [37,58; 53,32]), F1 66,94%, abstention P 79,49% / R 62,00% trên 150 mẫu; đóng góp của NLI gate chưa tách được — confusion matrix dual-config phải chạy lại full 2.091 trên GPU (bản CPU bị gián đoạn; xem §4.11).
+RQ2 (NLI + tác tử): E2E standard RAG đạt EM 45,33% (95% CI [37,58; 53,32]), F1 66,94%, abstention P 79,49% / R 62,00% trên 150 mẫu. Trên ViWikiFC, production config đạt accuracy 56,77%, macro F1 51,54%; standard 3-way config đạt 39,93%, macro F1 32,22%. Đây là đánh giá năng lực NLI trên claim-evidence, chưa phải phép đo nhân quả của NLI gate lên E2E RAG; đóng góp của gate vẫn chưa tách được (§4.11).
 
 RQ3 (agent): VN-FC 100 mẫu tool match 98% (95% CI [93,00; 99,45]), EM 93%; When2Call 60 mẫu accuracy 66,67% (95% CI [54,06; 77,27]), lỗi tập trung ở over-trigger tool_call (15/20). Recovery chưa đo chính thức (§4.10, §4.13).
 
@@ -760,7 +772,7 @@ RQ4 (trade-off): E2E standard RAG p50 11,7s (reasoning model) so với retrieval
 
 5.2. Hạn chế
 
-Tại thời điểm của bản thảo, bộ OCR tài liệu in thực tế, tập NLI có nhãn gold và agent task suite chưa hoàn thiện. Một số benchmark lớn chưa được chạy đầy đủ do hạn chế dữ liệu, hạ tầng hoặc license. Ngoài ra, benchmark đọc hiểu từ Wikipedia chưa phản ánh đầy đủ tài liệu nội bộ, bảng biểu phức tạp và truy vấn nhiều bước trong môi trường doanh nghiệp.
+Tại thời điểm của bản thảo, bộ OCR tài liệu in thực tế chưa được score; một số benchmark agent và retrieval lớn chưa được chạy đầy đủ do hạn chế dữ liệu, hạ tầng hoặc license. ViWikiFC là bộ fact-verification có evidence, nên kết quả NLI không thay thế cho đánh giá claim-level trên các câu trả lời E2E. Ngoài ra, benchmark đọc hiểu từ Wikipedia chưa phản ánh đầy đủ tài liệu nội bộ, bảng biểu phức tạp và truy vấn nhiều bước trong môi trường doanh nghiệp.
 
 Bổ sung từ đợt đo 2026-09-22: E2E 150 mẫu cho thấy khoảng cách giữa retrieval (hit@1 77,33%) và generation (EM 45,33%) — trả lời sai không chỉ do miss chứng cứ; abstention recall mới 62% nghĩa là 38% câu unanswerable vẫn bị trả lời bừa; mẫu E2E 150 và agent 60–100 còn nhỏ nên khoảng tin cậy rộng (±8–15 điểm phần trăm); chi phí suy luận chưa đo bằng tiền thật; toàn bộ model calls đi qua trial rate-limit của NVIDIA nên khả năng tái lập dài hạn phụ thuộc nhà cung cấp.
 
@@ -770,7 +782,7 @@ NLI chỉ kiểm tra quan hệ giữa claim và context được cung cấp; nó
 
 Hoàn thiện benchmark OCR tiếng Việt có ground truth và kiểm tra license.
 
-Xây dựng tập NLI và agent tool-calling có gán nhãn độc lập.
+Mở rộng tập NLI và agent tool-calling có gán nhãn độc lập, đồng thời đo claim-level trên các câu trả lời E2E.
 
 Đánh giá retrieval trên nhiều domain và dữ liệu ngoài Wikipedia.
 
@@ -818,7 +830,7 @@ C-003	VN-FC tool match 98%, EM 93% trên 100 mẫu	EXP-AGT-01	Bảng 4.10	`bench
 
 C-004	When2Call accuracy 66,67% trên 60 mẫu phân tầng	EXP-AGT-01	Bảng 4.10	`benchmarks/results/when2call_nvidia_deepseek_stratified60.json`	`Measured`
 
-C-005	[NLI: chờ chạy lại full 2.091 trên GPU]	EXP-NLI-01	Bảng 4.11	`benchmarks/results/viwikifc_nli_dual_smoke6.json` (pipeline check, N=6)	Chưa đo
+C-005	ViWikiFC NLI dual-config trên 2.091 cặp: production accuracy 56,77%, contradiction recall 60,48%	EXP-NLI-01	Bảng 4.11	`benchmarks/results/viwikifc_nli_dual_2091.json`	`Measured`
 
 PHỤ LỤC B. CẤU HÌNH HỆ THỐNG
 
@@ -856,7 +868,7 @@ reranker:
 
 nli:
 
-  model: "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7 (CPU, transformers zero-shot pipeline)"
+  model: "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7 (GPU, transformers zero-shot pipeline)"
 
   threshold: "production path: entailment > 0.6, neutral > 0.3 (xem nli_verifier.py:226)"
 
@@ -874,7 +886,7 @@ llm_runs:
 
   timeout_s: 180
 
-measurement_machine: "Intel i7-10850H 6 cores, RAM 15.6GB, CPU-only, Windows + Docker"
+measurement_machine: "NVIDIA GeForce RTX 3060 12GB, Docker; NLI run uses CUDA 13.0"
 
 ```
 
@@ -896,7 +908,7 @@ agent_contract_validation.json	EXP-AGT-01	—	`benchmarks/results/`	2.899 + 3.65
 
 usage_log.jsonl	EXP-SYS-01	—	`benchmarks/results/`	Calls/tokens từng run có guard (không ước tính token)
 
-viwikifc_nli_dual_2091.json	EXP-NLI-01	—	`benchmarks/results/`	Đang chạy (dual-config × 2.091 cặp)
+viwikifc_nli_dual_2091.json	EXP-NLI-01	—	`benchmarks/results/`	ViWikiFC full 2.091 cặp, dual-config trên GPU; production accuracy 56,77%, standard accuracy 39,93%
 
 Ghi chú: result/artifact dưới `benchmarks/` bị gitignore theo thiết kế; tái tạo bằng command trong §4.5 + dataset revision trong `source-lock.json`.
 

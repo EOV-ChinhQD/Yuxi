@@ -78,6 +78,13 @@ services:
       timeout: 15s
       retries: 8
       start_period: 180s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]
+              capabilities: [gpu]
     depends_on:
       postgres:
         condition: service_healthy

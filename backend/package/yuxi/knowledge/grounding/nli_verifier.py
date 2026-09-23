@@ -25,16 +25,18 @@ def get_nli_pipeline():
     global _nli_pipeline
     if _nli_pipeline is None:
         from transformers import pipeline
+        import torch
 
         # Load MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7
         model_name = "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7"
+        device = 0 if torch.cuda.is_available() else -1
         logger.info(f"Loading NLI model {model_name}...")
         _nli_pipeline = pipeline(
             "zero-shot-classification",
             model=model_name,
-            device=-1,  # CPU by default, can be customized
+            device=device,
         )
-        logger.info("NLI model loaded successfully.")
+        logger.info("NLI model loaded successfully on %s.", "cuda:0" if device == 0 else "cpu")
     return _nli_pipeline
 
 

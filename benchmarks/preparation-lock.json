@@ -42,7 +42,9 @@
       "records": 2091,
       "artifact": "benchmarks/artifacts/nli/viwikifc/test.jsonl",
       "sha256": "72828f5b1aee3eaceee6705013c1cfdd43f8e7801e1ae7cedcf17b2b8524f3c",
-      "status": "prepared_not_scored"
+      "status": "gpu_scored_full_2091",
+      "result": "benchmarks/results/viwikifc_nli_dual_2091.json",
+      "result_sha256": "4f961e441f28298ca4537a938f61a857f2ce06bb1a58daa53a99fc12a11674a6"
     },
     {
       "dataset": "vietnamese-function-calling",
@@ -92,6 +94,6 @@
     "BFCL fixed 50-100 task subset",
     "Yuxi production retrieval run on a populated benchmark knowledge base",
     "Real E2E generation runner and EM/F1 report",
-    "NLI and OCR metric runs"
+    "OCR metric runs"
   ]
 }

@@ -1,4 +1,4 @@
-# Handoff: phiên đo 2026-09-22/23 — E2E, NLI, Agent trên NVIDIA (máy CPU)
+# Handoff: phiên đo 2026-09-22/23 — E2E, NLI, Agent trên NVIDIA
 
 Ngày: 2026-09-23 (UTC). Branch: `phase2-viquad-benchmark`. Commits đã push:
 `bc2cb62d` (runners) → `11f9b019` (thesis) → `87fa2af8` (artifacts + results).
@@ -18,16 +18,11 @@ Ngày: 2026-09-23 (UTC). Branch: `phase2-viquad-benchmark`. Commits đã push:
 trên disk là 66.67% — thesis và bảng trên dùng số cuối.
 
 Thesis đã điền số thật: `docs/thesis/template_thesis.md` (§4.2, §4.3, §4.6, §4.8,
-§4.10, §4.12, §4.13, §5.1–5.2, Phụ lục A/B/C). Trừ §4.11 + C-005 (chờ NLI).
+§4.10, §4.11, §4.12, §4.13, §5.1–5.2, Phụ lục A/B/C). NLI full đã được chạy lại trên GPU.
 
 ## CHƯA XONG
 
-1. **NLI dual-config (EXP-NLI-01)** — full 2.091 cặp trên CPU **bị gián đoạn do tắt máy**
-   (đã chạy ~3h nhưng script không checkpoint nên mất tiến trình). Còn lại
-   `viwikifc_nli_dual_smoke6.json` (pipeline check N=6: production 4/6, standard
-   3/6 — không dùng làm kết quả). **Chạy lại full trên GPU chỉ mất vài phút**,
-   rồi điền §4.11 + C-005.
-2. **VN-FC failure review 7/100**, **E2E retrieval-vs-generation decomposition** —
+1. **VN-FC failure review 7/100**, **E2E retrieval-vs-generation decomposition** —
    có đủ per-sample data, chưa viết phân tích.
 3. **OCR, dense/hybrid/consensus arms, weight search, BFCL, production retrieval,
    reranker, agentic E2E arms** — `Blocked`/`Deferred` có lý do trong thesis
@@ -39,11 +34,11 @@ Thesis đã điền số thật: `docs/thesis/template_thesis.md` (§4.2, §4.3,
 git pull origin phase2-viquad-benchmark
 # raw/ không push — tải lại theo revision trong benchmarks/source-lock.json,
 # artifact chuẩn hóa đã push sẵn trong benchmarks/artifacts/ nên có thể bỏ qua prep.
-# NLI chạy lại trên GPU (vài phút):
+# NLI full trên GPU (đã chạy, dùng lệnh sau để tái lập):
 docker exec api-dev python /app/project-scripts/eval/run_nli_viwikifc.py \
   --input /app/benchmarks/artifacts/nli/viwikifc/test.jsonl \
   --output /app/benchmarks/results/viwikifc_nli_dual_2091.json
-# Xong: điền §4.11 + C-005 trong docs/thesis/template_thesis.md rồi commit/push.
+# Đã cập nhật thesis; các mục còn lại vẫn là OCR, dense/hybrid và production retrieval.
 ```
 
 ## Lưu ý quota & hạ tầng

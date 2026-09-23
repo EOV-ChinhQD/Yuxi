@@ -84,6 +84,7 @@ def run(args: argparse.Namespace) -> dict:
     if args.limit:
         rows = rows[: args.limit]
     pipeline = _load_pipeline()
+    device = str(getattr(pipeline, "device", "unknown"))
     configs = args.configs.split(",")
     results: dict[str, dict] = {}
     for config in configs:
@@ -130,7 +131,7 @@ def run(args: argparse.Namespace) -> dict:
         "benchmark": "viwikifc",
         "split": "test",
         "model": "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
-        "device": "cpu",
+        "device": device,
         "production_thresholds": list(PRODUCTION_THRESHOLDS),
         "configs": results,
     }
