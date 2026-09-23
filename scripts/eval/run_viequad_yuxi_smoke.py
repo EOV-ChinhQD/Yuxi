@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -57,6 +58,7 @@ async def run(args: argparse.Namespace) -> dict:
 
     recall = {}
     reciprocal_ranks = []
+    ndcg_values = []
     for row in rows:
         query_id = str(row["query_id"])
         gold = relevant[query_id]
@@ -66,6 +68,10 @@ async def run(args: argparse.Namespace) -> dict:
             recall[f"recall@{k}"].append(float(bool(set(ranked[:k]) & gold)))
         first = next((i for i, doc_id in enumerate(ranked[:10], 1) if doc_id in gold), None)
         reciprocal_ranks.append(1 / first if first else 0.0)
+        gains = [1 if doc_id in gold else 0 for doc_id in ranked[:10]]
+        dcg = sum(gain / math.log2(index + 2) for index, gain in enumerate(gains))
+        ideal = sum(1 / math.log2(index + 2) for index in range(min(len(gold), 10)))
+        ndcg_values.append(dcg / ideal if ideal else 0.0)
 
     result = {
         "benchmark": "mteb/VieQuADRetrieval",
@@ -80,6 +86,7 @@ async def run(args: argparse.Namespace) -> dict:
             for key, values in recall.items()
         }
         | {"mrr@10": sum(reciprocal_ranks) / len(reciprocal_ranks) if reciprocal_ranks else 0.0},
+        "ndcg@10": sum(ndcg_values) / len(ndcg_values) if ndcg_values else 0.0,
         "latency_seconds": {
             "mean": sum(latencies) / len(latencies) if latencies else 0.0,
             "p50": sorted(latencies)[len(latencies) // 2] if latencies else 0.0,

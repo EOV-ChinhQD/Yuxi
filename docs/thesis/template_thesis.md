@@ -569,13 +569,15 @@ Thí nghiệm so sánh BM25 theo khoảng trắng, bộ truy xuất từ khóa c
 | Cấu hình | Recall@1 | Recall@5 | Recall@10 | MRR@10 | nDCG@10 | p50 | p95 | Vai trò |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | BM25 theo khoảng trắng | 58,06% | 85,74% | 91,80% | 0,7010 | 0,4919 | 32,7 ms | 56,0 ms | Baseline chính |
-| Yuxi keyword | 60,99% | 87,35% | 92,38% | 0,7239 | — | 4,8 ms | 6,6 ms | Kết quả chính |
+| Yuxi keyword | 60,99% | 87,35% | 92,38% | 0,7239 | 0,5020 | 5,8 ms | 9,4 ms | Kết quả chính |
 | Dense vector | 5,57% | 12,65% | 16,65% | 0,0861 | 0,0660 | 50,4 ms | 71,8 ms | Phép so sánh bổ sung |
 | Hybrid mặc định ($w_{vector}=0{,}3$) | 53,56% | 87,40% | 92,38% | 0,6806 | — | — | — | Phép so sánh bổ sung |
 | Weighted hybrid ($w_{vector}=0{,}3$) | 28,81% | 71,04% | 89,65% | 0,4600 | — | — | — | Phân tích chẩn đoán |
 | RRF ($k=60$) | 35,99% | 81,01% | 88,62% | 0,5486 | — | — | — | Phép so sánh bổ sung |
 
 Yuxi keyword đạt kết quả cao nhất ở Recall@1, Recall@5, Recall@10 và MRR@10. Dense vector thấp hơn rõ rệt so với hai cấu hình từ khóa. Hybrid mặc định giữ được Recall@10 92,38% nhưng MRR@10 giảm còn 0,6806. RRF cũng không cải thiện so với BM25. Kết quả này chỉ áp dụng cho VieQuAD và mô hình embedding đã sử dụng; chưa thể khái quát cho ViRE hoặc dữ liệu doanh nghiệp.
+
+Trong lần chạy bổ sung trên KB đầy đủ, Yuxi keyword đã lưu thêm nDCG@10 và phân vị độ trễ. Các artifact hybrid, weighted hybrid và RRF trước đây chỉ lưu Recall/MRR hoặc latency tổng hợp, không lưu đủ ranking theo từng truy vấn để tính nDCG mới; vì vậy các ô “—” trong bảng được giữ nguyên thay vì suy diễn.
 
 ## 4.7. Tìm trọng số dung hợp
 
@@ -624,9 +626,9 @@ Kết quả cho thấy RapidOCR có thể chạy ổn định trên subset lịc
 | When2Call, DeepSeek V4.1 Flash | 60 | 66,67% (95% CI [54,06; 77,27]) | Không áp dụng | Xấp xỉ 1,00 | Kết quả chính |
 | VN-FC, Qwen3 8B local | 100 | 100,00% | 89,00% | 1,46 | Kiểm tra độ bền |
 | When2Call, Qwen3 8B local | 60 | 63,33% | Không áp dụng | 1,82 | Kiểm tra độ bền |
-| BFCL simple_python, Qwen2.5 7B local | 50 | 100,00% | 96,00% | Không ghi | Benchmark phụ, adapter Yuxi |
-| BFCL multiple, Qwen2.5 7B local | 50 | 98,00% | 90,00% | Không ghi | Benchmark phụ, adapter Yuxi |
-| BFCL parallel, Qwen2.5 7B local | 50 | 98,00% | 78,00% | Không ghi | Benchmark phụ, adapter Yuxi |
+| BFCL simple_python, Qwen2.5 7B local | 50 | 100,00% | 96,00% | 1,00 | Benchmark phụ, adapter Yuxi |
+| BFCL multiple, Qwen2.5 7B local | 50 | 98,00% | 90,00% | 1,00 | Benchmark phụ, adapter Yuxi |
+| BFCL parallel, Qwen2.5 7B local | 50 | 98,00% | 78,00% | 2,58 | Benchmark phụ, adapter Yuxi |
 
 Cấu hình DeepSeek đạt kết quả khớp chính xác toàn bộ lời gọi cao hơn Qwen3 8B 4 điểm phần trăm, dù Qwen3 chọn đúng tên công cụ ở toàn bộ 100 mẫu. Với When2Call, hai mô hình chỉ đạt 66,67% và 63,33%, cho thấy quyết định khi nào không nên gọi công cụ còn là điểm yếu. Adapter BFCL trên 50 tác vụ simple_python đạt 100% chọn đúng công cụ và 96% khớp đối số; category multiple đạt tương ứng 98% và 90%; category parallel đạt 98% và 78%. Đây là benchmark phụ bằng tiếng Anh, không đại diện cho toàn bộ BFCL hoặc tác vụ agent nhiều bước. Các tác vụ điều hướng tài liệu nhiều bước và phục hồi sau lỗi công cụ chưa được đánh giá trong phạm vi này.
 
@@ -673,12 +675,13 @@ Cấu hình vận hành có accuracy, macro F1 và các chỉ số contradiction
 | Thành phần | p50 | p95 | Trung bình | N | Điều kiện |
 | --- | ---: | ---: | ---: | ---: | --- |
 | BM25 trên VieQuAD (2.490 tài liệu) | 32,7 ms | 56,0 ms | 35,2 ms | 2.048 | Không cache |
-| BM25 trên corpus E2E (557 tài liệu) | 0,3 ms | Không ghi | Không ghi | 150 | Không cache |
-| RAG với DeepSeek V4.1 Flash | 11,7 s | Không ghi | 23,1 s | 150 | Không cache |
-| NLI, cấu hình vận hành | 8,9 ms | Không ghi | Không ghi | 2.091 | GPU |
-| NLI, cấu hình tiêu chuẩn | 26,2 ms | Không ghi | Không ghi | 2.091 | GPU |
+| BM25 trên corpus E2E (557 tài liệu) | 0,3 ms | 0,9 ms | 0,4 ms | 150 | Không cache |
+| RAG với DeepSeek V4.1 Flash | 11,7 s | 69,1 s | 23,1 s | 150 | Không cache |
+| RAG single-evidence Qwen2.5 7B | 0,5 s | 0,9 s | 0,5 s | 150 | Ollama, không cache |
+| NLI, cấu hình vận hành | 8,9 ms | Chưa lưu | 9,4 ms | 2.091 | GPU |
+| NLI, cấu hình tiêu chuẩn | 26,2 ms | Chưa lưu | 26,9 ms | 2.091 | GPU |
 
-Độ trễ sinh câu trả lời lớn hơn truy xuất khoảng ba bậc độ lớn và là thành phần chi phối thời gian phản hồi. Các chương trình đánh giá chưa ghi p95 cho bước sinh và NLI nên báo cáo không nội suy các giá trị này. Chi phí tiền tệ không được tính vì các lời gọi mô hình sử dụng hạn mức thử nghiệm; do đó đồ án chỉ phân tích đánh đổi giữa chất lượng, độ trễ và số lần gọi.
+Độ trễ sinh câu trả lời lớn hơn truy xuất khoảng ba bậc độ lớn và là thành phần chi phối thời gian phản hồi. p95 của RAG được tính trực tiếp từ 150 mẫu; NLI chỉ lưu trung bình và p50, nên p95 được ghi là “Chưa lưu” thay vì nội suy. Chi phí tiền tệ không được tính vì các lời gọi mô hình sử dụng hạn mức thử nghiệm; do đó đồ án chỉ phân tích đánh đổi giữa chất lượng, độ trễ và số lần gọi.
 
 ## 4.13. Phân tích lỗi
 
@@ -717,7 +720,7 @@ Khoảng cách giữa tỷ lệ truy xuất đúng ở vị trí đầu tiên 77
 
 **RQ3 – Khả năng gọi công cụ.** DeepSeek đạt 98% độ chính xác chọn công cụ và 93% khớp chính xác toàn bộ lời gọi trên 100 tác vụ VN-FC. Độ chính xác When2Call là 66,67% trên 60 tác vụ. Qwen3 8B đạt 100% và 89% trên VN-FC, nhưng chỉ đạt 63,33% trên When2Call. Adapter BFCL chạy Qwen2.5 7B đạt lần lượt 100%/96% trên `simple_python`, 98%/90% trên `multiple` và 98%/78% trên `parallel` cho chọn công cụ/đối số. Các số BFCL chỉ là ba subset tiếng Anh, không phải điểm toàn bộ benchmark. Kết quả cho thấy truyền đối số đã tương đối ổn định trong tác vụ single-call, trong khi quyết định có nên gọi công cụ hay xử lý nhiều lời gọi song song vẫn cần được cải thiện.
 
-**RQ4 – Độ trễ hệ thống.** BM25 có p50 32,7 ms và p95 56,0 ms trên VieQuAD, trong khi RAG đầu cuối có p50 11,7 giây và trung bình 23,1 giây. NLI chạy trên GPU có p50 từ 8,9 đến 26,2 ms tùy cấu hình. Kết quả cho thấy bước sinh bằng LLM chi phối độ trễ trong môi trường thực nghiệm; do chưa có dữ liệu chi phí tiền tệ, đồ án không đánh giá hiệu quả đầu tư.
+**RQ4 – Độ trễ hệ thống.** BM25 có p50 32,7 ms và p95 56,0 ms trên VieQuAD, trong khi RAG đầu cuối có p50 11,7 giây, p95 69,1 giây và trung bình 23,1 giây. NLI chạy trên GPU có p50 từ 8,9 đến 26,2 ms tùy cấu hình, với trung bình tương ứng 9,4 và 26,9 ms. Kết quả cho thấy bước sinh bằng LLM chi phối độ trễ trong môi trường thực nghiệm; do chưa có dữ liệu chi phí tiền tệ, đồ án không đánh giá hiệu quả đầu tư.
 
 ## 5.2. Hạn chế
 
@@ -725,7 +728,7 @@ Thứ nhất, retrieval được đánh giá trên VieQuAD, chủ yếu dựa tr
 
 Thứ hai, đánh giá RAG đầu cuối sử dụng 150 mẫu và đánh giá agent sử dụng 60–100 mẫu. Các khoảng tin cậy còn rộng; kết quả Qwen3 chỉ đóng vai trò kiểm tra độ bền vì khác mô hình và chính sách retry so với cấu hình DeepSeek.
 
-Thứ ba, OCR mới được đánh giá trên 40 trang tài liệu lịch sử; chưa đại diện cho PDF doanh nghiệp, bảng biểu hoặc tài liệu nhiều cột. Truy xuất đồ thị, reranking và tác vụ agent nhiều bước chưa có phép đo định lượng hoàn chỉnh. Đồ án cũng chưa đo citation accuracy, unsupported-claim rate trong câu trả lời RAG, p95 generation hoặc chi phí tiền tệ.
+Thứ ba, OCR mới được đánh giá trên 40 trang tài liệu lịch sử; chưa đại diện cho PDF doanh nghiệp, bảng biểu hoặc tài liệu nhiều cột. Truy xuất đồ thị, reranking và tác vụ agent nhiều bước chưa có phép đo định lượng hoàn chỉnh. Đồ án cũng chưa đo citation accuracy, unsupported-claim rate trong câu trả lời RAG, p95 NLI hoặc chi phí tiền tệ.
 
 Thứ tư, ViWikiFC đo quan hệ giữa claim và evidence được cung cấp, không chứng minh chân lý tuyệt đối và không thay thế đánh giá claim-level trên câu trả lời đầu cuối. Knowledge graph phụ thuộc vào chất lượng trích xuất thực thể và quan hệ. Cuối cùng, môi trường Docker Compose hỗ trợ tái lập cục bộ nhưng không chứng minh tính sẵn sàng cao hoặc khả năng mở rộng trong production.
 
@@ -790,6 +793,7 @@ Các hướng phát triển ưu tiên gồm:
 | C-012 | BFCL simple_python adapter với Qwen2.5 7B đạt chọn đúng công cụ 100%, đối số 96% trên 50 mẫu | EXP-AGT-01 | Bảng 4.5 | `benchmarks/results/bfcl_simple_python_qwen25_7b_full50.json` | Benchmark phụ, English subset |
 | C-013 | BFCL multiple adapter với Qwen2.5 7B đạt chọn đúng công cụ 98%, đối số 90% trên 50 mẫu | EXP-AGT-01 | Bảng 4.5 | `benchmarks/results/bfcl_multiple_qwen25_7b_full50.json` | Benchmark phụ, English subset |
 | C-014 | BFCL parallel adapter với Qwen2.5 7B đạt chọn đúng công cụ 98%, đối số 78% trên 50 mẫu | EXP-AGT-01 | Bảng 4.5 | `benchmarks/results/bfcl_parallel_qwen25_7b_full50.json` | Benchmark phụ, English subset |
+| C-015 | Yuxi keyword đạt nDCG@10 0,5020, p50 5,8 ms và p95 9,4 ms trên 2.048 truy vấn | EXP-RET-01 | Bảng 4.2 | `benchmarks/results/viequad_yuxi_full_metric_keyword.json` | Kết quả chính, chạy lại trên KB đầy đủ |
 
 # PHỤ LỤC B. CẤU HÌNH HỆ THỐNG
 
@@ -847,6 +851,7 @@ rag_ablation:
 | viequad_bm25_validation.json | EXP-RET-01 | cf704460462e97913aa9dc016143b2376ad17aa8243ae32bf820b7ef8fc03298 | `benchmarks/results/` | BM25, 2.048 truy vấn (R@10 91,80%, MRR 0,7010) |
 | viequad_weight_grid_tuning.json | EXP-RET-02 | 4884bd7e87bdacac4ed07f79bf8f23fc9026b9878d9d73ead883d9d373f7e31a | `benchmarks/results/` | 512 mẫu hiệu chỉnh và 1.536 mẫu holdout; chọn vector 0/BM25 1 |
 | viequad_yuxi_full_nvidia_keyword.json | EXP-RET-01 | cb4314cecea6e919eb2e67efb36c8328c32f1cfd274917d2be46938b59c454d0 | `benchmarks/results/` | Yuxi keyword, 2.048 truy vấn (R@10 92,38%, MRR 0,7239) |
+| viequad_yuxi_full_metric_keyword.json | EXP-RET-01 | 042d43dd103b793af2399d05be3cc7a8a5ce02b8f1404262352124b2ee380412 | `benchmarks/results/` | Yuxi keyword chạy lại; nDCG@10 0,5020; p50/p95 5,8/9,4 ms |
 | viequad_yuxi_full_nvidia_vector.json | EXP-RET-01 | f80269d55919865f4fcb696b4ae029ef3738941345683c3080dcc8e6b03f7f28 | `benchmarks/results/` | Dense vector, 2.048 truy vấn (R@10 16,65%, MRR 0,0861) |
 | viequad_yuxi_full_nvidia_hybrid_production.json | EXP-RET-01 | 3a1f6969d3acf075a71fe2649a5e9da1913c61b7a64168b07f4ec29d865b2d97 | `benchmarks/results/` | Hybrid mặc định, vector 0,3/BM25 0,7 |
 | viequad_yuxi_full_nvidia_hybrid_w03.json | EXP-RET-01 | ca388e02d5ad871fe77bc8a8236995ede20022cb7d0267cb16bc354ffd276b0c | `benchmarks/results/` | Weighted hybrid dùng cho phân tích chẩn đoán |

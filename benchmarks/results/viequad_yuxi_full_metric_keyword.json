@@ -1,0 +1,21 @@
+{
+  "benchmark": "mteb/VieQuADRetrieval",
+  "split": "validation",
+  "method": "yuxi_milvus_keyword",
+  "kb_id": "kb_viequad_full_nvidia_20260922",
+  "embedding_model": "nvidia:nvidia/nemotron-3-embed-1b",
+  "queries": 2048,
+  "failures": [],
+  "metrics": {
+    "recall@1": 0.60986328125,
+    "recall@5": 0.87353515625,
+    "recall@10": 0.923828125,
+    "mrr@10": 0.7238868350074404
+  },
+  "ndcg@10": 0.5019940786324835,
+  "latency_seconds": {
+    "mean": 0.006249434873994986,
+    "p50": 0.005786467001598794,
+    "p95": 0.009359977997519309
+  }
+}

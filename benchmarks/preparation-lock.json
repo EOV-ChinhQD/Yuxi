@@ -135,12 +135,13 @@
         "corpus": {"path": "benchmarks/artifacts/retrieval/viequad/corpus.jsonl", "sha256": "d754094ffae5a183c23d2aae9ecca37016bbb1d51db4d05757fb054f43289834"},
         "qrels": {"path": "benchmarks/artifacts/retrieval/viequad/qrels.jsonl", "sha256": "429e628d72f815889161f2e5b00cb406f4cb2ffcfdc3a6676cdfa8591e7d256d"}
       },
-      "status": "bm25_scored_full_2048_queries"
+      "status": "bm25_scored_full_2048_queries; yuxi_keyword_scored_full_2048_queries",
+      "yuxi_keyword_result": "benchmarks/results/viequad_yuxi_full_metric_keyword.json",
+      "yuxi_keyword_result_sha256": "042d43dd103b793af2399d05be3cc7a8a5ce02b8f1404262352124b2ee380412"
     }
   ],
   "pending": [
     "MeddiesOCR annotation redistribution approval",
-    "Yuxi production retrieval run on a populated benchmark knowledge base",
     "DeepSeek full evidence-filtering run (NVIDIA request stalled)",
     "Enterprise/modern printed-document OCR benchmark"
   ]
