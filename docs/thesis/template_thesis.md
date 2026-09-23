@@ -50,7 +50,7 @@ Mặc dù đã nỗ lực kiểm tra nội dung và kết quả thực nghiệm,
 
 Các mô hình ngôn ngữ lớn có khả năng sinh văn bản tự nhiên nhưng còn hạn chế khi xử lý tri thức chuyên biệt, dữ liệu nội bộ và thông tin cần đối chiếu nguồn. Đồ án nghiên cứu và phát triển Yuxi, một nền tảng hỏi–đáp tăng cường truy xuất trên ngữ liệu tiếng Việt. Nền tảng triển khai các thành phần truy xuất từ khóa, truy xuất vector, điều phối tác tử và kiểm chứng bằng suy luận ngôn ngữ tự nhiên trên kiến trúc FastAPI, LangGraph, Milvus, Neo4j cùng các dịch vụ hỗ trợ trong Docker Compose. Trong phạm vi thực nghiệm, đồ án đánh giá trực tiếp truy xuất từ khóa và vector, RAG đầu cuối, gọi công cụ, NLI và một pilot OCR tài liệu in; truy xuất đồ thị, tái xếp hạng và OCR trên tài liệu doanh nghiệp chưa có kết quả định lượng hoàn chỉnh.
 
-Đồ án xây dựng quy trình đánh giá theo từng tầng và lưu tệp kết quả (artifact) để truy nguyên. Trên 2.048 truy vấn VieQuAD, phương pháp từ khóa của Yuxi đạt Recall@10 92,38% và MRR@10 0,7239; trong khi cấu hình truy xuất vector được khảo sát đạt lần lượt 16,65% và 0,0861. Trên 150 câu hỏi UIT-ViQuAD 2.0, RAG tiêu chuẩn đạt EM 45,33% và F1 66,94%; ablation single-evidence với Qwen2.5 1.5B đạt EM 4,67% và F1 22,66%. Thử nghiệm gọi công cụ đạt 98% độ chính xác chọn công cụ và 93% khớp chính xác toàn bộ lời gọi trên 100 tác vụ. Bộ kiểm chứng NLI trên 2.091 cặp ViWikiFC đạt độ chính xác 56,77% và macro F1 51,54% ở cấu hình vận hành. OCR pilot trên 40 trang printed-document đạt CER 24,40% trên 30 trang MeddiesOCR và 22,87% trên 10 trang VietAge-OCR. Kết quả cho thấy truy xuất từ khóa vẫn là thành phần hiệu quả nhất trên tập dữ liệu được khảo sát, đồng thời chất lượng sinh câu trả lời, quyết định gọi công cụ và kiểm chứng mệnh đề vẫn còn dư địa cải thiện. OCR pilot chỉ có tính thăm dò; Meddies ground truth chưa được phép tái phân phối và chưa đại diện cho tài liệu doanh nghiệp hiện đại.
+Đồ án xây dựng quy trình đánh giá theo từng tầng và lưu tệp kết quả (artifact) để truy nguyên. Trên 2.048 truy vấn VieQuAD, phương pháp từ khóa của Yuxi đạt Recall@10 92,38% và MRR@10 0,7239; trong khi cấu hình truy xuất vector được khảo sát đạt lần lượt 16,65% và 0,0861. Trên 150 câu hỏi UIT-ViQuAD 2.0, RAG tiêu chuẩn đạt EM 45,33% và F1 66,94%; ablation single-evidence với Qwen2.5 7B đạt EM 34,67% và F1 47,36%, precision từ chối 43,75% và recall từ chối 70,00%. Thử nghiệm gọi công cụ đạt 98% độ chính xác chọn công cụ và 93% khớp chính xác toàn bộ lời gọi trên 100 tác vụ. Bộ kiểm chứng NLI trên 2.091 cặp ViWikiFC đạt độ chính xác 56,77% và macro F1 51,54% ở cấu hình vận hành. OCR pilot trên 40 trang printed-document đạt CER 24,40% trên 30 trang MeddiesOCR và 22,87% trên 10 trang VietAge-OCR. Kết quả cho thấy truy xuất từ khóa vẫn là thành phần hiệu quả nhất trên tập dữ liệu được khảo sát, đồng thời chất lượng sinh câu trả lời, quyết định gọi công cụ và kiểm chứng mệnh đề vẫn còn dư địa cải thiện. OCR pilot chỉ có tính thăm dò; Meddies ground truth chưa được phép tái phân phối và chưa đại diện cho tài liệu doanh nghiệp hiện đại.
 
 Từ khóa: truy xuất tăng cường tạo sinh, RAG, tác tử trí tuệ nhân tạo, truy xuất thông tin, đồ thị tri thức, OCR, NLI, tiếng Việt.
 
@@ -58,7 +58,7 @@ Từ khóa: truy xuất tăng cường tạo sinh, RAG, tác tử trí tuệ nh�
 
 Large language models can generate fluent natural-language responses but remain limited when handling domain-specific knowledge, private data, and claims that require source verification. This thesis presents Yuxi, a retrieval-augmented question-answering platform for Vietnamese documents, including text, PDF, and image inputs. The platform implements lexical and dense retrieval, knowledge-graph components, reranking, agent orchestration, and natural-language-inference-based verification. The completed experiments directly evaluate lexical and dense retrieval, end-to-end RAG, tool use, NLI, and a printed-document OCR pilot; graph retrieval, reranking, and broad enterprise-document OCR remain outside the completed quantitative evaluation.
 
-The thesis adopts a layered evaluation protocol with traceable artifacts. On 2,048 VieQuAD queries, Yuxi's lexical retriever achieved 92.38% Recall@10 and 0.7239 MRR@10, whereas the evaluated dense configuration achieved 16.65% and 0.0861, respectively. On 150 UIT-ViQuAD 2.0 questions, standard RAG obtained 45.33% exact match and 66.94% token F1; a single-evidence Qwen2.5 1.5B ablation obtained 4.67% and 22.66%. Tool-use evaluation reached 98% tool-selection accuracy and 93% exact-call accuracy over 100 tasks. On 2,091 ViWikiFC claim–evidence pairs, the operational NLI configuration achieved 56.77% accuracy and 51.54% macro F1. A 40-page printed-document OCR pilot obtained 24.40% CER on 30 MeddiesOCR pages and 22.87% CER on 10 VietAge-OCR pages. These OCR results are exploratory; Meddies ground truth is restricted to internal use because its annotation license is undeclared. These results indicate that lexical retrieval remained the strongest retrieval component on the evaluated corpus, while answer generation, tool-use decisions, claim verification, and robust document OCR still require improvement. The causal effect of the NLI gate on end-to-end RAG was outside the completed experimental scope.
+The thesis adopts a layered evaluation protocol with traceable artifacts. On 2,048 VieQuAD queries, Yuxi's lexical retriever achieved 92.38% Recall@10 and 0.7239 MRR@10, whereas the evaluated dense configuration achieved 16.65% and 0.0861, respectively. On 150 UIT-ViQuAD 2.0 questions, standard RAG obtained 45.33% exact match and 66.94% token F1; a single-evidence Qwen2.5 7B ablation obtained 34.67% and 47.36%, with 43.75% abstention precision and 70.00% abstention recall. Tool-use evaluation reached 98% tool-selection accuracy and 93% exact-call accuracy over 100 tasks. On 2,091 ViWikiFC claim–evidence pairs, the operational NLI configuration achieved 56.77% accuracy and 51.54% macro F1. A 40-page printed-document OCR pilot obtained 24.40% CER on 30 MeddiesOCR pages and 22.87% CER on 10 VietAge-OCR pages. These OCR results are exploratory; Meddies ground truth is restricted to internal use because its annotation license is undeclared. These results indicate that lexical retrieval remained the strongest retrieval component on the evaluated corpus, while answer generation, tool-use decisions, claim verification, and robust document OCR still require improvement. The causal effect of the NLI gate on end-to-end RAG was outside the completed experimental scope.
 
 Keywords: retrieval-augmented generation, RAG, AI agent, information retrieval, knowledge graph, OCR, natural language inference, Vietnamese.
 
@@ -597,9 +597,9 @@ Phép tìm kiếm lưới lựa chọn $w_{dense}=0$, nên cấu hình tốt nh�
 | --- | --- | --- | --- | --- | --- | --- |
 | Trích xuất trực tiếp từ kết quả đầu tiên | 0,67% (95% CI [0,12; 3,68]) | 17,57% | 0% | 0% | 77,33% | Baseline |
 | RAG tiêu chuẩn | 45,33% (95% CI [37,58; 53,32]) | 66,94% | 79,49% | 62,00% | 77,33% | Kết quả chính |
-| RAG single-evidence, Qwen2.5 1.5B | 4,67% | 22,66% | 0% | 0% | 77,33% | Ablation/robustness |
+| RAG single-evidence, Qwen2.5 7B | 34,67% | 47,36% | 43,75% | 70,00% | 77,33% | Ablation/robustness |
 
-RAG tiêu chuẩn cải thiện 44,66 điểm phần trăm EM và 49,37 điểm phần trăm F1 so với baseline trích xuất. Ablation single-evidence dùng Qwen2.5 1.5B chỉ đạt EM 4,67% và F1 22,66%; kết quả này không phải phép so sánh model có kiểm soát vì khác mô hình, giới hạn token và cấu hình evidence. Retrieval hit@1 đạt 77,33% trong khi RAG DeepSeek đạt EM 45,33%, cho thấy việc tìm được passage liên quan chưa bảo đảm mô hình sinh đúng đáp án. Recall từ chối 62% cũng cho thấy 38% câu không trả lời được vẫn chưa được từ chối đúng. Đồ án chưa có thí nghiệm cùng điều kiện cho Agentic RAG và Agentic RAG kết hợp NLI, vì vậy không đưa ra kết luận định lượng cho hai cấu hình này.
+RAG tiêu chuẩn cải thiện 44,66 điểm phần trăm EM và 49,37 điểm phần trăm F1 so với baseline trích xuất. Ablation single-evidence dùng Qwen2.5 7B đạt EM 34,67% và F1 47,36%; kết quả này không phải phép so sánh model có kiểm soát vì khác mô hình, giới hạn token và cấu hình evidence. Retrieval hit@1 đạt 77,33% trong khi RAG DeepSeek đạt EM 45,33%, cho thấy việc tìm được passage liên quan chưa bảo đảm mô hình sinh đúng đáp án. Recall từ chối 62% của RAG DeepSeek vẫn cho thấy nhiều câu không trả lời được chưa được từ chối đúng; ablation Qwen2.5 7B đạt recall từ chối 70,00% nhưng precision chỉ 43,75%. Đồ án chưa có thí nghiệm cùng điều kiện cho Agentic RAG và Agentic RAG kết hợp NLI, vì vậy không đưa ra kết luận định lượng cho hai cấu hình này.
 
 ## 4.9. Đánh giá pilot OCR tài liệu in
 
@@ -781,7 +781,7 @@ Các hướng phát triển ưu tiên gồm:
 | C-006 | Qwen3 cục bộ trên VN-FC đạt độ chính xác chọn công cụ 100%, khớp toàn bộ lời gọi 89% trên 100 mẫu | EXP-AGT-01 | Bảng 4.5 | `benchmarks/results/vietnamese_function_calling_qwen3_host_full100_retry_budget180.json` | Kiểm tra độ bền |
 | C-007 | Qwen3 cục bộ trên When2Call đạt độ chính xác 63,33% trên 60 mẫu | EXP-AGT-01 | Bảng 4.5 | `benchmarks/results/when2call_qwen3_host_relevance_gate_full60.json` | Kiểm tra độ bền |
 | C-008 | Yuxi keyword đạt R@10 92,38%, MRR@10 0,7239 trên VieQuAD | EXP-RET-01 | Bảng 4.2 | `benchmarks/results/viequad_yuxi_full_nvidia_keyword.json` | Kết quả chính |
-| C-009 | RAG single-evidence Qwen2.5 1.5B đạt EM 4,67%, F1 22,66% trên 150 mẫu | EXP-E2E-01 | Bảng 4.4 | `benchmarks/results/uit-viquad-2_e2e_qwen25_15b_full150_single_evidence.json` | Ablation/robustness |
+| C-009 | RAG single-evidence Qwen2.5 7B đạt EM 34,67%, F1 47,36% trên 150 mẫu | EXP-E2E-01 | Bảng 4.4 | `benchmarks/results/uit-viquad-2_e2e_qwen25_7b_full150_single_evidence.json` | Ablation/robustness |
 | C-010 | OCR pilot RapidOCR đạt CER 24,40%, WER 76,51% trên 30 trang MeddiesOCR | EXP-OCR-01 | Bảng 4.11 | `benchmarks/results/printed_ocr_meddiesocr_30_rapid_ocr.json` | Internal/conditional |
 | C-011 | OCR pilot RapidOCR đạt CER 22,87%, WER 71,61% trên 10 trang VietAge-OCR | EXP-OCR-01 | Bảng 4.11 | `benchmarks/results/printed_ocr_vietage_10_rapid_ocr.json` | Pilot public-license subset |
 
@@ -827,10 +827,10 @@ robustness_model:
 
 rag_ablation:
   runtime: "Ollama"
-  model: "qwen2.5:1.5b"
+  model: "qwen2.5:7b"
   top_k: 1
   evidence_k: 1
-  max_tokens: 128
+  max_tokens: 256
   timeout_seconds: 60
 ```
 
@@ -855,7 +855,7 @@ rag_ablation:
 | uit-viquad-2_e2e_qwen3_host_smoke15_k3.json | EXP-E2E-01 | 3ce1dc95c3937442bc1f3dcf9dfd1e96384f2cce32c06ae3a56c3d95f2a73e8c | `benchmarks/results/` | Thử nghiệm chẩn đoán Qwen3 trên 15 mẫu; không dùng làm kết quả chính |
 | usage_log.jsonl | EXP-SYS-01 | — | `benchmarks/results/` | Số lời gọi và ký tự prompt/completion theo từng lần chạy |
 | viwikifc_nli_dual_2091.json | EXP-NLI-01 | 4f961e441f28298ca4537a938f61a857f2ce06bb1a58daa53a99fc12a11674a6 | `benchmarks/results/` | NLI trên 2.091 cặp ViWikiFC, hai cấu hình |
-| uit-viquad-2_e2e_qwen25_15b_full150_single_evidence.json | EXP-E2E-01 | 908bb2f1b558bbc18ce833b343523a97572fcf4228693a3a050886b9406444f6 | `benchmarks/results/` | Qwen2.5 1.5B single-evidence, 150 mẫu; EM 4,67%, F1 22,66% |
+| uit-viquad-2_e2e_qwen25_7b_full150_single_evidence.json | EXP-E2E-01 | bfca0c0f4450549fb1fd2fc48bc143a679ce46987e5b4d57fd1cd6d746ad5fe7 | `benchmarks/results/` | Qwen2.5 7B single-evidence, 150 mẫu; EM 34,67%, F1 47,36% |
 | printed_ocr_meddiesocr_30_rapid_ocr.json | EXP-OCR-01 | 12ec2f2e8ea2f78ae76889d1443881d16786b17e8d9f5c899faecfed6c65da4d | `benchmarks/results/` | RapidOCR, 30 trang MeddiesOCR; CER 24,40%, WER 76,51%; internal |
 | printed_ocr_vietage_10_rapid_ocr.json | EXP-OCR-01 | a51d18993048a479cbf0b5405ad610a3f520f0a39d5328c95ee0af8e4d044ffa | `benchmarks/results/` | RapidOCR, 10 trang VietAge-OCR; CER 22,87%, WER 71,61% |
 

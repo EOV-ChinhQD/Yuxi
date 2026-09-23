@@ -78,9 +78,10 @@
         "corpus": {"path": "benchmarks/artifacts/e2e/uit-viquad-2/corpus.jsonl", "sha256": "57127d1793feee118d18319a6d31225f797e4c4a750480b7ecab6a97f81ff821"},
         "qrels": {"path": "benchmarks/artifacts/e2e/uit-viquad-2/qrels.jsonl", "sha256": "51ede10a0ffdac361944376e3c764a3abefe344cb784c242f49bacc9cef61b0d"}
       },
-      "status": "scored_qwen25_1.5b_single_evidence_ablation",
-      "result": "benchmarks/results/uit-viquad-2_e2e_qwen25_15b_full150_single_evidence.json",
-      "result_sha256": "908bb2f1b558bbc18ce833b343523a97572fcf4228693a3a050886b9406444f6"
+      "status": "scored_qwen25_7b_single_evidence_ablation",
+      "result": "benchmarks/results/uit-viquad-2_e2e_qwen25_7b_full150_single_evidence.json",
+      "result_sha256": "bfca0c0f4450549fb1fd2fc48bc143a679ce46987e5b4d57fd1cd6d746ad5fe7",
+      "superseded_diagnostic": "benchmarks/results/uit-viquad-2_e2e_qwen25_15b_full150_single_evidence.json"
     },
     {
       "dataset": "viequad-retrieval",

@@ -146,25 +146,26 @@ docker exec api-dev python /app/project-scripts/eval/run_e2e_viquad2.py \
 This reports decision accuracy for `cannot_answer`, `request_for_info`, and
 `tool_call`; it is not an argument exact-match benchmark.
 
-The completed single-evidence RAG ablation uses the local Qwen2.5 1.5B model
+The completed single-evidence RAG ablation uses the local Qwen2.5 7B model
 with the same fixed 150-question sample:
 
 ```bash
 docker exec api-dev python /app/project-scripts/eval/run_e2e_viquad2.py \
   --queries /app/benchmarks/artifacts/e2e/uit-viquad-2/queries.jsonl \
   --corpus /app/benchmarks/artifacts/e2e/uit-viquad-2/corpus.jsonl \
-  --output /app/benchmarks/results/uit-viquad-2_e2e_qwen25_15b_full150_single_evidence.json \
-  --model ollama:qwen2.5:1.5b --top-k 1 --evidence-k 1 \
+  --output /app/benchmarks/results/uit-viquad-2_e2e_qwen25_7b_full150_single_evidence.json \
+  --model ollama:qwen2.5:7b --top-k 1 --evidence-k 1 \
   --n-answerable 100 --n-impossible 50 --max-calls 160 \
   --max-tokens 128 --timeout 60
 ```
 
 This is an ablation/robustness result, not a controlled comparison with the
 DeepSeek primary RAG result because the model and evidence configuration differ.
-The runner stores `raw_answer` and applies a narrow answer normalization before
-scoring: common `Đáp án:` wrappers are removed, and the one-character refusal
-typo observed in the 1.5B probe is recognized. The previously committed 1.5B
-150-sample artifact predates this parser fix and must be rerun before replacing
-its thesis metrics.
+The run produced EM 34.67%, token F1 47.36%, abstention precision 43.75%,
+abstention recall 70.00%, and hit@1 77.33%. The runner stores `raw_answer` and
+applies narrow answer normalization before scoring: common `Đáp án:` wrappers
+are removed, and the one-character refusal typo observed in the 1.5B probe is
+recognized. The earlier 1.5B result remains a superseded diagnostic and is not
+used as a thesis metric.
 
 NLI claims and agent tool-calling tasks can use the public sources in `source-lock.json`. ViWikiFC is normalized to `ENTAILMENT`, `CONTRADICTION`, and `NEUTRAL`; When2Call and Vietnamese Function Calling are normalized to the tool-calling schema. These remain source-locked until the exported artifact has its own hash and test report.
