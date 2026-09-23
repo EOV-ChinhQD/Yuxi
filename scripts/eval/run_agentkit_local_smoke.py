@@ -15,6 +15,8 @@ from yuxi.models.chat import select_model
 
 from usage_tracker import UsageTracker
 
+CONTROLLED_ARGUMENT_QUALIFIERS = {"giao tiếp", "hữu cơ"}
+
 
 def _parse_prediction(text: str) -> dict:
     match = re.search(r"\{\s*[\"']?(?:name|tool_name)[\"']?\s*:", text, re.S)
@@ -80,11 +82,30 @@ def _matches(predicted: dict, expected: dict) -> tuple[bool, bool]:
         "decision"
     ) and predicted.get("tool_name") == expected.get("tool_name")
     arguments = expected.get("arguments", {})
-    argument_match = tool_match and all(
-        predicted.get("arguments", {}).get(key) == value
-        for key, value in arguments.items()
+    predicted_arguments = predicted.get("arguments", {})
+    argument_match = tool_match and set(predicted_arguments) == set(arguments) and all(
+        _arguments_equivalent(predicted_arguments[key], value) for key, value in arguments.items()
     )
     return tool_match, argument_match
+
+
+def _normalize_argument(value: object) -> object:
+    if not isinstance(value, str):
+        return value
+    return value.strip().rstrip(".,!?;:")
+
+
+def _arguments_equivalent(predicted: object, expected: object) -> bool:
+    """Allow punctuation and explicitly approved educational qualifiers only."""
+    predicted_normalized = _normalize_argument(predicted)
+    expected_normalized = _normalize_argument(expected)
+    if predicted_normalized == expected_normalized:
+        return True
+    if not isinstance(predicted_normalized, str) or not isinstance(expected_normalized, str):
+        return False
+    prefix = f"{expected_normalized} "
+    suffix = predicted_normalized[len(prefix) :] if predicted_normalized.startswith(prefix) else ""
+    return bool(suffix and suffix.casefold() in CONTROLLED_ARGUMENT_QUALIFIERS)
 
 
 def _arguments_are_grounded(predicted: dict, user_request: str) -> bool:
@@ -101,6 +122,8 @@ def _prediction_needs_retry(
     predicted: dict, user_request: str, tools: list[dict]
 ) -> bool:
     """Reject tool calls that can be validated as malformed without gold labels."""
+    if predicted.get("decision") == "parse_error":
+        return True
     if predicted.get("decision") != "tool_call":
         return False
 
@@ -116,6 +139,16 @@ def _prediction_needs_retry(
     if any(key not in properties for key in arguments):
         return True
     if any(key not in arguments for key in parameters.get("required") or []):
+        return True
+    if "new_time" in properties and "new_time" not in arguments and re.search(
+        r"\b\d{1,2}\s*giờ(?:\s*(?:sáng|chiều|tối))?\b|\b(?:sáng|chiều|tối)\b",
+        user_request,
+        re.IGNORECASE,
+    ):
+        return True
+    if "level" in properties and "level" not in arguments and re.search(
+        r"\b(?:trẻ em|cơ bản|nâng cao|sơ cấp|trung cấp)\b", user_request, re.IGNORECASE
+    ):
         return True
     if not _arguments_are_grounded(predicted, user_request):
         return True

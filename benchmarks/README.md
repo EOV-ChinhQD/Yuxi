@@ -113,6 +113,20 @@ docker exec api-dev python /app/project-scripts/eval/run_when2call_local.py \
   --model ollama:qwen3:8b --per-label 20 --native-ollama
 ```
 
+The When2Call runner enables a model-backed relevance gate by default. Use
+`--no-relevance-gate` only for an explicit ungated baseline comparison.
+
+For the E2E RAG runner, `--evidence-k 3` selects the highest-ranked passages
+with direct query-token overlap while preserving the retrieval hit metrics:
+
+```bash
+docker exec api-dev python /app/project-scripts/eval/run_e2e_viquad2.py \
+  --queries /app/benchmarks/artifacts/e2e/uit-viquad-2/queries.jsonl \
+  --corpus /app/benchmarks/artifacts/e2e/uit-viquad-2/corpus.jsonl \
+  --output /app/benchmarks/results/uit-viquad-2_e2e_improved.json \
+  --model ollama:qwen2.5:7b --top-k 5 --evidence-k 3
+```
+
 This reports decision accuracy for `cannot_answer`, `request_for_info`, and
 `tool_call`; it is not an argument exact-match benchmark.
 

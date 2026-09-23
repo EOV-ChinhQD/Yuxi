@@ -129,6 +129,24 @@ def is_abstained(answer: str) -> bool:
     return ABSTAIN_PHRASE in answer
 
 
+def hit_at_k(hits: dict, k: int) -> bool:
+    """Read JSON-safe string keys while accepting integer keys in tests."""
+    return bool(hits.get(str(k), hits.get(k, False)))
+
+
+def select_evidence(ranked_ids: list[str], by_id: dict[str, str], question: str, limit: int) -> list[str]:
+    """Keep the highest-ranked passages with direct query-token overlap."""
+    if limit <= 0:
+        return []
+    query_terms = set(tokens(question))
+    selected = [
+        document_id
+        for document_id in ranked_ids
+        if query_terms & set(tokens(by_id.get(document_id, "")))
+    ]
+    return (selected or ranked_ids)[:limit]
+
+
 async def run(args: argparse.Namespace) -> dict:
     queries = [json.loads(line) for line in args.queries.read_text(encoding="utf-8").splitlines() if line.strip()]
     corpus = [json.loads(line) for line in args.corpus.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -150,7 +168,8 @@ async def run(args: argparse.Namespace) -> dict:
             break
         ranked = [doc_id for doc_id, _ in index.retrieve(row["query"], args.top_k)]
         gold_ids = set(row["relevant_document_ids"])
-        hits = {k: bool(set(ranked[:k]) & gold_ids) for k in (1, min(5, args.top_k), min(10, args.top_k))}
+        hits = {str(k): bool(set(ranked[:k]) & gold_ids) for k in (1, min(5, args.top_k), min(10, args.top_k))}
+        evidence_ids = select_evidence(ranked, by_id, row["query"], args.evidence_k)
         arm_outputs = {}
         if "extractive" in arms:
             started = time.perf_counter()
@@ -167,13 +186,15 @@ async def run(args: argparse.Namespace) -> dict:
             }
         if "standard_rag" in arms:
             context = "\n\n".join(
-                f"[Nguồn {pos}] {by_id.get(doc_id, '')}"
-                for pos, doc_id in enumerate(ranked, 1)
+                f"<evidence id=\"{doc_id}\">{by_id.get(doc_id, '')}</evidence>"
+                for doc_id in evidence_ids
             )
             prompt = (
-                "Trả lời câu hỏi chỉ dựa vào các đoạn ngữ cảnh bên dưới, ngắn gọn bằng tiếng Việt. "
-                f"Nếu ngữ cảnh không đủ để trả lời, chỉ trả lời đúng cụm: {ABSTAIN_PHRASE}. "
-                "Không dùng tiếng Trung hay tiếng Anh trừ khi trích nguyên văn.\n\n"
+                "You are a Vietnamese extractive QA system. Return only the direct answer to the question, "
+                "not reasoning, a summary of the evidence, source labels, or XML tags. "
+                "Use an answer only when one evidence passage directly supports it; do not infer from general knowledge "
+                f"or combine weak clues. If no passage directly supports the answer, return exactly: {ABSTAIN_PHRASE}. "
+                "Keep the answer concise and in Vietnamese; preserve names, numbers, and dates from the evidence.\n\n"
                 f"Câu hỏi: {row['query']}\n\nNgữ cảnh:\n{context}"
             )
             started = time.perf_counter()
@@ -202,6 +223,7 @@ async def run(args: argparse.Namespace) -> dict:
                 "gold_answers": row["gold_answers"],
                 "retrieved_ids": ranked,
                 "hits": hits,
+                "evidence_ids": evidence_ids,
                 "arms": arm_outputs,
             }
         )
@@ -219,7 +241,7 @@ async def run(args: argparse.Namespace) -> dict:
         latencies = [sample["arms"][arm]["latency_ms"] for sample in arm_samples]
         summary[arm] = {
             "sample_size": len(arm_samples),
-            "hit@1": sum(sample["hits"].get(1, False) for sample in arm_samples) / len(arm_samples),
+            "hit@1": sum(hit_at_k(sample["hits"], 1) for sample in arm_samples) / len(arm_samples),
             "em": sum(sample["arms"][arm]["em"] for sample in arm_samples) / len(arm_samples),
             "f1": sum(sample["arms"][arm]["f1"] for sample in arm_samples) / len(arm_samples),
             "abstention_precision": true_positives / predicted_positives if predicted_positives else 0.0,
@@ -258,6 +280,7 @@ def main() -> None:
     parser.add_argument("--n-answerable", type=int, default=0)
     parser.add_argument("--n-impossible", type=int, default=0)
     parser.add_argument("--top-k", type=int, default=5)
+    parser.add_argument("--evidence-k", type=int, default=3)
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--max-tokens", type=int, default=1024)
     parser.add_argument("--max-calls", type=int, default=0)
