@@ -18,6 +18,7 @@ from run_e2e_viquad2 import (  # noqa: E402
     select_evidence,
 )
 from run_when2call_local import _parse_relevance_gate  # noqa: E402
+from run_bfcl_subset import argument_matches  # noqa: E402
 
 
 def test_hit_at_k_accepts_json_string_keys_and_integer_test_keys():
@@ -72,3 +73,11 @@ def test_agent_retries_only_inferred_optional_slots():
 def test_relevance_gate_rejects_unknown_tool_names_and_handles_invalid_json():
     assert _parse_relevance_gate('{"relevant_tool_names":["search", "unknown"]}', {"search"}) == ["search"]
     assert _parse_relevance_gate("not-json", {"search"}) is None
+
+
+def test_bfcl_argument_match_allows_declared_optional_empty_values():
+    expected = {"required": [1], "optional": ["", "default"]}
+    assert argument_matches({"required": 1}, expected)
+    assert argument_matches({"required": 1, "optional": "default"}, expected)
+    assert not argument_matches({"required": 1, "extra": True}, expected)
+    assert not argument_matches({}, expected)

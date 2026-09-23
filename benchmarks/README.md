@@ -132,6 +132,35 @@ docker exec api-dev python /app/project-scripts/eval/run_when2call_local.py \
 The When2Call runner enables a model-backed relevance gate by default. Use
 `--no-relevance-gate` only for an explicit ungated baseline comparison.
 
+The fixed BFCL adapter subset contains 50 English `simple_python` tasks from
+revision `6ea57973c7a6097fd7c5915698c54c17c5b1b6c8`. It is an Apache-2.0
+derived subset, not the complete BFCL benchmark. Prepare it from the pinned
+upstream checkout with:
+
+```bash
+python scripts/eval/prepare_bfcl_subset.py \
+  --data /path/to/gorilla/berkeley-function-call-leaderboard/bfcl_eval/data \
+  --answers /path/to/gorilla/berkeley-function-call-leaderboard/bfcl_eval/data/possible_answer \
+  --category simple_python --count 50 --seed 42 \
+  --source-revision 6ea57973c7a6097fd7c5915698c54c17c5b1b6c8 \
+  --output benchmarks/artifacts/agent/bfcl/simple_python_50.jsonl
+```
+
+Run it in `api-dev` with the local Qwen2.5 7B model:
+
+```bash
+docker exec api-dev python /app/project-scripts/eval/run_bfcl_subset.py \
+  --input /app/benchmarks/artifacts/agent/bfcl/simple_python_50.jsonl \
+  --output /app/benchmarks/results/bfcl_simple_python_qwen25_7b_full50.json \
+  --category simple_python --model ollama:qwen2.5:7b \
+  --sample-size 50 --max-calls 55 --max-tokens 256 --timeout 90
+```
+
+The completed result is tool-selection accuracy 100.00%, argument exact match
+96.00%, and call-error rate 0.00%. BFCL optional parameters are matched using
+the upstream convention where an allowed empty value means the argument may be
+omitted. This result covers only the fixed simple-function subset.
+
 For the E2E RAG runner, `--evidence-k 3` selects the highest-ranked passages
 with direct query-token overlap while preserving the retrieval hit metrics:
 

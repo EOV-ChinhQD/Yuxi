@@ -69,6 +69,20 @@
       "status": "model_scored_qwen3_native_stratified60_accuracy_0.55"
     },
     {
+      "dataset": "bfcl",
+      "source_revision": "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8",
+      "split": "v4:simple_python",
+      "records": 50,
+      "artifact": "benchmarks/artifacts/agent/bfcl/simple_python_50.jsonl",
+      "sha256": "c98fab17669d3fcb61763030fffdc83d67b2c57f2d8d0d9a5b1c2b595056c5f3",
+      "manifest": "benchmarks/artifacts/agent/bfcl/simple_python_50.manifest.json",
+      "manifest_sha256": "9ca90e3873181168b94677ad77799f59a8aaae847fb2dba98bb68805cae9ef13",
+      "license": "Apache-2.0",
+      "status": "model_scored_qwen25_7b_tool_1.0_argument_0.96",
+      "result": "benchmarks/results/bfcl_simple_python_qwen25_7b_full50.json",
+      "result_sha256": "f49a2cfcf32beed75ac06636b8e6729fcb86d7c44c901e1d5617f258f4a417fa"
+    },
+    {
       "dataset": "uit-viquad-2",
       "source_revision": "406f09a45cc106a8f7b7fd0c25078883fe58cb1f",
       "split": "validation",
@@ -98,7 +112,6 @@
   ],
   "pending": [
     "MeddiesOCR annotation redistribution approval",
-    "BFCL fixed 50-100 task subset",
     "Yuxi production retrieval run on a populated benchmark knowledge base",
     "DeepSeek full evidence-filtering run (NVIDIA request stalled)",
     "Enterprise/modern printed-document OCR benchmark"

@@ -624,8 +624,9 @@ Kết quả cho thấy RapidOCR có thể chạy ổn định trên subset lịc
 | When2Call, DeepSeek V4.1 Flash | 60 | 66,67% (95% CI [54,06; 77,27]) | Không áp dụng | Xấp xỉ 1,00 | Kết quả chính |
 | VN-FC, Qwen3 8B local | 100 | 100,00% | 89,00% | 1,46 | Kiểm tra độ bền |
 | When2Call, Qwen3 8B local | 60 | 63,33% | Không áp dụng | 1,82 | Kiểm tra độ bền |
+| BFCL simple_python, Qwen2.5 7B local | 50 | 100,00% | 96,00% | Không ghi | Benchmark phụ, adapter Yuxi |
 
-Cấu hình DeepSeek đạt kết quả khớp chính xác toàn bộ lời gọi cao hơn Qwen3 8B 4 điểm phần trăm, dù Qwen3 chọn đúng tên công cụ ở toàn bộ 100 mẫu. Với When2Call, hai mô hình chỉ đạt 66,67% và 63,33%, cho thấy quyết định khi nào không nên gọi công cụ còn là điểm yếu. Các tác vụ điều hướng tài liệu nhiều bước và phục hồi sau lỗi công cụ chưa được đánh giá trong phạm vi này.
+Cấu hình DeepSeek đạt kết quả khớp chính xác toàn bộ lời gọi cao hơn Qwen3 8B 4 điểm phần trăm, dù Qwen3 chọn đúng tên công cụ ở toàn bộ 100 mẫu. Với When2Call, hai mô hình chỉ đạt 66,67% và 63,33%, cho thấy quyết định khi nào không nên gọi công cụ còn là điểm yếu. Adapter BFCL trên 50 tác vụ simple_python đạt 100% chọn đúng công cụ và 96% khớp đối số; đây là benchmark phụ bằng tiếng Anh, không đại diện cho toàn bộ BFCL hoặc tác vụ agent nhiều bước. Các tác vụ điều hướng tài liệu nhiều bước và phục hồi sau lỗi công cụ chưa được đánh giá trong phạm vi này.
 
 ## 4.11. Đánh giá NLI
 
@@ -784,6 +785,7 @@ Các hướng phát triển ưu tiên gồm:
 | C-009 | RAG single-evidence Qwen2.5 7B đạt EM 34,67%, F1 47,36% trên 150 mẫu | EXP-E2E-01 | Bảng 4.4 | `benchmarks/results/uit-viquad-2_e2e_qwen25_7b_full150_single_evidence.json` | Ablation/robustness |
 | C-010 | OCR pilot RapidOCR đạt CER 24,40%, WER 76,51% trên 30 trang MeddiesOCR | EXP-OCR-01 | Bảng 4.11 | `benchmarks/results/printed_ocr_meddiesocr_30_rapid_ocr.json` | Internal/conditional |
 | C-011 | OCR pilot RapidOCR đạt CER 22,87%, WER 71,61% trên 10 trang VietAge-OCR | EXP-OCR-01 | Bảng 4.11 | `benchmarks/results/printed_ocr_vietage_10_rapid_ocr.json` | Pilot public-license subset |
+| C-012 | BFCL simple_python adapter với Qwen2.5 7B đạt chọn đúng công cụ 100%, đối số 96% trên 50 mẫu | EXP-AGT-01 | Bảng 4.5 | `benchmarks/results/bfcl_simple_python_qwen25_7b_full50.json` | Benchmark phụ, English subset |
 
 # PHỤ LỤC B. CẤU HÌNH HỆ THỐNG
 

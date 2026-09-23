@@ -153,8 +153,8 @@
       "source_url": "https://github.com/ShishirPatil/gorilla/tree/6ea57973c7a6097fd7c5915698c54c17c5b1b6c8/berkeley-function-call-leaderboard",
       "revision": "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8",
       "license": "Apache-2.0 repository; audit each dataset component before redistribution",
-      "splits": {"selected_subset": "50-100 tasks after fixed category selection"},
-      "artifact_sha256": null,
+      "splits": {"selected_subset": "v4 simple_python, 50 tasks, seed 42"},
+      "artifact_sha256": "c98fab17669d3fcb61763030fffdc83d67b2c57f2d8d0d9a5b1c2b595056c5f3",
       "metrics": ["tool_selection_accuracy", "argument_exact_match", "multi_tool_sequence_accuracy", "tool_error_recovery", "unnecessary_tool_call_rate"],
       "limitations": "A Vietnamese-adapted subset is derived data and must not be called the original BFCL dataset."
     },
