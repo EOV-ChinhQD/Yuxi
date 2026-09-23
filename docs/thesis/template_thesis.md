@@ -626,8 +626,9 @@ Kết quả cho thấy RapidOCR có thể chạy ổn định trên subset lịc
 | When2Call, Qwen3 8B local | 60 | 63,33% | Không áp dụng | 1,82 | Kiểm tra độ bền |
 | BFCL simple_python, Qwen2.5 7B local | 50 | 100,00% | 96,00% | Không ghi | Benchmark phụ, adapter Yuxi |
 | BFCL multiple, Qwen2.5 7B local | 50 | 98,00% | 90,00% | Không ghi | Benchmark phụ, adapter Yuxi |
+| BFCL parallel, Qwen2.5 7B local | 50 | 98,00% | 78,00% | Không ghi | Benchmark phụ, adapter Yuxi |
 
-Cấu hình DeepSeek đạt kết quả khớp chính xác toàn bộ lời gọi cao hơn Qwen3 8B 4 điểm phần trăm, dù Qwen3 chọn đúng tên công cụ ở toàn bộ 100 mẫu. Với When2Call, hai mô hình chỉ đạt 66,67% và 63,33%, cho thấy quyết định khi nào không nên gọi công cụ còn là điểm yếu. Adapter BFCL trên 50 tác vụ simple_python đạt 100% chọn đúng công cụ và 96% khớp đối số; category multiple đạt tương ứng 98% và 90%. Đây là benchmark phụ bằng tiếng Anh, không đại diện cho toàn bộ BFCL hoặc tác vụ agent nhiều bước. Các tác vụ điều hướng tài liệu nhiều bước và phục hồi sau lỗi công cụ chưa được đánh giá trong phạm vi này.
+Cấu hình DeepSeek đạt kết quả khớp chính xác toàn bộ lời gọi cao hơn Qwen3 8B 4 điểm phần trăm, dù Qwen3 chọn đúng tên công cụ ở toàn bộ 100 mẫu. Với When2Call, hai mô hình chỉ đạt 66,67% và 63,33%, cho thấy quyết định khi nào không nên gọi công cụ còn là điểm yếu. Adapter BFCL trên 50 tác vụ simple_python đạt 100% chọn đúng công cụ và 96% khớp đối số; category multiple đạt tương ứng 98% và 90%; category parallel đạt 98% và 78%. Đây là benchmark phụ bằng tiếng Anh, không đại diện cho toàn bộ BFCL hoặc tác vụ agent nhiều bước. Các tác vụ điều hướng tài liệu nhiều bước và phục hồi sau lỗi công cụ chưa được đánh giá trong phạm vi này.
 
 ## 4.11. Đánh giá NLI
 
@@ -788,6 +789,7 @@ Các hướng phát triển ưu tiên gồm:
 | C-011 | OCR pilot RapidOCR đạt CER 22,87%, WER 71,61% trên 10 trang VietAge-OCR | EXP-OCR-01 | Bảng 4.11 | `benchmarks/results/printed_ocr_vietage_10_rapid_ocr.json` | Pilot public-license subset |
 | C-012 | BFCL simple_python adapter với Qwen2.5 7B đạt chọn đúng công cụ 100%, đối số 96% trên 50 mẫu | EXP-AGT-01 | Bảng 4.5 | `benchmarks/results/bfcl_simple_python_qwen25_7b_full50.json` | Benchmark phụ, English subset |
 | C-013 | BFCL multiple adapter với Qwen2.5 7B đạt chọn đúng công cụ 98%, đối số 90% trên 50 mẫu | EXP-AGT-01 | Bảng 4.5 | `benchmarks/results/bfcl_multiple_qwen25_7b_full50.json` | Benchmark phụ, English subset |
+| C-014 | BFCL parallel adapter với Qwen2.5 7B đạt chọn đúng công cụ 98%, đối số 78% trên 50 mẫu | EXP-AGT-01 | Bảng 4.5 | `benchmarks/results/bfcl_parallel_qwen25_7b_full50.json` | Benchmark phụ, English subset |
 
 # PHỤ LỤC B. CẤU HÌNH HỆ THỐNG
 
@@ -862,6 +864,7 @@ rag_ablation:
 | uit-viquad-2_e2e_qwen25_7b_full150_single_evidence.json | EXP-E2E-01 | bfca0c0f4450549fb1fd2fc48bc143a679ce46987e5b4d57fd1cd6d746ad5fe7 | `benchmarks/results/` | Qwen2.5 7B single-evidence, 150 mẫu; EM 34,67%, F1 47,36% |
 | bfcl_simple_python_qwen25_7b_full50.json | EXP-AGT-01 | f49a2cfcf32beed75ac06636b8e6729fcb86d7c44c901e1d5617f258f4a417fa | `benchmarks/results/` | BFCL simple_python adapter, 50 mẫu; tool 100%, argument 96% |
 | bfcl_multiple_qwen25_7b_full50.json | EXP-AGT-01 | a23b07f0d4ba13afe4c86303e165e00de680c961a8f1c89a766b477e22c8b85c | `benchmarks/results/` | BFCL multiple adapter, 50 mẫu; tool 98%, argument 90% |
+| bfcl_parallel_qwen25_7b_full50.json | EXP-AGT-01 | 66bdf5e283c5e668310354e2237367f8d84460922ad0320bc484b8b90918f46c | `benchmarks/results/` | BFCL parallel adapter, 50 mẫu; tool 98%, argument 78% |
 | printed_ocr_meddiesocr_30_rapid_ocr.json | EXP-OCR-01 | 12ec2f2e8ea2f78ae76889d1443881d16786b17e8d9f5c899faecfed6c65da4d | `benchmarks/results/` | RapidOCR, 30 trang MeddiesOCR; CER 24,40%, WER 76,51%; internal |
 | printed_ocr_vietage_10_rapid_ocr.json | EXP-OCR-01 | a51d18993048a479cbf0b5405ad610a3f520f0a39d5328c95ee0af8e4d044ffa | `benchmarks/results/` | RapidOCR, 10 trang VietAge-OCR; CER 22,87%, WER 71,61% |
 

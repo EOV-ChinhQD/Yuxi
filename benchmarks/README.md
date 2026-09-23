@@ -159,9 +159,12 @@ docker exec api-dev python /app/project-scripts/eval/run_bfcl_subset.py \
 The completed result is tool-selection accuracy 100.00%, argument exact match
 96.00%, and call-error rate 0.00% for `simple_python`. The `multiple` category
 obtained 98.00% tool selection, 90.00% argument exact match, and 0.00% call
-errors. BFCL optional parameters are matched using
+errors. The `parallel` category obtained 98.00% tool selection, 78.00%
+argument exact match, and 0.00% call errors after normalizing BFCL's
+multi-object and list-valued argument forms. BFCL optional parameters are matched using
 the upstream convention where an allowed empty value means the argument may be
-omitted. These results cover only the two fixed single-call categories.
+omitted. These results cover only the three fixed categories and should not be
+read as a complete BFCL score.
 
 For the E2E RAG runner, `--evidence-k 3` selects the highest-ranked passages
 with direct query-token overlap while preserving the retrieval hit metrics:

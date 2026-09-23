@@ -11,6 +11,7 @@ Run fixed, auditable 50-task BFCL `simple_python` and 50-task `multiple` subsets
 - [x] Run all 50 tasks → verify sample count, tool-selection and argument-exact metrics.
 - [x] Update benchmark lock/README/thesis only if the full artifact is valid → verify hashes and tests.
 - [x] Repeat the fixed preparation and scoring for `multiple` → verify 50 records and zero call errors.
+- [x] Extend the adapter to BFCL `parallel` output forms and score 50 tasks → verify parser tests and zero call errors.
 
 ## Done when
 
