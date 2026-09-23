@@ -101,6 +101,26 @@ uv run python scripts/eval/run_viequad_bm25.py \
 The current result is a BM25 reference baseline, not a Yuxi production-pipeline
 score. Agent data contracts can be checked with:
 
+For a populated Yuxi Milvus knowledge base, the production retrieval runner
+supports weighted hybrid and RRF configurations and writes per-query rankings
+and latency samples. Use a bounded concurrency value and run configurations
+sequentially to avoid exhausting the embedding service or GPU memory:
+
+```bash
+docker exec api-dev python /app/project-scripts/eval/run_viequad_yuxi_smoke.py \
+  --queries /app/benchmarks/artifacts/retrieval/viequad/queries.jsonl \
+  --qrels /app/benchmarks/artifacts/retrieval/viequad/qrels.jsonl \
+  --output /app/benchmarks/results/viequad_yuxi_full_metric_hybrid_03.json \
+  --kb-id kb_viequad_full_nvidia_20260922 \
+  --embedding-model nvidia:nvidia/nemotron-3-embed-1b \
+  --limit 2048 --top-k 10 --search-mode hybrid \
+  --vector-weight 0.3 --bm25-weight 0.7 \
+  --hybrid-ranker weighted --concurrency 8
+```
+
+Set `--hybrid-ranker rrf --rrf-k 60` for RRF. The output includes
+`rankings`, `latency_samples_seconds`, Recall@K, MRR@10 and nDCG@10.
+
 ```bash
 uv run python scripts/eval/run_agent_contract_validation.py \
   --vietnamese benchmarks/artifacts/agent/vietnamese-function-calling/test.jsonl \

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import math
 import time
@@ -39,22 +40,36 @@ async def run(args: argparse.Namespace) -> dict:
     options = QueryOptions(
         search_mode=args.search_mode,
         final_top_k=args.top_k,
+        vector_weight=args.vector_weight,
+        bm25_weight=args.bm25_weight,
+        hybrid_ranker=args.hybrid_ranker,
+        rrf_k=args.rrf_k,
         use_graph_retrieval=False,
         use_consensus_retrieval=False,
     )
-    for row in rows:
-        started = time.perf_counter()
-        try:
-            results = await backend.query(row["query"], args.kb_id, options)
-            rankings[str(row["query_id"])] = [
-                Path(item.get("metadata", {}).get("source", "")).stem
-                for item in results
-                if item.get("metadata", {}).get("source")
-            ]
-        except Exception as exc:
-            rankings[str(row["query_id"])] = []
-            failures.append({"query_id": row["query_id"], "error": str(exc)})
-        latencies.append(time.perf_counter() - started)
+    semaphore = asyncio.Semaphore(args.concurrency)
+
+    async def retrieve(index: int, row: dict) -> tuple[int, list[str], float, dict | None]:
+        async with semaphore:
+            started = time.perf_counter()
+            try:
+                results = await backend.query(row["query"], args.kb_id, options)
+                ranking = [
+                    Path(item.get("metadata", {}).get("source", "")).stem
+                    for item in results
+                    if item.get("metadata", {}).get("source")
+                ]
+                return index, ranking, time.perf_counter() - started, None
+            except Exception as exc:
+                return index, [], time.perf_counter() - started, {"query_id": row["query_id"], "error": str(exc)}
+
+    retrieved = await asyncio.gather(*(retrieve(index, row) for index, row in enumerate(rows)))
+    for index, ranking, latency, failure in retrieved:
+        query_id = str(rows[index]["query_id"])
+        rankings[query_id] = ranking
+        latencies.append(latency)
+        if failure:
+            failures.append(failure)
 
     recall = {}
     reciprocal_ranks = []
@@ -81,6 +96,8 @@ async def run(args: argparse.Namespace) -> dict:
         "embedding_model": args.embedding_model,
         "queries": len(rows),
         "failures": failures,
+        "rankings": rankings,
+        "latency_samples_seconds": latencies,
         "metrics": {
             key: sum(values) / len(values) if values else 0.0
             for key, values in recall.items()
@@ -108,6 +125,11 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=20)
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--search-mode", choices=("vector", "keyword", "hybrid"), default="vector")
+    parser.add_argument("--vector-weight", type=float, default=0.3)
+    parser.add_argument("--bm25-weight", type=float, default=0.7)
+    parser.add_argument("--hybrid-ranker", choices=("weighted", "rrf"), default="weighted")
+    parser.add_argument("--rrf-k", type=int, default=60)
+    parser.add_argument("--concurrency", type=int, default=8)
     args = parser.parse_args()
 
     import asyncio

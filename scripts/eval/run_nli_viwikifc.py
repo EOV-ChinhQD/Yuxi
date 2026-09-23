@@ -92,17 +92,18 @@ def run(args: argparse.Namespace) -> dict:
         samples = []
         latencies: list[float] = []
         for row in rows:
+            started = time.perf_counter()
             context = "\n".join(row.get("evidence") or [])
             if not context.strip():
                 predicted, detail = "NEUTRAL", {"reason": "empty_evidence"}
             else:
-                started = time.perf_counter()
                 if config == "production":
                     predicted, score = _predict_production(pipeline, row["claim"], context)
                     detail = {"score": score}
                 else:
                     predicted, detail = _predict_standard(pipeline, row["claim"], context)
-                latencies.append((time.perf_counter() - started) * 1000)
+            latency_ms = (time.perf_counter() - started) * 1000
+            latencies.append(latency_ms)
             expected = row["label"]
             confusion[expected][predicted] += 1
             samples.append(
@@ -111,6 +112,7 @@ def run(args: argparse.Namespace) -> dict:
                     "expected": expected,
                     "predicted": predicted,
                     "detail": detail,
+                    "latency_ms": round(latency_ms, 3),
                 }
             )
         per_class = {label: _prf(confusion, label) for label in LABELS}
@@ -124,6 +126,7 @@ def run(args: argparse.Namespace) -> dict:
             "latency_ms": {
                 "mean": sum(latencies) / len(latencies) if latencies else 0.0,
                 "p50": sorted(latencies)[len(latencies) // 2] if latencies else 0.0,
+                "p95": sorted(latencies)[max(0, int(len(latencies) * 0.95) - 1)] if latencies else 0.0,
             },
             "samples": samples,
         }
