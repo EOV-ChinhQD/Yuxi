@@ -23,16 +23,37 @@ def question_text(row: dict) -> str:
     )
 
 
-def parse_call(raw: str) -> dict | None:
-    candidates = re.findall(r"\{.*\}", raw, re.DOTALL)
-    for candidate in reversed(candidates):
-        try:
-            value = json.loads(candidate)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(value, dict) and value.get("name"):
-            return {"name": value["name"], "arguments": value.get("arguments") or {}}
-    return None
+def parse_call(raw: str) -> list[dict] | None:
+    decoder = json.JSONDecoder()
+    starts = [index for index, char in enumerate(raw) if char in "[{" ]
+    if not starts:
+        return None
+    first_start = starts[0]
+    try:
+        first, first_end = decoder.raw_decode(raw[first_start:])
+    except json.JSONDecodeError:
+        first = None
+        first_end = 0
+    if isinstance(first, list) and all(isinstance(item, dict) and item.get("name") for item in first):
+        values = list(first)
+    elif isinstance(first, dict) and first.get("name"):
+        values = [first]
+        offset = first_start + first_end
+        for index in range(offset, len(raw)):
+            if raw[index] != "{":
+                continue
+            try:
+                value, _ = decoder.raw_decode(raw[index:])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(value, dict) and value.get("name"):
+                values.append(value)
+    else:
+        return None
+    return [
+        {"name": item["name"], "arguments": item.get("arguments") or {}}
+        for item in values
+    ]
 
 
 def argument_matches(actual: dict, expected: dict) -> bool:
@@ -48,14 +69,43 @@ def argument_matches(actual: dict, expected: dict) -> bool:
     return True
 
 
-def score_call(call: dict | None, ground_truth: list[dict]) -> tuple[bool, bool]:
-    if not call:
+def score_call(calls: list[dict] | None, ground_truth: list[dict]) -> tuple[bool, bool]:
+    if not calls:
         return False, False
-    for expected_call in ground_truth:
-        for name, expected_arguments in expected_call.items():
-            if call["name"] == name:
-                return True, argument_matches(call["arguments"], expected_arguments)
-    return False, False
+    expected_calls = [
+        {"name": name, "arguments": arguments}
+        for expected_call in ground_truth
+        for name, arguments in expected_call.items()
+    ]
+    if len(calls) == 1 and len(expected_calls) > 1:
+        call = calls[0]
+        if isinstance(call["arguments"], list):
+            calls = [
+                {"name": call["name"], "arguments": arguments}
+                for arguments in call["arguments"]
+            ]
+        elif isinstance(call["arguments"], dict):
+            count = len(expected_calls)
+            values = call["arguments"]
+            expanded = []
+            for index in range(count):
+                arguments = {
+                    key: value[index] if isinstance(value, list) and len(value) == count else value
+                    for key, value in values.items()
+                }
+                expanded.append({"name": call["name"], "arguments": arguments})
+            calls = expanded
+    if len(calls) != len(expected_calls):
+        return False, False
+    unmatched = list(expected_calls)
+    argument_match = True
+    for call in calls:
+        match = next((item for item in unmatched if item["name"] == call["name"]), None)
+        if match is None:
+            return False, False
+        unmatched.remove(match)
+        argument_match = argument_match and argument_matches(call["arguments"], match["arguments"])
+    return True, argument_match
 
 
 async def run(args: argparse.Namespace) -> dict:
@@ -88,7 +138,7 @@ async def run(args: argparse.Namespace) -> dict:
             {
                 "id": row["id"],
                 "raw_output": raw,
-                "parsed_call": call,
+            "parsed_call": call,
                 "tool_match": tool_match,
                 "argument_exact_match": argument_match,
                 "error": error,

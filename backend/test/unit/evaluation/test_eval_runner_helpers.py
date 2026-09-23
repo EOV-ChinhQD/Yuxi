@@ -19,6 +19,7 @@ from run_e2e_viquad2 import (  # noqa: E402
 )
 from run_when2call_local import _parse_relevance_gate  # noqa: E402
 from run_bfcl_subset import argument_matches  # noqa: E402
+from run_bfcl_subset import parse_call, score_call  # noqa: E402
 
 
 def test_hit_at_k_accepts_json_string_keys_and_integer_test_keys():
@@ -81,3 +82,17 @@ def test_bfcl_argument_match_allows_declared_optional_empty_values():
     assert argument_matches({"required": 1, "optional": "default"}, expected)
     assert not argument_matches({"required": 1, "extra": True}, expected)
     assert not argument_matches({}, expected)
+
+
+def test_bfcl_parallel_score_matches_calls_without_requiring_order():
+    gold = [{"a": {"x": [1]}}, {"b": {"y": [2]}}]
+    assert score_call(
+        [{"name": "b", "arguments": {"y": 2}}, {"name": "a", "arguments": {"x": 1}}],
+        gold,
+    ) == (True, True)
+    assert len(parse_call('{"name":"a","arguments":{"x":1}}\n{"name":"b","arguments":{"y":2}}')) == 2
+    assert score_call([{"name": "a", "arguments": {"x": 9}}], gold) == (False, False)
+    assert score_call(
+        [{"name": "a", "arguments": [{"x": 1}, {"x": 1}]}],
+        [{"a": {"x": [1]}}, {"a": {"x": [1]}}],
+    ) == (True, True)
