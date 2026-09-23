@@ -2,7 +2,7 @@
 
 ## Goal
 
-Run a fixed, auditable 50-task BFCL `simple_python` subset through Yuxi's local agent harness.
+Run fixed, auditable 50-task BFCL `simple_python` and 50-task `multiple` subsets through Yuxi's local agent harness.
 
 ## Tasks
 
@@ -10,6 +10,7 @@ Run a fixed, auditable 50-task BFCL `simple_python` subset through Yuxi's local 
 - [x] Run a 5-task Qwen2.5 7B smoke → verify zero runner errors and inspect parsed calls.
 - [x] Run all 50 tasks → verify sample count, tool-selection and argument-exact metrics.
 - [x] Update benchmark lock/README/thesis only if the full artifact is valid → verify hashes and tests.
+- [x] Repeat the fixed preparation and scoring for `multiple` → verify 50 records and zero call errors.
 
 ## Done when
 

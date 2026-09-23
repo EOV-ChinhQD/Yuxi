@@ -83,6 +83,20 @@
       "result_sha256": "f49a2cfcf32beed75ac06636b8e6729fcb86d7c44c901e1d5617f258f4a417fa"
     },
     {
+      "dataset": "bfcl",
+      "source_revision": "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8",
+      "split": "v4:multiple",
+      "records": 50,
+      "artifact": "benchmarks/artifacts/agent/bfcl/multiple_50.jsonl",
+      "sha256": "66db21cec5d96b11c11dc05a7c0d1e80ec1870cc0560147ec8f39f95b184290d",
+      "manifest": "benchmarks/artifacts/agent/bfcl/multiple_50.manifest.json",
+      "manifest_sha256": "4c80a0dca4351dffa23a51ddc9d3af914606585c52d4dba07b56d1bf8d0fce32",
+      "license": "Apache-2.0",
+      "status": "model_scored_qwen25_7b_tool_0.98_argument_0.90",
+      "result": "benchmarks/results/bfcl_multiple_qwen25_7b_full50.json",
+      "result_sha256": "a23b07f0d4ba13afe4c86303e165e00de680c961a8f1c89a766b477e22c8b85c"
+    },
+    {
       "dataset": "uit-viquad-2",
       "source_revision": "406f09a45cc106a8f7b7fd0c25078883fe58cb1f",
       "split": "validation",
