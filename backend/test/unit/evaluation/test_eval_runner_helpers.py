@@ -11,7 +11,12 @@ from run_agentkit_local_smoke import (  # noqa: E402
     _optional_argument_needs_retry,
     _prediction_needs_retry,
 )
-from run_e2e_viquad2 import hit_at_k, select_evidence  # noqa: E402
+from run_e2e_viquad2 import (  # noqa: E402
+    extract_model_answer,
+    hit_at_k,
+    is_abstained,
+    select_evidence,
+)
 from run_when2call_local import _parse_relevance_gate  # noqa: E402
 
 
@@ -24,6 +29,13 @@ def test_hit_at_k_accepts_json_string_keys_and_integer_test_keys():
 def test_select_evidence_keeps_ranked_documents_with_query_overlap():
     corpus = {"a": "lịch sử nước Việt", "b": "ẩm thực miền Trung", "c": "lịch sử Hà Nội"}
     assert select_evidence(["a", "b", "c"], corpus, "lịch sử Hà Nội", 2) == ["a", "c"]
+
+
+def test_rag_answer_parser_extracts_answer_and_refusal():
+    assert extract_model_answer("Lý do...\\nĐáp án: Hà Nội.") == "Hà Nội."
+    assert is_abstained("KHÔNG ĐỦ THÔNG TIN")
+    assert is_abstained("KHÔNG ĐỦ THÔN TIN.")
+    assert not is_abstained("Hà Nội")
 
 
 def test_agent_argument_normalization_is_limited_to_punctuation_and_approved_qualifiers():

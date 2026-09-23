@@ -125,8 +125,19 @@ def f1_score(predicted: str, golds: list[str], abstained: bool, answerable: bool
     return best
 
 
+def extract_model_answer(raw_answer: str) -> str:
+    """Remove common answer wrappers before scoring the model output."""
+    answer = (raw_answer or "").strip().strip("`")
+    for marker in ("Đáp án:", "Đáp án -", "Answer:"):
+        if marker.casefold() in answer.casefold():
+            answer = answer[answer.casefold().rfind(marker.casefold()) + len(marker) :].strip()
+    return answer
+
+
 def is_abstained(answer: str) -> bool:
-    return ABSTAIN_PHRASE in answer
+    """Recognize the protocol phrase and one observed one-character typo."""
+    normalized = normalize_vi(extract_model_answer(answer))
+    return normalized in {normalize_vi(ABSTAIN_PHRASE), "không đủ thôn tin"}
 
 
 def hit_at_k(hits: dict, k: int) -> bool:
@@ -203,13 +214,16 @@ async def run(args: argparse.Namespace) -> dict:
                     model.call(prompt, stream=False), timeout=args.timeout
                 )
                 tracker.record(True, len(prompt), len(response.content or ""))
-                answer = (response.content or "").strip()
+                raw_answer = (response.content or "").strip()
+                answer = extract_model_answer(raw_answer)
             except Exception as error:
                 tracker.record(False, len(prompt))
-                answer = f"LỖI: {error!r}"
+                raw_answer = f"LỖI: {error!r}"
+                answer = raw_answer
             abstained = is_abstained(answer)
             arm_outputs["standard_rag"] = {
                 "answer": answer,
+                "raw_answer": raw_answer,
                 "abstained": abstained,
                 "em": em_score(answer, row["gold_answers"], abstained, row["answerable"]),
                 "f1": f1_score(answer, row["gold_answers"], abstained, row["answerable"]),
@@ -263,6 +277,7 @@ async def run(args: argparse.Namespace) -> dict:
         "model_params": {"temperature": 0, "max_tokens": args.max_tokens, "top_k": args.top_k},
         "tokenizer": "whitespace-unicode-word-regex",
         "abstain_phrase": ABSTAIN_PHRASE,
+        "answer_normalization": "strip common answer wrappers; accept observed one-character refusal typo",
         "sample_size": len(samples),
         "usage": tracker.summary(),
         "summary": summary,

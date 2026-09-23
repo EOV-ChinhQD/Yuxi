@@ -161,5 +161,10 @@ docker exec api-dev python /app/project-scripts/eval/run_e2e_viquad2.py \
 
 This is an ablation/robustness result, not a controlled comparison with the
 DeepSeek primary RAG result because the model and evidence configuration differ.
+The runner stores `raw_answer` and applies a narrow answer normalization before
+scoring: common `Đáp án:` wrappers are removed, and the one-character refusal
+typo observed in the 1.5B probe is recognized. The previously committed 1.5B
+150-sample artifact predates this parser fix and must be rerun before replacing
+its thesis metrics.
 
 NLI claims and agent tool-calling tasks can use the public sources in `source-lock.json`. ViWikiFC is normalized to `ENTAILMENT`, `CONTRADICTION`, and `NEUTRAL`; When2Call and Vietnamese Function Calling are normalized to the tool-calling schema. These remain source-locked until the exported artifact has its own hash and test report.
