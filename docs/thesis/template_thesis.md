@@ -464,7 +464,7 @@ CHƯƠNG 4. THIẾT KẾ THỰC NGHIỆM VÀ KẾT QUẢ
 
 UIT-ViQuAD được sử dụng làm nguồn cho benchmark đọc hiểu tiếng Việt. Khi chuyển thành retrieval benchmark, cần mô tả rõ cách xây dựng corpus, cách xác định relevant passage, cách tạo negative passages và cách loại bỏ duplicate giữa các split.
 
-Số liệu đã khóa cho đồ án (trạng thái `Measured`, chi tiết tại §4.6 và §4.8): nguồn phụ cho retrieval là `mteb/VieQuADRetrieval` revision `f956535e` (validation: 2.048 queries, 2.490 passages, 4.096 qrels); nguồn chính cho E2E và abstention là `taidng/UIT-ViQuAD2.0` revision `406f09a4` (validation: 3.814 dòng gồm 2.653 answerable và 1.161 impossible), từ đó trích mẫu E2E 150 câu (100 answerable + 50 impossible, seed 42) trên corpus 557 passages deduplicated. Nguồn `checken9x/vietnamese-rag-benchmark-1k` (revision `cd979a55`) chỉ dùng tham khảo vì toàn bộ 1.000 ô `ground_truth` đều là placeholder, không tính được EM/F1 (xem `source-lock.json`, mục `vn-rag-1k`, trạng thái `reference_only`).
+Số liệu đã khóa cho đồ án (trạng thái `Measured`, chi tiết tại §4.6 và §4.8): nguồn bổ sung cho retrieval là `mteb/VieQuADRetrieval` revision `f956535e` (validation: 2.048 queries, 2.490 passages, 4.096 qrels). Các artifact Yuxi trên nguồn này đã chạy BM25, vector, hybrid, weighted hybrid và RRF; đây là adapter retrieval bổ sung, không thay thế benchmark đa miền ViRE trong thiết kế ban đầu. Nguồn chính cho E2E và abstention là `taidng/UIT-ViQuAD2.0` revision `406f09a4` (validation: 3.814 dòng gồm 2.653 answerable và 1.161 impossible), từ đó trích mẫu E2E 150 câu (100 answerable + 50 impossible, seed 42) trên corpus 557 passages deduplicated. Nguồn `checken9x/vietnamese-rag-benchmark-1k` (revision `cd979a55`) chỉ dùng tham khảo vì toàn bộ 1.000 ô `ground_truth` đều là placeholder, không tính được EM/F1 (xem `source-lock.json`, mục `vn-rag-1k`, trạng thái `reference_only`).
 
 4.2.2. OCR
 
@@ -486,9 +486,9 @@ Exp ID	Nội dung	Dữ liệu	Chỉ số chính	Trạng thái hiện tại
 
 EXP-OCR-01	OCR trên tài liệu in thực tế	[CẦN BỔ SUNG]	CER, WER, table score, latency	`Deferred` (raw OCR trống, engine chưa kiểm chứng; xem §4.9)
 
-EXP-RET-01	Retrieval ablation	UIT-ViQuAD converted corpus	Recall@K, MRR, nDCG@5	`Measured` một phần (arm BM25 whitespace full 2.048 queries; dense/hybrid `Blocked` vì không có embedding key)
+EXP-RET-01	Retrieval ablation	VieQuAD converted corpus	Recall@K, MRR, nDCG@10	`Measured` trên adapter VieQuAD (BM25, vector, hybrid, RRF; 2.048 queries); ViRE multi-domain `Deferred`
 
-EXP-RET-02	Consensus weight search	Validation split	nDCG@5	`Blocked` (cần dense arm trước)
+EXP-RET-02	Consensus weight search	VieQuAD validation split	nDCG@10	`Measured` (512 tuning + 1.536 holdout; chọn vector 0 / BM25 1; graph/consensus `Deferred`)
 
 EXP-E2E-01	End-to-end QA	Test split	EM, F1, citation, abstention	`Measured` (150 mẫu UIT-ViQuAD 2.0: extractive + standard RAG)
 
@@ -592,41 +592,41 @@ Hybrid + query rewriting.
 
 Consensus retrieval + reranking.
 
-Cấu hình	Recall@1	Recall@5	Recall@10	MRR	nDCG@5	p50	p95	Trạng thái
+Cấu hình	Recall@1	Recall@5	Recall@10	MRR	nDCG@10	p50	p95	Trạng thái
 
-BM25 whitespace	58,06%	85,74%	91,80%	0,7010	0,4919	32,7ms	56,0ms	`Measured` (N=2.048, corpus 2.490; `viequad_bm25_validation.json`)
+BM25 whitespace (MTEB adapter)	58,06%	85,74%	91,80%	0,7010	0,4919	32,7ms	56,0ms	`Measured primary retrieval baseline` (N=2.048, corpus 2.490; `viequad_bm25_validation.json`)
 
-BM25 tiếng Việt	—	—	—	—	—	—	—	`Missing` (chưa chạy arm pyvi)
+BM25 Yuxi keyword	60,99%	87,35%	92,38%	0,7239	—	4,8ms	6,6ms	`Measured secondary` (N=2.048; `viequad_yuxi_full_nvidia_keyword.json`)
 
-Dense	—	—	—	—	—	—	—	`Blocked` (không có embedding key khả dụng: Gemini/OpenRouter hết hạn, NVIDIA chỉ có chat, SiliconFlow/DashScope không có key)
+Dense vector	5,57%	12,65%	16,65%	0,0861	0,0660	50,4ms	71,8ms	`Measured secondary` (N=2.048; NVIDIA Nemotron embedding; `viequad_yuxi_full_nvidia_vector.json`)
 
-Hybrid	—	—	—	—	—	—	—	`Blocked` (phụ thuộc dense)
+Hybrid production defaults (w_vector=0,3)	53,56%	87,40%	92,38%	0,6806	—	—	—	`Measured secondary` (N=2.048; `viequad_yuxi_full_nvidia_hybrid_production.json`)
 
-Hybrid + rewrite	—	—	—	—	—	—	—	`Blocked` (phụ thuộc dense)
+Weighted hybrid w_vector=0,3	28,81%	71,04%	89,65%	0,4600	—	—	—	`Measured diagnostic` (không dùng làm primary; `viequad_yuxi_full_nvidia_hybrid_w03.json`)
 
-Consensus + reranker	—	—	—	—	—	—	—	`Blocked` (phụ thuộc dense + weight search)
+RRF hybrid (k=60)	35,99%	81,01%	88,62%	0,5486	—	—	—	`Measured secondary` (N=2.048; `viequad_yuxi_full_nvidia_rrf.json`)
 
-[Sau khi chạy: báo cáo bootstrap 95% confidence interval và chênh lệch theo điểm phần trăm; không dùng “tăng X%” nếu thực chất là X percentage points.]
+[Nhận xét: vector standalone thấp hơn BM25 trên artifact này; hybrid production có Recall@10 xấp xỉ BM25 nhưng MRR thấp hơn. Grid search chọn w_vector=0 trên holdout (nDCG@10=0,4997), vì vậy chưa có bằng chứng rằng thêm vector cải thiện trên tập này. Query rewrite, graph signal, reranker và benchmark ViRE đa miền chưa có kết quả full.]
 
 4.7. Tìm kiếm trọng số consensus
 
-Trọng số được lựa chọn trên validation set theo nDCG@5. Sau khi chọn, cấu hình được khóa và đánh giá một lần trên test set. Cần công bố toàn bộ search space, normalization method và tiêu chí xử lý tie.
+Trọng số được lựa chọn trên tuning split theo nDCG@10. Sau khi chọn, cấu hình được khóa và đánh giá trên holdout split. Cần công bố toàn bộ search space, normalization method và tiêu chí xử lý tie.
 
-Bộ trọng số	(w_{BM25})	(w_{dense})	(w_{graph})	(w_{event})	Validation nDCG@5	Test nDCG@5	Trạng thái
+Bộ trọng số	(w_{BM25})	(w_{dense})	(w_{graph})	(w_{event})	Validation nDCG@10	Holdout nDCG@10	Trạng thái
 
-[Cấu hình]	—	—	—	—	—	—	`Missing`
+VieQuAD grid-selected	1,00	0,00	—	—	0,5092	0,4997	`Measured` (512 tuning queries, 1.536 holdout; `viequad_weight_grid_tuning.json`; graph/event chưa đánh giá)
 
 4.8. Đánh giá đầu cuối
 
 Phương pháp	EM	Token F1	Citation accuracy	Abstention F1	Unsupported claim rate	Trạng thái
 
-Direct retrieval/extractive	0,67% (95% CI [0,12; 3,68])	17,57%	—	— (P=0, R=0)	—	`Measured` (N=150, hit@1 77,33%; `uit-viquad-2_e2e_150.json`)
+Direct retrieval/extractive	0,67% (95% CI [0,12; 3,68])	17,57%	—	— (P=0, R=0)	—	`Measured primary baseline` (N=150, hit@1 77,33%; `uit-viquad-2_e2e_150.json`)
 
-Standard RAG	45,33% (95% CI [37,58; 53,32])	66,94%	—	P=79,49%, R=62,00%	—	`Measured` (N=150, DeepSeek V4.1 Flash qua NVIDIA, temp=0, max_tokens=4096, top_k=5, 150 calls/2 lỗi; cùng file trên)
+Standard RAG	45,33% (95% CI [37,58; 53,32])	66,94%	—	P=79,49%, R=62,00%	—	`Measured primary` (N=150, DeepSeek V4.1 Flash qua NVIDIA, temp=0, max_tokens=4096, top_k=5, 150 calls/2 lỗi; cùng file trên)
 
-Agentic RAG không NLI	—	—	—	—	—	`Missing` (cần KB populated + LangGraph path)
+Agentic RAG không NLI	—	—	—	—	—	`Missing` (chưa có full artifact cùng test set và LangGraph path)
 
-Agentic RAG + NLI	—	—	—	—	—	`Missing` (phụ thuộc arm trên + NLI gate)
+Agentic RAG + NLI	—	—	—	—	—	`Blocked` (chưa tách được đóng góp nhân quả của NLI gate trên E2E)
 
 Các arms phải sử dụng cùng test queries và cùng LLM nếu mục tiêu là đo đóng góp của retrieval/agent/NLI.
 
@@ -744,7 +744,7 @@ Retrieval miss (E2E: hit@1 đúng nhưng abstain / EM sai)	—	—	—	Phân tí
 
 Unsupported generation	—	—	—	Chờ phân tích claim-level trên artifact E2E; NLI benchmark đã có kết quả độc lập
 
-Tool/argument error (VN-FC: 7/100 EM sai)	7	7%	—	Phân tích chi tiết sau (tách lỗi gold-chuẩn-hóa khỏi lỗi slot)
+Tool/argument error (VN-FC primary: 7/100 exact sai)	7	7%	—	Phân tích chi tiết sau (tách lỗi gold-chuẩn-hóa khỏi lỗi slot)
 
 Qwen3 argument mismatch (VN-FC secondary run)	11/100	11%	—	Không post-process; chỉ retry bounded cho optional fields; giữ run để đánh giá local-model robustness
 
@@ -766,23 +766,21 @@ CHƯƠNG 5. KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN
 
 Đồ án đã xác định kiến trúc và phương pháp đánh giá cho một nền tảng hỏi–đáp RAG tiếng Việt có hỗ trợ tài liệu đa định dạng, hybrid retrieval, đồ thị tri thức, workflow tác tử và kiểm chứng NLI. Thiết kế nhấn mạnh khả năng truy nguyên và tách riêng các tầng đánh giá thay vì chỉ sử dụng một chỉ số trả lời đầu cuối.
 
-[CẦN CẬP NHẬT SAU THỰC NGHIỆM: viết một đoạn trả lời cho từng RQ1–RQ4, kèm số liệu và tham chiếu bảng. Không dùng “vượt trội”, “đột phá”, “chặn hoàn toàn” hoặc “production-ready” nếu dữ liệu không chứng minh.]
+Kết luận cho từng câu hỏi nghiên cứu, chỉ dựa trên các artifact đã có:
 
-Trả lời sơ bộ từ số liệu đã chốt:
+RQ1 (retrieval): Có bằng chứng đầy đủ cho adapter VieQuAD, nhưng chưa cho benchmark ViRE đa miền. BM25 whitespace đạt Recall@10 91,80%, MRR@10 0,7010; Yuxi keyword đạt Recall@10 92,38%, MRR@10 0,7239. Dense vector chỉ đạt Recall@10 16,65%, MRR@10 0,0861. Hybrid production đạt Recall@10 92,38%, MRR@10 0,6806, còn RRF đạt 88,62% và 0,5486. Grid search trên 512 truy vấn tuning và 1.536 truy vấn holdout chọn trọng số vector bằng 0, với holdout nDCG@10=0,4997. Do đó, trên tập này chưa có bằng chứng rằng thêm vector hoặc RRF cải thiện BM25; query rewrite, graph signal, reranker và ViRE vẫn `Deferred` (§4.6–§4.7).
 
-RQ1 (retrieval): mới chỉ đo arm BM25 whitespace trên VieQuAD (R@10 91,80%, MRR@10 0,7010, N=2.048) và BM25 trên corpus E2E 557 docs (hit@1 77,33%). Chưa đủ cơ sở so sánh với dense/hybrid/consensus (`Blocked`, §4.6).
+RQ2 (RAG và NLI): Standard RAG primary đạt EM 45,33% (95% CI [37,58; 53,32]), F1 66,94%, abstention precision 79,49% và recall 62,00% trên 150 mẫu. Retrieval hit@1 là 77,33%, cho thấy khoảng cách giữa tìm được passage và sinh đúng đáp án. ViWikiFC production NLI đạt accuracy 56,77%, macro F1 51,54%, contradiction precision/recall 74,65%/60,48%; cấu hình standard đạt 39,93%/32,22%. Đây là hai phép đo năng lực riêng biệt: artifact hiện có chưa chứng minh tác động nhân quả của NLI gate lên E2E RAG, nên Agentic RAG + NLI được ghi `Blocked`.
 
-RQ2 (NLI + tác tử): E2E standard RAG đạt EM 45,33% (95% CI [37,58; 53,32]), F1 66,94%, abstention P 79,49% / R 62,00% trên 150 mẫu. Trên ViWikiFC, production config đạt accuracy 56,77%, macro F1 51,54%; standard 3-way config đạt 39,93%, macro F1 32,22%. Đây là đánh giá năng lực NLI trên claim-evidence, chưa phải phép đo nhân quả của NLI gate lên E2E RAG; đóng góp của gate vẫn chưa tách được (§4.11).
+RQ3 (agent): DeepSeek primary trên VN-FC đạt tool match 98% và exact match 93% trên 100 task; When2Call đạt 66,67% trên 60 task phân tầng. Qwen3 8B local là robustness secondary: VN-FC đạt tool match 100%, exact match 89%; When2Call đạt 63,33%. Chênh lệch giữa hai model cho thấy kết quả phụ thuộc model, prompt và retry policy. Recovery sau timeout/empty result/structured error chưa có benchmark chính thức.
 
-RQ3 (agent): baseline DeepSeek trên VN-FC đạt tool match 98% (95% CI [93,00; 99,45]), EM 93%; When2Call đạt accuracy 66,67% trên 60 mẫu (95% CI [54,06; 77,27]). Run robustness Qwen3 local đạt lần lượt 100%/89% trên VN-FC và 63,33% trên When2Call, cho thấy kết quả phụ thuộc model và cấu hình retry; recovery chưa đo chính thức (§4.10, §4.13).
-
-RQ4 (trade-off): E2E standard RAG p50 11,7s (reasoning model) so với retrieval thuần 0,3–32,7ms; chi phí ở mức `Estimated` vì dùng free trial — cần bảng giá công khai hoặc đo spend thật trước khi kết luận (§4.12).
+RQ4 (trade-off): Retrieval BM25 trên VieQuAD có p50 32,7ms và p95 56,0ms; E2E standard RAG có p50 11,7s và mean 23,1s. NLI có p50 8,9ms ở production config và 26,2ms ở standard config. Chi phí tiền thật chưa được đo; các run LLM dùng trial/free quota, vì vậy chỉ được báo cáo latency, usage và số lần gọi, không kết luận cost hoặc ROI.
 
 5.2. Hạn chế
 
-Tại thời điểm của bản thảo, bộ OCR tài liệu in thực tế chưa được score; một số benchmark agent và retrieval lớn chưa được chạy đầy đủ do hạn chế dữ liệu, hạ tầng hoặc license. ViWikiFC là bộ fact-verification có evidence, nên kết quả NLI không thay thế cho đánh giá claim-level trên các câu trả lời E2E. Ngoài ra, benchmark đọc hiểu từ Wikipedia chưa phản ánh đầy đủ tài liệu nội bộ, bảng biểu phức tạp và truy vấn nhiều bước trong môi trường doanh nghiệp.
+Tại thời điểm của bản thảo, OCR tài liệu in thực tế chưa được score; benchmark chính ViRE đa miền cũng chưa được chạy. Retrieval đã có các artifact full trên adapter VieQuAD, nhưng đây không phải bằng chứng thay thế cho ViRE. Các bảng dense/hybrid/RRF phản ánh một corpus và một embedding model cụ thể, không đại diện cho mọi cấu hình triển khai. ViWikiFC là bộ fact-verification có evidence, nên kết quả NLI không thay thế cho đánh giá claim-level trên các câu trả lời E2E. Ngoài ra, benchmark đọc hiểu từ Wikipedia không phản ánh đầy đủ tài liệu nội bộ, bảng biểu phức tạp và truy vấn nhiều bước trong môi trường doanh nghiệp.
 
-Bổ sung từ đợt đo 2026-09-22/23: E2E 150 mẫu cho thấy khoảng cách giữa retrieval (hit@1 77,33%) và generation (EM 45,33%) — trả lời sai không chỉ do miss chứng cứ; abstention recall mới 62% nghĩa là 38% câu unanswerable vẫn bị trả lời bừa. Run Qwen3 local E2E mới dừng ở smoke 15 mẫu (EM 20%, F1 36,92%, hit@1 46,67%, một call error), nên chưa đủ để so sánh model hoặc thay thế baseline. Agent 60–100 còn nhỏ nên khoảng tin cậy rộng; chi phí suy luận chưa đo bằng tiền thật; các run DeepSeek phụ thuộc trial rate-limit của NVIDIA.
+Bổ sung từ đợt đo 2026-09-22/23: E2E 150 mẫu cho thấy khoảng cách giữa retrieval (hit@1 77,33%) và generation (EM 45,33%) — trả lời sai không chỉ do miss chứng cứ; abstention recall mới 62% nghĩa là 38% câu unanswerable vẫn bị trả lời bừa. Run Qwen3 local E2E chỉ là smoke 15 mẫu (EM 20%, F1 36,92%, hit@1 46,67%, 1/15 call error), nên không được dùng để so sánh model hoặc thay thế baseline. Agent 60–100 còn nhỏ nên khoảng tin cậy rộng; chi phí suy luận chưa đo bằng tiền thật; các run DeepSeek phụ thuộc trial rate-limit của NVIDIA.
 
 NLI chỉ kiểm tra quan hệ giữa claim và context được cung cấp; nó không chứng minh chân lý tuyệt đối. Knowledge graph cũng phụ thuộc vào chất lượng trích xuất thực thể và quan hệ. Cuối cùng, Docker Compose phục vụ phát triển và tái lập cục bộ nhưng không tự chứng minh khả năng sẵn sàng cao hay mở rộng production.
 
@@ -906,17 +904,29 @@ PHỤ LỤC C. ARTIFACT INDEX
 
 Artifact	Exp ID	SHA-256	Vị trí	Mô tả
 
-viequad_bm25_validation.json	EXP-RET-01	—	`benchmarks/results/`	BM25 full 2.048 queries (R@10 91,80%)
+viequad_bm25_validation.json	EXP-RET-01	cf704460462e97913aa9dc016143b2376ad17aa8243ae32bf820b7ef8fc03298	`benchmarks/results/`	BM25 validation 2.048 queries (R@10 91,80%, MRR 0,7010)
+
+viequad_weight_grid_tuning.json	EXP-RET-02	4884bd7e87bdacac4ed07f79bf8f23fc9026b9878d9d73ead883d9d373f7e31a	`benchmarks/results/`	512 tuning + 1.536 holdout; chọn vector 0 / BM25 1; holdout nDCG@10 0,4997
+
+viequad_yuxi_full_nvidia_keyword.json	EXP-RET-01	cb4314cecea6e919eb2e67efb36c8328c32f1cfd274917d2be46938b59c454d0	`benchmarks/results/`	Yuxi keyword full 2.048 queries (R@10 92,38%, MRR 0,7239)
+
+viequad_yuxi_full_nvidia_vector.json	EXP-RET-01	f80269d55919865f4fcb696b4ae029ef3738941345683c3080dcc8e6b03f7f28	`benchmarks/results/`	Dense vector full 2.048 queries (R@10 16,65%, MRR 0,0861)
+
+viequad_yuxi_full_nvidia_hybrid_production.json	EXP-RET-01	3a1f6969d3acf075a71fe2649a5e9da1913c61b7a64168b07f4ec29d865b2d97	`benchmarks/results/`	Hybrid production defaults, vector 0,3/BM25 0,7; R@10 92,38%, MRR 0,6806
+
+viequad_yuxi_full_nvidia_hybrid_w03.json	EXP-RET-01	ca388e02d5ad871fe77bc8a8236995ede20022cb7d0267cb16bc354ffd276b0c	`benchmarks/results/`	Weighted hybrid diagnostic; R@10 89,65%, MRR 0,4600
+
+viequad_yuxi_full_nvidia_rrf.json	EXP-RET-01	2dbf0729414d62779b75f4a3fc1a436a85e63d430e333c43d0e81139ad7faaef	`benchmarks/results/`	RRF k=60 full 2.048 queries (R@10 88,62%, MRR 0,5486)
 
 uit-viquad-2/queries.jsonl + corpus.jsonl + manifest.json	EXP-E2E-01	926fcf2e… / 57127d17… (xem manifest)	`benchmarks/artifacts/e2e/uit-viquad-2/`	E2E sample 150 (seed 42), corpus 557 docs
 
-uit-viquad-2_e2e_150.json	EXP-E2E-01	—	`benchmarks/results/`	EM 45,33%, abstention P/R 79,49%/62,00%
+uit-viquad-2_e2e_150.json	EXP-E2E-01	5110dff29331122dcd02928e781fa5d22b629f69f7fe3372472470a741c90ccc	`benchmarks/results/`	DeepSeek primary E2E 150; EM 45,33%, F1 66,94%, hit@1 77,33%, abstention P/R 79,49%/62,00%
 
-vietnamese_function_calling_nvidia_deepseek_100.json	EXP-AGT-01	—	`benchmarks/results/`	Tool 98%, EM 93% (merge smoke20 + rows20_100)
+vietnamese_function_calling_nvidia_deepseek_100.json	EXP-AGT-01	702e51d114a3c26ad8df8a21025fd7ce77844eab367263650a3873800ebbd3fc	`benchmarks/results/`	DeepSeek primary VN-FC 100; tool 98%, exact 93%, 0 call errors
 
-when2call_nvidia_deepseek_stratified60.json	EXP-AGT-01	—	`benchmarks/results/`	Accuracy 66,67% (20/class)
+when2call_nvidia_deepseek_stratified60.json	EXP-AGT-01	a3e55cfe4751107de37d0820c84ea4b601c3483014a17741eac0d1906b3db3ca	`benchmarks/results/`	DeepSeek primary When2Call 60; accuracy 66,67% (20/class)
 
-agent_contract_validation.json	EXP-AGT-01	—	`benchmarks/results/`	2.899 + 3.652 records hợp lệ
+agent_contract_validation.json	EXP-AGT-01	—	`benchmarks/results/`	2.899 + 3.652 records hợp lệ; schema validation only, không phải model score
 
 vietnamese_function_calling_qwen3_host_full100_retry_budget180.json	EXP-AGT-01	642c7db39950b2da0b3c5d8d57324804dc8b8592b925681516786d34ca287723	`benchmarks/results/`	Qwen3 local secondary: tool 100%, exact 89%, 100 mẫu, 146 calls
 
@@ -926,7 +936,7 @@ uit-viquad-2_e2e_qwen3_host_smoke15_k3.json	EXP-E2E-01	3ce1dc95c3937442bc1f3dcf9
 
 usage_log.jsonl	EXP-SYS-01	—	`benchmarks/results/`	Calls/tokens từng run có guard (không ước tính token)
 
-viwikifc_nli_dual_2091.json	EXP-NLI-01	—	`benchmarks/results/`	ViWikiFC full 2.091 cặp, dual-config trên GPU; production accuracy 56,77%, standard accuracy 39,93%
+viwikifc_nli_dual_2091.json	EXP-NLI-01	4f961e441f28298ca4537a938f61a857f2ce06bb1a58daa53a99fc12a11674a6	`benchmarks/results/`	ViWikiFC full 2.091 cặp, dual-config trên GPU; production accuracy 56,77%, standard accuracy 39,93%
 
 Ghi chú: result/artifact dưới `benchmarks/` bị gitignore theo thiết kế; tái tạo bằng command trong §4.5 + dataset revision trong `source-lock.json`.
 
